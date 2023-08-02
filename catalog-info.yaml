@@ -1,0 +1,7 @@
+apiVersion: backstage.io/v1alpha1
+kind: Component
+metadata:
+  name: openfeature-js-provider
+spec:
+  type: library
+  owner: bullseye

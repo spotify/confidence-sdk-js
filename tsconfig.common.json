@@ -1,0 +1,25 @@
+{
+  "extends": "@spotify/tsconfig/tsconfig.json",
+  "compilerOptions": {
+    "target": "ES2015",
+    "esModuleInterop": true,
+    "skipLibCheck": true,
+    "jsx": "react",
+    "downlevelIteration": true,
+    "incremental": true,
+    "composite": true,
+    "noEmit": false,
+    "declaration": true,
+    "declarationMap": true,
+    "isolatedModules": false,
+    "sourceMap": true
+  },
+  "exclude": ["**/*.setup.ts"],
+  "include": ["packages/**/src/*"],
+  "references": [
+    { "path": "packages/client-http" },
+    { "path": "packages/openfeature-web-provider" },
+    { "path": "packages/openfeature-server-provider" },
+    { "path": "packages/integration-react" }
+  ]
+}

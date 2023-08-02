@@ -1,0 +1,21 @@
+{
+  "extends": [
+    "@spotify/eslint-config-base",
+    "@spotify/eslint-config-typescript",
+    "@spotify/eslint-config-react",
+    "prettier",
+    "plugin:es/restrict-to-es2015"
+  ],
+  "plugins": ["@spotify/eslint-plugin"],
+  "settings": {
+    "react": {
+      "version": "detect"
+    }
+  },
+  "rules": {
+    "es/no-async-functions": "off",
+    "es/no-trailing-function-commas": "off",
+    "es/no-rest-spread-properties": "off",
+    "es/no-optional-chaining": "off"
+  }
+}

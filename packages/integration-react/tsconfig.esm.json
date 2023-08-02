@@ -1,0 +1,8 @@
+{
+  "extends": "./tsconfig.json",
+  "compilerOptions": {
+    "outDir": "build/esm",
+    "tsBuildInfoFile": "./build/types/tsconfig.esm.tsbuildinfo"
+  },
+  "exclude": ["**/*.test.*", "jest.setup.ts"]
+}

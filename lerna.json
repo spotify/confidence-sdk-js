@@ -1,0 +1,14 @@
+{
+  "$schema": "node_modules/lerna/schemas/lerna-schema.json",
+  "version": "independent",
+  "packages": ["packages/*"],
+  "npmClient": "yarn",
+  "command": {
+    "version": {
+      "conventionalCommits": true,
+      "message": "chore(release): prepare versions [skip ci]",
+      "changelogPreset": "@commitlint/config-conventional"
+    }
+  },
+  "ignoreChanges": ["**/*.test.*"]
+}

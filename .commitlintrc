@@ -1,0 +1,42 @@
+{
+	extends:['@commitlint/config-conventional'],
+	rules: {
+		'scope-case': [2, 'always', 'lower-case'],
+		'scope-enum': [
+			2,
+			'always',
+			[
+				'web',
+				'client-http',
+				'server',
+				'react'
+			],
+		],
+	},
+	prompt: {
+		questions: {
+			scope: {
+				description:
+					'What is the scope of this change (e.g. component or file name)',
+				enum: {
+					web: {
+						description: "Change in the web provider",
+						title: 'OpenFeature Web Provider',
+					},
+					server: {
+						description: "Change in the server provider",
+						title: 'OpenFeature Server Provider',
+					},
+					['client-http']: {
+						description: "Change in the confidence HTTP Client",
+						title: 'Confidence HTTP client',
+					},
+					react: {
+						description: "Change in the React integration",
+						title: 'Integration React',
+					}
+				}
+			},
+		},
+	},
+}
