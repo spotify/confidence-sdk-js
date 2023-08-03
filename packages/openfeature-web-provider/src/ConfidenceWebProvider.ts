@@ -3,6 +3,7 @@ import {
   EvaluationContext,
   JsonValue,
   Logger,
+  OpenFeature,
   OpenFeatureEventEmitter,
   Provider,
   ProviderEvents,
@@ -37,20 +38,7 @@ export class ConfidenceWebProvider implements Provider {
   }
 
   async initialize(context?: EvaluationContext): Promise<void> {
-    try {
-      this.configuration = await this.client.resolve(this.convertContext(context || {}), {
-        flags: [],
-      });
-      this.status = ProviderStatus.READY;
-      // this event should be emitted by the OpenFeature sdk onto the client handlers, but in current version is not work.
-      this.events.emit(ProviderEvents.Ready);
-      return Promise.resolve();
-    } catch (e) {
-      this.status = ProviderStatus.ERROR;
-      // this event should be emitted by the OpenFeature sdk onto the client handlers, but in current version is not work.
-      this.events.emit(ProviderEvents.Error);
-      throw e;
-    }
+    await this.fetchNewConfiguration(context || {});
   }
 
   async onContextChange(oldContext: EvaluationContext, newContext: EvaluationContext): Promise<void> {
@@ -58,16 +46,27 @@ export class ConfidenceWebProvider implements Provider {
       return;
     }
     this.events.emit(ProviderEvents.Stale);
+    await this.fetchNewConfiguration(newContext);
+  }
+
+  private async fetchNewConfiguration(context: EvaluationContext): Promise<void> {
     try {
-      this.configuration = await this.client.resolve(this.convertContext(newContext || {}), {
-        apply: false,
+      const config = await this.client.resolve(this.convertContext(context), {
         flags: [],
       });
-      this.status = ProviderStatus.READY;
-      this.events.emit(ProviderEvents.Ready);
+      const oldCtx = OpenFeature.getContext();
+      if (equal(oldCtx, context)) {
+        this.configuration = config;
+        this.status = ProviderStatus.READY;
+        this.events.emit(ProviderEvents.Ready);
+      }
+      return Promise.resolve();
     } catch (e) {
-      this.status = ProviderStatus.ERROR;
-      this.events.emit(ProviderEvents.Error);
+      if (equal(OpenFeature.getContext(), context)) {
+        this.status = ProviderStatus.ERROR;
+        this.events.emit(ProviderEvents.Error);
+      }
+      throw e;
     }
   }
 

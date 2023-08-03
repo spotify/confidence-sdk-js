@@ -2,6 +2,7 @@ import {
   ErrorCode,
   EvaluationContext,
   Logger,
+  OpenFeature,
   OpenFeatureAPI,
   ProviderEvents,
   ProviderStatus,
@@ -26,7 +27,7 @@ const mockClient = {
 } as unknown as ConfidenceClient;
 
 const dummyContext: ResolveContext = { targeting_key: 'test' };
-const dummyEvaluationContext: EvaluationContext = { targetingKey: 'test' };
+const dummyEvaluationContext: EvaluationContext = dummyContext;
 
 const dummyConfiguration: Configuration = {
   flags: {
@@ -112,12 +113,13 @@ describe('ConfidenceProvider', () => {
   beforeEach(() => {
     instanceUnderTest = new ConfidenceWebProvider(mockClient);
     resolveMock.mockResolvedValue(dummyConfiguration);
+    jest.spyOn(OpenFeature, 'getContext').mockReturnValue(dummyContext);
   });
 
   describe('initialize', () => {
     describe('with context', () => {
       it('should resolve', async () => {
-        await instanceUnderTest.initialize({ targetingKey: 'test' });
+        await instanceUnderTest.initialize(dummyContext);
 
         expect(resolveMock).toHaveBeenCalledWith(
           {
@@ -132,7 +134,7 @@ describe('ConfidenceProvider', () => {
       it('should change the provider status to READY', async () => {
         expect(instanceUnderTest.status).toEqual(ProviderStatus.NOT_READY);
 
-        await instanceUnderTest.initialize({ targetingKey: 'test' });
+        await instanceUnderTest.initialize(dummyContext);
 
         expect(instanceUnderTest.status).toEqual(ProviderStatus.READY);
       });
@@ -141,7 +143,7 @@ describe('ConfidenceProvider', () => {
         resolveMock.mockRejectedValue(new Error('something went wrong'));
 
         try {
-          await instanceUnderTest.initialize({ targetingKey: 'test' });
+          await instanceUnderTest.initialize(dummyContext);
         } catch (_) {
           // do nothing
         }
@@ -151,6 +153,10 @@ describe('ConfidenceProvider', () => {
     });
 
     describe('no context', () => {
+      beforeEach(() => {
+        jest.spyOn(OpenFeature, 'getContext').mockReturnValue({});
+      });
+
       it('should change the provider status to READY', async () => {
         expect(instanceUnderTest.status).toEqual(ProviderStatus.NOT_READY);
 
@@ -161,6 +167,7 @@ describe('ConfidenceProvider', () => {
     });
 
     it('should change the provider status with context', async () => {
+      jest.spyOn(OpenFeature, 'getContext').mockReturnValue({});
       expect(instanceUnderTest.status).toEqual(ProviderStatus.NOT_READY);
 
       await instanceUnderTest.initialize();
@@ -179,7 +186,6 @@ describe('ConfidenceProvider', () => {
         },
         {
           flags: [],
-          apply: false,
         },
       );
     });
@@ -190,8 +196,46 @@ describe('ConfidenceProvider', () => {
       expect(resolveMock).not.toHaveBeenCalled();
     });
 
+    it('should only emit ready and change the status when the context has not been changed mid change', async () => {
+      const staleHandler = jest.fn();
+      const readyHandler = jest.fn();
+      instanceUnderTest.events.addHandler(ProviderEvents.Stale, staleHandler);
+      instanceUnderTest.events.addHandler(ProviderEvents.Ready, readyHandler);
+      const getContextMock = jest.spyOn(OpenFeature, 'getContext');
+      let firstResolve: (() => void) | undefined;
+      let secondResolve: (() => void) | undefined;
+
+      resolveMock
+        .mockReturnValueOnce(
+          new Promise<void>(res => {
+            firstResolve = res;
+          }),
+        )
+        .mockReturnValueOnce(
+          new Promise<void>(res => {
+            secondResolve = res;
+          }),
+        );
+
+      getContextMock.mockReturnValue({ targetingKey: 'a' });
+      const firstSet = instanceUnderTest.onContextChange(dummyContext, { targetingKey: 'a' });
+      getContextMock.mockReturnValue({ targetingKey: 'b' });
+      const secondSet = instanceUnderTest.onContextChange(dummyContext, { targetingKey: 'b' });
+
+      firstResolve?.();
+      await firstSet;
+      expect(readyHandler).toHaveBeenCalledTimes(0);
+
+      secondResolve?.();
+      await secondSet;
+      expect(readyHandler).toHaveBeenCalledTimes(1);
+
+      expect(staleHandler).toHaveBeenCalledTimes(2);
+      expect(staleHandler).toHaveBeenCalledBefore(readyHandler);
+    });
+
     it('should return default with reason stale during fetch', async () => {
-      await instanceUnderTest.initialize({ targetingKey: 'A' });
+      await instanceUnderTest.initialize(dummyContext);
 
       expect(
         instanceUnderTest.resolveBooleanEvaluation('testFlag.bool', false, { targetingKey: 'B' }, dummyConsole),
@@ -208,6 +252,7 @@ describe('ConfidenceProvider', () => {
       const readyHandler = jest.fn();
       instanceUnderTest.events.addHandler(ProviderEvents.Stale, staleHandler);
       instanceUnderTest.events.addHandler(ProviderEvents.Ready, readyHandler);
+      jest.spyOn(OpenFeature, 'getContext').mockReturnValue({ targetingKey: 'a' });
 
       await instanceUnderTest.onContextChange(dummyContext, { targetingKey: 'a' });
 
@@ -695,10 +740,12 @@ describe('events', () => {
   const staleHandler = jest.fn();
   let initPromise: Promise<void> | undefined;
 
-  afterEach(() => {
+  afterEach(async () => {
     openFeatureAPI.removeHandler(ProviderEvents.Error, errorHandler);
     openFeatureAPI.removeHandler(ProviderEvents.Ready, readyHandler);
     openFeatureAPI.removeHandler(ProviderEvents.Stale, staleHandler);
+    openFeatureAPI.setLogger(dummyConsole);
+    return openFeatureAPI.setContext({});
   });
 
   beforeEach(() => {
@@ -718,10 +765,12 @@ describe('events', () => {
   it('should emit ready stale ready on successful initialisation and context change', async () => {
     resolveMock.mockResolvedValue(dummyConfiguration);
     openFeatureAPI.setProvider(new ConfidenceWebProvider(mockClient));
+    jest.spyOn(OpenFeature, 'getContext').mockReturnValue({ targetingKey: 'user-a' });
     await initPromise;
-    await openFeatureAPI.setContext({ targetingKey: 'user-a', name: 'Kurt' });
+    jest.spyOn(OpenFeature, 'getContext').mockReturnValue({ targetingKey: 'user-b' });
+    await openFeatureAPI.setContext({ targetingKey: 'user-b' });
 
-    expect(readyHandler).toHaveBeenCalledTimes(3);
+    expect(readyHandler).toHaveBeenCalledTimes(2);
     expect(staleHandler).toHaveBeenCalledTimes(1);
     expect(errorHandler).toHaveBeenCalledTimes(0);
   });
@@ -729,15 +778,17 @@ describe('events', () => {
   it('should emit error stale error on failed initialisation and context change', async () => {
     resolveMock.mockRejectedValue(new Error('some error'));
     openFeatureAPI.setProvider(new ConfidenceWebProvider(mockClient));
+    jest.spyOn(OpenFeature, 'getContext').mockReturnValue({ targetingKey: 'user-a' });
     await initPromise;
     try {
-      await openFeatureAPI.setContext({ targetingKey: 'user-a' });
+      jest.spyOn(OpenFeature, 'getContext').mockReturnValue({ targetingKey: 'user-b' });
+      await openFeatureAPI.setContext({ targetingKey: 'user-b' });
     } catch (_) {
       // do nothing
     }
 
     expect(readyHandler).toHaveBeenCalledTimes(0);
     expect(staleHandler).toHaveBeenCalledTimes(1);
-    expect(errorHandler).toHaveBeenCalledTimes(3);
+    expect(errorHandler).toHaveBeenCalledTimes(2);
   });
 });

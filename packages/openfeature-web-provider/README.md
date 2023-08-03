@@ -33,10 +33,10 @@ const provider = createConfidenceWebProvider({
   fetchImplementation: window.fetch.bind(window),
 });
 
+OpenFeature.setProvider(provider);
 await OpenFeature.setContext({
   targetingKey: 'myTargetingKey',
 });
-OpenFeature.setProvider(provider);
 
 const client = OpenFeature.getClient();
 const result = client.getBooleanValue('flag.my-boolean', false);

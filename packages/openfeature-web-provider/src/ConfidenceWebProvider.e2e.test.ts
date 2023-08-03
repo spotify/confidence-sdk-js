@@ -1,8 +1,8 @@
-import { OpenFeature, ProviderEvents } from '@openfeature/web-sdk';
+import { OpenFeature } from '@openfeature/web-sdk';
 import axios from 'axios';
 import { createConfidenceWebProvider } from './factory';
 
-describe('ConfidenceHTTPProvider E2E tests', () => {
+describe('ConfidenceWebProvider E2E tests', () => {
   beforeAll(() => {
     const confidenceProvider = createConfidenceWebProvider({
       fetchImplementation: async (url, request): Promise<Response> => {
@@ -18,19 +18,11 @@ describe('ConfidenceHTTPProvider E2E tests', () => {
       region: 'eu',
       clientSecret: 'RxDVTrXvc6op1XxiQ4OaR31dKbJ39aYV',
     });
-    const providerReadyPromise = new Promise<void>(resolve => {
-      OpenFeature.addHandler(ProviderEvents.Ready, () => {
-        resolve();
-      });
-    }).then(() => {
-      return OpenFeature.setContext({
-        targetingKey: 'test-a', // control
-      });
-    });
 
     OpenFeature.setProvider(confidenceProvider);
-
-    return providerReadyPromise;
+    return OpenFeature.setContext({
+      targetingKey: 'test-a', // control
+    });
   });
 
   it('should resolve a boolean e2e', async () => {
