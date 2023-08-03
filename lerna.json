@@ -6,7 +6,7 @@
   "command": {
     "version": {
       "conventionalCommits": true,
-      "message": "chore(release): prepare versions [skip ci]",
+      "message": "chore: prepare versions [skip ci]",
       "changelogPreset": "@commitlint/config-conventional",
       "noPrivate": true
     }
