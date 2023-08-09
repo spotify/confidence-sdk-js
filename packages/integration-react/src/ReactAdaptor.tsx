@@ -21,11 +21,13 @@ export class ClientManager {
   private onChangeHandlers: Set<SetState> = new Set();
 
   constructor(private readonly instance: Client) {
-    let resolve = this.createPromise();
+    const resolves = [this.createPromise()];
 
     this.onReady = this.onError = () => {
-      this.promise = undefined;
-      resolve();
+      resolves.pop()?.();
+      if (resolves.length === 0) {
+        this.promise = undefined;
+      }
       for (const cb of this.onChangeHandlers) {
         try {
           cb();
@@ -33,10 +35,9 @@ export class ClientManager {
           // do nothing
         }
       }
-      this.onChangeHandlers.clear();
     };
     this.onStale = () => {
-      resolve = this.createPromise();
+      resolves.unshift(this.createPromise());
     };
 
     this.effect = () => {
@@ -47,8 +48,12 @@ export class ClientManager {
     };
   }
 
-  onceOnChange(callback: SetState) {
+  addOnChangeHandler(callback: SetState) {
     this.onChangeHandlers.add(callback);
+  }
+
+  removeOnChangeHandler(callback: SetState) {
+    this.onChangeHandlers.delete(callback);
   }
 
   getClient(): Client {
@@ -80,7 +85,7 @@ export class ClientManager {
       resolver = resolve;
     });
     return () => {
-      resolver();
+      resolver?.();
     };
   }
 }
@@ -115,7 +120,11 @@ export function useStringValue(flagKey: string, defaultValue: string): string {
   const [value, setValue] = useState(() => client.getStringValue(flagKey, defaultValue));
 
   useEffect(() => {
-    manager.onceOnChange(() => setValue(client.getStringValue(flagKey, defaultValue)));
+    const callback = () => setValue(client.getStringValue(flagKey, defaultValue));
+    manager.addOnChangeHandler(callback);
+    return () => {
+      manager.removeOnChangeHandler(callback);
+    };
   }, [defaultValue, flagKey, manager, client]);
 
   return value;
@@ -127,7 +136,11 @@ export function useStringDetails(flagKey: string, defaultValue: string): Resolut
   const [value, setValue] = useState(() => client.getStringDetails(flagKey, defaultValue));
 
   useEffect(() => {
-    manager.onceOnChange(() => setValue(client.getStringDetails(flagKey, defaultValue)));
+    const callback = () => setValue(client.getStringDetails(flagKey, defaultValue));
+    manager.addOnChangeHandler(callback);
+    return () => {
+      manager.removeOnChangeHandler(callback);
+    };
   }, [defaultValue, flagKey, manager, client]);
 
   return value;
@@ -139,7 +152,11 @@ export function useBooleanValue(flagKey: string, defaultValue: boolean): boolean
   const [value, setValue] = useState(() => client.getBooleanValue(flagKey, defaultValue));
 
   useEffect(() => {
-    manager.onceOnChange(() => setValue(client.getBooleanValue(flagKey, defaultValue)));
+    const callback = () => setValue(client.getBooleanValue(flagKey, defaultValue));
+    manager.addOnChangeHandler(callback);
+    return () => {
+      manager.removeOnChangeHandler(callback);
+    };
   }, [defaultValue, flagKey, manager, client]);
 
   return value;
@@ -151,7 +168,11 @@ export function useBooleanDetails(flagKey: string, defaultValue: boolean): Resol
   const [value, setValue] = useState(() => client.getBooleanDetails(flagKey, defaultValue));
 
   useEffect(() => {
-    manager.onceOnChange(() => setValue(client.getBooleanDetails(flagKey, defaultValue)));
+    const callback = () => setValue(client.getBooleanDetails(flagKey, defaultValue));
+    manager.addOnChangeHandler(callback);
+    return () => {
+      manager.removeOnChangeHandler(callback);
+    };
   }, [defaultValue, flagKey, manager, client]);
 
   return value;
@@ -163,7 +184,11 @@ export function useNumberValue(flagKey: string, defaultValue: number): number {
   const [value, setValue] = useState(() => client.getNumberValue(flagKey, defaultValue));
 
   useEffect(() => {
-    manager.onceOnChange(() => setValue(client.getNumberValue(flagKey, defaultValue)));
+    const callback = () => setValue(client.getNumberValue(flagKey, defaultValue));
+    manager.addOnChangeHandler(callback);
+    return () => {
+      manager.removeOnChangeHandler(callback);
+    };
   }, [defaultValue, flagKey, manager, client]);
 
   return value;
@@ -175,7 +200,11 @@ export function useNumberDetails(flagKey: string, defaultValue: number): Evaluat
   const [value, setValue] = useState(() => client.getNumberDetails(flagKey, defaultValue));
 
   useEffect(() => {
-    manager.onceOnChange(() => setValue(client.getNumberDetails(flagKey, defaultValue)));
+    const callback = () => setValue(client.getNumberDetails(flagKey, defaultValue));
+    manager.addOnChangeHandler(callback);
+    return () => {
+      manager.removeOnChangeHandler(callback);
+    };
   }, [defaultValue, flagKey, manager, client]);
 
   return value;
@@ -187,7 +216,11 @@ export function useObjectValue<T extends JsonValue>(flagKey: string, defaultValu
   const [value, setValue] = useState(() => client.getObjectValue(flagKey, defaultValue));
 
   useEffect(() => {
-    manager.onceOnChange(() => setValue(client.getObjectValue(flagKey, defaultValue)));
+    const callback = () => setValue(client.getObjectValue(flagKey, defaultValue));
+    manager.addOnChangeHandler(callback);
+    return () => {
+      manager.removeOnChangeHandler(callback);
+    };
   }, [defaultValue, flagKey, manager, client]);
 
   return value as T;
@@ -199,7 +232,11 @@ export function useObjectDetails<T extends JsonValue>(flagKey: string, defaultVa
   const [value, setValue] = useState(() => client.getObjectDetails(flagKey, defaultValue));
 
   useEffect(() => {
-    manager.onceOnChange(() => setValue(client.getObjectDetails(flagKey, defaultValue)));
+    const callback = () => setValue(client.getObjectDetails(flagKey, defaultValue));
+    manager.addOnChangeHandler(callback);
+    return () => {
+      manager.removeOnChangeHandler(callback);
+    };
   }, [defaultValue, flagKey, manager, client]);
 
   return value as EvaluationDetails<T>;
