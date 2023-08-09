@@ -721,7 +721,7 @@ describe('events', () => {
     await initPromise;
     await openFeatureAPI.setContext({ targetingKey: 'user-a', name: 'Kurt' });
 
-    expect(readyHandler).toHaveBeenCalledTimes(3);
+    expect(readyHandler).toHaveBeenCalledTimes(2);
     expect(staleHandler).toHaveBeenCalledTimes(1);
     expect(errorHandler).toHaveBeenCalledTimes(0);
   });
@@ -738,6 +738,6 @@ describe('events', () => {
 
     expect(readyHandler).toHaveBeenCalledTimes(0);
     expect(staleHandler).toHaveBeenCalledTimes(1);
-    expect(errorHandler).toHaveBeenCalledTimes(3);
+    expect(errorHandler).toHaveBeenCalledTimes(2);
   });
 });

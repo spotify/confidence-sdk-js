@@ -42,13 +42,9 @@ export class ConfidenceWebProvider implements Provider {
         flags: [],
       });
       this.status = ProviderStatus.READY;
-      // this event should be emitted by the OpenFeature sdk onto the client handlers, but in current version is not work.
-      this.events.emit(ProviderEvents.Ready);
       return Promise.resolve();
     } catch (e) {
       this.status = ProviderStatus.ERROR;
-      // this event should be emitted by the OpenFeature sdk onto the client handlers, but in current version is not work.
-      this.events.emit(ProviderEvents.Error);
       throw e;
     }
   }
