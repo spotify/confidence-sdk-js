@@ -29,6 +29,13 @@ module.exports = {
       setupFilesAfterEnv: ['jest-extended/all', '<rootDir>/packages/integration-react/jest.setup.ts'],
     },
     {
+      displayName: 'integration-next',
+      testMatch: ['<rootDir>/packages/integration-next/src/**/*.test.ts*'],
+      testEnvironment: 'jsdom',
+      ...projectCommonConfig,
+      setupFilesAfterEnv: ['jest-extended/all', '<rootDir>/packages/integration-react/jest.setup.ts'],
+    },
+    {
       displayName: 'client-http',
       testMatch: ['<rootDir>/packages/client-http/src/**/*.test.ts*'],
       ...projectCommonConfig,
