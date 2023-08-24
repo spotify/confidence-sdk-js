@@ -1,5 +1,3 @@
-import { Provider } from '@openfeature/js-sdk';
-
 import { ConfidenceClient } from '@spotify-confidence/client-http';
 
 import { ConfidenceServerProvider } from './ConfidenceServerProvider';
@@ -14,7 +12,7 @@ type ConfidenceProviderFactoryOptions = {
   };
 };
 
-export function createConfidenceServerProvider(options: ConfidenceProviderFactoryOptions): Provider {
+export function createConfidenceServerProvider(options: ConfidenceProviderFactoryOptions): ConfidenceServerProvider {
   const confidenceClient = new ConfidenceClient({
     ...options,
     apply: !options.apply,

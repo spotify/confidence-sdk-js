@@ -18,7 +18,11 @@ interface ConfidenceServerProviderOptions {
   };
 }
 
-export class ConfidenceServerProvider implements Provider {
+interface SerializableProvider {
+  serialize(): Configuration.Serialized | null;
+}
+
+export class ConfidenceServerProvider implements Provider, SerializableProvider {
   readonly metadata: ProviderMetadata = {
     name: 'ConfidenceServerProvider',
   };
@@ -110,6 +114,14 @@ export class ConfidenceServerProvider implements Provider {
         reason: 'ERROR',
       };
     }
+  }
+
+  serialize(): Configuration.Serialized | null {
+    if (!this.configuration) {
+      return null;
+    }
+
+    return Configuration.serialize(this.configuration);
   }
 
   private async fetchFlag<T>(
