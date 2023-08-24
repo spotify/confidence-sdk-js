@@ -20,7 +20,11 @@ export interface ConfidenceWebProviderOptions {
   };
 }
 
-export class ConfidenceWebProvider implements Provider {
+interface InitializableProvider {
+  initConfig(initConfig: Configuration.Serialized, currentContext: EvaluationContext): void;
+}
+
+export class ConfidenceWebProvider implements Provider, InitializableProvider {
   readonly metadata: ProviderMetadata = {
     name: 'ConfidenceWebProvider',
   };
@@ -37,6 +41,10 @@ export class ConfidenceWebProvider implements Provider {
   }
 
   async initialize(context?: EvaluationContext): Promise<void> {
+    if (this.status === ProviderStatus.READY) {
+      return Promise.resolve();
+    }
+
     try {
       this.configuration = await this.client.resolve(this.convertContext(context || {}), {
         flags: [],
@@ -80,6 +88,21 @@ export class ConfidenceWebProvider implements Provider {
       };
     }
     return rest;
+  }
+
+  serialize(): Configuration.Serialized | null {
+    if (!this.configuration) {
+      return null;
+    }
+    return Configuration.serialize(this.configuration);
+  }
+
+  initConfig(initConfig: Configuration.Serialized, currentContext: EvaluationContext): void {
+    if (equal(initConfig.context, this.convertContext(currentContext))) {
+      this.configuration = Configuration.toConfiguration(initConfig);
+    }
+    this.status = ProviderStatus.READY;
+    this.events.emit(ProviderEvents.Ready);
   }
 
   private getFlag<T>(
