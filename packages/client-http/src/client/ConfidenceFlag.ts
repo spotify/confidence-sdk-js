@@ -1,5 +1,9 @@
 import { Configuration } from './Configuration';
 
+type PartialBy<T, K> = {
+  [P in keyof T]: P extends K ? T[P] | undefined : T[P];
+};
+
 type FlagSchema =
   | 'number'
   | 'boolean'
@@ -76,12 +80,13 @@ export class ConfidenceFlag implements Configuration.Flag {
   readonly schema: FlagSchema;
   readonly reason: Configuration.ResolveReason;
 
-  constructor(flag: ResolvedFlag) {
-    this.flagName = flag.flag;
+  constructor(flag: ResolvedFlag);
+  constructor(flag: PartialBy<ResolvedFlag, 'flagSchema' | 'flag'> & { flagName?: string; schema?: FlagSchema }) {
+    this.flagName = flag.flagName || flag.flag!;
     this.reason = flag.reason;
     this.variant = flag.variant;
     this.value = flag.value;
-    this.schema = parseSchema(flag.flagSchema);
+    this.schema = flag.schema || parseSchema(flag.flagSchema);
   }
 
   getValue(...path: string[]): Configuration.FlagValue | null {
