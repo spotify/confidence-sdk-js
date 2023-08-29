@@ -1,7 +1,7 @@
 {
   "name": "@spotify-confidence/integration-react",
   "license": "Apache-2.0",
-  "version": "0.0.2",
+  "version": "0.0.3",
   "module": "build/esm/index.js",
   "types": "build/types/index.d.ts",
   "peerDependencies": {
@@ -15,7 +15,7 @@
     "clean": "rm -rf build"
   },
   "devDependencies": {
-    "@spotify-confidence/openfeature-web-provider": "^0.0.2",
+    "@spotify-confidence/openfeature-web-provider": "^0.0.3",
     "@testing-library/jest-dom": "^5.16.5",
     "@testing-library/react": "^14.0.0",
     "@types/node-fetch": "^2.6.4"
