@@ -1,4 +1,3 @@
-export * from './OpenFeatureNext13';
-export * from './OpenFeatureNext12';
+'use client'
 // re-export for easy dependency management.
 export * from '@spotify-confidence/integration-react';
