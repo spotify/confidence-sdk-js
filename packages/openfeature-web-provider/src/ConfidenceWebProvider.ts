@@ -15,7 +15,7 @@ import equal from 'fast-deep-equal';
 import { ApplyManager, ConfidenceClient, Configuration, ResolveContext } from '@spotify-confidence/client-http';
 
 export interface ConfidenceWebProviderOptions {
-  initConfiguration?: Configuration.Serialized;
+  initConfiguration?: Configuration;
   apply?: {
     timeout?: number;
   };
@@ -38,7 +38,7 @@ export class ConfidenceWebProvider implements Provider {
     this.applyManager = new ApplyManager({ client: this.client, timeout: options?.apply?.timeout || 250 });
 
     if (options?.initConfiguration) {
-      this.configuration = Configuration.toConfiguration(options.initConfiguration);
+      this.configuration = options.initConfiguration;
       this.isInitialConfiguration = true;
     } else {
       this.isInitialConfiguration = false;
@@ -148,8 +148,13 @@ export class ConfidenceWebProvider implements Provider {
         };
       }
 
-      const flagValue = flag.getValue(...pathParts);
-      if (flagValue === null) {
+      let flagValue = null;
+      let flagSchema = null;
+      try {
+        const valAndSchema = Configuration.Flag.getValueAndSchema(flag, ...pathParts);
+        flagValue = valAndSchema.value;
+        flagSchema = valAndSchema.schema;
+      } catch (e) {
         logger.warn('Value with path "%s" was not found in flag "%s"', pathParts.join('.'), flagName);
         return {
           errorCode: ErrorCode.PARSE_ERROR,
@@ -157,8 +162,13 @@ export class ConfidenceWebProvider implements Provider {
           reason: 'ERROR',
         };
       }
-
-      if (!flagValue.match(defaultValue)) {
+      if (flagValue === null) {
+        return {
+          value: defaultValue,
+          reason: flag.reason,
+        };
+      }
+      if (!Configuration.Flag.valueMatchesSchema(flagValue, flagSchema)) {
         logger.warn('Value for "%s" is of incorrect type', flagKey);
         return {
           errorCode: ErrorCode.TYPE_MISMATCH,
@@ -166,17 +176,11 @@ export class ConfidenceWebProvider implements Provider {
           reason: 'ERROR',
         };
       }
-      if (flagValue.value === null) {
-        logger.info('Value for "%s" is default', flagKey);
-        return {
-          value: defaultValue,
-          reason: flag.reason,
-        };
-      }
+
       this.applyManager.apply(this.configuration.resolveToken, flagName);
       logger.info('Value for "%s" successfully evaluated', flagKey);
       return {
-        value: flagValue.value,
+        value: flagValue as T,
         reason: 'TARGETING_MATCH',
         variant: flag.variant,
         flagMetadata: {

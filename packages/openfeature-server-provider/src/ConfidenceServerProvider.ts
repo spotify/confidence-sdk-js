@@ -1,15 +1,15 @@
 import {
+  ErrorCode,
+  EvaluationContext,
+  JsonValue,
+  Logger,
+  Provider,
   ProviderMetadata,
   ProviderStatus,
-  EvaluationContext,
-  Logger,
   ResolutionDetails,
-  JsonValue,
-  ErrorCode,
-  Provider,
 } from '@openfeature/js-sdk';
 
-import { ConfidenceClient, ResolveContext, ApplyManager, Configuration } from '@spotify-confidence/client-http';
+import { ApplyManager, ConfidenceClient, Configuration, ResolveContext } from '@spotify-confidence/client-http';
 
 interface ConfidenceServerProviderOptions {
   apply?: {
@@ -41,7 +41,12 @@ export class ConfidenceServerProvider implements Provider {
     return rest;
   }
 
-  private getFlag<T>(configuration: Configuration, flagKey: string, defaultValue: T, _logger: Logger): ResolutionDetails<T> {
+  private getFlag<T>(
+    configuration: Configuration,
+    flagKey: string,
+    defaultValue: T,
+    _logger: Logger,
+  ): ResolutionDetails<T> {
     if (!configuration) {
       return {
         errorCode: ErrorCode.PROVIDER_NOT_READY,
@@ -70,31 +75,36 @@ export class ConfidenceServerProvider implements Provider {
         };
       }
 
-      const flagValue = flag.getValue(...pathParts);
-      if (flagValue === null) {
+      let flagValue = null;
+      let flagSchema = null;
+      try {
+        const valAndSchema = Configuration.Flag.getValueAndSchema(flag, ...pathParts);
+        flagValue = valAndSchema.value;
+        flagSchema = valAndSchema.schema;
+      } catch (e) {
         return {
           errorCode: 'PARSE_ERROR' as ErrorCode,
           value: defaultValue,
           reason: 'ERROR',
         };
       }
-
-      if (!flagValue.match(defaultValue)) {
+      if (flagValue === null) {
+        return {
+          value: defaultValue,
+          reason: flag.reason,
+        };
+      }
+      if (!Configuration.Flag.valueMatchesSchema(flagValue, flagSchema)) {
         return {
           errorCode: 'TYPE_MISMATCH' as ErrorCode,
           value: defaultValue,
           reason: 'ERROR',
         };
       }
-      if (flagValue.value === null) {
-        return {
-          value: defaultValue,
-          reason: flag.reason,
-        };
-      }
+
       this.applyManager.apply(configuration.resolveToken, flagName);
       return {
-        value: flagValue.value,
+        value: flagValue as T,
         reason: 'TARGETING_MATCH',
         variant: flag.variant,
         flagMetadata: {
@@ -110,9 +120,8 @@ export class ConfidenceServerProvider implements Provider {
     }
   }
 
-  async getConfiguration(context: EvaluationContext): Promise<Configuration.Serialized> {
-    const totalConfig = await this.client.resolve(this.convertContext(this.convertContext(context || {})));
-    return Configuration.serialize(totalConfig);
+  async getConfiguration(context: EvaluationContext): Promise<Configuration> {
+    return this.client.resolve(this.convertContext(this.convertContext(context || {})));
   }
 
   private async fetchFlag<T>(

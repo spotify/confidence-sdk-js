@@ -1,15 +1,17 @@
 'use client';
-import React, {useMemo} from 'react';
+import React, { useMemo } from 'react';
 import { OpenFeature } from '@openfeature/web-sdk';
-import {ConfidenceWebProvider, createConfidenceWebProvider} from '@spotify-confidence/openfeature-web-provider';
-
+import { ConfidenceWebProvider, createConfidenceWebProvider } from '@spotify-confidence/openfeature-web-provider';
 
 type RequiredSelected<T, K extends keyof T> = {
-  [P in K]-?:  NonNullable<T[P]>;
+  [P in K]-?: NonNullable<T[P]>;
 } & T;
 
 export interface ClientSetupProps {
-  clientProviderFactoryOptions: RequiredSelected<Parameters<typeof createConfidenceWebProvider>[0], 'initConfiguration'>
+  clientProviderFactoryOptions: RequiredSelected<
+    Parameters<typeof createConfidenceWebProvider>[0],
+    'initConfiguration'
+  >;
   isServer?: boolean;
 }
 export function ClientSetup(props: ClientSetupProps) {
@@ -20,11 +22,11 @@ export function ClientSetup(props: ClientSetupProps) {
       return createConfidenceWebProvider({
         ...clientProviderFactoryOptions,
         fetchImplementation: _ => {
-          throw new Error('Initial configuration not set correctly')
-        }
+          throw new Error('Initial configuration not set correctly');
+        },
       });
     }
-    return createConfidenceWebProvider(clientProviderFactoryOptions)
+    return createConfidenceWebProvider(clientProviderFactoryOptions);
   }, [clientProviderFactoryOptions, isServer]);
 
   useMemo(() => {
