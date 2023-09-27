@@ -15,16 +15,13 @@ import equal from 'fast-deep-equal';
 import { ApplyManager, ConfidenceClient, Configuration, ResolveContext } from '@spotify-confidence/client-http';
 
 export interface ConfidenceWebProviderOptions {
+  initConfiguration?: Configuration.Serialized;
   apply?: {
     timeout?: number;
   };
 }
 
-interface InitializableProvider {
-  initConfig(initConfig: Configuration.Serialized, currentContext: EvaluationContext): void;
-}
-
-export class ConfidenceWebProvider implements Provider, InitializableProvider {
+export class ConfidenceWebProvider implements Provider {
   readonly metadata: ProviderMetadata = {
     name: 'ConfidenceWebProvider',
   };
@@ -34,14 +31,31 @@ export class ConfidenceWebProvider implements Provider, InitializableProvider {
 
   private readonly client: ConfidenceClient;
   private readonly applyManager: ApplyManager;
+  private isInitialConfiguration: boolean;
 
   constructor(client: ConfidenceClient, options?: ConfidenceWebProviderOptions) {
     this.client = client;
     this.applyManager = new ApplyManager({ client: this.client, timeout: options?.apply?.timeout || 250 });
+
+    if (options?.initConfiguration) {
+      this.configuration = Configuration.toConfiguration(options.initConfiguration);
+      this.isInitialConfiguration = true;
+    } else {
+      this.isInitialConfiguration = false;
+    }
   }
 
   async initialize(context?: EvaluationContext): Promise<void> {
-    if (this.status === ProviderStatus.READY) {
+    if (this.isInitialConfiguration) {
+      this.isInitialConfiguration = false;
+      this.status = ProviderStatus.READY;
+      // this event should be emitted by the OpenFeature sdk onto the client handlers, but in current version is not work.
+      this.events.emit(ProviderEvents.Ready);
+      return Promise.resolve();
+    }
+
+    if (this.status === ProviderStatus.READY || this.isInitialConfiguration) {
+      this.isInitialConfiguration = false;
       return Promise.resolve();
     }
 
@@ -88,21 +102,6 @@ export class ConfidenceWebProvider implements Provider, InitializableProvider {
       };
     }
     return rest;
-  }
-
-  serialize(): Configuration.Serialized | null {
-    if (!this.configuration) {
-      return null;
-    }
-    return Configuration.serialize(this.configuration);
-  }
-
-  initConfig(initConfig: Configuration.Serialized, currentContext: EvaluationContext): void {
-    if (equal(initConfig.context, this.convertContext(currentContext))) {
-      this.configuration = Configuration.toConfiguration(initConfig);
-    }
-    this.status = ProviderStatus.READY;
-    this.events.emit(ProviderEvents.Ready);
   }
 
   private getFlag<T>(

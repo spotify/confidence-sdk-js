@@ -11,15 +11,10 @@
       "import": "./build/esm/index.js",
       "types": "./build/types/index.d.ts"
     },
-    "./Next13": {
-      "require": "./build/cjs/OpenFeatureNext13.js",
-      "import": "./build/esm/OpenFeatureNext13.js",
-      "types": "./build/types/OpenFeatureNext13.d.ts"
-    },
-    "./Next12": {
-      "require": "./build/cjs/OpenFeatureNext12.js",
-      "import": "./build/esm/OpenFeatureNext12.js",
-      "types": "./build/types/OpenFeatureNext12.d.ts"
+    "./ClientSetup": {
+      "require": "./build/cjs/ClientSetup.js",
+      "import": "./build/esm/ClientSetup.js",
+      "types": "./build/types/ClientSetup.d.ts"
     }
   },
   "peerDependencies": {

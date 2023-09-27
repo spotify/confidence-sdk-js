@@ -3,14 +3,14 @@ import { createConfidenceWebProvider } from '@spotify-confidence/openfeature-web
 import { Configuration, ResolveContext } from '@spotify-confidence/client-http';
 import { useStringValue } from '@spotify-confidence/integration-react';
 import { act, render, screen } from '@testing-library/react';
-import { OpenFeatureNext12 } from './OpenFeatureNext12';
+import { OpenFeatureNext13 } from './ClientSetup';
 
 const TestComponent = () => {
   const str = useStringValue('test.str', 'default');
   return <p>{str}</p>;
 };
 
-describe('OpenFeatureNext12', () => {
+describe('OpenFeatureNext13', () => {
   const fakeFetch = jest.fn();
   it('should put the serialized config into the client provider and configure it', async () => {
     const fakeContext: ResolveContext = {
@@ -40,20 +40,17 @@ describe('OpenFeatureNext12', () => {
     await act(() =>
       render(
         <>
-          <OpenFeatureNext12.ClientSetup
+          <OpenFeatureNext13.ClientSetup
             serializedConfig={fakeSerializedProvider}
             context={fakeContext}
             clientProvider={clientProvider}
-            fallback={<p>fallback</p>}
-          >
-            <TestComponent />
-          </OpenFeatureNext12.ClientSetup>
+          />
+          <TestComponent />
         </>,
       ),
     );
 
     expect(screen.getByText('from serialized')).toBeInTheDocument();
-    expect(screen.queryByText('loading')).not.toBeInTheDocument();
     expect(fakeFetch).not.toHaveBeenCalled();
   });
 });

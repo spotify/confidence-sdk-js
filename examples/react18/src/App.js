@@ -3,12 +3,13 @@ import {OpenFeature} from "@openfeature/web-sdk";
 import {webProvider} from "./client-provider";
 import TestComponent from "./TestComponent";
 
-OpenFeature.setProvider(webProvider);
 
 function App() {
   useEffect(() => {
     OpenFeature.setContext({
-      targetingKey: 'myTargetingKey',
+      targetingKey: 'user-a',
+    }).then(() => {
+        OpenFeature.setProvider(webProvider);
     });
   }, []);
 

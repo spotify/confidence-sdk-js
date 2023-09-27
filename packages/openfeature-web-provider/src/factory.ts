@@ -1,9 +1,10 @@
 import { ConfidenceWebProvider } from './ConfidenceWebProvider';
-import { ConfidenceClient } from '@spotify-confidence/client-http';
+import {ConfidenceClient, Configuration} from '@spotify-confidence/client-http';
 
 export type ConfidenceWebProviderFactoryOptions = {
   region: 'eu' | 'us';
-  fetchImplementation: typeof fetch;
+  fetchImplementation?: typeof fetch;
+  initConfiguration?: Configuration.Serialized;
   clientSecret: string;
   baseUrl?: string;
   apply?: {
@@ -12,12 +13,22 @@ export type ConfidenceWebProviderFactoryOptions = {
 };
 
 export function createConfidenceWebProvider(options: ConfidenceWebProviderFactoryOptions): ConfidenceWebProvider {
+  const { initConfiguration, ...otherOptions} = options;
   const confidenceClient = new ConfidenceClient({
-    ...options,
-    apply: !options.apply,
+    ...otherOptions,
+    apply: !otherOptions.apply,
+    fetchImplementation: getFetch()
   });
 
   return new ConfidenceWebProvider(confidenceClient, {
+    initConfiguration,
     apply: options.apply,
   });
+}
+
+function getFetch() {
+  if (typeof window !== 'undefined') {
+    return window.fetch.bind(window)
+  }
+  return global.fetch.bind(global);
 }
