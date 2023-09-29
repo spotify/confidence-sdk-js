@@ -20,8 +20,13 @@ export class ClientManager {
   promise?: Promise<void>;
   private onChangeHandlers: Set<SetState> = new Set();
 
-  constructor(private readonly instance: Client) {
-    let resolve = this.createPromise();
+  constructor(private readonly instance: Client, providerReady: boolean) {
+    let resolve: () => void;
+    if (providerReady) {
+      resolve = () => {};
+    } else {
+      resolve = this.createPromise();
+    }
 
     this.onReady = this.onError = () => {
       this.promise = undefined;
@@ -90,20 +95,19 @@ let defaultClientManager: ClientManager | undefined;
 // exported for tests
 export const ClientManagerContext = createContext<() => ClientManager>(() => {
   if (!defaultClientManager) {
-    defaultClientManager = new ClientManager(OpenFeature.getClient());
+    defaultClientManager = new ClientManager(OpenFeature.getClient(), false);
     defaultClientManager.ref();
   }
   return defaultClientManager;
 });
 
 type OpenFeatureContextProviderProps = {
-  name: string;
+  client?: Client;
+  providerReady?: boolean;
 };
-export const OpenFeatureContextProvider: React.FC<React.PropsWithChildren<OpenFeatureContextProviderProps>> = ({
-  children,
-  name,
-}) => {
-  const manager = useMemo(() => new ClientManager(OpenFeature.getClient(name)), [name]);
+export const OpenFeatureContextProvider: React.FC<React.PropsWithChildren<OpenFeatureContextProviderProps>> = props => {
+  const { client = OpenFeature.getClient(), providerReady = false, children } = props;
+  const manager = useMemo(() => new ClientManager(client, providerReady), [providerReady, client]);
   useEffect(() => manager.effect(), [manager]);
 
   return <ClientManagerContext.Provider value={() => manager}>{children}</ClientManagerContext.Provider>;

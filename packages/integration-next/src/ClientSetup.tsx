@@ -1,7 +1,8 @@
 'use client';
 import React, { useMemo } from 'react';
-import { OpenFeature } from '@openfeature/web-sdk';
+import { DefaultLogger, OpenFeature, OpenFeatureClient, OpenFeatureEventEmitter } from '@openfeature/web-sdk';
 import { ConfidenceWebProvider, createConfidenceWebProvider } from '@spotify-confidence/openfeature-web-provider';
+import { OpenFeatureContextProvider } from '@spotify-confidence/integration-react';
 
 type RequiredSelected<T, K extends keyof T> = {
   [P in K]-?: NonNullable<T[P]>;
@@ -13,9 +14,11 @@ export interface ClientSetupProps {
     'initConfiguration'
   >;
   isServer?: boolean;
+  fallback: React.ReactNode;
 }
-export function ClientSetup(props: ClientSetupProps) {
-  const { clientProviderFactoryOptions, isServer = typeof window === 'undefined' } = props;
+
+export function ClientSetup(props: React.PropsWithChildren<ClientSetupProps>) {
+  const { clientProviderFactoryOptions, isServer = typeof window === 'undefined', children, fallback } = props;
 
   const clientProvider = useMemo((): ConfidenceWebProvider => {
     if (isServer) {
@@ -30,10 +33,31 @@ export function ClientSetup(props: ClientSetupProps) {
   }, [clientProviderFactoryOptions, isServer]);
 
   useMemo(() => {
-    OpenFeature.setContext(clientProviderFactoryOptions.initConfiguration.context).then(() => {
-      OpenFeature.setProvider(clientProvider);
-    });
-  }, [clientProvider, clientProviderFactoryOptions.initConfiguration.context]);
+    if (!isServer) {
+      OpenFeature.setContext(clientProviderFactoryOptions.initConfiguration.context).then(() => {
+        OpenFeature.setProvider(clientProvider);
+      });
+    }
+  }, [isServer, clientProvider, clientProviderFactoryOptions.initConfiguration.context]);
 
-  return <></>;
+  if (isServer) {
+    const ssrClient = new OpenFeatureClient(
+      () => clientProvider,
+      () => new OpenFeatureEventEmitter(),
+      () => new DefaultLogger(),
+      {},
+    );
+
+    return (
+      <OpenFeatureContextProvider client={ssrClient} providerReady>
+        <React.Suspense fallback={fallback}>{children}</React.Suspense>
+      </OpenFeatureContextProvider>
+    );
+  }
+
+  return (
+    <OpenFeatureContextProvider providerReady>
+      <React.Suspense fallback={fallback}>{children}</React.Suspense>
+    </OpenFeatureContextProvider>
+  );
 }

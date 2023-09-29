@@ -13,20 +13,19 @@ export default function Old(props: any) {
   const { initConfiguration } = props;
 
   return (
-    <>
-      <ClientSetup
-        clientProviderFactoryOptions={{
-          clientSecret: 'RxDVTrXvc6op1XxiQ4OaR31dKbJ39aYV',
-          initConfiguration,
-          region: 'eu',
-          fetchImplementation: fetch.bind(this) || window.fetch.bind(window),
-          apply: {
-            timeout: 1000,
-          },
-        }}
-      />
+    <ClientSetup
+      clientProviderFactoryOptions={{
+        clientSecret: 'RxDVTrXvc6op1XxiQ4OaR31dKbJ39aYV',
+        initConfiguration,
+        region: 'eu',
+        apply: {
+          timeout: 1000,
+        },
+      }}
+      fallback={<p>loading...</p>}
+    >
       <TestComponent />
-    </>
+    </ClientSetup>
   );
 }
 
