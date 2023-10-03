@@ -1,12 +1,24 @@
 import React from 'react';
 import { OpenFeature } from '@openfeature/js-sdk';
+import { OpenFeature as OpenFeatureWeb } from '@openfeature/web-sdk';
 import { ClientSetup } from '@spotify-confidence/integration-next/ClientSetup';
 import { useStringValue } from '@spotify-confidence/integration-next';
 import { serverProvider } from '@/utils/server-provider';
 
 function TestComponent() {
   const str = useStringValue('web-sdk-e2e-flag.str', 'default');
-  return <p>{str}</p>;
+  return (
+    <>
+      <p>{str}</p>;
+      <button
+        onClick={() => {
+          OpenFeatureWeb.setContext({ targetingKey: 'user-a', random: Math.random() });
+        }}
+      >
+        Random context
+      </button>
+    </>
+  );
 }
 
 export default function Old(props: any) {

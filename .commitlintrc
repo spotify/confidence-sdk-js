@@ -10,7 +10,8 @@
 				'client-http',
 				'server',
 				'react',
-				'next'
+				'next',
+				'examples'
 			],
 		],
 	},
@@ -39,6 +40,10 @@
 					next: {
                         description: "Change in the Next integration",
                         title: 'Integration Next',
+                    },
+					examples: {
+                        description: "Change in the example apps",
+                        title: 'Example apps',
                     }
 				}
 			},
