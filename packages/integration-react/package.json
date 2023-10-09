@@ -8,6 +8,9 @@
     "@openfeature/web-sdk": "^0.3.10-experimental",
     "react-dom": ">=16 <19"
   },
+  "dependencies": {
+    "use-sync-external-store": "^1.2.0"
+  },
   "scripts": {
     "build:cjs": "tsc -p tsconfig.cjs.json",
     "build:esm": "tsc -p tsconfig.esm.json",
@@ -18,7 +21,8 @@
     "@spotify-confidence/openfeature-web-provider": "^0.0.1",
     "@testing-library/jest-dom": "^5.16.5",
     "@testing-library/react": "^14.0.0",
-    "@types/node-fetch": "^2.6.4"
+    "@types/node-fetch": "^2.6.4",
+    "@types/use-sync-external-store": "^0.0.4"
   },
   "publishConfig": {
     "access": "public"

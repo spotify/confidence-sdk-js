@@ -1,210 +1,131 @@
-import React, { EffectCallback, createContext, useContext, useEffect, useState, useMemo } from 'react';
+import React, { createContext, useContext, useMemo } from 'react';
+import { useSyncExternalStore } from 'use-sync-external-store/shim';
 import {
   Client,
   EvaluationDetails,
-  EventHandler,
+  Features,
   JsonValue,
   OpenFeature,
   ProviderEvents,
   ResolutionDetails,
 } from '@openfeature/web-sdk';
 
-type SetState = () => void;
+export type FeaturesStore = {
+  subscribe: (onChange: () => void) => () => void;
+  getSnapshot: () => Features;
+};
 
-export class ClientManager {
-  private readonly onReady: EventHandler<ProviderEvents>;
-  private readonly onStale: EventHandler<ProviderEvents>;
-  private readonly onError: EventHandler<ProviderEvents>;
-  public readonly effect: EffectCallback;
-  private references: number = 0;
-  promise?: Promise<void>;
-  private onChangeHandlers: Set<SetState> = new Set();
+export namespace FeaturesStore {
+  export function forClient(client: Client, isReady = false): FeaturesStore {
+    let [readyPromise, resolveReady] = createPromise();
 
-  constructor(private readonly instance: Client, providerReady: boolean) {
-    let resolve: () => void;
-    if (providerReady) {
-      resolve = () => {};
-    } else {
-      resolve = this.createPromise();
-    }
+    if (isReady) resolveReady();
 
-    this.onReady = this.onError = () => {
-      this.promise = undefined;
-      resolve();
-      for (const cb of this.onChangeHandlers) {
-        try {
-          cb();
-        } catch (e) {
-          // do nothing
-        }
+    const onReadyOrError = () => {
+      isReady = true;
+      resolveReady();
+      for (const handler of changeHandlers) {
+        handler();
       }
-      this.onChangeHandlers.clear();
-    };
-    this.onStale = () => {
-      resolve = this.createPromise();
     };
 
-    this.effect = () => {
-      this.ref();
+    const onStale = () => {
+      isReady = false;
+      [readyPromise, resolveReady] = createPromise();
+    };
+
+    const changeHandlers = new Set<() => void>();
+
+    const subscribe = (onChange: () => void) => {
+      if (changeHandlers.has(onChange)) throw new Error('Already subscribed');
+      changeHandlers.add(onChange);
+      if (changeHandlers.size == 1) {
+        client.addHandler(ProviderEvents.Ready, onReadyOrError);
+        client.addHandler(ProviderEvents.Error, onReadyOrError);
+        client.addHandler(ProviderEvents.Stale, onStale);
+      }
       return () => {
-        this.unref();
+        if (!changeHandlers.has(onChange)) throw new Error('Already unsubscribed');
+        changeHandlers.delete(onChange);
+        if (changeHandlers.size == 0) {
+          client.removeHandler(ProviderEvents.Ready, onReadyOrError);
+          client.removeHandler(ProviderEvents.Error, onReadyOrError);
+          client.removeHandler(ProviderEvents.Stale, onStale);
+        }
       };
     };
-  }
-
-  onceOnChange(callback: SetState) {
-    this.onChangeHandlers.add(callback);
-  }
-
-  getClient(): Client {
-    if (this.promise) {
-      throw this.promise;
-    }
-    return this.instance;
-  }
-
-  public ref() {
-    if (this.references++ === 0) {
-      this.instance.addHandler(ProviderEvents.Error, this.onError);
-      this.instance.addHandler(ProviderEvents.Ready, this.onReady);
-      this.instance.addHandler(ProviderEvents.Stale, this.onStale);
-    }
-  }
-
-  public unref() {
-    if (--this.references === 0) {
-      this.instance.removeHandler(ProviderEvents.Error, this.onError);
-      this.instance.removeHandler(ProviderEvents.Ready, this.onReady);
-      this.instance.removeHandler(ProviderEvents.Stale, this.onStale);
-    }
-  }
-
-  private createPromise(): () => void {
-    let resolver: () => void;
-    this.promise = new Promise(resolve => {
-      resolver = resolve;
-    });
-    return () => {
-      resolver();
+    const getSnapshot = () => {
+      if (!isReady) {
+        readyPromise.then(subscribe(() => {}));
+        throw readyPromise;
+      }
+      return client;
     };
+
+    return { subscribe, getSnapshot };
   }
 }
 
-let defaultClientManager: ClientManager | undefined;
+// Maybe this is not a good idea? Keeping whatever client was here as default?
+const defaultFeatureStore = FeaturesStore.forClient(OpenFeature.getClient());
 
-// exported for tests
-export const ClientManagerContext = createContext<() => ClientManager>(() => {
-  if (!defaultClientManager) {
-    defaultClientManager = new ClientManager(OpenFeature.getClient(), false);
-    defaultClientManager.ref();
-  }
-  return defaultClientManager;
-});
+export const FeatureStoreContext = createContext(defaultFeatureStore);
 
 type OpenFeatureContextProviderProps = {
   client?: Client;
   providerReady?: boolean;
 };
 export const OpenFeatureContextProvider: React.FC<React.PropsWithChildren<OpenFeatureContextProviderProps>> = props => {
-  const { client = OpenFeature.getClient(), providerReady = false, children } = props;
-  const manager = useMemo(() => new ClientManager(client, providerReady), [providerReady, client]);
-  useEffect(() => manager.effect(), [manager]);
+  const { client = OpenFeature.getClient(), children } = props;
+  const featuresStore = useMemo(() => FeaturesStore.forClient(client), [client]);
 
-  return <ClientManagerContext.Provider value={() => manager}>{children}</ClientManagerContext.Provider>;
+  return <FeatureStoreContext.Provider value={featuresStore}>{children}</FeatureStoreContext.Provider>;
 };
 
 export function useStringValue(flagKey: string, defaultValue: string): string {
-  const manager = useContext(ClientManagerContext)();
-  const client = manager.getClient();
-  const [value, setValue] = useState(() => client.getStringValue(flagKey, defaultValue));
-
-  useEffect(() => {
-    manager.onceOnChange(() => setValue(client.getStringValue(flagKey, defaultValue)));
-  }, [defaultValue, flagKey, manager, client]);
-
-  return value;
+  const store = useContext(FeatureStoreContext);
+  return useSyncExternalStore(store.subscribe, () => store.getSnapshot().getStringValue(flagKey, defaultValue));
 }
 
 export function useStringDetails(flagKey: string, defaultValue: string): ResolutionDetails<string> {
-  const manager = useContext(ClientManagerContext)();
-  const client = manager.getClient();
-  const [value, setValue] = useState(() => client.getStringDetails(flagKey, defaultValue));
-
-  useEffect(() => {
-    manager.onceOnChange(() => setValue(client.getStringDetails(flagKey, defaultValue)));
-  }, [defaultValue, flagKey, manager, client]);
-
-  return value;
+  const store = useContext(FeatureStoreContext);
+  return useSyncExternalStore(store.subscribe, () => store.getSnapshot().getStringDetails(flagKey, defaultValue));
 }
 
 export function useBooleanValue(flagKey: string, defaultValue: boolean): boolean {
-  const manager = useContext(ClientManagerContext)();
-  const client = manager.getClient();
-  const [value, setValue] = useState(() => client.getBooleanValue(flagKey, defaultValue));
-
-  useEffect(() => {
-    manager.onceOnChange(() => setValue(client.getBooleanValue(flagKey, defaultValue)));
-  }, [defaultValue, flagKey, manager, client]);
-
-  return value;
+  const store = useContext(FeatureStoreContext);
+  return useSyncExternalStore(store.subscribe, () => store.getSnapshot().getBooleanValue(flagKey, defaultValue));
 }
 
 export function useBooleanDetails(flagKey: string, defaultValue: boolean): ResolutionDetails<boolean> {
-  const manager = useContext(ClientManagerContext)();
-  const client = manager.getClient();
-  const [value, setValue] = useState(() => client.getBooleanDetails(flagKey, defaultValue));
-
-  useEffect(() => {
-    manager.onceOnChange(() => setValue(client.getBooleanDetails(flagKey, defaultValue)));
-  }, [defaultValue, flagKey, manager, client]);
-
-  return value;
+  const store = useContext(FeatureStoreContext);
+  return useSyncExternalStore(store.subscribe, () => store.getSnapshot().getBooleanDetails(flagKey, defaultValue));
 }
 
 export function useNumberValue(flagKey: string, defaultValue: number): number {
-  const manager = useContext(ClientManagerContext)();
-  const client = manager.getClient();
-  const [value, setValue] = useState(() => client.getNumberValue(flagKey, defaultValue));
-
-  useEffect(() => {
-    manager.onceOnChange(() => setValue(client.getNumberValue(flagKey, defaultValue)));
-  }, [defaultValue, flagKey, manager, client]);
-
-  return value;
+  const store = useContext(FeatureStoreContext);
+  return useSyncExternalStore(store.subscribe, () => store.getSnapshot().getNumberValue(flagKey, defaultValue));
 }
 
 export function useNumberDetails(flagKey: string, defaultValue: number): EvaluationDetails<number> {
-  const manager = useContext(ClientManagerContext)();
-  const client = manager.getClient();
-  const [value, setValue] = useState(() => client.getNumberDetails(flagKey, defaultValue));
-
-  useEffect(() => {
-    manager.onceOnChange(() => setValue(client.getNumberDetails(flagKey, defaultValue)));
-  }, [defaultValue, flagKey, manager, client]);
-
-  return value;
+  const store = useContext(FeatureStoreContext);
+  return useSyncExternalStore(store.subscribe, () => store.getSnapshot().getNumberDetails(flagKey, defaultValue));
 }
 
 export function useObjectValue<T extends JsonValue>(flagKey: string, defaultValue: T): T {
-  const manager = useContext(ClientManagerContext)();
-  const client = manager.getClient();
-  const [value, setValue] = useState(() => client.getObjectValue(flagKey, defaultValue));
-
-  useEffect(() => {
-    manager.onceOnChange(() => setValue(client.getObjectValue(flagKey, defaultValue)));
-  }, [defaultValue, flagKey, manager, client]);
-
-  return value as T;
+  const store = useContext(FeatureStoreContext);
+  return useSyncExternalStore(store.subscribe, () => store.getSnapshot().getObjectValue<T>(flagKey, defaultValue));
 }
 
 export function useObjectDetails<T extends JsonValue>(flagKey: string, defaultValue: T): EvaluationDetails<T> {
-  const manager = useContext(ClientManagerContext)();
-  const client = manager.getClient();
-  const [value, setValue] = useState(() => client.getObjectDetails(flagKey, defaultValue));
+  const store = useContext(FeatureStoreContext);
+  return useSyncExternalStore(store.subscribe, () => store.getSnapshot().getObjectDetails<T>(flagKey, defaultValue));
+}
 
-  useEffect(() => {
-    manager.onceOnChange(() => setValue(client.getObjectDetails(flagKey, defaultValue)));
-  }, [defaultValue, flagKey, manager, client]);
-
-  return value as EvaluationDetails<T>;
+function createPromise<T = void>(): [Promise<T>, (value: T) => void, (reason: any) => void] {
+  let promise, resolve: (value: T) => void, reject: (reason: any) => void;
+  promise = new Promise<T>((...args) => {
+    [resolve, reject] = args;
+  });
+  return [promise, resolve!, reject!];
 }

@@ -1,8 +1,7 @@
 import React from 'react';
 import fetch from 'node-fetch';
 import { OpenFeatureAPI, ProviderEvents } from '@openfeature/web-sdk';
-import { act } from 'react-dom/test-utils';
-import { render, screen } from '@testing-library/react';
+import { render, screen, act } from '@testing-library/react';
 
 import { createConfidenceWebProvider } from '@spotify-confidence/openfeature-web-provider';
 import { useStringValue } from './ReactAdaptor';

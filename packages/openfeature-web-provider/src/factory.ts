@@ -17,7 +17,7 @@ export function createConfidenceWebProvider(options: ConfidenceWebProviderFactor
   const confidenceClient = new ConfidenceClient({
     ...otherOptions,
     apply: !otherOptions.apply,
-    fetchImplementation: getFetch(),
+    fetchImplementation: options.fetchImplementation || getFetch(),
   });
 
   return new ConfidenceWebProvider(confidenceClient, {
