@@ -1,0 +1,19 @@
+name: 'Setup Environment'
+description: 'Setup Environment'
+inputs:
+  node-verion:
+    description: 'Node version to setup'
+    required: false
+    default: 18.x
+
+runs:
+  using: 'composite'
+  steps:
+    - name: Setup Node
+      uses: actions/setup-node@v3
+      with:
+        node-version: ${{ inputs.node-version }}
+        scope: '@spotify-confidence'
+    - name: Install dependencies
+      shell: bash
+      run: yarn install --frozen-lockfile

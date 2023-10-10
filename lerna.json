@@ -3,13 +3,5 @@
   "version": "independent",
   "packages": ["packages/*"],
   "npmClient": "yarn",
-  "command": {
-    "version": {
-      "conventionalCommits": true,
-      "message": "chore: prepare versions [skip ci]",
-      "changelogPreset": "@commitlint/config-conventional",
-      "noPrivate": true
-    }
-  },
   "ignoreChanges": ["**/*.test.*"]
 }
