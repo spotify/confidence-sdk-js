@@ -3,3 +3,4 @@ packages/**/build
 .idea
 coverage/*
 *.log
+packages/*/CHANGELOG.md
