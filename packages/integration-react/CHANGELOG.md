@@ -1,4 +1,13 @@
-# Change Log
+# Changelog
+
+## [0.0.4](https://github.com/spotify/confidence-openfeature-provider-js/compare/integration-react-v0.0.3...integration-react-v0.0.4) (2023-10-11)
+
+
+### ✨ New Features
+
+* **react:** expose cjs for react native ([71526f7](https://github.com/spotify/confidence-openfeature-provider-js/commit/71526f7d6dc20e7bf1c4ce8211f589d6f8efdee1)), closes [#10](https://github.com/spotify/confidence-openfeature-provider-js/issues/10)
+
+## Change Log
 
 All notable changes to this project will be documented in this file.
 See [Conventional Commits](https://conventionalcommits.org) for commit guidelines.
