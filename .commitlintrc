@@ -9,7 +9,8 @@
 				'web',
 				'client-http',
 				'server',
-				'react'
+				'react',
+				'examples'
 			],
 		],
 	},
@@ -34,7 +35,11 @@
 					react: {
 						description: "Change in the React integration",
 						title: 'Integration React',
-					}
+					},
+					examples: {
+                        description: "Change to an example app",
+                        title: 'Example',
+                    }
 				}
 			},
 		},

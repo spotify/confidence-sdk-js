@@ -2,7 +2,8 @@
   "license": "Apache-2.0",
   "private": true,
   "workspaces": [
-    "packages/*"
+    "packages/*",
+    "examples/*"
   ],
   "scripts": {
     "build": "yarn build:types && yarn build:esm && yarn build:cjs",

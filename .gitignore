@@ -1,5 +1,16 @@
-node_modules/
-packages/**/build
+**/node_modules/
 .idea
+
+# packages
+packages/**/build
 coverage/*
-*.log
+
+# examples
+examples/*/coverage
+examples/*/build
+
+# logs
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+lerna-debug.log*
