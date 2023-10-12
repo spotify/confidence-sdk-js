@@ -1,6 +1,5 @@
 import { AppliedFlag, ConfidenceClient } from './ConfidenceClient';
 import { Configuration, ResolveContext } from './Configuration';
-import { ConfidenceFlag } from './ConfidenceFlag';
 
 describe('ConfidenceClient', () => {
   const mockFetch = jest.fn();
@@ -75,7 +74,7 @@ describe('ConfidenceClient', () => {
 
     it('should return a valid configuration with the flags resolved', async () => {
       const fakeFlag = {
-        flag: 'test-flag',
+        flag: 'flags/test-flag',
         variant: 'test',
         value: {
           str: 'test',
@@ -97,7 +96,19 @@ describe('ConfidenceClient', () => {
       const config = await instanceUnderTest.resolve(context);
 
       expect(config).toEqual({
-        flags: { ['test-flag']: new ConfidenceFlag(fakeFlag) },
+        flags: {
+          ['test-flag']: {
+            name: 'test-flag',
+            schema: {
+              str: 'string',
+            },
+            value: {
+              str: 'test',
+            },
+            reason: Configuration.ResolveReason.Match,
+            variant: 'test',
+          },
+        },
         resolveToken: 'resolve-token',
         context,
       });

@@ -9,6 +9,7 @@ import {
   ProviderMetadata,
   ProviderStatus,
   ResolutionDetails,
+  ResolutionReason,
 } from '@openfeature/web-sdk';
 import equal from 'fast-deep-equal';
 
@@ -102,7 +103,7 @@ export class ConfidenceWebProvider implements Provider {
 
     const [flagName, ...pathParts] = flagKey.split('.');
     try {
-      const flag = this.configuration.flags[`flags/${flagName}`];
+      const flag = this.configuration.flags[flagName];
 
       if (!flag) {
         logger.warn('Flag "%s" was not found', flagName);
@@ -113,17 +114,10 @@ export class ConfidenceWebProvider implements Provider {
         };
       }
 
-      if (flag.reason !== Configuration.ResolveReason.Match) {
-        logger.info('No variant match for flag "%s"', flagName);
-        return {
-          errorCode: ErrorCode.GENERAL,
-          value: defaultValue,
-          reason: flag.reason,
-        };
-      }
-
-      const flagValue = flag.getValue(...pathParts);
-      if (flagValue === null) {
+      let flagValue: Configuration.FlagValue;
+      try {
+        flagValue = Configuration.FlagValue.traverse(flag, pathParts.join('.'));
+      } catch (e) {
         logger.warn('Value with path "%s" was not found in flag "%s"', pathParts.join('.'), flagName);
         return {
           errorCode: ErrorCode.PARSE_ERROR,
@@ -131,8 +125,13 @@ export class ConfidenceWebProvider implements Provider {
           reason: 'ERROR',
         };
       }
-
-      if (!flagValue.match(defaultValue)) {
+      if (flagValue.value === null) {
+        return {
+          value: defaultValue,
+          reason: mapConfidenceReason(flag.reason),
+        };
+      }
+      if (!Configuration.FlagValue.matches(flagValue, defaultValue)) {
         logger.warn('Value for "%s" is of incorrect type', flagKey);
         return {
           errorCode: ErrorCode.TYPE_MISMATCH,
@@ -140,18 +139,12 @@ export class ConfidenceWebProvider implements Provider {
           reason: 'ERROR',
         };
       }
-      if (flagValue.value === null) {
-        logger.info('Value for "%s" is default', flagKey);
-        return {
-          value: defaultValue,
-          reason: flag.reason,
-        };
-      }
+
       this.applyManager.apply(this.configuration.resolveToken, flagName);
       logger.info('Value for "%s" successfully evaluated', flagKey);
       return {
-        value: flagValue.value,
-        reason: 'TARGETING_MATCH',
+        value: flagValue.value as T,
+        reason: mapConfidenceReason(flag.reason),
         variant: flag.variant,
         flagMetadata: {
           resolveToken: this.configuration.resolveToken,
@@ -201,5 +194,18 @@ export class ConfidenceWebProvider implements Provider {
     logger: Logger,
   ): ResolutionDetails<string> {
     return this.getFlag(flagKey, defaultValue, context, logger);
+  }
+}
+
+function mapConfidenceReason(reason: Configuration.ResolveReason): ResolutionReason {
+  switch (reason) {
+    case Configuration.ResolveReason.Archived:
+      return 'DISABLED';
+    case Configuration.ResolveReason.Unspecified:
+      return 'UNKNOWN';
+    case Configuration.ResolveReason.Match:
+      return 'TARGETING_MATCH';
+    default:
+      return 'DEFAULT';
   }
 }
