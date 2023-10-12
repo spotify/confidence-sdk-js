@@ -9,6 +9,6 @@
 
 - [ ] All tests are passing
 - [ ] Relevant documentation updated
-- [ ] linter/sytle run on changed files
+- [ ] linter/style run on changed files
 - [ ] Tests added for new functionality
 - [ ] Regression tests added for bug fixes
