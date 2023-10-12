@@ -19,20 +19,23 @@ yarn add @openfeature/js-sdk @spotify-confidence/openfeature-server-provider
 
 ```ts
 import { createConfidenceServerProvider } from '@spotify-confidence/openfeature-server-provider';
-import { OpenFeature, OpenFeatureAPI } from '@openfeature/js-sdk';
-import { fetch } from 'node-fetch';
+import { OpenFeature } from '@openfeature/js-sdk';
 
 const provider = createConfidenceServerProvider({
-  clientSecret: 'mysecret',
+  clientSecret: 'your-client-secret',
   region: 'eu',
   fetchImplementation: fetch,
 });
 
 OpenFeature.setProvider(provider);
-OpenFeature.setContext({ targetingKey: 'myTargetingKey' });
 
 const client = OpenFeature.getClient();
-const result = await client.getBooleanValue('flag.my-boolean', false, {
-  someOtherContext: true,
-});
+
+client
+  .getBooleanValue('flagname.bool', false, {
+    targetingKey: `your targeting key`,
+  })
+  .then(result => {
+    console.log('result:', result);
+  });
 ```
