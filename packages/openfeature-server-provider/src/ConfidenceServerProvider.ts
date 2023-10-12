@@ -8,7 +8,6 @@ import {
   ErrorCode,
   Provider,
 } from '@openfeature/js-sdk';
-import equal from 'fast-deep-equal';
 
 import { ConfidenceClient, ResolveContext, ApplyManager, Configuration } from '@spotify-confidence/client-http';
 
@@ -24,7 +23,6 @@ export class ConfidenceServerProvider implements Provider {
   };
   status: ProviderStatus = ProviderStatus.READY;
   private readonly client: ConfidenceClient;
-  private configuration: Configuration | null = null;
   private readonly applyManager: ApplyManager;
 
   constructor(client: ConfidenceClient, options?: ConfidenceServerProviderOptions) {
@@ -43,8 +41,13 @@ export class ConfidenceServerProvider implements Provider {
     return rest;
   }
 
-  private getFlag<T>(flagKey: string, defaultValue: T, _logger: Logger): ResolutionDetails<T> {
-    if (!this.configuration) {
+  private getFlag<T>(
+    configuration: Configuration,
+    flagKey: string,
+    defaultValue: T,
+    _logger: Logger,
+  ): ResolutionDetails<T> {
+    if (!configuration) {
       return {
         errorCode: ErrorCode.PROVIDER_NOT_READY,
         value: defaultValue,
@@ -54,7 +57,7 @@ export class ConfidenceServerProvider implements Provider {
 
     const [flagName, ...pathParts] = flagKey.split('.');
     try {
-      const flag = this.configuration.flags[`flags/${flagName}`];
+      const flag = configuration.flags[`flags/${flagName}`];
 
       if (!flag) {
         return {
@@ -94,13 +97,13 @@ export class ConfidenceServerProvider implements Provider {
           reason: flag.reason,
         };
       }
-      this.applyManager.apply(this.configuration.resolveToken, flagName);
+      this.applyManager.apply(configuration.resolveToken, flagName);
       return {
         value: flagValue.value,
         reason: 'TARGETING_MATCH',
         variant: flag.variant,
         flagMetadata: {
-          resolveToken: this.configuration.resolveToken || '',
+          resolveToken: configuration.resolveToken || '',
         },
       };
     } catch (e) {
@@ -120,17 +123,11 @@ export class ConfidenceServerProvider implements Provider {
   ): Promise<ResolutionDetails<T>> {
     const [flagName, ..._] = flagKey.split('.');
 
-    if (!!this.configuration && equal(this.configuration.context, this.convertContext(context))) {
-      if (this.configuration.flags[`flags/${flagName}`]) {
-        return this.getFlag(flagKey, defaultValue, logger);
-      }
-    }
-
-    this.configuration = await this.client.resolve(this.convertContext(context || {}), {
+    const configuration = await this.client.resolve(this.convertContext(context || {}), {
       flags: [`flags/${flagName}`],
     });
 
-    return this.getFlag(flagKey, defaultValue, logger);
+    return this.getFlag(configuration, flagKey, defaultValue, logger);
   }
 
   resolveBooleanEvaluation(

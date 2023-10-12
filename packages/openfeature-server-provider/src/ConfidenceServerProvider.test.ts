@@ -108,6 +108,13 @@ describe('ConfidenceServerProvider', () => {
     expect(instanceUnderTest.status).toEqual(ProviderStatus.READY);
   });
 
+  it('should make a network request on each flag resolve', async () => {
+    await instanceUnderTest.resolveBooleanEvaluation('testFlag.bool', false, {}, dummyConsole);
+    await instanceUnderTest.resolveBooleanEvaluation('testFlag.bool', false, {}, dummyConsole);
+
+    expect(resolveMock).toHaveBeenCalledTimes(2);
+  });
+
   describe('apply', () => {
     it('should send an apply event', async () => {
       await instanceUnderTest.resolveBooleanEvaluation('testFlag.bool', false, {}, dummyConsole);
