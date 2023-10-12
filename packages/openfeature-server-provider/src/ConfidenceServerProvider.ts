@@ -1,15 +1,16 @@
 import {
+  ErrorCode,
+  EvaluationContext,
+  JsonValue,
+  Logger,
+  Provider,
   ProviderMetadata,
   ProviderStatus,
-  EvaluationContext,
-  Logger,
   ResolutionDetails,
-  JsonValue,
-  ErrorCode,
-  Provider,
+  ResolutionReason,
 } from '@openfeature/js-sdk';
 
-import { ConfidenceClient, ResolveContext, ApplyManager, Configuration } from '@spotify-confidence/client-http';
+import { ApplyManager, ConfidenceClient, Configuration, ResolveContext } from '@spotify-confidence/client-http';
 
 interface ConfidenceServerProviderOptions {
   apply?: {
@@ -57,7 +58,7 @@ export class ConfidenceServerProvider implements Provider {
 
     const [flagName, ...pathParts] = flagKey.split('.');
     try {
-      const flag = configuration.flags[`flags/${flagName}`];
+      const flag = configuration.flags[flagName];
 
       if (!flag) {
         return {
@@ -67,26 +68,12 @@ export class ConfidenceServerProvider implements Provider {
         };
       }
 
-      if (flag.reason !== Configuration.ResolveReason.Match) {
-        return {
-          errorCode: ErrorCode.GENERAL,
-          value: defaultValue,
-          reason: flag.reason,
-        };
-      }
-
-      const flagValue = flag.getValue(...pathParts);
-      if (flagValue === null) {
+      let flagValue: Configuration.FlagValue;
+      try {
+        flagValue = Configuration.FlagValue.traverse(flag, pathParts.join('.'));
+      } catch (e) {
         return {
           errorCode: 'PARSE_ERROR' as ErrorCode,
-          value: defaultValue,
-          reason: 'ERROR',
-        };
-      }
-
-      if (!flagValue.match(defaultValue)) {
-        return {
-          errorCode: 'TYPE_MISMATCH' as ErrorCode,
           value: defaultValue,
           reason: 'ERROR',
         };
@@ -94,13 +81,21 @@ export class ConfidenceServerProvider implements Provider {
       if (flagValue.value === null) {
         return {
           value: defaultValue,
-          reason: flag.reason,
+          reason: mapConfidenceReason(flag.reason),
         };
       }
+      if (!Configuration.FlagValue.matches(flagValue, defaultValue)) {
+        return {
+          errorCode: 'TYPE_MISMATCH' as ErrorCode,
+          value: defaultValue,
+          reason: 'ERROR',
+        };
+      }
+
       this.applyManager.apply(configuration.resolveToken, flagName);
       return {
-        value: flagValue.value,
-        reason: 'TARGETING_MATCH',
+        value: flagValue.value as T,
+        reason: mapConfidenceReason(flag.reason),
         variant: flag.variant,
         flagMetadata: {
           resolveToken: configuration.resolveToken || '',
@@ -164,5 +159,18 @@ export class ConfidenceServerProvider implements Provider {
     logger: Logger,
   ): Promise<ResolutionDetails<string>> {
     return this.fetchFlag(flagKey, defaultValue, context, logger);
+  }
+}
+
+function mapConfidenceReason(reason: Configuration.ResolveReason): ResolutionReason {
+  switch (reason) {
+    case Configuration.ResolveReason.Archived:
+      return 'DISABLED';
+    case Configuration.ResolveReason.Unspecified:
+      return 'UNKNOWN';
+    case Configuration.ResolveReason.Match:
+      return 'TARGETING_MATCH';
+    default:
+      return 'DEFAULT';
   }
 }

@@ -7,7 +7,7 @@ import {
   ProviderStatus,
 } from '@openfeature/web-sdk';
 import { ConfidenceWebProvider } from './ConfidenceWebProvider';
-import { ConfidenceClient, ConfidenceFlag, Configuration, ResolveContext } from '@spotify-confidence/client-http';
+import { ConfidenceClient, Configuration, ResolveContext } from '@spotify-confidence/client-http';
 
 const mockApply = jest.fn();
 jest.mock('@spotify-confidence/client-http', () => {
@@ -30,8 +30,8 @@ const dummyEvaluationContext: EvaluationContext = { targetingKey: 'test' };
 
 const dummyConfiguration: Configuration = {
   flags: {
-    ['flags/testFlag']: new ConfidenceFlag({
-      flag: 'flags/testFlag',
+    ['testFlag']: {
+      name: 'testFlag',
       variant: 'control',
       value: {
         bool: true,
@@ -46,56 +46,30 @@ const dummyConfiguration: Configuration = {
         },
       },
       reason: Configuration.ResolveReason.Match,
-      flagSchema: {
-        schema: {
-          bool: {
-            boolSchema: {},
-          },
-          str: {
-            stringSchema: {},
-          },
-          int: {
-            intSchema: {},
-          },
-          dub: {
-            doubleSchema: {},
-          },
-          obj: {
-            structSchema: {
-              schema: {
-                bool: {
-                  boolSchema: {},
-                },
-                str: {
-                  stringSchema: {},
-                },
-                int: {
-                  intSchema: {},
-                },
-                dub: {
-                  doubleSchema: {},
-                },
-              },
-            },
-          },
+      schema: {
+        bool: 'boolean',
+        str: 'string',
+        int: 'number',
+        dub: 'number',
+        obj: {
+          bool: 'boolean',
+          str: 'string',
+          int: 'number',
+          dub: 'number',
         },
       },
-    }),
-    ['flags/anotherFlag']: new ConfidenceFlag({
-      flag: 'flags/anotherFlag',
+    },
+    ['anotherFlag']: {
+      name: 'anotherFlag',
       variant: 'control',
       value: {
         bool: true,
       },
       reason: Configuration.ResolveReason.Match,
-      flagSchema: {
-        schema: {
-          bool: {
-            boolSchema: {},
-          },
-        },
+      schema: {
+        bool: 'boolean',
       },
-    }),
+    },
   },
   resolveToken: 'before-each',
   context: dummyContext,
