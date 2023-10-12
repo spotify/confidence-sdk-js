@@ -1,5 +1,4 @@
 import { Configuration, ResolveContext } from './Configuration';
-import { ConfidenceFlag, ResolvedFlag } from './ConfidenceFlag';
 
 type ApplyRequest = {
   clientSecret: string;
@@ -12,6 +11,13 @@ type ResolveRequest = {
   evaluationContext: ResolveContext;
   apply?: boolean;
   flags?: string[];
+};
+export type ResolvedFlag<T = any> = {
+  flag: string;
+  variant: string;
+  value?: T;
+  flagSchema?: ConfidenceFlagSchema;
+  reason: Configuration.ResolveReason;
 };
 type ResolveResponse = {
   resolvedFlags: ResolvedFlag[];
@@ -28,6 +34,12 @@ export type ConfidenceClientOptions = {
 export type AppliedFlag = {
   flag: string;
   applyTime: string;
+};
+type ConfidenceBaseTypes = { boolSchema: {} } | { doubleSchema: {} } | { intSchema: {} } | { stringSchema: {} };
+type ConfidenceFlagSchema = {
+  schema: {
+    [key: string]: ConfidenceBaseTypes | { structSchema: ConfidenceFlagSchema };
+  };
 };
 
 export class ConfidenceClient {
@@ -58,9 +70,10 @@ export class ConfidenceClient {
       body: JSON.stringify(payload),
     });
     const responseBody: ResolveResponse = await response.json();
+
     return {
       flags: responseBody.resolvedFlags.reduce((acc, flag) => {
-        return { ...acc, [flag.flag]: new ConfidenceFlag(flag) };
+        return { ...acc, [flag.flag]: resolvedFlagToFlag(flag) };
       }, {}),
       resolveToken: responseBody.resolveToken,
       context,
@@ -79,4 +92,50 @@ export class ConfidenceClient {
       body: JSON.stringify(payload),
     });
   }
+}
+
+function resolvedFlagToFlag(flag: ResolvedFlag): Configuration.Flag {
+  return {
+    flagName: flag.flag,
+    reason: flag.reason,
+    variant: flag.variant,
+    value: flag.value,
+    schema: parseSchema(flag.flagSchema),
+  };
+}
+
+function parseBaseType(obj: ConfidenceBaseTypes): Configuration.FlagSchema {
+  if ('boolSchema' in obj) {
+    return 'boolean';
+  }
+  if ('doubleSchema' in obj) {
+    return 'number';
+  }
+  if ('intSchema' in obj) {
+    return 'number';
+  }
+  if ('stringSchema' in obj) {
+    return 'string';
+  }
+
+  throw new Error(`Confidence: cannot parse schema. unknown schema: ${JSON.stringify(obj)}`);
+}
+function parseSchema(schema: ConfidenceFlagSchema | undefined): Configuration.FlagSchema {
+  if (!schema) {
+    return {};
+  }
+
+  return Object.keys(schema.schema).reduce((acc: Record<string, Configuration.FlagSchema>, key) => {
+    const obj = schema.schema[key];
+    if ('structSchema' in obj) {
+      return {
+        ...acc,
+        [key]: parseSchema(obj.structSchema),
+      };
+    }
+    return {
+      ...acc,
+      [key]: parseBaseType(obj),
+    };
+  }, {});
 }

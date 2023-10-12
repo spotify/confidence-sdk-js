@@ -1,16 +1,16 @@
 import {
+  ErrorCode,
+  EvaluationContext,
+  JsonValue,
+  Logger,
+  Provider,
   ProviderMetadata,
   ProviderStatus,
-  EvaluationContext,
-  Logger,
   ResolutionDetails,
-  JsonValue,
-  ErrorCode,
-  Provider,
 } from '@openfeature/js-sdk';
 import equal from 'fast-deep-equal';
 
-import { ConfidenceClient, ResolveContext, ApplyManager, Configuration } from '@spotify-confidence/client-http';
+import { ApplyManager, ConfidenceClient, Configuration, ResolveContext } from '@spotify-confidence/client-http';
 
 interface ConfidenceServerProviderOptions {
   apply?: {
@@ -72,31 +72,33 @@ export class ConfidenceServerProvider implements Provider {
         };
       }
 
-      const flagValue = flag.getValue(...pathParts);
-      if (flagValue === null) {
+      let flagDetails: Configuration.Flag.Details;
+      try {
+        flagDetails = Configuration.Flag.getFlagDetails(flag, ...pathParts);
+      } catch (e) {
         return {
           errorCode: 'PARSE_ERROR' as ErrorCode,
           value: defaultValue,
           reason: 'ERROR',
         };
       }
-
-      if (!flagValue.match(defaultValue)) {
+      if (flagDetails.value === null) {
+        return {
+          value: defaultValue,
+          reason: flag.reason,
+        };
+      }
+      if (!Configuration.Flag.valueMatchesSchema(defaultValue, flagDetails.schema)) {
         return {
           errorCode: 'TYPE_MISMATCH' as ErrorCode,
           value: defaultValue,
           reason: 'ERROR',
         };
       }
-      if (flagValue.value === null) {
-        return {
-          value: defaultValue,
-          reason: flag.reason,
-        };
-      }
+
       this.applyManager.apply(this.configuration.resolveToken, flagName);
       return {
-        value: flagValue.value,
+        value: flagDetails.value as T,
         reason: 'TARGETING_MATCH',
         variant: flag.variant,
         flagMetadata: {
