@@ -17,44 +17,45 @@ export namespace Configuration {
         [step: string]: FlagSchema;
       };
 
-  export interface Flag<T = unknown> {
-    flagName: string;
+  export interface Flag<T = any> {
+    name: string;
     reason: ResolveReason;
     variant: string;
     value: T;
     schema: FlagSchema;
   }
+  export interface SubFlag<T = any> extends Flag<T> {
+    path: string;
 
-  export namespace Flag {
-    export type Details<T = unknown> = { value: T; schema: FlagSchema };
-    export function valueMatchesSchema(value: any, schema: FlagSchema | null): boolean {
-      if (value === null || schema === null) {
-        return false;
-      }
+    matches<V>(this: SubFlag, value: V): this is SubFlag<V>;
+  }
 
-      if (typeof schema !== 'object') {
-        return typeof value === schema;
-      }
-
-      return Object.keys(value).every(key => valueMatchesSchema(value[key], schema[key]));
+  function matches(this: { schema: FlagSchema }, value: any): boolean {
+    const { schema } = this;
+    if (value === null || schema === null) {
+      return false;
     }
-    export function getFlagDetails<T>(flag: Flag<T>, ...path: string[]): Details<T> {
-      let value: any = flag.value;
-      let schema: FlagSchema = flag.schema;
 
-      for (const part of path) {
-        if (typeof schema !== 'object') {
-          throw new Error(`Parse Error. Cannot find path: ${path.join(',')}. In flag: ${JSON.stringify(flag)}`);
-        }
-        value = value[part];
-        schema = schema[part];
-        if (schema === undefined) {
-          throw new Error(`Parse Error. Cannot find path: ${path.join(',')}. In flag: ${JSON.stringify(flag)}`);
-        }
-      }
-
-      return { value, schema };
+    if (typeof schema !== 'object') {
+      return typeof value === schema;
     }
+
+    return Object.keys(value).every(key => matches.call({ schema: schema[key] }, value[key]));
+  }
+
+  export function get(configuration: Configuration, path: string): SubFlag {
+    const [name, ...steps] = path.split('.');
+    let { reason, variant, value, schema } = configuration.flags[name];
+
+    for (const step of steps) {
+      if (typeof schema != 'object') throw new Error();
+      schema = schema[step];
+      value = value[step];
+    }
+
+    path = steps.join('.');
+
+    return { name, path, reason, variant, value, schema, matches };
   }
 }
 export interface Configuration {
