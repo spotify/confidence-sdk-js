@@ -3,9 +3,13 @@
   "version": "0.1.0",
   "private": true,
   "dependencies": {
+    "@babel/core": "^7.23.2",
+    "@babel/plugin-syntax-flow": "^7.22.5",
+    "@babel/plugin-transform-react-jsx": "^7.22.15",
     "@openfeature/web-sdk": "^0.4.0",
     "@spotify-confidence/integration-react": "^0.0.4",
     "@spotify-confidence/openfeature-web-provider": "^0.0.3",
+    "@testing-library/dom": "^7.29.6",
     "@testing-library/jest-dom": "^5.14.1",
     "@testing-library/react": "^13.0.0",
     "@testing-library/user-event": "^13.2.1",
@@ -18,6 +22,9 @@
     "react-scripts": "5.0.1",
     "typescript": "^4.4.2",
     "web-vitals": "^2.1.0"
+  },
+  "devDependencies": {
+    "@babel/plugin-transform-private-property-in-object": "^7.22.11"
   },
   "scripts": {
     "dev": "react-scripts start",
