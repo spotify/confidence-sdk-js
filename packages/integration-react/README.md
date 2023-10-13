@@ -149,3 +149,31 @@ import { ResolutionDetails } from '@openfeature/web-sdk';
 
 const details: ResolutionDetails<{ val: string }> = useObjectDetails('flagKey', { val: 'default' });
 ```
+
+## Usage in Next13
+
+### Server Components
+
+In Next13's server components using a dynamic paradigm OpenFeature sdk is recommended. This means setting up a
+Confidence server provider, see [docs](../openfeature-server-provider/README.md). Then you can use the async methods on
+an OpenFeature Client in your server component.
+
+### Client Components
+
+There are two options for usage of OpenFeature's Clients in Next's Client Components.
+
+1.  Pass the flag value as a property from a Server Component.
+1.  Setup a Static Context OpenFeature Client and corresponding Confidence Web Provider.
+
+Option #1 is very simple to implement and will work for most cases.
+
+Option #2 is more complex and requires the OpenFeature global API to be configured in the client bundle (under a
+`'use client'` directive), and the Confidence Web Provider, OpenFeature Context and OpenFeature's provider must be
+set only in the browser. This will require making a component with a client boundary and checking if you're on the sever
+either by using a useEffect Hook, or by checking the `typeof window`.
+
+## Usage in Next12
+
+In Next12 using a dynamic paradigm OpenFeature sdk is recommended. This means setting up a
+Confidence server provider, see [docs](../openfeature-server-provider/README.md). Using this OpenFeature client in the
+`getServerSideProps` method to pass the retrieved flag values from the server to the client.
