@@ -3,8 +3,8 @@ import { render, screen, act } from '@testing-library/react';
 import { OpenFeatureClient, ProviderEvents } from '@openfeature/web-sdk';
 import {
   useStringValue,
-  ClientManager,
-  ClientManagerContext,
+  FeaturesStore,
+  FeatureStoreContext,
   useNumberValue,
   useObjectValue,
   useBooleanValue,
@@ -28,20 +28,27 @@ const fakeClient = {
 } as jest.MockedObject<OpenFeatureClient>;
 
 describe('hooks', () => {
-  let fireReady: Function | undefined;
-  let fireError: Function | undefined;
-  let fireStale: Function | undefined;
+  const handlerMap = new Map<ProviderEvents, Set<Function>>();
+  const fire = (event: ProviderEvents) => {
+    const handlers = handlerMap.get(event);
+    if (handlers) {
+      for (const handler of handlers) {
+        handler();
+      }
+    }
+  };
 
   beforeEach(() => {
     fakeClient.addHandler.mockImplementation((event, cb) => {
-      if (event === ProviderEvents.Error) {
-        fireError = cb;
-      }
-      if (event === ProviderEvents.Stale) {
-        fireStale = cb;
-      }
-      if (event === ProviderEvents.Ready) {
-        fireReady = cb;
+      let handlers = handlerMap.get(event);
+      if (!handlers) handlerMap.set(event, (handlers = new Set()));
+      handlers.add(cb);
+    });
+    fakeClient.removeHandler.mockImplementation((event, cb) => {
+      const handlers = handlerMap.get(event);
+      if (handlers) {
+        handlers.delete(cb);
+        if (handlers.size === 0) handlerMap.delete(event);
       }
     });
   });
@@ -66,31 +73,25 @@ describe('hooks', () => {
           return <p>{JSON.stringify(val)}</p>;
         };
 
-        const manager = new ClientManager(fakeClient);
-        manager.ref();
+        const featureStore = FeaturesStore.forClient(fakeClient);
 
         const { unmount } = render(
-          <ClientManagerContext.Provider value={() => manager}>
+          <FeatureStoreContext.Provider value={featureStore}>
             <React.Suspense fallback={<p>suspense</p>}>
               <TestComponent />
             </React.Suspense>
-          </ClientManagerContext.Provider>,
+          </FeatureStoreContext.Provider>,
         );
 
         expect(screen.getByText('suspense')).toBeInTheDocument();
 
-        await act(async () => {
-          fireReady!();
-          await manager.promise;
-        });
+        fire(ProviderEvents.Ready);
 
-        expect(screen.getByText(JSON.stringify(mockValue))).toBeInTheDocument();
+        expect(await screen.findByText(JSON.stringify(mockValue))).toBeInTheDocument();
 
         unmount();
 
-        manager.unref();
-        expect(fakeClient.addHandler).toBeCalledTimes(3);
-        expect(fakeClient.removeHandler).toBeCalledTimes(3);
+        expect(handlerMap.size).toBe(0);
       },
     );
   });
@@ -109,44 +110,39 @@ describe('hooks', () => {
     `(
       `($name): should show suspense until the value is resolved and reload when the context is changed, show new value and cleanup`,
       async ({ hookUnderTest, defaultValue, mockValue1, mockValue2, mockFunc }) => {
-        mockFunc.mockReturnValueOnce(mockValue1).mockReturnValueOnce(mockValue2);
+        mockFunc.mockReturnValue(mockValue1);
         const TestComponent = () => {
           const val = hookUnderTest('flag', defaultValue);
           return <p>{JSON.stringify(val)}</p>;
         };
 
-        const manager = new ClientManager(fakeClient);
-        manager.ref();
+        const featureStore = FeaturesStore.forClient(fakeClient);
 
         const { unmount } = render(
-          <ClientManagerContext.Provider value={() => manager}>
+          <FeatureStoreContext.Provider value={featureStore}>
             <React.Suspense fallback={<p>suspense</p>}>
               <TestComponent />
             </React.Suspense>
-          </ClientManagerContext.Provider>,
+          </FeatureStoreContext.Provider>,
         );
 
         expect(screen.getByText('suspense')).toBeInTheDocument();
 
-        await act(async () => {
-          fireReady!();
-          await manager.promise;
+        fire(ProviderEvents.Ready);
+
+        expect(await screen.findByText(JSON.stringify(mockValue1))).toBeInTheDocument();
+
+        act(() => {
+          fire(ProviderEvents.Stale);
+          mockFunc.mockReturnValue(mockValue2);
+          fire(ProviderEvents.Ready);
         });
 
-        expect(screen.getByText(JSON.stringify(mockValue1))).toBeInTheDocument();
-
-        await act(async () => {
-          fireStale!();
-          fireReady!();
-        });
-
-        expect(screen.getByText(JSON.stringify(mockValue2))).toBeInTheDocument();
+        expect(await screen.findByText(JSON.stringify(mockValue2))).toBeInTheDocument();
 
         unmount();
 
-        manager.unref();
-        expect(fakeClient.addHandler).toBeCalledTimes(3);
-        expect(fakeClient.removeHandler).toBeCalledTimes(3);
+        expect(handlerMap.size).toBe(0);
       },
     );
   });
@@ -169,31 +165,27 @@ describe('hooks', () => {
         return <p>{JSON.stringify(val)}</p>;
       };
 
-      const manager = new ClientManager(fakeClient);
-      manager.ref();
+      const featureStore = FeaturesStore.forClient(fakeClient);
 
       const { unmount } = render(
-        <ClientManagerContext.Provider value={() => manager}>
+        <FeatureStoreContext.Provider value={featureStore}>
           <React.Suspense fallback={<p>suspense</p>}>
             <TestComponent />
           </React.Suspense>
-        </ClientManagerContext.Provider>,
+        </FeatureStoreContext.Provider>,
       );
 
       expect(screen.getByText('suspense')).toBeInTheDocument();
 
-      await act(async () => {
-        fireError!();
-        await manager.promise;
+      act(() => {
+        fire(ProviderEvents.Error);
       });
 
-      expect(screen.getByText(JSON.stringify(defaultValue))).toBeInTheDocument();
+      expect(await screen.findByText(JSON.stringify(defaultValue))).toBeInTheDocument();
 
       unmount();
 
-      manager.unref();
-      expect(fakeClient.addHandler).toBeCalledTimes(3);
-      expect(fakeClient.removeHandler).toBeCalledTimes(3);
+      expect(handlerMap.size).toBe(0);
     });
   });
 });
