@@ -8,6 +8,12 @@ coverage/*
 # examples
 examples/*/coverage
 examples/*/build
+examples/*/.next
+examples/*/out
+examples/*/*.log*
+examples/*/.env*
+examples/*/*.tsbuildinfo
+examples/*/next-env.d.ts
 
 # logs
 npm-debug.log*

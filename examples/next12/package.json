@@ -1,0 +1,24 @@
+{
+  "name": "next12",
+  "version": "0.1.0",
+  "private": true,
+  "scripts": {
+    "dev": "next dev",
+    "build": "next build",
+    "start": "next start",
+    "lint": "next lint"
+  },
+  "dependencies": {
+    "@openfeature/web-sdk": "^0.4.0",
+    "@openfeature/js-sdk": "^1.4.2",
+    "@spotify-confidence/openfeature-web-provider": "^0.0.3",
+    "@spotify-confidence/openfeature-server-provider": "^0.0.3",
+    "next": "13.5.3",
+    "react": "18.2.0",
+    "react-dom": "18.2.0"
+  },
+  "devDependencies": {
+    "eslint": "8.50.0",
+    "eslint-config-next": "13.5.3"
+  }
+}
