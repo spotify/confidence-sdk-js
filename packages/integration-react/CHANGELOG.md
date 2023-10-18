@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.0.5](https://github.com/spotify/confidence-openfeature-provider-js/compare/integration-react-v0.0.4...integration-react-v0.0.5) (2023-10-18)
+
+
+### 🐛 Bug Fixes
+
+* **react:** issue with multiple context updates ([2dd3857](https://github.com/spotify/confidence-openfeature-provider-js/commit/2dd385764bd9c01b3f88f34b2da80b023b52cad1))
+
 ## [0.0.4](https://github.com/spotify/confidence-openfeature-provider-js/compare/integration-react-v0.0.3...integration-react-v0.0.4) (2023-10-11)
 
 
