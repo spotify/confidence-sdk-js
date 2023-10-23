@@ -12,6 +12,17 @@ type ResolveRequest = {
   apply?: boolean;
   flags?: string[];
 };
+type ResolveResponse = {
+  resolvedFlags: ResolvedFlag[];
+  resolveToken: string;
+};
+type ConfidenceSimpleTypes = { boolSchema: {} } | { doubleSchema: {} } | { intSchema: {} } | { stringSchema: {} };
+type ConfidenceFlagSchema = {
+  schema: {
+    [key: string]: ConfidenceSimpleTypes | { structSchema: ConfidenceFlagSchema };
+  };
+};
+
 export type ResolvedFlag<T = any> = {
   flag: string;
   variant: string;
@@ -19,11 +30,6 @@ export type ResolvedFlag<T = any> = {
   flagSchema?: ConfidenceFlagSchema;
   reason: Configuration.ResolveReason;
 };
-type ResolveResponse = {
-  resolvedFlags: ResolvedFlag[];
-  resolveToken: string;
-};
-
 export type ConfidenceClientOptions = {
   fetchImplementation: typeof fetch;
   clientSecret: string;
@@ -34,12 +40,6 @@ export type ConfidenceClientOptions = {
 export type AppliedFlag = {
   flag: string;
   applyTime: string;
-};
-type ConfidenceSimpleTypes = { boolSchema: {} } | { doubleSchema: {} } | { intSchema: {} } | { stringSchema: {} };
-type ConfidenceFlagSchema = {
-  schema: {
-    [key: string]: ConfidenceSimpleTypes | { structSchema: ConfidenceFlagSchema };
-  };
 };
 
 export class ConfidenceClient {
