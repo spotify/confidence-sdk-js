@@ -2787,19 +2787,6 @@
   dependencies:
     "@sinonjs/commons" "^1.7.0"
 
-"@spotify-confidence/integration-react@^0.0.4":
-  version "0.0.4"
-  resolved "https://registry.yarnpkg.com/@spotify-confidence/integration-react/-/integration-react-0.0.4.tgz#383afc78c2db608b1bf75cb41c53d17512b6a77d"
-  integrity sha512-4NPbuMTweAz8sjsiEdFNBcB7im5XeETDc7ysyoLWw3vSN407fww+e3XDDhon+advI47TYvlUdvlEN75mOGnW4g==
-
-"@spotify-confidence/openfeature-server-provider@^0.0.3":
-  version "0.0.3"
-  resolved "https://registry.yarnpkg.com/@spotify-confidence/openfeature-server-provider/-/openfeature-server-provider-0.0.3.tgz#e424b2626f291037c00133171a01c4915981b6d4"
-  integrity sha512-GaOyWe8yOC//LYHe+K3pn2wXUph88doXoLOz/6nup+J/xDc2F7kQIsFkA+TE+fI27CH8iaPUbO8ledTdKcYFjw==
-  dependencies:
-    "@spotify-confidence/client-http" "^0.0.2"
-    fast-deep-equal "^3.1.3"
-
 "@spotify/eslint-config-base@^15.0.0":
   version "15.0.0"
   resolved "https://registry.yarnpkg.com/@spotify/eslint-config-base/-/eslint-config-base-15.0.0.tgz#fa8a003e656b1c14694528a487bb9e974e013e4d"

@@ -102,6 +102,7 @@ export class ConfidenceWebProvider implements Provider {
     }
 
     const [flagName, ...pathParts] = flagKey.split('.');
+
     try {
       const flag = this.configuration.flags[flagName];
 
@@ -125,12 +126,14 @@ export class ConfidenceWebProvider implements Provider {
           reason: 'ERROR',
         };
       }
+
       if (flagValue.value === null) {
         return {
           value: defaultValue,
           reason: mapConfidenceReason(flag.reason),
         };
       }
+
       if (!Configuration.FlagValue.matches(flagValue, defaultValue)) {
         logger.warn('Value for "%s" is of incorrect type', flagKey);
         return {
@@ -141,6 +144,7 @@ export class ConfidenceWebProvider implements Provider {
       }
 
       this.applyManager.apply(this.configuration.resolveToken, flagName);
+
       logger.info('Value for "%s" successfully evaluated', flagKey);
       return {
         value: flagValue.value as T,
