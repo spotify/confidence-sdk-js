@@ -46,3 +46,19 @@ Notes:
 
 - It's advised not to perform `setContext` while `setProvider` is running, you can await setting the context first, or listen to the `ProviderEvent.Ready` via a handler on `OpenFeaure`.
 - It's advised not to perform resolves while `setProvider` and `setContext` are running: resolves might return the default value with reason `STALE` during such operations.
+
+## Configuring Apply
+
+See [apply concept](../../concepts/apply.md).
+
+By default, access apply is used, using a timeout of 250ms.
+
+To use Backend Apply, set the apply option to `'backend'`:
+
+```ts
+const provider = createConfidenceWebProvider({
+    ...,
+    apply: 'backend'
+});
+
+```
