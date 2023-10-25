@@ -10,13 +10,7 @@ import {
   ResolutionReason,
 } from '@openfeature/js-sdk';
 
-import { ApplyManager, ConfidenceClient, Configuration, ResolveContext } from '@spotify-confidence/client-http';
-
-interface ConfidenceServerProviderOptions {
-  apply?: {
-    timeout?: number;
-  };
-}
+import { ConfidenceClient, ResolveContext, Configuration } from '@spotify-confidence/client-http';
 
 export class ConfidenceServerProvider implements Provider {
   readonly metadata: ProviderMetadata = {
@@ -24,11 +18,9 @@ export class ConfidenceServerProvider implements Provider {
   };
   status: ProviderStatus = ProviderStatus.READY;
   private readonly client: ConfidenceClient;
-  private readonly applyManager: ApplyManager;
 
-  constructor(client: ConfidenceClient, options?: ConfidenceServerProviderOptions) {
+  constructor(client: ConfidenceClient) {
     this.client = client;
-    this.applyManager = new ApplyManager({ client, timeout: options?.apply?.timeout || 250 });
   }
 
   private convertContext(context: EvaluationContext): ResolveContext {
@@ -92,7 +84,6 @@ export class ConfidenceServerProvider implements Provider {
         };
       }
 
-      this.applyManager.apply(configuration.resolveToken, flagName);
       return {
         value: flagValue.value as T,
         reason: mapConfidenceReason(flag.reason),

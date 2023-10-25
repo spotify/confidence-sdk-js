@@ -9,18 +9,13 @@ type ConfidenceProviderFactoryOptions = {
   fetchImplementation: typeof fetch;
   clientSecret: string;
   baseUrl?: string;
-  apply?: {
-    timeout: number;
-  };
 };
 
 export function createConfidenceServerProvider(options: ConfidenceProviderFactoryOptions): Provider {
   const confidenceClient = new ConfidenceClient({
     ...options,
-    apply: !options.apply,
+    apply: true,
   });
 
-  return new ConfidenceServerProvider(confidenceClient, {
-    apply: options.apply,
-  });
+  return new ConfidenceServerProvider(confidenceClient);
 }
