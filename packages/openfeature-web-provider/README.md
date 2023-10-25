@@ -51,7 +51,7 @@ Notes:
 
 See [apply concept](../../concepts/apply.md).
 
-By default, access apply is used, using a timeout of 250ms.
+By default, `'access'` apply is used, using a timeout of 250ms.
 
 To use Backend Apply, set the apply option to `'backend'`:
 

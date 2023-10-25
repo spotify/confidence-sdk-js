@@ -7,18 +7,16 @@ type ConfidenceWebProviderFactoryOptions = {
   fetchImplementation: typeof fetch;
   clientSecret: string;
   baseUrl?: string;
-  apply?: {
-    timeout: number;
-  };
+  apply?: 'access' | 'backend';
 };
 
 export function createConfidenceWebProvider(options: ConfidenceWebProviderFactoryOptions): Provider {
   const confidenceClient = new ConfidenceClient({
     ...options,
-    apply: !options.apply,
+    apply: options.apply === 'backend',
   });
 
   return new ConfidenceWebProvider(confidenceClient, {
-    apply: options.apply,
+    apply: options.apply || 'access',
   });
 }

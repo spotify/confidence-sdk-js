@@ -84,7 +84,7 @@ describe('ConfidenceProvider', () => {
   let instanceUnderTest: ConfidenceWebProvider;
 
   beforeEach(() => {
-    instanceUnderTest = new ConfidenceWebProvider(mockClient);
+    instanceUnderTest = new ConfidenceWebProvider(mockClient, { apply: 'access' });
     resolveMock.mockResolvedValue(dummyConfiguration);
   });
 
@@ -691,7 +691,7 @@ describe('events', () => {
 
   it('should emit ready stale ready on successful initialisation and context change', async () => {
     resolveMock.mockResolvedValue(dummyConfiguration);
-    openFeatureAPI.setProvider(new ConfidenceWebProvider(mockClient));
+    openFeatureAPI.setProvider(new ConfidenceWebProvider(mockClient, { apply: 'backend' }));
     await initPromise;
     await openFeatureAPI.setContext({ targetingKey: 'user-a', name: 'Kurt' });
 
@@ -702,7 +702,7 @@ describe('events', () => {
 
   it('should emit error stale error on failed initialisation and context change', async () => {
     resolveMock.mockRejectedValue(new Error('some error'));
-    openFeatureAPI.setProvider(new ConfidenceWebProvider(mockClient));
+    openFeatureAPI.setProvider(new ConfidenceWebProvider(mockClient, { apply: 'backend' }));
     await initPromise;
     try {
       await openFeatureAPI.setContext({ targetingKey: 'user-a' });

@@ -15,10 +15,10 @@ import equal from 'fast-deep-equal';
 
 import { ApplyManager, ConfidenceClient, Configuration, ResolveContext } from '@spotify-confidence/client-http';
 
+const APPLY_TIMEOUT = 250;
+
 export interface ConfidenceWebProviderOptions {
-  apply?: {
-    timeout?: number;
-  };
+  apply: 'access' | 'backend';
 }
 
 export class ConfidenceWebProvider implements Provider {
@@ -30,11 +30,13 @@ export class ConfidenceWebProvider implements Provider {
   readonly events = new OpenFeatureEventEmitter();
 
   private readonly client: ConfidenceClient;
-  private readonly applyManager: ApplyManager;
+  private readonly applyManager: ApplyManager | undefined = undefined;
 
-  constructor(client: ConfidenceClient, options?: ConfidenceWebProviderOptions) {
+  constructor(client: ConfidenceClient, options: ConfidenceWebProviderOptions) {
     this.client = client;
-    this.applyManager = new ApplyManager({ client: this.client, timeout: options?.apply?.timeout || 250 });
+    if (options.apply !== 'backend') {
+      this.applyManager = new ApplyManager({ client: this.client, timeout: APPLY_TIMEOUT });
+    }
   }
 
   async initialize(context?: EvaluationContext): Promise<void> {
@@ -143,8 +145,7 @@ export class ConfidenceWebProvider implements Provider {
         };
       }
 
-      this.applyManager.apply(this.configuration.resolveToken, flagName);
-
+      this.applyManager?.apply(this.configuration.resolveToken, flagName);
       logger.info('Value for "%s" successfully evaluated', flagKey);
       return {
         value: flagValue.value as T,
