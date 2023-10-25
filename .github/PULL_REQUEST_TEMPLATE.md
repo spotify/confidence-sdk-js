@@ -12,3 +12,4 @@
 - [ ] linter/style run on changed files
 - [ ] Tests added for new functionality
 - [ ] Regression tests added for bug fixes
+- [ ] Tested in a corresponding example app
