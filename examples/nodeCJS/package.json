@@ -7,7 +7,7 @@
   "license": "MIT",
   "dependencies": {
     "@openfeature/js-sdk": "^1.6.1",
-    "@spotify-confidence/openfeature-server-provider": "^0.0.3"
+    "@spotify-confidence/openfeature-server-provider": "0.0.4"
   },
   "scripts": {
     "dev": "node src/index.js"

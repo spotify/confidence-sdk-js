@@ -19,7 +19,8 @@
     "prepare": "husky install",
     "cm": "git-cz",
     "release": "lerna version",
-    "publish-if-missing": "lerna publish from-package --yes"
+    "publish-if-missing": "lerna publish from-package --yes",
+    "update-examples": "node scripts/bump-example-deps.js"
   },
   "devDependencies": {
     "@commitlint/cli": "^17.6.7",
