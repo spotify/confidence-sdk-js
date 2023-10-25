@@ -87,14 +87,6 @@ describe('ConfidenceServerProvider', () => {
     expect(resolveMock).toHaveBeenCalledTimes(2);
   });
 
-  describe('apply', () => {
-    it('should send an apply event', async () => {
-      await instanceUnderTest.resolveBooleanEvaluation('testFlag.bool', false, {}, dummyConsole);
-
-      expect(mockApply).toHaveBeenCalledWith(dummyConfiguration.resolveToken, 'testFlag');
-    });
-  });
-
   describe('resolveBooleanEvaluation', () => {
     it('should resolve a boolean', async () => {
       expect(await instanceUnderTest.resolveBooleanEvaluation('testFlag.bool', false, {}, dummyConsole)).toEqual({

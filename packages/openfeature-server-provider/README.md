@@ -39,3 +39,9 @@ client
     console.log('result:', result);
   });
 ```
+
+## Configuring Apply
+
+See [apply concept](../../concepts/apply.md).
+
+Backend apply is the only supported method in the `ConfidenceServerProvider`.
