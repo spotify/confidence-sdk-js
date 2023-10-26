@@ -11,8 +11,8 @@
   "dependencies": {
     "@openfeature/web-sdk": "^0.4.0",
     "@openfeature/js-sdk": "^1.4.2",
-    "@spotify-confidence/openfeature-web-provider": "^0.0.3",
-    "@spotify-confidence/openfeature-server-provider": "^0.0.3",
+    "@spotify-confidence/openfeature-web-provider": "0.0.4",
+    "@spotify-confidence/openfeature-server-provider": "0.0.5",
     "@types/node": "20.6.5",
     "@types/react": "18.2.22",
     "@types/react-dom": "18.2.7",

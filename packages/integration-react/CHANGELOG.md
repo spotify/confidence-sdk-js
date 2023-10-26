@@ -1,5 +1,22 @@
 # Changelog
 
+## [0.0.6](https://github.com/spotify/confidence-openfeature-provider-js/compare/integration-react-v0.0.5...integration-react-v0.0.6) (2023-10-26)
+
+
+### ✨ New Features
+
+* **examples:** add next 12 and next 13 example apps ([151015a](https://github.com/spotify/confidence-openfeature-provider-js/commit/151015a03f7fe67a7c6382078743b38f8d6ef2d1))
+
+
+### 📚 Documentation
+
+* **react:** add docs for usage in Next 12 and 13 ([96faf2e](https://github.com/spotify/confidence-openfeature-provider-js/commit/96faf2eed2e5f84346f1ffcfc9d274f36cfa7514))
+
+
+### 🔄 Refactoring
+
+* **react:** ensure inclusion in the client bundle for next13 apps ([4fcae19](https://github.com/spotify/confidence-openfeature-provider-js/commit/4fcae19849eb7459eb80c649de76d09f49b8cdbf))
+
 ## [0.0.5](https://github.com/spotify/confidence-openfeature-provider-js/compare/integration-react-v0.0.4...integration-react-v0.0.5) (2023-10-18)
 
 
