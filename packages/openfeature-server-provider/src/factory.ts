@@ -16,6 +16,10 @@ export function createConfidenceServerProvider(options: ConfidenceProviderFactor
   const confidenceClient = new ConfidenceClient({
     ...options,
     apply: true,
+    sdk: {
+      id: 'SDK_ID_JS_SERVER_PROVIDER',
+      version: '0.0.0', // x-release-please-version
+    },
   });
 
   return new ConfidenceServerProvider(confidenceClient);

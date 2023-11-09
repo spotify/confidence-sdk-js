@@ -6,11 +6,16 @@ type ApplyRequest = {
   flags: AppliedFlag[];
   sendTime: string;
 };
+type SDK = {
+  id: 'SDK_ID_JS_WEB_PROVIDER' | 'SDK_ID_JS_SERVER_PROVIDER';
+  version: string;
+};
 type ResolveRequest = {
   clientSecret: string;
   evaluationContext: ResolveContext;
   apply?: boolean;
   flags?: string[];
+  sdk: SDK;
 };
 type ResolveResponse = {
   resolvedFlags: ResolvedFlag[];
@@ -36,6 +41,7 @@ export type ConfidenceClientOptions = {
   apply: boolean;
   region: 'eu' | 'us';
   baseUrl?: string;
+  sdk: SDK;
   timeout: number;
 };
 export type AppliedFlag = {
@@ -48,6 +54,7 @@ export class ConfidenceClient {
   private readonly baseUrl: string;
   private readonly clientSecret: string;
   private readonly timeout: number;
+  private readonly sdk: SDK;
   private readonly fetchImplementation: typeof fetch;
 
   constructor(options: ConfidenceClientOptions) {
@@ -55,6 +62,7 @@ export class ConfidenceClient {
     this.clientSecret = options.clientSecret;
     this.backendApplyEnabled = options.apply;
     this.timeout = options.timeout;
+    this.sdk = options.sdk;
     if (options.baseUrl) {
       this.baseUrl = options.baseUrl;
     } else {
@@ -66,6 +74,7 @@ export class ConfidenceClient {
       clientSecret: this.clientSecret,
       evaluationContext: context,
       apply: this.backendApplyEnabled,
+      sdk: this.sdk,
       ...options,
     };
     const controller = new AbortController();

@@ -15,6 +15,10 @@ export function createConfidenceWebProvider(options: ConfidenceWebProviderFactor
   const confidenceClient = new ConfidenceClient({
     ...options,
     apply: options.apply === 'backend',
+    sdk: {
+      id: 'SDK_ID_JS_WEB_PROVIDER',
+      version: '0.0.0', // x-release-please-version
+    },
   });
 
   return new ConfidenceWebProvider(confidenceClient, {

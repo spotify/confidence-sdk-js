@@ -17,13 +17,15 @@
       "component": "openfeature-server-provider",
       "changelog-path": "CHANGELOG.md",
       "bump-minor-pre-major": true,
-      "bump-patch-for-minor-pre-major": true
+      "bump-patch-for-minor-pre-major": true,
+      "extra-files": ["src/factory.ts"]
     },
     "packages/openfeature-web-provider": {
       "component": "openfeature-web-provider",
       "changelog-path": "CHANGELOG.md",
       "bump-minor-pre-major": true,
-      "bump-patch-for-minor-pre-major": true
+      "bump-patch-for-minor-pre-major": true,
+      "extra-files": ["src/factory.ts"]
     }
   },
   "changelog-sections": [
