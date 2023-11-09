@@ -14,6 +14,7 @@ describe('ApplyManager', () => {
   beforeEach(() => {
     instanceUnderTest = new ApplyManager({
       timeout: 100,
+      maxBufferSize: 3,
       client: mockClient,
     });
     resolveMock.mockResolvedValue({});
@@ -97,6 +98,33 @@ describe('ApplyManager', () => {
         },
       ],
       'some-token2',
+    );
+  });
+
+  it('should send apply event when the max buffer size is met, and flush the apply events', async () => {
+    const applyTime = new Date().toISOString();
+
+    instanceUnderTest.apply('some-token', 'apply-test');
+    instanceUnderTest.apply('some-token', 'apply-test1');
+    instanceUnderTest.apply('some-token', 'apply-test2');
+
+    expect(resolveMock).toHaveBeenCalledTimes(1);
+    expect(resolveMock).toHaveBeenCalledWith(
+      [
+        {
+          flag: 'flags/apply-test',
+          applyTime: applyTime,
+        },
+        {
+          flag: 'flags/apply-test1',
+          applyTime: applyTime,
+        },
+        {
+          flag: 'flags/apply-test2',
+          applyTime: applyTime,
+        },
+      ],
+      'some-token',
     );
   });
 });
