@@ -2,6 +2,7 @@ import { ConfidenceClient, AppliedFlag } from './client';
 
 export interface ApplyManagerOptions {
   timeout: number;
+  maxBufferSize: number;
   client: ConfidenceClient;
 }
 
@@ -9,11 +10,13 @@ export class ApplyManager {
   private resolveTokenPending: Map<string, AppliedFlag[]> = new Map();
   private resolveTokenSeen: Map<string, Set<string>> = new Map();
   private readonly timeout: number;
+  private readonly maxBufferSize: number;
   private client: ConfidenceClient;
   private flushTimeout: ReturnType<typeof setTimeout> | null = null;
 
   constructor(options: ApplyManagerOptions) {
     this.timeout = options.timeout;
+    this.maxBufferSize = options.maxBufferSize;
     this.client = options.client;
   }
 
@@ -61,6 +64,11 @@ export class ApplyManager {
     if (this.flushTimeout) {
       clearTimeout(this.flushTimeout);
     }
-    this.flushTimeout = setTimeout(() => this.flush(), this.timeout);
+
+    if ((this.resolveTokenPending.get(resolveToken)?.length || 0) >= this.maxBufferSize) {
+      this.flush();
+    } else {
+      this.flushTimeout = setTimeout(() => this.flush(), this.timeout);
+    }
   }
 }
