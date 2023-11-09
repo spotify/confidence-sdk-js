@@ -16,6 +16,7 @@ import equal from 'fast-deep-equal';
 import { ApplyManager, ConfidenceClient, Configuration, ResolveContext } from '@spotify-confidence/client-http';
 
 const APPLY_TIMEOUT = 250;
+const MAX_APPLY_BUFFER_SIZE = 20;
 
 export interface ConfidenceWebProviderOptions {
   apply: 'access' | 'backend';
@@ -35,7 +36,11 @@ export class ConfidenceWebProvider implements Provider {
   constructor(client: ConfidenceClient, options: ConfidenceWebProviderOptions) {
     this.client = client;
     if (options.apply !== 'backend') {
-      this.applyManager = new ApplyManager({ client: this.client, timeout: APPLY_TIMEOUT });
+      this.applyManager = new ApplyManager({
+        client: this.client,
+        timeout: APPLY_TIMEOUT,
+        maxBufferSize: MAX_APPLY_BUFFER_SIZE,
+      });
     }
   }
 
