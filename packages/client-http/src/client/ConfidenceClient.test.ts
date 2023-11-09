@@ -8,6 +8,10 @@ describe('ConfidenceClient', () => {
     fetchImplementation: mockFetch,
     apply: true,
     region: 'eu',
+    sdk: {
+      id: 'SDK_ID_JS_WEB_PROVIDER',
+      version: 'TESTING',
+    },
     timeout: 10,
   });
 
@@ -63,7 +67,12 @@ describe('ConfidenceClient', () => {
           body: JSON.stringify({
             clientSecret: 'test-secret',
             evaluationContext: context,
-            ...options,
+            apply: options.apply,
+            sdk: {
+              id: 'SDK_ID_JS_WEB_PROVIDER',
+              version: 'TESTING',
+            },
+            flags: options.flags,
           }),
         }),
       );
@@ -91,6 +100,10 @@ describe('ConfidenceClient', () => {
             clientSecret: 'test-secret',
             evaluationContext: context,
             apply: true,
+            sdk: {
+              id: 'SDK_ID_JS_WEB_PROVIDER',
+              version: 'TESTING',
+            },
           }),
         }),
       );

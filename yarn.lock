@@ -2787,6 +2787,33 @@
   dependencies:
     "@sinonjs/commons" "^1.7.0"
 
+"@spotify-confidence/client-http@^0.0.3":
+  version "0.0.3"
+  resolved "https://registry.yarnpkg.com/@spotify-confidence/client-http/-/client-http-0.0.3.tgz#33d90fa8e22e4968ed5d3a885b4dfc7afd9fa01b"
+  integrity sha512-gV6+T7/dtQs2PYKI/4PZac09Kq12LB6OBkdWRlb5uUJCjqzX6kcWUjabbz5ifkWSg9vYeOuH9oy/Bn/IMLRKXA==
+
+"@spotify-confidence/integration-react@0.1.0":
+  version "0.1.0"
+  resolved "https://registry.yarnpkg.com/@spotify-confidence/integration-react/-/integration-react-0.1.0.tgz#735e6a0f74d0a855f31024b45c316066589cb53f"
+  integrity sha512-ryCNI1xeO3FZZjqMM8QNImtm1MgK7f74esytfSnCT3hUkMf7pYbEnZ6/hBdM10QYeiywVagwZioTF/3SMVn2sA==
+  dependencies:
+    use-sync-external-store "^1.2.0"
+
+"@spotify-confidence/openfeature-server-provider@0.1.0":
+  version "0.1.0"
+  resolved "https://registry.yarnpkg.com/@spotify-confidence/openfeature-server-provider/-/openfeature-server-provider-0.1.0.tgz#5409a85691dba7a47bd8f5edf2990e080a9333fe"
+  integrity sha512-cDOu3FRggxXE8dom5b//Kmi5wPwfOKTXA7V0PXXXQHVNTIODH9A6mfQnovAxijcqnR+0sFYsX61M+6Pj+xFiBw==
+  dependencies:
+    "@spotify-confidence/client-http" "^0.0.3"
+
+"@spotify-confidence/openfeature-web-provider@0.1.0":
+  version "0.1.0"
+  resolved "https://registry.yarnpkg.com/@spotify-confidence/openfeature-web-provider/-/openfeature-web-provider-0.1.0.tgz#5516a33a493b59e551be0d987cea92d442f94e99"
+  integrity sha512-b096+DLlWlljKIT0NijhJXvRXoMLtEOykzUIh6zDm2dZ+tyu/YuZ5wQXV6GVfFXLeWXyPn5rBzwQNbT2v4+l/w==
+  dependencies:
+    "@spotify-confidence/client-http" "^0.0.3"
+    fast-deep-equal "^3.1.3"
+
 "@spotify/eslint-config-base@^15.0.0":
   version "15.0.0"
   resolved "https://registry.yarnpkg.com/@spotify/eslint-config-base/-/eslint-config-base-15.0.0.tgz#fa8a003e656b1c14694528a487bb9e974e013e4d"
