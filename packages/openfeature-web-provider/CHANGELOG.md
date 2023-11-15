@@ -1,5 +1,26 @@
 # Changelog
 
+## [0.1.0](https://github.com/spotify/confidence-openfeature-provider-js/compare/openfeature-web-provider-v0.0.4...openfeature-web-provider-v0.1.0) (2023-11-15)
+
+
+### ⚠ BREAKING CHANGES
+
+* **client-http,web,server,react,examples:** new required option: timeout
+
+### ✨ New Features
+
+* **client-http,web,server,react,examples:** add timeout for network request ([f460b97](https://github.com/spotify/confidence-openfeature-provider-js/commit/f460b97ec4e1c56375de52fd1eb664c7b9be1f35))
+
+
+### 📚 Documentation
+
+* add concept apply docs ([0274284](https://github.com/spotify/confidence-openfeature-provider-js/commit/02742845d029e994c0f83c4acc2bff9f796a3dad))
+
+
+### 🔄 Refactoring
+
+* **web:** set access apply to default, add docs ([91d9ebf](https://github.com/spotify/confidence-openfeature-provider-js/commit/91d9ebff2ee826d6549587406e0ab61584ce0263))
+
 ## [0.0.4](https://github.com/spotify/confidence-openfeature-provider-js/compare/openfeature-web-provider-v0.0.3...openfeature-web-provider-v0.0.4) (2023-10-26)
 
 

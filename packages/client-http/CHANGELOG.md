@@ -1,5 +1,16 @@
 # Changelog
 
+## [0.1.0](https://github.com/spotify/confidence-openfeature-provider-js/compare/client-http-v0.0.3...client-http-v0.1.0) (2023-11-15)
+
+
+### ⚠ BREAKING CHANGES
+
+* **client-http,web,server,react,examples:** new required option: timeout
+
+### ✨ New Features
+
+* **client-http,web,server,react,examples:** add timeout for network request ([f460b97](https://github.com/spotify/confidence-openfeature-provider-js/commit/f460b97ec4e1c56375de52fd1eb664c7b9be1f35))
+
 ## [0.0.3](https://github.com/spotify/confidence-openfeature-provider-js/compare/client-http-v0.0.2...client-http-v0.0.3) (2023-10-26)
 
 
