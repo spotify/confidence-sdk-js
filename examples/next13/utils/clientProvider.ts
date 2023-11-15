@@ -9,8 +9,7 @@ if (typeof window !== 'undefined') {
     clientSecret: 'RxDVTrXvc6op1XxiQ4OaR31dKbJ39aYV',
     region: 'eu',
     fetchImplementation: fetch.bind(this) || window.fetch.bind(window),
-    apply: {
-      timeout: 1000,
-    },
+    apply: 'access',
+    timeout: 1000,
   });
 }

@@ -17,6 +17,7 @@ describe('ConfidenceHTTPProvider E2E tests', () => {
       },
       region: 'eu',
       clientSecret: 'RxDVTrXvc6op1XxiQ4OaR31dKbJ39aYV',
+      timeout: 1000,
     });
     const providerReadyPromise = new Promise<void>(resolve => {
       OpenFeature.addHandler(ProviderEvents.Ready, () => {
@@ -31,6 +32,31 @@ describe('ConfidenceHTTPProvider E2E tests', () => {
     OpenFeature.setProvider(confidenceProvider);
 
     return providerReadyPromise;
+  });
+
+  it('should return defaults after the timeout', async () => {
+    const confidenceProvider = createConfidenceWebProvider({
+      fetchImplementation: global.fetch.bind(global),
+      region: 'eu',
+      clientSecret: 'RxDVTrXvc6op1XxiQ4OaR31dKbJ39aYV',
+      timeout: 0,
+    });
+
+    await confidenceProvider.onContextChange!({}, { targetingKey: 'user-a' });
+
+    const flag = confidenceProvider.resolveStringEvaluation(
+      'web-sdk-e2e-flag.str',
+      'default',
+      { targetingKey: 'user-a' },
+      {
+        info: jest.fn(),
+        warn: jest.fn(),
+        error: jest.fn(),
+        debug: jest.fn(),
+      },
+    );
+
+    expect(flag.value).toEqual('default');
   });
 
   it('should resolve a boolean e2e', async () => {

@@ -10,6 +10,7 @@ export function setupOpenFeatureConfidenceProvider() {
         clientSecret: 'RxDVTrXvc6op1XxiQ4OaR31dKbJ39aYV',
         region: 'eu',
         fetchImplementation: fetch.bind(global),
+        timeout: 1000,
       }),
     );
     setup = true;

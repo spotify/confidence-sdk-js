@@ -8,6 +8,7 @@ type ConfidenceWebProviderFactoryOptions = {
   clientSecret: string;
   baseUrl?: string;
   apply?: 'access' | 'backend';
+  timeout: number;
 };
 
 export function createConfidenceWebProvider(options: ConfidenceWebProviderFactoryOptions): Provider {

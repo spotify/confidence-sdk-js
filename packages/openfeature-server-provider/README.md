@@ -25,6 +25,7 @@ const provider = createConfidenceServerProvider({
   clientSecret: 'your-client-secret',
   region: 'eu',
   fetchImplementation: fetch,
+  timeout: 1000,
 });
 
 OpenFeature.setProvider(provider);
@@ -39,6 +40,10 @@ client
     console.log('result:', result);
   });
 ```
+
+## Timeout
+
+The timeout option is used to set the timeout for the network request to the Confidence backend. When the timeout is reached, default values will be returned.
 
 ## Configuring Apply
 

@@ -8,9 +8,36 @@ describe('ConfidenceClient', () => {
     fetchImplementation: mockFetch,
     apply: true,
     region: 'eu',
+    timeout: 10,
   });
 
   describe('resolve', () => {
+    it('should abort the request if it exceeds timeout', async () => {
+      jest.useFakeTimers();
+      let signal: AbortSignal | undefined;
+      mockFetch.mockImplementation((_url, options) => {
+        signal = options.signal;
+        return new Promise(() => {});
+      });
+      const context: ResolveContext = {
+        targeting_key: 'a',
+      };
+      const options = {
+        apply: false,
+        flags: ['test-flag'],
+      };
+
+      instanceUnderTest.resolve(context, options);
+
+      expect(signal!.aborted).toBeFalsy();
+
+      jest.advanceTimersByTime(11);
+
+      expect(signal!.aborted).toBeTruthy();
+
+      jest.useRealTimers();
+    });
+
     it('should call resolve with the given options and context', async () => {
       mockFetch.mockResolvedValue({
         json: () =>
@@ -29,14 +56,17 @@ describe('ConfidenceClient', () => {
 
       await instanceUnderTest.resolve(context, options);
 
-      expect(mockFetch).toHaveBeenCalledWith(`https://resolver.eu.confidence.dev/v1/flags:resolve`, {
-        method: 'POST',
-        body: JSON.stringify({
-          clientSecret: 'test-secret',
-          evaluationContext: context,
-          ...options,
+      expect(mockFetch).toHaveBeenCalledWith(
+        `https://resolver.eu.confidence.dev/v1/flags:resolve`,
+        expect.objectContaining({
+          method: 'POST',
+          body: JSON.stringify({
+            clientSecret: 'test-secret',
+            evaluationContext: context,
+            ...options,
+          }),
         }),
-      });
+      );
     });
 
     it('should call resolve with the context', async () => {
@@ -53,14 +83,17 @@ describe('ConfidenceClient', () => {
 
       await instanceUnderTest.resolve(context);
 
-      expect(mockFetch).toHaveBeenCalledWith(`https://resolver.eu.confidence.dev/v1/flags:resolve`, {
-        method: 'POST',
-        body: JSON.stringify({
-          clientSecret: 'test-secret',
-          evaluationContext: context,
-          apply: true,
+      expect(mockFetch).toHaveBeenCalledWith(
+        `https://resolver.eu.confidence.dev/v1/flags:resolve`,
+        expect.objectContaining({
+          method: 'POST',
+          body: JSON.stringify({
+            clientSecret: 'test-secret',
+            evaluationContext: context,
+            apply: true,
+          }),
         }),
-      });
+      );
     });
 
     it('should throw any errors', async () => {
