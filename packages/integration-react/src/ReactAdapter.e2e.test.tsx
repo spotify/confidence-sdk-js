@@ -17,6 +17,7 @@ const confidenceProvider = createConfidenceWebProvider({
   clientSecret: 'RxDVTrXvc6op1XxiQ4OaR31dKbJ39aYV',
   fetchImplementation: fetch as any,
   region: 'eu',
+  timeout: 1000,
 });
 
 describe('ReactAdapter e2e', () => {

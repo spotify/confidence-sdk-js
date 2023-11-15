@@ -5,6 +5,7 @@ const provider = createConfidenceServerProvider({
   clientSecret: 'RxDVTrXvc6op1XxiQ4OaR31dKbJ39aYV',
   region: 'eu',
   fetchImplementation: fetch,
+  timeout: 1000,
 });
 
 OpenFeature.setProvider(provider);

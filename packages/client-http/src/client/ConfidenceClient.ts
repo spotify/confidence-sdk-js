@@ -36,6 +36,7 @@ export type ConfidenceClientOptions = {
   apply: boolean;
   region: 'eu' | 'us';
   baseUrl?: string;
+  timeout: number;
 };
 export type AppliedFlag = {
   flag: string;
@@ -46,12 +47,14 @@ export class ConfidenceClient {
   private readonly backendApplyEnabled: boolean;
   private readonly baseUrl: string;
   private readonly clientSecret: string;
+  private readonly timeout: number;
   private readonly fetchImplementation: typeof fetch;
 
   constructor(options: ConfidenceClientOptions) {
     this.fetchImplementation = options.fetchImplementation;
     this.clientSecret = options.clientSecret;
     this.backendApplyEnabled = options.apply;
+    this.timeout = options.timeout;
     if (options.baseUrl) {
       this.baseUrl = options.baseUrl;
     } else {
@@ -65,10 +68,15 @@ export class ConfidenceClient {
       apply: this.backendApplyEnabled,
       ...options,
     };
+    const controller = new AbortController();
+    const timeoutId = setTimeout(() => controller.abort(), this.timeout);
+
     const response = await this.fetchImplementation(`${this.baseUrl}/v1/flags:resolve`, {
       method: 'POST',
       body: JSON.stringify(payload),
+      signal: controller.signal,
     });
+    clearTimeout(timeoutId);
     const responseBody: ResolveResponse = await response.json();
 
     return {

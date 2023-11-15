@@ -17,6 +17,7 @@ describe('ConfidenceServerProvider E2E tests', () => {
       },
       region: 'eu',
       clientSecret: 'RxDVTrXvc6op1XxiQ4OaR31dKbJ39aYV',
+      timeout: 1000,
     });
     const providerReadyPromise = new Promise<void>(resolve => {
       OpenFeature.addHandler(ProviderEvents.Ready, () => {
