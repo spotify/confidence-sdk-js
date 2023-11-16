@@ -45,7 +45,7 @@ export namespace Configuration {
 
     export function traverse<T, S extends string>(flag: FlagValue<T>, path: S): FlagValue<Traversed<T, S>> {
       let value: any = flag.value;
-      let schema: FlagSchema | undefined = flag.schema;
+      let schema: FlagSchema = flag.schema;
 
       for (const part of path.split('.')) {
         if (typeof schema !== 'object') {
@@ -63,7 +63,7 @@ export namespace Configuration {
   }
 }
 
-function valueMatchesSchema(value: any, schema?: Configuration.FlagSchema): boolean {
+function valueMatchesSchema(value: any, schema: Configuration.FlagSchema): boolean {
   if (value === null || schema === null) {
     return false;
   }
