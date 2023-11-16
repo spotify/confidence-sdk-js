@@ -1,5 +1,24 @@
 # Changelog
 
+## [0.1.2](https://github.com/spotify/confidence-openfeature-provider-js/compare/openfeature-web-provider-v0.1.1...openfeature-web-provider-v0.1.2) (2023-11-16)
+
+
+### 🐛 Bug Fixes
+
+* **web,server,client-http:** send apply for flags with NO_SEGMENT_MATCH ([30b0956](https://github.com/spotify/confidence-openfeature-provider-js/commit/30b0956ae9f505552fae3b6cf19f670cd0c650f9))
+
+
+### ✨ New Features
+
+* **client-http,web,server:** send sdk version ([23245ac](https://github.com/spotify/confidence-openfeature-provider-js/commit/23245acc3200eb9b0315e0d8374d226f442c6607))
+
+
+### Dependencies
+
+* The following workspace dependencies were updated
+  * dependencies
+    * @spotify-confidence/client-http bumped from ^0.1.0 to ^0.1.1
+
 ## [0.1.1](https://github.com/spotify/confidence-openfeature-provider-js/compare/openfeature-web-provider-v0.1.0...openfeature-web-provider-v0.1.1) (2023-11-16)
 
 
