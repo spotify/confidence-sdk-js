@@ -143,7 +143,7 @@ function parseBaseType(obj: ConfidenceSimpleTypes): Configuration.FlagSchema {
 
 function parseSchema(schema: ConfidenceFlagSchema | undefined): Configuration.FlagSchema {
   if (!schema) {
-    return {};
+    return 'undefined';
   }
 
   return Object.keys(schema.schema).reduce((acc: Record<string, Configuration.FlagSchema>, key) => {

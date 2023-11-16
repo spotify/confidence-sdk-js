@@ -128,10 +128,15 @@ describe('ConfidenceClient', () => {
         flagSchema: { schema: { str: { stringSchema: {} } } },
         reason: Configuration.ResolveReason.Match,
       };
+      const fakeFlag1 = {
+        flag: 'flags/test-flag1',
+        variant: '',
+        reason: Configuration.ResolveReason.NoSegmentMatch,
+      };
       mockFetch.mockResolvedValue({
         json: () =>
           Promise.resolve({
-            resolvedFlags: [fakeFlag],
+            resolvedFlags: [fakeFlag, fakeFlag1],
             resolveToken: 'resolve-token',
           }),
       });
@@ -153,6 +158,13 @@ describe('ConfidenceClient', () => {
             },
             reason: Configuration.ResolveReason.Match,
             variant: 'test',
+          },
+          ['test-flag1']: {
+            name: 'test-flag1',
+            schema: 'undefined',
+            value: undefined,
+            reason: Configuration.ResolveReason.NoSegmentMatch,
+            variant: '',
           },
         },
         resolveToken: 'resolve-token',

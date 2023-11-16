@@ -117,6 +117,14 @@ export class ConfidenceWebProvider implements Provider {
         };
       }
 
+      if (Configuration.ResolveReason.NoSegmentMatch === flag.reason) {
+        this.applyManager?.apply(this.configuration.resolveToken, flagName);
+        return {
+          value: defaultValue,
+          reason: 'DEFAULT',
+        };
+      }
+
       let flagValue: Configuration.FlagValue;
       try {
         flagValue = Configuration.FlagValue.traverse(flag, pathParts.join('.'));
