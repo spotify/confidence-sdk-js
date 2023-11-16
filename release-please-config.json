@@ -1,32 +1,29 @@
 {
+  "plugins": ["node-workspace"],
   "packages": {
     "packages/client-http": {
       "component": "client-http",
       "changelog-path": "CHANGELOG.md",
       "bump-minor-pre-major": true,
-      "bump-patch-for-minor-pre-major": true,
-      "extra-files": ["README.md"]
+      "bump-patch-for-minor-pre-major": true
     },
     "packages/integration-react": {
       "component": "integration-react",
       "changelog-path": "CHANGELOG.md",
       "bump-minor-pre-major": true,
-      "bump-patch-for-minor-pre-major": true,
-      "extra-files": ["README.md"]
+      "bump-patch-for-minor-pre-major": true
     },
     "packages/openfeature-server-provider": {
       "component": "openfeature-server-provider",
       "changelog-path": "CHANGELOG.md",
       "bump-minor-pre-major": true,
-      "bump-patch-for-minor-pre-major": true,
-      "extra-files": ["README.md"]
+      "bump-patch-for-minor-pre-major": true
     },
     "packages/openfeature-web-provider": {
       "component": "openfeature-web-provider",
       "changelog-path": "CHANGELOG.md",
       "bump-minor-pre-major": true,
-      "bump-patch-for-minor-pre-major": true,
-      "extra-files": ["README.md"]
+      "bump-patch-for-minor-pre-major": true
     }
   },
   "changelog-sections": [
