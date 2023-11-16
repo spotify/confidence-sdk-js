@@ -70,6 +70,13 @@ const dummyConfiguration: Configuration = {
         bool: 'boolean',
       },
     },
+    ['no-seg-flag']: {
+      name: 'no-seg-flag',
+      variant: '',
+      reason: Configuration.ResolveReason.NoSegmentMatch,
+      value: undefined,
+      schema: 'undefined',
+    },
   },
   resolveToken: 'before-each',
   context: dummyContext,
@@ -204,6 +211,13 @@ describe('ConfidenceProvider', () => {
   });
 
   describe('apply', () => {
+    it('should apply when a flag has no segment match', async () => {
+      await instanceUnderTest.initialize(dummyContext);
+      instanceUnderTest.resolveBooleanEvaluation('no-seg-flag.enabled', false, dummyEvaluationContext, dummyConsole);
+
+      expect(mockApply).toHaveBeenCalledWith(dummyConfiguration.resolveToken, 'no-seg-flag');
+    });
+
     it('should send an apply event', async () => {
       await instanceUnderTest.initialize(dummyContext);
       instanceUnderTest.resolveBooleanEvaluation('testFlag.bool', false, dummyEvaluationContext, dummyConsole);
@@ -225,6 +239,16 @@ describe('ConfidenceProvider', () => {
         },
         reason: 'TARGETING_MATCH',
         value: true,
+      });
+    });
+    it('should resolve default when accessing a flag with no segment match', async () => {
+      await instanceUnderTest.initialize(dummyContext);
+
+      expect(
+        instanceUnderTest.resolveBooleanEvaluation('no-seg-flag.enabled', false, dummyEvaluationContext, dummyConsole),
+      ).toEqual({
+        reason: 'DEFAULT',
+        value: false,
       });
     });
 

@@ -60,6 +60,13 @@ export class ConfidenceServerProvider implements Provider {
         };
       }
 
+      if (Configuration.ResolveReason.NoSegmentMatch === flag.reason) {
+        return {
+          value: defaultValue,
+          reason: 'DEFAULT',
+        };
+      }
+
       let flagValue: Configuration.FlagValue;
       try {
         flagValue = Configuration.FlagValue.traverse(flag, pathParts.join('.'));

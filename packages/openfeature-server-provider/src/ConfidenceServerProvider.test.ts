@@ -58,6 +58,13 @@ const dummyConfiguration: Configuration = {
       reason: Configuration.ResolveReason.Match,
       schema: { bool: 'boolean' },
     },
+    ['no-seg-flag']: {
+      name: 'no-seg-flag',
+      variant: '',
+      reason: Configuration.ResolveReason.NoSegmentMatch,
+      value: undefined,
+      schema: 'undefined',
+    },
   },
   resolveToken: 'before-each',
   context: {},
@@ -96,6 +103,13 @@ describe('ConfidenceServerProvider', () => {
         },
         reason: 'TARGETING_MATCH',
         value: true,
+      });
+    });
+
+    it('should resolve default when accessing a flag with no segment match', async () => {
+      expect(await instanceUnderTest.resolveBooleanEvaluation('no-seg-flag.enabled', false, {}, dummyConsole)).toEqual({
+        reason: 'DEFAULT',
+        value: false,
       });
     });
 

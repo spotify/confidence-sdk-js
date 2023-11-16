@@ -10,6 +10,7 @@ export namespace Configuration {
   }
 
   export type FlagSchema =
+    | 'undefined'
     | 'number'
     | 'boolean'
     | 'string'
