@@ -16,7 +16,7 @@
     "clean": "rm -rf build"
   },
   "devDependencies": {
-    "@spotify-confidence/openfeature-web-provider": "^0.0.4",
+    "@spotify-confidence/openfeature-web-provider": "^0.1.0",
     "@testing-library/jest-dom": "^5.16.5",
     "@testing-library/react": "^14.0.0",
     "@types/node-fetch": "^2.6.4",
