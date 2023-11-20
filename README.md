@@ -2,7 +2,7 @@
 
 ![](https://img.shields.io/badge/lifecycle-beta-a0c3d2.svg)
 
-JavaScript implementation of the Confidence feature provider, to be used in conjunction wth the [OpenFeature SDK](https://github.com/open-feature/js-sdk).
+JavaScript implementation of the [Confidence](https://confidence.spotify.com/) feature provider, to be used in conjunction wth the [OpenFeature SDK](https://github.com/open-feature/js-sdk).
 
 # Usage
 
