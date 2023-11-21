@@ -2,6 +2,7 @@ import {
   EvaluationContext,
   FlagNotFoundError,
   GeneralError,
+  InvalidContextError,
   Logger,
   OpenFeatureAPI,
   ParseError,
@@ -79,6 +80,13 @@ const dummyConfiguration: Configuration = {
       reason: Configuration.ResolveReason.NoSegmentMatch,
       value: undefined,
       schema: 'undefined',
+    },
+    ['targeting-error-flag']: {
+      name: 'targeting-error-flag',
+      variant: '',
+      reason: Configuration.ResolveReason.TargetingKeyError,
+      value: { enabled: true },
+      schema: { enabled: 'boolean' },
     },
   },
   resolveToken: 'before-each',
@@ -231,6 +239,19 @@ describe('ConfidenceProvider', () => {
 
       expect(mockApply).toHaveBeenCalledWith(dummyConfiguration.resolveToken, 'testFlag');
     });
+  });
+
+  it('should throw invalid context error when the reason from confidence is targeting key error', async () => {
+    await instanceUnderTest.initialize(dummyContext);
+
+    expect(() =>
+      instanceUnderTest.resolveBooleanEvaluation(
+        'targeting-error-flag.enabled',
+        false,
+        dummyEvaluationContext,
+        dummyConsole,
+      ),
+    ).toThrow(InvalidContextError);
   });
 
   describe('resolveBooleanEvaluation', () => {

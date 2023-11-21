@@ -2,6 +2,7 @@ import {
   ErrorCode,
   EvaluationContext,
   FlagNotFoundError,
+  InvalidContextError,
   JsonValue,
   Logger,
   ParseError,
@@ -58,6 +59,10 @@ export class ConfidenceServerProvider implements Provider {
     if (!flag) {
       logger.warn('Flag "%s" was not found', flagName);
       throw new FlagNotFoundError(`Flag "${flagName}" was not found`);
+    }
+
+    if (flag.reason === Configuration.ResolveReason.TargetingKeyError) {
+      throw new InvalidContextError();
     }
 
     if (Configuration.ResolveReason.NoSegmentMatch === flag.reason) {

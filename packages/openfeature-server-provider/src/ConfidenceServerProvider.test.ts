@@ -1,4 +1,11 @@
-import { FlagNotFoundError, Logger, ParseError, ProviderStatus, TypeMismatchError } from '@openfeature/js-sdk';
+import {
+  FlagNotFoundError,
+  Logger,
+  ParseError,
+  ProviderStatus,
+  TypeMismatchError,
+  InvalidContextError,
+} from '@openfeature/js-sdk';
 import { ConfidenceClient, Configuration } from '@spotify-confidence/client-http';
 import { ConfidenceServerProvider } from './ConfidenceServerProvider';
 
@@ -65,6 +72,13 @@ const dummyConfiguration: Configuration = {
       value: undefined,
       schema: 'undefined',
     },
+    ['targeting-error-flag']: {
+      name: 'targeting-error-flag',
+      variant: '',
+      reason: Configuration.ResolveReason.TargetingKeyError,
+      value: { enabled: true },
+      schema: { enabled: 'boolean' },
+    },
   },
   resolveToken: 'before-each',
   context: {},
@@ -92,6 +106,12 @@ describe('ConfidenceServerProvider', () => {
     await instanceUnderTest.resolveBooleanEvaluation('testFlag.bool', false, {}, dummyConsole);
 
     expect(resolveMock).toHaveBeenCalledTimes(2);
+  });
+
+  it('should throw invalid context error when the reason from confidence is targeting key error', async () => {
+    expect(() =>
+      instanceUnderTest.resolveBooleanEvaluation('targeting-error-flag.enabled', false, {}, dummyConsole),
+    ).rejects.toThrow(InvalidContextError);
   });
 
   describe('resolveBooleanEvaluation', () => {
