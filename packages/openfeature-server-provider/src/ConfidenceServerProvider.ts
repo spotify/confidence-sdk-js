@@ -1,13 +1,16 @@
 import {
   ErrorCode,
   EvaluationContext,
+  FlagNotFoundError,
   JsonValue,
   Logger,
+  ParseError,
   Provider,
   ProviderMetadata,
   ProviderStatus,
   ResolutionDetails,
   ResolutionReason,
+  TypeMismatchError,
 } from '@openfeature/js-sdk';
 
 import { ConfidenceClient, ResolveContext, Configuration } from '@spotify-confidence/client-http';
@@ -38,7 +41,7 @@ export class ConfidenceServerProvider implements Provider {
     configuration: Configuration,
     flagKey: string,
     defaultValue: T,
-    _logger: Logger,
+    logger: Logger,
   ): ResolutionDetails<T> {
     if (!configuration) {
       return {
@@ -49,63 +52,43 @@ export class ConfidenceServerProvider implements Provider {
     }
 
     const [flagName, ...pathParts] = flagKey.split('.');
-    try {
-      const flag = configuration.flags[flagName];
 
-      if (!flag) {
-        return {
-          errorCode: ErrorCode.FLAG_NOT_FOUND,
-          value: defaultValue,
-          reason: 'ERROR',
-        };
-      }
+    const flag = configuration.flags[flagName];
 
-      if (Configuration.ResolveReason.NoSegmentMatch === flag.reason) {
-        return {
-          value: defaultValue,
-          reason: 'DEFAULT',
-        };
-      }
+    if (!flag) {
+      logger.warn('Flag "%s" was not found', flagName);
+      throw new FlagNotFoundError(`Flag "${flagName}" was not found`);
+    }
 
-      let flagValue: Configuration.FlagValue;
-      try {
-        flagValue = Configuration.FlagValue.traverse(flag, pathParts.join('.'));
-      } catch (e) {
-        return {
-          errorCode: 'PARSE_ERROR' as ErrorCode,
-          value: defaultValue,
-          reason: 'ERROR',
-        };
-      }
-      if (flagValue.value === null) {
-        return {
-          value: defaultValue,
-          reason: mapConfidenceReason(flag.reason),
-        };
-      }
-      if (!Configuration.FlagValue.matches(flagValue, defaultValue)) {
-        return {
-          errorCode: 'TYPE_MISMATCH' as ErrorCode,
-          value: defaultValue,
-          reason: 'ERROR',
-        };
-      }
-
+    if (Configuration.ResolveReason.NoSegmentMatch === flag.reason) {
       return {
-        value: flagValue.value as T,
-        reason: mapConfidenceReason(flag.reason),
-        variant: flag.variant,
-        flagMetadata: {
-          resolveToken: configuration.resolveToken || '',
-        },
-      };
-    } catch (e) {
-      return {
-        errorCode: ErrorCode.GENERAL,
         value: defaultValue,
-        reason: 'ERROR',
+        reason: 'DEFAULT',
       };
     }
+
+    let flagValue: Configuration.FlagValue;
+    try {
+      flagValue = Configuration.FlagValue.traverse(flag, pathParts.join('.'));
+    } catch (e) {
+      logger.warn('Value with path "%s" was not found in flag "%s"', pathParts.join('.'), flagName);
+      throw new ParseError();
+    }
+
+    if (!Configuration.FlagValue.matches(flagValue, defaultValue)) {
+      logger.warn('Value for "%s" is of incorrect type', flagKey);
+      throw new TypeMismatchError();
+    }
+
+    logger.info('Value for "%s" successfully evaluated', flagKey);
+    return {
+      value: flagValue.value === null ? defaultValue : (flagValue.value as T),
+      reason: mapConfidenceReason(flag.reason),
+      variant: flag.variant,
+      flagMetadata: {
+        resolveToken: configuration.resolveToken || '',
+      },
+    };
   }
 
   private async fetchFlag<T>(

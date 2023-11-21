@@ -1,15 +1,18 @@
 import {
-  ErrorCode,
   EvaluationContext,
+  FlagNotFoundError,
+  GeneralError,
   JsonValue,
   Logger,
   OpenFeatureEventEmitter,
+  ParseError,
   Provider,
   ProviderEvents,
   ProviderMetadata,
   ProviderStatus,
   ResolutionDetails,
   ResolutionReason,
+  TypeMismatchError,
 } from '@openfeature/web-sdk';
 import equal from 'fast-deep-equal';
 
@@ -89,11 +92,7 @@ export class ConfidenceWebProvider implements Provider {
   ): ResolutionDetails<T> {
     if (!this.configuration) {
       logger.warn('Provider not ready');
-      return {
-        errorCode: ErrorCode.PROVIDER_NOT_READY,
-        value: defaultValue,
-        reason: 'ERROR',
-      };
+      throw new GeneralError('Provider not ready');
     }
 
     if (!equal(this.configuration.context, this.convertContext(context))) {
@@ -105,72 +104,45 @@ export class ConfidenceWebProvider implements Provider {
 
     const [flagName, ...pathParts] = flagKey.split('.');
 
-    try {
-      const flag = this.configuration.flags[flagName];
+    const flag = this.configuration.flags[flagName];
 
-      if (!flag) {
-        logger.warn('Flag "%s" was not found', flagName);
-        return {
-          errorCode: ErrorCode.FLAG_NOT_FOUND,
-          value: defaultValue,
-          reason: 'ERROR',
-        };
-      }
+    if (!flag) {
+      logger.warn('Flag "%s" was not found', flagName);
+      throw new FlagNotFoundError(`Flag "${flagName}" was not found`);
+    }
 
-      if (Configuration.ResolveReason.NoSegmentMatch === flag.reason) {
-        this.applyManager?.apply(this.configuration.resolveToken, flagName);
-        return {
-          value: defaultValue,
-          reason: 'DEFAULT',
-        };
-      }
-
-      let flagValue: Configuration.FlagValue;
-      try {
-        flagValue = Configuration.FlagValue.traverse(flag, pathParts.join('.'));
-      } catch (e) {
-        logger.warn('Value with path "%s" was not found in flag "%s"', pathParts.join('.'), flagName);
-        return {
-          errorCode: ErrorCode.PARSE_ERROR,
-          value: defaultValue,
-          reason: 'ERROR',
-        };
-      }
-
-      if (flagValue.value === null) {
-        return {
-          value: defaultValue,
-          reason: mapConfidenceReason(flag.reason),
-        };
-      }
-
-      if (!Configuration.FlagValue.matches(flagValue, defaultValue)) {
-        logger.warn('Value for "%s" is of incorrect type', flagKey);
-        return {
-          errorCode: ErrorCode.TYPE_MISMATCH,
-          value: defaultValue,
-          reason: 'ERROR',
-        };
-      }
-
+    if (Configuration.ResolveReason.NoSegmentMatch === flag.reason) {
       this.applyManager?.apply(this.configuration.resolveToken, flagName);
-      logger.info('Value for "%s" successfully evaluated', flagKey);
       return {
-        value: flagValue.value as T,
-        reason: mapConfidenceReason(flag.reason),
-        variant: flag.variant,
-        flagMetadata: {
-          resolveToken: this.configuration.resolveToken,
-        },
-      };
-    } catch (e: unknown) {
-      logger.warn('Error %o occurred in flag evaluation', e);
-      return {
-        errorCode: ErrorCode.GENERAL,
         value: defaultValue,
-        reason: 'ERROR',
+        reason: 'DEFAULT',
       };
     }
+
+    let flagValue: Configuration.FlagValue;
+    try {
+      flagValue = Configuration.FlagValue.traverse(flag, pathParts.join('.'));
+    } catch (e) {
+      logger.warn('Value with path "%s" was not found in flag "%s"', pathParts.join('.'), flagName);
+      throw new ParseError();
+    }
+
+    if (!Configuration.FlagValue.matches(flagValue, defaultValue)) {
+      logger.warn('Value for "%s" is of incorrect type', flagKey);
+      throw new TypeMismatchError();
+    }
+
+    logger.info('Value for "%s" successfully evaluated', flagKey);
+
+    this.applyManager?.apply(this.configuration.resolveToken, flagName);
+    return {
+      value: flagValue.value === null ? defaultValue : (flagValue.value as T),
+      reason: mapConfidenceReason(flag.reason),
+      variant: flag.variant,
+      flagMetadata: {
+        resolveToken: this.configuration.resolveToken,
+      },
+    };
   }
 
   resolveBooleanEvaluation(

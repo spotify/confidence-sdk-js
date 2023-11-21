@@ -1,4 +1,4 @@
-import { OpenFeature, ProviderEvents } from '@openfeature/web-sdk';
+import { GeneralError, OpenFeature, ProviderEvents, ProviderStatus } from '@openfeature/web-sdk';
 import axios from 'axios';
 import { createConfidenceWebProvider } from './factory';
 
@@ -34,29 +34,58 @@ describe('ConfidenceHTTPProvider E2E tests', () => {
     return providerReadyPromise;
   });
 
-  it('should return defaults after the timeout', async () => {
-    const confidenceProvider = createConfidenceWebProvider({
-      fetchImplementation: global.fetch.bind(global),
-      region: 'eu',
-      clientSecret: 'RxDVTrXvc6op1XxiQ4OaR31dKbJ39aYV',
-      timeout: 0,
+  describe('timeout', () => {
+    it('should have error status and throw provider not ready when timeout hit', async () => {
+      const confidenceProvider = createConfidenceWebProvider({
+        fetchImplementation: global.fetch.bind(global),
+        region: 'eu',
+        clientSecret: 'RxDVTrXvc6op1XxiQ4OaR31dKbJ39aYV',
+        timeout: 0,
+      });
+
+      await confidenceProvider.onContextChange!({}, { targetingKey: 'user-a' });
+
+      expect(confidenceProvider.status).toEqual(ProviderStatus.ERROR);
+      expect(() =>
+        confidenceProvider.resolveBooleanEvaluation(
+          'web-sdk-e2e-flag.bool',
+          true,
+          { targetingKey: 'user-a' },
+          {
+            info: jest.fn(),
+            warn: jest.fn(),
+            error: jest.fn(),
+            debug: jest.fn(),
+          },
+        ),
+      ).toThrow(new GeneralError('Provider not ready'));
     });
 
-    await confidenceProvider.onContextChange!({}, { targetingKey: 'user-a' });
+    it('should have ready status and return values when timeout not hit', async () => {
+      const confidenceProvider = createConfidenceWebProvider({
+        fetchImplementation: global.fetch.bind(global),
+        region: 'eu',
+        clientSecret: 'RxDVTrXvc6op1XxiQ4OaR31dKbJ39aYV',
+        timeout: 1000,
+      });
 
-    const flag = confidenceProvider.resolveStringEvaluation(
-      'web-sdk-e2e-flag.str',
-      'default',
-      { targetingKey: 'user-a' },
-      {
-        info: jest.fn(),
-        warn: jest.fn(),
-        error: jest.fn(),
-        debug: jest.fn(),
-      },
-    );
+      await confidenceProvider.onContextChange!({}, { targetingKey: 'user-a' });
 
-    expect(flag.value).toEqual('default');
+      expect(confidenceProvider.status).toEqual(ProviderStatus.READY);
+      expect(
+        confidenceProvider.resolveBooleanEvaluation(
+          'web-sdk-e2e-flag.bool',
+          true,
+          { targetingKey: 'user-a' },
+          {
+            info: jest.fn(),
+            warn: jest.fn(),
+            error: jest.fn(),
+            debug: jest.fn(),
+          },
+        ),
+      ).toBeTruthy();
+    });
   });
 
   it('should resolve a boolean e2e', async () => {

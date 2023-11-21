@@ -1,10 +1,13 @@
 import {
-  ErrorCode,
   EvaluationContext,
+  FlagNotFoundError,
+  GeneralError,
   Logger,
   OpenFeatureAPI,
+  ParseError,
   ProviderEvents,
   ProviderStatus,
+  TypeMismatchError,
 } from '@openfeature/web-sdk';
 import { ConfidenceWebProvider } from './ConfidenceWebProvider';
 import { ConfidenceClient, Configuration, ResolveContext } from '@spotify-confidence/client-http';
@@ -213,7 +216,11 @@ describe('ConfidenceProvider', () => {
   describe('apply', () => {
     it('should apply when a flag has no segment match', async () => {
       await instanceUnderTest.initialize(dummyContext);
-      instanceUnderTest.resolveBooleanEvaluation('no-seg-flag.enabled', false, dummyEvaluationContext, dummyConsole);
+      try {
+        instanceUnderTest.resolveBooleanEvaluation('no-seg-flag.enabled', false, dummyEvaluationContext, dummyConsole);
+      } catch (e) {
+        expect(e).toBeDefined();
+      }
 
       expect(mockApply).toHaveBeenCalledWith(dummyConfiguration.resolveToken, 'no-seg-flag');
     });
@@ -241,6 +248,7 @@ describe('ConfidenceProvider', () => {
         value: true,
       });
     });
+
     it('should resolve default when accessing a flag with no segment match', async () => {
       await instanceUnderTest.initialize(dummyContext);
 
@@ -267,67 +275,34 @@ describe('ConfidenceProvider', () => {
       });
     });
 
-    it('should return default if the provider is not ready', () => {
-      const actual = instanceUnderTest.resolveBooleanEvaluation(
-        'testFlag.bool',
-        false,
-        dummyEvaluationContext,
-        dummyConsole,
-      );
-
-      expect(actual).toEqual({
-        value: false,
-        errorCode: ErrorCode.PROVIDER_NOT_READY,
-        reason: 'ERROR',
-      });
+    it('should throw if the provider is not ready', () => {
+      expect(() =>
+        instanceUnderTest.resolveBooleanEvaluation('testFlag.bool', false, dummyEvaluationContext, dummyConsole),
+      ).toThrow(new GeneralError('Provider not ready'));
     });
 
-    it('should return default if the flag is not found', async () => {
+    it('should throw if the flag is not found', async () => {
       await instanceUnderTest.initialize(dummyContext);
-      const actual = instanceUnderTest.resolveBooleanEvaluation(
-        'notARealFlag.bool',
-        false,
-        dummyEvaluationContext,
-        dummyConsole,
-      );
 
-      expect(actual).toEqual({
-        value: false,
-        errorCode: ErrorCode.FLAG_NOT_FOUND,
-        reason: 'ERROR',
-      });
+      expect(() =>
+        instanceUnderTest.resolveBooleanEvaluation('notARealFlag.bool', false, dummyEvaluationContext, dummyConsole),
+      ).toThrow(new FlagNotFoundError(`Flag "notARealFlag" was not found`));
     });
 
-    it('should return default if the flag requested is the wrong type', async () => {
+    it('should throw if the flag requested is the wrong type', async () => {
       await instanceUnderTest.initialize(dummyContext);
-      const actual = instanceUnderTest.resolveBooleanEvaluation(
-        'testFlag.str',
-        false,
-        dummyEvaluationContext,
-        dummyConsole,
-      );
 
-      expect(actual).toEqual({
-        value: false,
-        errorCode: ErrorCode.TYPE_MISMATCH,
-        reason: 'ERROR',
-      });
+      expect(() =>
+        instanceUnderTest.resolveBooleanEvaluation('testFlag.str', false, dummyEvaluationContext, dummyConsole),
+      ).toThrow(TypeMismatchError);
     });
 
-    it('should return default if the value requested is not in the flag schema', async () => {
+    it('should throw if the value requested is not in the flag schema', async () => {
       await instanceUnderTest.initialize(dummyContext);
-      const actual = instanceUnderTest.resolveBooleanEvaluation(
-        'testFlag.404',
-        false,
-        dummyEvaluationContext,
-        dummyConsole,
-      );
 
-      expect(actual).toEqual({
-        value: false,
-        errorCode: ErrorCode.PARSE_ERROR,
-        reason: 'ERROR',
-      });
+      expect(() =>
+        instanceUnderTest.resolveBooleanEvaluation('testFlag.404', false, dummyEvaluationContext, dummyConsole),
+      ).toThrow(ParseError);
     });
   });
 
@@ -392,52 +367,34 @@ describe('ConfidenceProvider', () => {
       });
     });
 
-    it('should return default if the provider is not ready', () => {
-      const actual = instanceUnderTest.resolveNumberEvaluation('testFlag.int', 1, dummyEvaluationContext, dummyConsole);
-
-      expect(actual).toEqual({
-        value: 1,
-        errorCode: ErrorCode.PROVIDER_NOT_READY,
-        reason: 'ERROR',
-      });
+    it('should throw if the provider is not ready', () => {
+      expect(() =>
+        instanceUnderTest.resolveNumberEvaluation('testFlag.int', 1, dummyEvaluationContext, dummyConsole),
+      ).toThrow(new GeneralError('Provider not ready'));
     });
 
-    it('should return default if the flag is not found', async () => {
+    it('should throw if the flag is not found', async () => {
       await instanceUnderTest.initialize(dummyContext);
-      const actual = instanceUnderTest.resolveNumberEvaluation(
-        'notARealFlag.int',
-        1,
-        dummyEvaluationContext,
-        dummyConsole,
-      );
 
-      expect(actual).toEqual({
-        value: 1,
-        errorCode: ErrorCode.FLAG_NOT_FOUND,
-        reason: 'ERROR',
-      });
+      expect(() =>
+        instanceUnderTest.resolveNumberEvaluation('notARealFlag.int', 1, dummyEvaluationContext, dummyConsole),
+      ).toThrow(FlagNotFoundError);
     });
 
-    it('should return default if the flag requested is the wrong type', async () => {
+    it('should throw if the flag requested is the wrong type', async () => {
       await instanceUnderTest.initialize(dummyContext);
-      const actual = instanceUnderTest.resolveNumberEvaluation('testFlag.str', 1, dummyEvaluationContext, dummyConsole);
 
-      expect(actual).toEqual({
-        value: 1,
-        errorCode: ErrorCode.TYPE_MISMATCH,
-        reason: 'ERROR',
-      });
+      expect(() =>
+        instanceUnderTest.resolveNumberEvaluation('testFlag.str', 1, dummyEvaluationContext, dummyConsole),
+      ).toThrow(TypeMismatchError);
     });
 
-    it('should return default if the value requested is not in the flag schema', async () => {
+    it('should throw if the value requested is not in the flag schema', async () => {
       await instanceUnderTest.initialize(dummyContext);
-      const actual = instanceUnderTest.resolveNumberEvaluation('testFlag.404', 1, dummyEvaluationContext, dummyConsole);
 
-      expect(actual).toEqual({
-        value: 1,
-        errorCode: ErrorCode.PARSE_ERROR,
-        reason: 'ERROR',
-      });
+      expect(() =>
+        instanceUnderTest.resolveNumberEvaluation('testFlag.404', 1, dummyEvaluationContext, dummyConsole),
+      ).toThrow(ParseError);
     });
   });
 
@@ -472,83 +429,42 @@ describe('ConfidenceProvider', () => {
       });
     });
 
-    it('should return default if the provider is not ready', () => {
-      const actual = instanceUnderTest.resolveStringEvaluation(
-        'testFlag.str',
-        'default',
-        dummyEvaluationContext,
-        dummyConsole,
-      );
-
-      expect(actual).toEqual({
-        value: 'default',
-        errorCode: ErrorCode.PROVIDER_NOT_READY,
-        reason: 'ERROR',
-      });
+    it('should throw if the provider is not ready', () => {
+      expect(() =>
+        instanceUnderTest.resolveStringEvaluation('testFlag.str', 'default', dummyEvaluationContext, dummyConsole),
+      ).toThrow(new GeneralError('Provider not ready'));
     });
 
-    it('should return default if the flag is not found', async () => {
+    it('should throw if the flag is not found', async () => {
       await instanceUnderTest.initialize(dummyContext);
-      const actual = instanceUnderTest.resolveStringEvaluation(
-        'notARealFlag.str',
-        'default',
-        dummyEvaluationContext,
-        dummyConsole,
-      );
 
-      expect(actual).toEqual({
-        value: 'default',
-        errorCode: ErrorCode.FLAG_NOT_FOUND,
-        reason: 'ERROR',
-      });
+      expect(() =>
+        instanceUnderTest.resolveStringEvaluation('notARealFlag.str', 'default', dummyEvaluationContext, dummyConsole),
+      ).toThrow(FlagNotFoundError);
     });
 
-    it('should return default if the flag requested is the wrong type', async () => {
+    it('should throw if the flag requested is the wrong type', async () => {
       await instanceUnderTest.initialize(dummyContext);
-      const actual = instanceUnderTest.resolveStringEvaluation(
-        'testFlag.int',
-        'default',
-        dummyEvaluationContext,
-        dummyConsole,
-      );
 
-      expect(actual).toEqual({
-        value: 'default',
-        errorCode: ErrorCode.TYPE_MISMATCH,
-        reason: 'ERROR',
-      });
+      expect(() =>
+        instanceUnderTest.resolveStringEvaluation('testFlag.int', 'default', dummyEvaluationContext, dummyConsole),
+      ).toThrow(TypeMismatchError);
     });
 
-    it('should return default if the flag requested is the wrong type from nested obj', async () => {
+    it('should throw if the flag requested is the wrong type from nested obj', async () => {
       await instanceUnderTest.initialize(dummyContext);
-      const actual = instanceUnderTest.resolveStringEvaluation(
-        'testFlag.obj.int',
-        'default',
-        dummyEvaluationContext,
-        dummyConsole,
-      );
 
-      expect(actual).toEqual({
-        value: 'default',
-        errorCode: ErrorCode.TYPE_MISMATCH,
-        reason: 'ERROR',
-      });
+      expect(() =>
+        instanceUnderTest.resolveStringEvaluation('testFlag.obj.int', 'default', dummyEvaluationContext, dummyConsole),
+      ).toThrow(TypeMismatchError);
     });
 
-    it('should return default if the value requested is not in the flag schema', async () => {
+    it('should throw if the value requested is not in the flag schema', async () => {
       await instanceUnderTest.initialize(dummyContext);
-      const actual = instanceUnderTest.resolveStringEvaluation(
-        'testFlag.404',
-        'default',
-        dummyEvaluationContext,
-        dummyConsole,
-      );
 
-      expect(actual).toEqual({
-        value: 'default',
-        errorCode: ErrorCode.PARSE_ERROR,
-        reason: 'ERROR',
-      });
+      expect(() =>
+        instanceUnderTest.resolveStringEvaluation('testFlag.404', 'default', dummyEvaluationContext, dummyConsole),
+      ).toThrow(ParseError);
     });
   });
 
@@ -603,7 +519,7 @@ describe('ConfidenceProvider', () => {
     it('should resolve a full object with type mismatch default', async () => {
       await instanceUnderTest.initialize(dummyContext);
 
-      expect(
+      expect(() =>
         instanceUnderTest.resolveObjectEvaluation(
           'testFlag.obj',
           {
@@ -612,76 +528,37 @@ describe('ConfidenceProvider', () => {
           dummyEvaluationContext,
           dummyConsole,
         ),
-      ).toEqual({
-        errorCode: 'TYPE_MISMATCH',
-        reason: 'ERROR',
-        value: {
-          testBool: false,
-        },
-      });
+      ).toThrow(TypeMismatchError);
     });
 
-    it('should return default if the provider is not ready', () => {
-      const actual = instanceUnderTest.resolveObjectEvaluation(
-        'testFlag.obj',
-        {},
-        dummyEvaluationContext,
-        dummyConsole,
-      );
-
-      expect(actual).toEqual({
-        value: {},
-        errorCode: ErrorCode.PROVIDER_NOT_READY,
-        reason: 'ERROR',
-      });
+    it('should throw if the provider is not ready', () => {
+      expect(() =>
+        instanceUnderTest.resolveObjectEvaluation('testFlag.obj', {}, dummyEvaluationContext, dummyConsole),
+      ).toThrow(new GeneralError('Provider not ready'));
     });
 
-    it('should return default if the flag is not found', async () => {
+    it('should throw if the flag is not found', async () => {
       await instanceUnderTest.initialize(dummyContext);
-      const actual = instanceUnderTest.resolveObjectEvaluation(
-        'notARealFlag.obj',
-        {},
-        dummyEvaluationContext,
-        dummyConsole,
-      );
 
-      expect(actual).toEqual({
-        value: {},
-        errorCode: ErrorCode.FLAG_NOT_FOUND,
-        reason: 'ERROR',
-      });
+      expect(() =>
+        instanceUnderTest.resolveObjectEvaluation('notARealFlag.obj', {}, dummyEvaluationContext, dummyConsole),
+      ).toThrow(FlagNotFoundError);
     });
 
-    it('should return default if the flag requested is the wrong type', async () => {
+    it('should throw if the flag requested is the wrong type', async () => {
       await instanceUnderTest.initialize(dummyContext);
-      const actual = instanceUnderTest.resolveObjectEvaluation(
-        'testFlag.str',
-        {},
-        dummyEvaluationContext,
-        dummyConsole,
-      );
 
-      expect(actual).toEqual({
-        value: {},
-        errorCode: ErrorCode.TYPE_MISMATCH,
-        reason: 'ERROR',
-      });
+      expect(() =>
+        instanceUnderTest.resolveObjectEvaluation('testFlag.str', {}, dummyEvaluationContext, dummyConsole),
+      ).toThrow(TypeMismatchError);
     });
 
-    it('should return default if the value requested is not in the flag schema', async () => {
+    it('should throw if the value requested is not in the flag schema', async () => {
       await instanceUnderTest.initialize(dummyContext);
-      const actual = instanceUnderTest.resolveObjectEvaluation(
-        'testFlag.404',
-        {},
-        dummyEvaluationContext,
-        dummyConsole,
-      );
 
-      expect(actual).toEqual({
-        value: {},
-        errorCode: ErrorCode.PARSE_ERROR,
-        reason: 'ERROR',
-      });
+      expect(() =>
+        instanceUnderTest.resolveObjectEvaluation('testFlag.404', {}, dummyEvaluationContext, dummyConsole),
+      ).toThrow(ParseError);
     });
   });
 });
