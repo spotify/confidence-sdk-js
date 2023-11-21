@@ -33,6 +33,7 @@ const provider = createConfidenceWebProvider({
   clientSecret: 'mysecret',
   region: 'eu',
   fetchImplementation: window.fetch.bind(window),
+  timeout: 1000,
 });
 OpenFeature.setProvider(provider);
 
