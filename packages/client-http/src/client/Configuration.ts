@@ -6,6 +6,7 @@ export namespace Configuration {
     Match = 'RESOLVE_REASON_MATCH',
     NoSegmentMatch = 'RESOLVE_REASON_NO_SEGMENT_MATCH',
     NoTreatmentMatch = 'RESOLVE_REASON_NO_TREATMENT_MATCH',
+    TargetingKeyError = 'RESOLVE_REASON_TARGETING_KEY_ERROR',
     Archived = 'RESOLVE_REASON_FLAG_ARCHIVED',
   }
 
