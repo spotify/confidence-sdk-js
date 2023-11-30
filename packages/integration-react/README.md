@@ -23,6 +23,10 @@ ProviderEvents events will be emitted only when we are done with the network req
 network response. If the network response failed, default values will be returned on flag evaluation, if the network
 request is successful we update the flags and then emit `ProviderEvents.Ready`.
 
+Notes:
+
+- It's advised not to perform `setContext` while `setProvider` is running, you can await setting the context first, or listen to the `ProviderEvent.Ready` via a handler on `OpenFeaure`.
+
 ```tsx
 import React, { useEffect } from 'react';
 import { createConfidenceWebProvider } from '@spotify-confidence/openfeature-web-provider';
@@ -35,12 +39,13 @@ const provider = createConfidenceWebProvider({
   fetchImplementation: window.fetch.bind(window),
   timeout: 1000,
 });
-OpenFeature.setProvider(provider);
 
 const App = () => {
   useEffect(() => {
     OpenFeature.setContext({
       targetingKey: 'myTargetingKey',
+    }).then(() => {
+      OpenFeature.setProvider(provider);
     });
   }, []);
 
