@@ -39,7 +39,7 @@ export type ConfidenceClientOptions = {
   fetchImplementation: typeof fetch;
   clientSecret: string;
   apply: boolean;
-  region: 'eu' | 'us';
+  region?: 'global' | 'eu' | 'us';
   baseUrl?: string;
   sdk: SDK;
   timeout: number;
@@ -66,9 +66,10 @@ export class ConfidenceClient {
     if (options.baseUrl) {
       this.baseUrl = options.baseUrl;
     } else {
-      this.baseUrl = `https://resolver.${options.region}.confidence.dev`;
+      this.baseUrl = getConfidenceUrl(options.region);
     }
   }
+
   async resolve(context: ResolveContext, options?: { apply?: boolean; flags: string[] }): Promise<Configuration> {
     const payload: ResolveRequest = {
       clientSecret: this.clientSecret,
@@ -112,6 +113,13 @@ export class ConfidenceClient {
       body: JSON.stringify(payload),
     });
   }
+}
+
+function getConfidenceUrl(region?: ConfidenceClientOptions['region']): string {
+  if (region === 'global' || !region) {
+    return 'https://resolver.confidence.dev';
+  }
+  return `https://resolver.${region}.confidence.dev`;
 }
 
 function resolvedFlagToFlag(flag: ResolvedFlag): Configuration.Flag {
