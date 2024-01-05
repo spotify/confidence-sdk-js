@@ -29,7 +29,6 @@ import { OpenFeature, OpenFeatureAPI } from '@openfeature/web-sdk';
 
 const provider = createConfidenceWebProvider({
   clientSecret: 'mysecret',
-  region: 'eu',
   fetchImplementation: window.fetch.bind(window),
   timeout: 1000,
 });
@@ -47,6 +46,18 @@ Notes:
 
 - It's advised not to perform `setContext` while `setProvider` is running, you can await setting the context first, or listen to the `ProviderEvent.Ready` via a handler on `OpenFeaure`.
 - It's advised not to perform resolves while `setProvider` and `setContext` are running: resolves might return the default value with reason `STALE` during such operations.
+
+## Region
+
+The region option is used to set the region for the network request to the Confidence backend. When the region is not set, the default (global) region will be used.
+The current regions are: `eu` and `us`, the region can be set as follows:
+
+```ts
+const provider = createConfidenceWebProvider({
+  region: 'eu', // or 'us'
+  // ... other options
+});
+```
 
 ## Timeout
 

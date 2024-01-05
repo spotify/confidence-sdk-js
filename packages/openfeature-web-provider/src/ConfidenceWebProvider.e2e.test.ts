@@ -15,7 +15,6 @@ describe('ConfidenceHTTPProvider E2E tests', () => {
             } as Response),
         );
       },
-      region: 'eu',
       clientSecret: 'RxDVTrXvc6op1XxiQ4OaR31dKbJ39aYV',
       timeout: 1000,
     });
