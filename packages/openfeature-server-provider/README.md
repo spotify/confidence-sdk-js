@@ -23,7 +23,6 @@ import { OpenFeature } from '@openfeature/js-sdk';
 
 const provider = createConfidenceServerProvider({
   clientSecret: 'your-client-secret',
-  region: 'eu',
   fetchImplementation: fetch,
   timeout: 1000,
 });
@@ -39,6 +38,18 @@ client
   .then(result => {
     console.log('result:', result);
   });
+```
+
+## Region
+
+The region option is used to set the region for the network request to the Confidence backend. When the region is not set, the default (global) region will be used.
+The current regions are: `eu` and `us`, the region can be set as follows:
+
+```ts
+const provider = createConfidenceServerProvider({
+  region: 'eu', // or 'us'
+  // ... other options
+});
 ```
 
 ## Timeout
