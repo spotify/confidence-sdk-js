@@ -78,6 +78,63 @@ describe('ConfidenceClient', () => {
       );
     });
 
+    it.each`
+      region       | url
+      ${'eu'}      | ${'https://resolver.eu.confidence.dev/v1/flags:resolve'}
+      ${'us'}      | ${'https://resolver.us.confidence.dev/v1/flags:resolve'}
+      ${'global'}  | ${'https://resolver.confidence.dev/v1/flags:resolve'}
+      ${undefined} | ${'https://resolver.confidence.dev/v1/flags:resolve'}
+    `(`should use the correct url for region $region`, async ({ region, url }) => {
+      mockFetch.mockResolvedValue({
+        json: () =>
+          Promise.resolve({
+            resolvedFlags: [],
+            resolveToken: '',
+          }),
+      });
+
+      const regionBasedInstance = new ConfidenceClient({
+        clientSecret: 'test-secret',
+        fetchImplementation: mockFetch,
+        apply: true,
+        region,
+        sdk: {
+          id: 'SDK_ID_JS_WEB_PROVIDER',
+          version: 'TESTING',
+        },
+        timeout: 10,
+      });
+
+      await regionBasedInstance.resolve({ targeting_key: 'a' }, { apply: false, flags: ['test-flag'] });
+
+      expect(mockFetch).toHaveBeenCalledWith(url, expect.anything());
+    });
+
+    it(`should default to the global region`, async () => {
+      mockFetch.mockResolvedValue({
+        json: () =>
+          Promise.resolve({
+            resolvedFlags: [],
+            resolveToken: '',
+          }),
+      });
+
+      const regionBasedInstance = new ConfidenceClient({
+        clientSecret: 'test-secret',
+        fetchImplementation: mockFetch,
+        apply: true,
+        sdk: {
+          id: 'SDK_ID_JS_WEB_PROVIDER',
+          version: 'TESTING',
+        },
+        timeout: 10,
+      });
+
+      await regionBasedInstance.resolve({ targeting_key: 'a' }, { apply: false, flags: ['test-flag'] });
+
+      expect(mockFetch).toHaveBeenCalledWith('https://resolver.confidence.dev/v1/flags:resolve', expect.anything());
+    });
+
     it('should call resolve with the context', async () => {
       mockFetch.mockResolvedValue({
         json: () =>
