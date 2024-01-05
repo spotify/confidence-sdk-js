@@ -17,7 +17,7 @@ export function createConfidenceWebProvider(options: ConfidenceWebProviderFactor
     apply: options.apply === 'backend',
     sdk: {
       id: 'SDK_ID_JS_WEB_PROVIDER',
-      version: '0.1.2', // x-release-please-version
+      version: '0.1.3', // x-release-please-version
     },
   });
 

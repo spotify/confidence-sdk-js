@@ -1,5 +1,24 @@
 # Changelog
 
+## [0.1.3](https://github.com/spotify/confidence-openfeature-provider-js/compare/openfeature-server-provider-v0.1.2...openfeature-server-provider-v0.1.3) (2024-01-05)
+
+
+### ✨ New Features
+
+* **server:** default to global region ([c87a9d0](https://github.com/spotify/confidence-openfeature-provider-js/commit/c87a9d045e7de02bd98930c50b622768b18fedc8))
+
+
+### 🔄 Refactoring
+
+* **examples:** use the default region in an example (node) ([0bc03e7](https://github.com/spotify/confidence-openfeature-provider-js/commit/0bc03e79c36a6c72dcfc46f3ad1de069474fed53))
+
+
+### Dependencies
+
+* The following workspace dependencies were updated
+  * dependencies
+    * @spotify-confidence/client-http bumped from ^0.1.1 to ^0.1.2
+
 ## [0.1.2](https://github.com/spotify/confidence-openfeature-provider-js/compare/openfeature-server-provider-v0.1.1...openfeature-server-provider-v0.1.2) (2023-11-16)
 
 

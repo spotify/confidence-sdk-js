@@ -18,7 +18,7 @@ export function createConfidenceServerProvider(options: ConfidenceProviderFactor
     apply: true,
     sdk: {
       id: 'SDK_ID_JS_SERVER_PROVIDER',
-      version: '0.1.2', // x-release-please-version
+      version: '0.1.3', // x-release-please-version
     },
   });
 
