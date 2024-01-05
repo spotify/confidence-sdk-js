@@ -35,7 +35,6 @@ import { useStringValue } from '@spotify-confidence/integration-react';
 
 const provider = createConfidenceWebProvider({
   clientSecret: 'mysecret',
-  region: 'eu',
   fetchImplementation: window.fetch.bind(window),
   timeout: 1000,
 });
