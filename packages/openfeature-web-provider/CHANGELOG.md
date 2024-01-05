@@ -1,5 +1,29 @@
 # Changelog
 
+## [0.1.3](https://github.com/spotify/confidence-openfeature-provider-js/compare/openfeature-web-provider-v0.1.2...openfeature-web-provider-v0.1.3) (2024-01-05)
+
+
+### 🐛 Bug Fixes
+
+* **web:** set max buffer size for apply ([f774150](https://github.com/spotify/confidence-openfeature-provider-js/commit/f774150d47b92ba6780af6e47a8705a32f7c35d6))
+
+
+### ✨ New Features
+
+* **web:** default to global region ([2f09c27](https://github.com/spotify/confidence-openfeature-provider-js/commit/2f09c275062b916f4e924e87dcc8256e9c23a6fc))
+
+
+### 🔄 Refactoring
+
+* **examples:** use the default region in an example (node) ([0bc03e7](https://github.com/spotify/confidence-openfeature-provider-js/commit/0bc03e79c36a6c72dcfc46f3ad1de069474fed53))
+
+
+### Dependencies
+
+* The following workspace dependencies were updated
+  * dependencies
+    * @spotify-confidence/client-http bumped from ^0.1.1 to ^0.1.2
+
 ## [0.1.2](https://github.com/spotify/confidence-openfeature-provider-js/compare/openfeature-web-provider-v0.1.1...openfeature-web-provider-v0.1.2) (2023-11-16)
 
 

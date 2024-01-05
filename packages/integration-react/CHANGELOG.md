@@ -6,6 +6,27 @@
   * devDependencies
     * @spotify-confidence/openfeature-web-provider bumped from ^0.1.1 to ^0.1.2
 
+## [0.1.3](https://github.com/spotify/confidence-openfeature-provider-js/compare/integration-react-v0.1.2...integration-react-v0.1.3) (2024-01-05)
+
+
+### 📚 Documentation
+
+* **react:** add note on setting provider before setting context ([e785c22](https://github.com/spotify/confidence-openfeature-provider-js/commit/e785c2283913f1f4a9e3875d1638c4961f9a9a5b))
+* **react:** add timeout to docs ([952b7b6](https://github.com/spotify/confidence-openfeature-provider-js/commit/952b7b6c6e067c1191dd2bc492fce16a76391b6b))
+
+
+### 🔄 Refactoring
+
+* **examples:** use the default region in an example (node) ([0bc03e7](https://github.com/spotify/confidence-openfeature-provider-js/commit/0bc03e79c36a6c72dcfc46f3ad1de069474fed53))
+* **react:** use global url in e2e tests ([9dbe2be](https://github.com/spotify/confidence-openfeature-provider-js/commit/9dbe2be3493025916e5596842be6b9a645edcc60))
+
+
+### Dependencies
+
+* The following workspace dependencies were updated
+  * devDependencies
+    * @spotify-confidence/openfeature-web-provider bumped from ^0.1.2 to ^0.1.3
+
 ## [0.1.1](https://github.com/spotify/confidence-openfeature-provider-js/compare/integration-react-v0.1.0...integration-react-v0.1.1) (2023-11-16)
 
 
