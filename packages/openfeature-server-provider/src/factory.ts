@@ -1,11 +1,11 @@
 import { Provider } from '@openfeature/js-sdk';
 
-import { ConfidenceClient } from '@spotify-confidence/client-http';
+import { ConfidenceClient, ConfidenceClientOptions } from '@spotify-confidence/client-http';
 
 import { ConfidenceServerProvider } from './ConfidenceServerProvider';
 
 type ConfidenceProviderFactoryOptions = {
-  region: 'eu' | 'us';
+  region?: ConfidenceClientOptions['region'];
   fetchImplementation: typeof fetch;
   clientSecret: string;
   baseUrl?: string;
