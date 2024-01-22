@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.1.3](https://github.com/spotify/confidence-openfeature-provider-js/compare/client-http-v0.1.2...client-http-v0.1.3) (2024-01-22)
+
+
+### 🐛 Bug Fixes
+
+* **client-http:** duplicate events on buffer overflow ([57ff968](https://github.com/spotify/confidence-openfeature-provider-js/commit/57ff9680931a11ee4db9fe80e54592e878bc21eb))
+
 ## [0.1.2](https://github.com/spotify/confidence-openfeature-provider-js/compare/client-http-v0.1.1...client-http-v0.1.2) (2024-01-05)
 
 

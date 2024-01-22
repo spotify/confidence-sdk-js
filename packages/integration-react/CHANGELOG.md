@@ -6,6 +6,12 @@
   * devDependencies
     * @spotify-confidence/openfeature-web-provider bumped from ^0.1.1 to ^0.1.2
 
+### Dependencies
+
+* The following workspace dependencies were updated
+  * devDependencies
+    * @spotify-confidence/openfeature-web-provider bumped from ^0.1.3 to ^0.1.4
+
 ## [0.1.3](https://github.com/spotify/confidence-openfeature-provider-js/compare/integration-react-v0.1.2...integration-react-v0.1.3) (2024-01-05)
 
 
