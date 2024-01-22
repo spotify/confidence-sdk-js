@@ -1,5 +1,11 @@
 # Changelog
 
+### Dependencies
+
+* The following workspace dependencies were updated
+  * dependencies
+    * @spotify-confidence/client-http bumped from ^0.1.2 to ^0.1.3
+
 ## [0.1.3](https://github.com/spotify/confidence-openfeature-provider-js/compare/openfeature-server-provider-v0.1.2...openfeature-server-provider-v0.1.3) (2024-01-05)
 
 
