@@ -1,10 +1,10 @@
 import { ConfidenceClient } from './client';
 import { ApplyManager } from './ApplyManager';
 
-const resolveMock = jest.fn();
+const applyMock = jest.fn();
 const mockClient = {
   resolve: jest.fn(),
-  apply: resolveMock,
+  apply: applyMock,
 } as jest.MockedObject<ConfidenceClient>;
 
 describe('ApplyManager', () => {
@@ -17,7 +17,7 @@ describe('ApplyManager', () => {
       maxBufferSize: 3,
       client: mockClient,
     });
-    resolveMock.mockResolvedValue({});
+    applyMock.mockResolvedValue({});
     jest.useFakeTimers();
     jest.setSystemTime(fakeDate);
   });
@@ -30,12 +30,12 @@ describe('ApplyManager', () => {
     instanceUnderTest.apply('some-token', 'apply-test');
 
     jest.advanceTimersByTime(99);
-    expect(resolveMock).toHaveBeenCalledTimes(0);
+    expect(applyMock).toHaveBeenCalledTimes(0);
 
     jest.advanceTimersByTime(1);
-    expect(resolveMock).toHaveBeenCalledTimes(1);
+    expect(applyMock).toHaveBeenCalledTimes(1);
 
-    expect(resolveMock).toHaveBeenCalledWith(
+    expect(applyMock).toHaveBeenCalledWith(
       [
         {
           flag: 'flags/apply-test',
@@ -55,12 +55,12 @@ describe('ApplyManager', () => {
     instanceUnderTest.apply('some-token', 'apply-test1');
     const secondApplyTime = new Date().toISOString();
 
-    expect(resolveMock).toHaveBeenCalledTimes(0);
+    expect(applyMock).toHaveBeenCalledTimes(0);
 
     jest.advanceTimersByTime(100);
-    expect(resolveMock).toHaveBeenCalledTimes(1);
+    expect(applyMock).toHaveBeenCalledTimes(1);
 
-    expect(resolveMock).toHaveBeenCalledWith(
+    expect(applyMock).toHaveBeenCalledWith(
       [
         {
           flag: 'flags/apply-test',
@@ -81,7 +81,7 @@ describe('ApplyManager', () => {
 
     jest.advanceTimersByTime(100);
 
-    expect(resolveMock).toHaveBeenCalledWith(
+    expect(applyMock).toHaveBeenCalledWith(
       [
         {
           flag: 'flags/apply-test1',
@@ -90,7 +90,7 @@ describe('ApplyManager', () => {
       ],
       'some-token1',
     );
-    expect(resolveMock).toHaveBeenCalledWith(
+    expect(applyMock).toHaveBeenCalledWith(
       [
         {
           flag: 'flags/apply-test2',
@@ -108,8 +108,8 @@ describe('ApplyManager', () => {
     instanceUnderTest.apply('some-token', 'apply-test1');
     instanceUnderTest.apply('some-token', 'apply-test2');
 
-    expect(resolveMock).toHaveBeenCalledTimes(1);
-    expect(resolveMock).toHaveBeenCalledWith(
+    expect(applyMock).toHaveBeenCalledTimes(1);
+    expect(applyMock).toHaveBeenCalledWith(
       [
         {
           flag: 'flags/apply-test',
@@ -126,5 +126,22 @@ describe('ApplyManager', () => {
       ],
       'some-token',
     );
+  });
+
+  it('should not resend events if the buffer overflows before the previous apply has completed', () => {
+    for (let i = 0; i < 10; i++) instanceUnderTest.apply('some-token', `apply-test${i}`);
+
+    expect(applyMock).toHaveBeenCalledTimes(3);
+    jest.advanceTimersByTime(100);
+    expect(applyMock).toHaveBeenCalledTimes(4);
+  });
+
+  it('should not attempt to send empty apply events', () => {
+    instanceUnderTest.apply('some-token', `apply-test`);
+    instanceUnderTest.flush();
+    expect(applyMock).toHaveBeenCalledTimes(1);
+
+    instanceUnderTest.flush(); // nothing left to send
+    expect(applyMock).toHaveBeenCalledTimes(1);
   });
 });

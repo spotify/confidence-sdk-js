@@ -6,9 +6,13 @@ export interface ApplyManagerOptions {
   client: ConfidenceClient;
 }
 
+type TokenRecord = {
+  readonly pendingApply: AppliedFlag[];
+  readonly seenFlags: Set<string>;
+};
+
 export class ApplyManager {
-  private resolveTokenPending: Map<string, AppliedFlag[]> = new Map();
-  private resolveTokenSeen: Map<string, Set<string>> = new Map();
+  private readonly tokenRecords: Map<string, TokenRecord> = new Map();
   private readonly timeout: number;
   private readonly maxBufferSize: number;
   private client: ConfidenceClient;
@@ -21,54 +25,47 @@ export class ApplyManager {
   }
 
   async flush(): Promise<void> {
-    for (const resolve_token of Array.from(this.resolveTokenPending.keys())) {
-      const flagsToSend = this.resolveTokenPending.get(resolve_token) || [];
-
-      if (flagsToSend.length === 0) {
-        continue;
-      }
-
-      try {
-        this.client.apply(flagsToSend, resolve_token).then(() => {
-          this.resolveTokenPending.set(resolve_token, []);
-        });
-      } catch (e: unknown) {
-        // TODO log errors
-      }
+    for (const [resolve_token, { pendingApply }] of Array.from(this.tokenRecords.entries())) {
+      if (!pendingApply.length) continue;
+      // remove all flags while trying
+      const flagsToSend = pendingApply.splice(0, pendingApply.length);
+      this.client.apply(flagsToSend, resolve_token).catch(() => {
+        // re-add flags on failure
+        pendingApply.push(...flagsToSend);
+      });
     }
   }
 
   apply(resolveToken: string, flagName: string) {
-    if (!resolveToken) {
-      return;
-    }
-    const confidenceFlagName = `flags/${flagName}`;
+    if (!resolveToken) return;
 
-    if (this.resolveTokenSeen.get(resolveToken)?.has(flagName)) {
-      return;
-    }
+    const tokenRecord = this.getTokenRecord(resolveToken);
 
-    const appliedFlag: AppliedFlag = {
-      flag: confidenceFlagName,
+    if (tokenRecord.seenFlags.has(flagName)) return;
+
+    tokenRecord.seenFlags.add(flagName);
+
+    tokenRecord.pendingApply.push({
+      flag: `flags/${flagName}`,
       applyTime: new Date().toISOString(),
-    };
-
-    if (!this.resolveTokenPending.has(resolveToken)) {
-      this.resolveTokenPending.set(resolveToken, [appliedFlag]);
-      this.resolveTokenSeen.set(resolveToken, new Set([flagName]));
-    } else {
-      this.resolveTokenPending.get(resolveToken)?.push(appliedFlag);
-      this.resolveTokenSeen.get(resolveToken)?.add(confidenceFlagName);
-    }
+    });
 
     if (this.flushTimeout) {
       clearTimeout(this.flushTimeout);
     }
 
-    if ((this.resolveTokenPending.get(resolveToken)?.length || 0) >= this.maxBufferSize) {
+    if (tokenRecord.pendingApply.length >= this.maxBufferSize) {
       this.flush();
     } else {
       this.flushTimeout = setTimeout(() => this.flush(), this.timeout);
     }
+  }
+
+  private getTokenRecord(resolveToken: string): TokenRecord {
+    let tokenRecord = this.tokenRecords.get(resolveToken);
+    if (!tokenRecord) {
+      this.tokenRecords.set(resolveToken, (tokenRecord = { pendingApply: [], seenFlags: new Set() }));
+    }
+    return tokenRecord;
   }
 }
