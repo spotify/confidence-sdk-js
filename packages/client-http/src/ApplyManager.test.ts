@@ -130,17 +130,17 @@ describe('ApplyManager', () => {
 
   it('should not resend events if the buffer overflows before the previous apply has completed', () => {
     for (let i = 0; i < 10; i++) instanceUnderTest.apply('some-token', `apply-test${i}`);
-    
+
     expect(applyMock).toHaveBeenCalledTimes(3);
     jest.advanceTimersByTime(100);
     expect(applyMock).toHaveBeenCalledTimes(4);
   });
-  
+
   it('should not attempt to send empty apply events', () => {
     instanceUnderTest.apply('some-token', `apply-test`);
     instanceUnderTest.flush();
     expect(applyMock).toHaveBeenCalledTimes(1);
-    
+
     instanceUnderTest.flush(); // nothing left to send
     expect(applyMock).toHaveBeenCalledTimes(1);
   });
