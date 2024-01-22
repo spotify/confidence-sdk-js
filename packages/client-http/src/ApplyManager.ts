@@ -7,8 +7,8 @@ export interface ApplyManagerOptions {
 }
 
 type TokenRecord = {
-  pendingApply: AppliedFlag[];
-  seenFlags: Set<string>;
+  readonly pendingApply: AppliedFlag[];
+  readonly seenFlags: Set<string>;
 };
 
 export class ApplyManager {
@@ -26,6 +26,7 @@ export class ApplyManager {
 
   async flush(): Promise<void> {
     for (const [resolve_token, { pendingApply }] of Array.from(this.tokenRecords.entries())) {
+      if (!pendingApply.length) continue;
       // remove all flags while trying
       const flagsToSend = pendingApply.splice(0, pendingApply.length);
       this.client.apply(flagsToSend, resolve_token).catch(() => {
