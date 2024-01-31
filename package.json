@@ -14,7 +14,7 @@
     "clean": "lerna run clean",
     "format": "prettier --config prettier.config.js -w .",
     "format:check": "prettier --config prettier.config.js -c .",
-    "lint": "eslint ./packages/**/src/**/*.{tsx,ts}",
+    "lint": "eslint 'packages/*/src/**/*.{tsx,ts}'",
     "test": "jest",
     "prepare": "husky install",
     "cm": "git-cz",
