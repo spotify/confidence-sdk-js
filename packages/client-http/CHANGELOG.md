@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.1.4](https://github.com/spotify/confidence-openfeature-provider-js/compare/client-http-v0.1.3...client-http-v0.1.4) (2024-02-01)
+
+
+### 🐛 Bug Fixes
+
+* allow the full flag to be resolved ([#56](https://github.com/spotify/confidence-openfeature-provider-js/issues/56)) ([fa4c7a8](https://github.com/spotify/confidence-openfeature-provider-js/commit/fa4c7a8641206b7212f50f7e42d953b3056e762c))
+
 ## [0.1.3](https://github.com/spotify/confidence-openfeature-provider-js/compare/client-http-v0.1.2...client-http-v0.1.3) (2024-01-22)
 
 
