@@ -603,9 +603,7 @@ describe('ConfidenceProvider', () => {
     it('should resolve the full flag object', async () => {
       await instanceUnderTest.initialize(dummyContext);
 
-      expect(
-          instanceUnderTest.resolveObjectEvaluation('testFlag', {}, dummyEvaluationContext, dummyConsole),
-      ).toEqual({
+      expect(instanceUnderTest.resolveObjectEvaluation('testFlag', {}, dummyEvaluationContext, dummyConsole)).toEqual({
         variant: 'control',
         flagMetadata: {
           resolveToken: 'before-each',

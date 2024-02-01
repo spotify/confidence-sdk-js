@@ -47,7 +47,7 @@ export namespace Configuration {
       let value: any = flag.value;
       let schema: FlagSchema = flag.schema;
 
-      if(path === '') {
+      if (path === '') {
         return { value, schema };
       }
 
