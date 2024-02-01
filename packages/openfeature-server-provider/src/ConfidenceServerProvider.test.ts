@@ -312,6 +312,28 @@ describe('ConfidenceServerProvider', () => {
       });
     });
 
+    it('should resolve a full flag object', async () => {
+      expect(await instanceUnderTest.resolveObjectEvaluation('testFlag', {}, {}, dummyConsole)).toEqual({
+        variant: 'control',
+        flagMetadata: {
+          resolveToken: 'before-each',
+        },
+        reason: 'TARGETING_MATCH',
+        value: {
+          bool: true,
+          str: 'control',
+          int: 3,
+          dub: 3.5,
+          obj: {
+            str: 'obj string',
+            bool: true,
+            int: 3,
+            dub: 3.5,
+          },
+        },
+      });
+    });
+
     it('should resolve a full object with partial default', async () => {
       expect(
         await instanceUnderTest.resolveObjectEvaluation(
