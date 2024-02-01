@@ -47,6 +47,10 @@ export namespace Configuration {
       let value: any = flag.value;
       let schema: FlagSchema = flag.schema;
 
+      if (path === '') {
+        return { value, schema };
+      }
+
       for (const part of path.split('.')) {
         if (typeof schema !== 'object') {
           throw new Error(`Parse Error. Cannot find path: ${path}. In flag: ${JSON.stringify(flag)}`);
