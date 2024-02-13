@@ -1,5 +1,5 @@
 import React from 'react';
-import { OpenFeature } from '@openfeature/js-sdk';
+import { OpenFeature } from '@openfeature/server-sdk';
 
 import { ClientComponent } from '@/app/next13Advanced/ClientComponent';
 import { setupOpenFeatureConfidenceProvider } from '@/utils/setupOpenFeatureConfidenceProvider';
@@ -16,14 +16,12 @@ export default async function App() {
 
   return (
     <>
-      {/* @ts-expect-error Server Component */}
       <ClientBoundary>
         <SetOpenFeatureContext context={{ targetingKey: 'user-a' }} />
       </ClientBoundary>
 
       <p>Flag value being used in the Server Component: {str}</p>
 
-      {/* @ts-expect-error Server Component */}
       <ClientBoundary>
         <React.Suspense fallback={<p>loading...</p>}>
           <ClientComponent />

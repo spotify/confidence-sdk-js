@@ -1,5 +1,5 @@
 import { setupOpenFeatureConfidenceProvider } from '@/utils/setupOpenFeatureConfidenceProvider';
-import { OpenFeature } from '@openfeature/js-sdk';
+import { OpenFeature } from '@openfeature/server-sdk';
 import { NextResponse } from 'next/server';
 
 setupOpenFeatureConfidenceProvider();

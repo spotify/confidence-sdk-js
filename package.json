@@ -26,8 +26,6 @@
     "@commitlint/config-conventional": "^17.6.7",
     "@commitlint/cz-commitlint": "^17.6.7",
     "@commitlint/prompt-cli": "^17.6.7",
-    "@openfeature/js-sdk": "^1.4.2",
-    "@openfeature/web-sdk": "^0.4.0",
     "@spotify/eslint-config-base": "^15.0.0",
     "@spotify/eslint-config-react": "^15.0.0",
     "@spotify/eslint-config-typescript": "^15.0.0",
@@ -53,8 +51,6 @@
     "jest-extended": "^4.0.0",
     "lerna": "^7.1.4",
     "prettier": "^2.8.8",
-    "react": "^18.2.0",
-    "react-dom": "^18.2.0",
     "ts-jest": "^29.1.0",
     "typescript": "^5.1.3"
   },

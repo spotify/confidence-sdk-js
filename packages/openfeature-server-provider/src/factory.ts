@@ -1,4 +1,4 @@
-import { Provider } from '@openfeature/js-sdk';
+import { Provider } from '@openfeature/server-sdk';
 
 import { ConfidenceClient, ConfidenceClientOptions } from '@spotify-confidence/client-http';
 

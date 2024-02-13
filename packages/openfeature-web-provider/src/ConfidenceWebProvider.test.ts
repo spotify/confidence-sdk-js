@@ -715,32 +715,21 @@ describe('events', () => {
   const readyHandler = jest.fn();
   const errorHandler = jest.fn();
   const staleHandler = jest.fn();
-  let initPromise: Promise<void> | undefined;
 
-  afterEach(() => {
-    openFeatureAPI.removeHandler(ProviderEvents.Error, errorHandler);
-    openFeatureAPI.removeHandler(ProviderEvents.Ready, readyHandler);
-    openFeatureAPI.removeHandler(ProviderEvents.Stale, staleHandler);
-  });
-
-  beforeEach(() => {
+  beforeEach(async () => {
+    await openFeatureAPI.clearProviders();
     openFeatureAPI.addHandler(ProviderEvents.Stale, staleHandler);
     openFeatureAPI.addHandler(ProviderEvents.Error, errorHandler);
     openFeatureAPI.addHandler(ProviderEvents.Ready, readyHandler);
-    initPromise = new Promise<void>(res => {
-      openFeatureAPI.addHandler(ProviderEvents.Ready, () => {
-        res();
-      });
-      openFeatureAPI.addHandler(ProviderEvents.Error, () => {
-        res();
-      });
-    });
+  });
+
+  afterEach(() => {
+    openFeatureAPI.clearHandlers();
   });
 
   it('should emit ready stale ready on successful initialisation and context change', async () => {
     resolveMock.mockResolvedValue(dummyConfiguration);
     openFeatureAPI.setProvider(new ConfidenceWebProvider(mockClient, { apply: 'backend' }));
-    await initPromise;
     await openFeatureAPI.setContext({ targetingKey: 'user-a', name: 'Kurt' });
 
     expect(readyHandler).toHaveBeenCalledTimes(2);
@@ -751,7 +740,7 @@ describe('events', () => {
   it('should emit error stale error on failed initialisation and context change', async () => {
     resolveMock.mockRejectedValue(new Error('some error'));
     openFeatureAPI.setProvider(new ConfidenceWebProvider(mockClient, { apply: 'backend' }));
-    await initPromise;
+
     try {
       await openFeatureAPI.setContext({ targetingKey: 'user-a' });
     } catch (_) {

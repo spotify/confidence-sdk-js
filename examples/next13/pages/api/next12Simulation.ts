@@ -1,5 +1,5 @@
 import type { NextApiRequest, NextApiResponse } from 'next';
-import { OpenFeature } from '@openfeature/js-sdk';
+import { OpenFeature } from '@openfeature/server-sdk';
 import { setupOpenFeatureConfidenceProvider } from '@/utils/setupOpenFeatureConfidenceProvider';
 
 setupOpenFeatureConfidenceProvider();

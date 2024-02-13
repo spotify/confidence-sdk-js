@@ -1,5 +1,5 @@
 const { createConfidenceServerProvider } = require('@spotify-confidence/openfeature-server-provider');
-const { OpenFeature } = require('@openfeature/js-sdk');
+const { OpenFeature } = require('@openfeature/server-sdk');
 
 const provider = createConfidenceServerProvider({
   clientSecret: 'RxDVTrXvc6op1XxiQ4OaR31dKbJ39aYV',

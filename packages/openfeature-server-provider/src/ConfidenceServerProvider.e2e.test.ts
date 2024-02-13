@@ -1,4 +1,4 @@
-import { OpenFeature, ProviderEvents } from '@openfeature/js-sdk';
+import { OpenFeature, ProviderEvents } from '@openfeature/server-sdk';
 import axios from 'axios';
 import { createConfidenceServerProvider } from './factory';
 

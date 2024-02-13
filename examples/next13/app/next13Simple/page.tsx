@@ -1,6 +1,6 @@
 import React from 'react';
 import { SimpleClientComponent } from './SimpleClientComponent';
-import { OpenFeature } from '@openfeature/js-sdk';
+import { OpenFeature } from '@openfeature/server-sdk';
 import { setupOpenFeatureConfidenceProvider } from '@/utils/setupOpenFeatureConfidenceProvider';
 
 setupOpenFeatureConfidenceProvider();

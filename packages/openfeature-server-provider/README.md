@@ -12,14 +12,14 @@ This implements the dynamic paradigm of OpenFeature.
 To add the packages to your dependencies run:
 
 ```sh
-yarn add @openfeature/js-sdk @spotify-confidence/openfeature-server-provider
+yarn add @openfeature/server-sdk @spotify-confidence/openfeature-server-provider
 ```
 
 ## Enabling the provider, setting the evaluation context and resolving flags
 
 ```ts
 import { createConfidenceServerProvider } from '@spotify-confidence/openfeature-server-provider';
-import { OpenFeature } from '@openfeature/js-sdk';
+import { OpenFeature } from '@openfeature/server-sdk';
 
 const provider = createConfidenceServerProvider({
   clientSecret: 'your-client-secret',
