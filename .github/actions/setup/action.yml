@@ -16,4 +16,4 @@ runs:
         scope: '@spotify-confidence'
     - name: Install dependencies
       shell: bash
-      run: yarn install --frozen-lockfile
+      run: corepack enable && yarn install --frozen-lockfile
