@@ -8,8 +8,12 @@
   "dependencies": {
     "@spotify-confidence/client-http": "^0.1.4"
   },
+  "devDependencies": {
+    "@openfeature/core": "^0.0.24",
+    "@openfeature/server-sdk": "^1.10.0"
+  },
   "peerDependencies": {
-    "@openfeature/js-sdk": "^1.4.2"
+    "@openfeature/server-sdk": "^1.10.0"
   },
   "scripts": {
     "build:esm": "tsc -p tsconfig.esm.json",

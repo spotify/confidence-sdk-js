@@ -1,5 +1,5 @@
 import { createConfidenceServerProvider } from '@spotify-confidence/openfeature-server-provider';
-import { OpenFeature } from '@openfeature/js-sdk';
+import { OpenFeature } from '@openfeature/server-sdk';
 
 let setup: boolean = false;
 

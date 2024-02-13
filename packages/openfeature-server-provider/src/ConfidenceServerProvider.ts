@@ -8,7 +8,7 @@ import {
   ProviderStatus,
   ResolutionDetails,
   ResolutionReason,
-} from '@openfeature/js-sdk';
+} from '@openfeature/server-sdk';
 
 import { ConfidenceClient, ResolveContext, Configuration } from '@spotify-confidence/client-http';
 
