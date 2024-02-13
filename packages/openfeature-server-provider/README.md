@@ -12,7 +12,7 @@ This implements the dynamic paradigm of OpenFeature.
 To add the packages to your dependencies run:
 
 ```sh
-yarn add @openfeature/server-sdk @spotify-confidence/openfeature-server-provider
+yarn add @openfeature/server-sdk @spotify-confidence/openfeature-server-provider @openfeature/core
 ```
 
 ## Enabling the provider, setting the evaluation context and resolving flags

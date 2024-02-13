@@ -1,5 +1,5 @@
 import React, { useEffect } from 'react';
-import { OpenFeature } from '@openfeature/web-sdk';
+import { ClientProviderEvents, OpenFeature } from '@openfeature/web-sdk';
 import TestComponent from './TestComponent';
 import { createConfidenceWebProvider } from '@spotify-confidence/openfeature-web-provider';
 
@@ -11,13 +11,13 @@ export const webProvider = createConfidenceWebProvider({
   timeout: 1000,
 });
 
+OpenFeature.getClient().addHandler(ClientProviderEvents.Ready, () => console.log('ready!'));
 function App() {
   useEffect(() => {
     OpenFeature.setContext({
       targetingKey: 'user-a',
-    }).then(() => {
-      OpenFeature.setProvider(webProvider);
     });
+    OpenFeature.setProvider(webProvider);
   }, []);
 
   return (
