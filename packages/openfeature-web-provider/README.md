@@ -25,7 +25,7 @@ evaluation, if the network request is successful we update the flags and then em
 
 ```ts
 import { createConfidenceWebProvider } from '@spotify-confidence/openfeature-web-provider';
-import { OpenFeature, OpenFeatureAPI } from '@openfeature/web-sdk';
+import { OpenFeature } from '@openfeature/web-sdk';
 
 const provider = createConfidenceWebProvider({
   clientSecret: 'mysecret',
@@ -33,10 +33,11 @@ const provider = createConfidenceWebProvider({
   timeout: 1000,
 });
 
-await OpenFeature.setContext({
+OpenFeature.setContext({
   targetingKey: 'myTargetingKey',
 });
-OpenFeature.setProvider(provider);
+
+await OpenFeature.setProviderAndWait(provider);
 
 const client = OpenFeature.getClient();
 const result = client.getBooleanValue('flag.my-boolean', false);
@@ -44,8 +45,7 @@ const result = client.getBooleanValue('flag.my-boolean', false);
 
 Notes:
 
-- It's advised not to perform `setContext` while `setProvider` is running, you can await setting the context first, or listen to the `ProviderEvent.Ready` via a handler on `OpenFeaure`.
-- It's advised not to perform resolves while `setProvider` and `setContext` are running: resolves might return the default value with reason `STALE` during such operations.
+- In the above example we first set the context and then set the provider and await for the provider to become ready before getting flags values. Other ways of arranging these calls might make more sense depending on what app framework you are using. See the example apps for more inspiration.
 
 ## Region
 
