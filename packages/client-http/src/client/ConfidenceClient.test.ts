@@ -260,6 +260,10 @@ describe('ConfidenceClient', () => {
           resolve_token: resolveToken,
           flags: flagsToApply,
           sendTime: fakeTime.toISOString(),
+          sdk: {
+            id: 'SDK_ID_JS_WEB_PROVIDER',
+            version: 'TESTING',
+          },
         }),
       });
     });

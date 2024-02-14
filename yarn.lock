@@ -3830,7 +3830,7 @@ __metadata:
   languageName: node
   linkType: hard
 
-"@spotify-confidence/client-http@npm:^0.1.4, @spotify-confidence/client-http@workspace:packages/client-http":
+"@spotify-confidence/client-http@npm:0.1.4, @spotify-confidence/client-http@workspace:packages/client-http":
   version: 0.0.0-use.local
   resolution: "@spotify-confidence/client-http@workspace:packages/client-http"
   languageName: unknown
@@ -3873,7 +3873,7 @@ __metadata:
   dependencies:
     "@openfeature/core": "npm:^0.0.24"
     "@openfeature/server-sdk": "npm:^1.10.0"
-    "@spotify-confidence/client-http": "npm:^0.1.4"
+    "@spotify-confidence/client-http": "npm:0.1.4"
   peerDependencies:
     "@openfeature/server-sdk": ^1.10.0
   languageName: unknown
@@ -3885,7 +3885,7 @@ __metadata:
   dependencies:
     "@openfeature/core": "npm:^0.0.24"
     "@openfeature/web-sdk": "npm:^0.4.11"
-    "@spotify-confidence/client-http": "npm:^0.1.4"
+    "@spotify-confidence/client-http": "npm:0.1.4"
     fast-deep-equal: "npm:^3.1.3"
   peerDependencies:
     "@openfeature/web-sdk": ^0.4.11
