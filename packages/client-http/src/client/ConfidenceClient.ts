@@ -5,6 +5,7 @@ type ApplyRequest = {
   resolve_token: string;
   flags: AppliedFlag[];
   sendTime: string;
+  sdk: SDK;
 };
 type SDK = {
   id: 'SDK_ID_JS_WEB_PROVIDER' | 'SDK_ID_JS_SERVER_PROVIDER';
@@ -107,6 +108,7 @@ export class ConfidenceClient {
       resolve_token: resolveToken,
       flags,
       sendTime: new Date().toISOString(),
+      sdk: this.sdk,
     };
     await this.fetchImplementation(`${this.baseUrl}/v1/flags:apply`, {
       method: 'POST',
