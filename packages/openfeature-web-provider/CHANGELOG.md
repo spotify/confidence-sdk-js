@@ -6,6 +6,34 @@
   * dependencies
     * @spotify-confidence/client-http bumped from ^0.1.2 to ^0.1.3
 
+## [0.2.0](https://github.com/spotify/confidence-openfeature-provider-js/compare/openfeature-web-provider-v0.1.5...openfeature-web-provider-v0.2.0) (2024-02-15)
+
+
+### ⚠ BREAKING CHANGES
+
+* Since our peer dependency to `@openfeature/js-sdk` changed into `@openfeature/server-sdk`, users need to install the new package which is concidered a breaking change.
+
+### ✨ New Features
+
+* send sdk info with apply events ([6b95d0e](https://github.com/spotify/confidence-openfeature-provider-js/commit/6b95d0ea90059cae6fd71882a13a65ee84eb0e2c))
+
+
+### 🧹 Chore
+
+* upgrade OpenFeature dependencies ([8f27a92](https://github.com/spotify/confidence-openfeature-provider-js/commit/8f27a924aa5eb7662fdf73be6564eb2e3580b2fc))
+
+
+### 📚 Documentation
+
+* update readme with setProviderAndWait ([6dd6847](https://github.com/spotify/confidence-openfeature-provider-js/commit/6dd6847ce513f31491ed88f75cd13d7f598bc366))
+
+
+### Dependencies
+
+* The following workspace dependencies were updated
+  * dependencies
+    * @spotify-confidence/client-http bumped from 0.1.4 to 0.1.5
+
 ## [0.1.5](https://github.com/spotify/confidence-openfeature-provider-js/compare/openfeature-web-provider-v0.1.4...openfeature-web-provider-v0.1.5) (2024-02-01)
 
 
