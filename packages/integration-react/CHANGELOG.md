@@ -18,6 +18,24 @@
   * devDependencies
     * @spotify-confidence/openfeature-web-provider bumped from ^0.1.4 to ^0.1.5
 
+## [0.2.0](https://github.com/spotify/confidence-openfeature-provider-js/compare/integration-react-v0.1.5...integration-react-v0.2.0) (2024-02-15)
+
+
+### ⚠ BREAKING CHANGES
+
+* Since our peer dependency to `@openfeature/js-sdk` changed into `@openfeature/server-sdk`, users need to install the new package which is concidered a breaking change.
+
+### 🧹 Chore
+
+* upgrade OpenFeature dependencies ([8f27a92](https://github.com/spotify/confidence-openfeature-provider-js/commit/8f27a924aa5eb7662fdf73be6564eb2e3580b2fc))
+
+
+### Dependencies
+
+* The following workspace dependencies were updated
+  * devDependencies
+    * @spotify-confidence/openfeature-web-provider bumped from ^0.1.5 to ^0.2.0
+
 ## [0.1.3](https://github.com/spotify/confidence-openfeature-provider-js/compare/integration-react-v0.1.2...integration-react-v0.1.3) (2024-01-05)
 
 

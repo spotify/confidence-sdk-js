@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.1.5](https://github.com/spotify/confidence-openfeature-provider-js/compare/client-http-v0.1.4...client-http-v0.1.5) (2024-02-15)
+
+
+### ✨ New Features
+
+* send sdk info with apply events ([6b95d0e](https://github.com/spotify/confidence-openfeature-provider-js/commit/6b95d0ea90059cae6fd71882a13a65ee84eb0e2c))
+
 ## [0.1.4](https://github.com/spotify/confidence-openfeature-provider-js/compare/client-http-v0.1.3...client-http-v0.1.4) (2024-02-01)
 
 
