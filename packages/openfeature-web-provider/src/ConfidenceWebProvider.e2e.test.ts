@@ -1,20 +1,10 @@
 import { OpenFeature, ProviderEvents } from '@openfeature/web-sdk';
-import axios from 'axios';
 import { createConfidenceWebProvider } from './factory';
 
 describe('ConfidenceHTTPProvider E2E tests', () => {
   beforeAll(() => {
     const confidenceProvider = createConfidenceWebProvider({
-      fetchImplementation: async (url, request): Promise<Response> => {
-        return await axios.post(url as string, request?.body).then(
-          resp =>
-            ({
-              json: async () => {
-                return resp.data;
-              },
-            } as Response),
-        );
-      },
+      fetchImplementation: fetch,
       clientSecret: 'RxDVTrXvc6op1XxiQ4OaR31dKbJ39aYV',
       timeout: 1000,
     });

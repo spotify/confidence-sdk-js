@@ -24,7 +24,7 @@ module.exports = {
     {
       displayName: 'integration-react',
       testMatch: ['<rootDir>/packages/integration-react/src/**/*.test.ts*'],
-      testEnvironment: 'jsdom',
+      testEnvironment: './customJestBrowserEnv.ts',
       ...projectCommonConfig,
       setupFilesAfterEnv: ['jest-extended/all', '<rootDir>/packages/integration-react/jest.setup.ts'],
     },

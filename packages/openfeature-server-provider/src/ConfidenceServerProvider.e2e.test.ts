@@ -1,36 +1,18 @@
-import { OpenFeature, ProviderEvents } from '@openfeature/server-sdk';
-import axios from 'axios';
+import { OpenFeature } from '@openfeature/server-sdk';
 import { createConfidenceServerProvider } from './factory';
 
 describe('ConfidenceServerProvider E2E tests', () => {
-  beforeAll(() => {
+  beforeEach(() => {
     const confidenceProvider = createConfidenceServerProvider({
-      fetchImplementation: async (url, request): Promise<Response> => {
-        return await axios.post(url as string, request?.body).then(
-          resp =>
-            ({
-              json: async () => {
-                return resp.data;
-              },
-            } as Response),
-        );
-      },
+      fetchImplementation: fetch,
       clientSecret: 'RxDVTrXvc6op1XxiQ4OaR31dKbJ39aYV',
-      timeout: 1000,
-    });
-    const providerReadyPromise = new Promise<void>(resolve => {
-      OpenFeature.addHandler(ProviderEvents.Ready, () => {
-        resolve();
-      });
-    }).then(() => {
-      return OpenFeature.setContext({
-        targetingKey: 'test-a', // control
-      });
+      timeout: 2000,
     });
 
     OpenFeature.setProvider(confidenceProvider);
-
-    return providerReadyPromise;
+    OpenFeature.setContext({
+      targetingKey: 'test-a', // control
+    });
   });
 
   it('should resolve a boolean e2e', async () => {
