@@ -3857,7 +3857,6 @@ __metadata:
     "@spotify-confidence/openfeature-web-provider": "npm:^0.1.5"
     "@testing-library/jest-dom": "npm:^5.16.5"
     "@testing-library/react": "npm:^14.0.0"
-    "@types/node-fetch": "npm:^2.6.4"
     "@types/use-sync-external-store": "npm:^0.0.4"
     react: "npm:^18.2.0"
     use-sync-external-store: "npm:^1.2.0"
@@ -4590,16 +4589,6 @@ __metadata:
   version: 1.2.2
   resolution: "@types/minimist@npm:1.2.2"
   checksum: 10c0/f220f57f682bbc3793dab4518f8e2180faa79d8e2589c79614fd777d7182be203ba399020c3a056a115064f5d57a065004a32b522b2737246407621681b24137
-  languageName: node
-  linkType: hard
-
-"@types/node-fetch@npm:^2.6.4":
-  version: 2.6.4
-  resolution: "@types/node-fetch@npm:2.6.4"
-  dependencies:
-    "@types/node": "npm:*"
-    form-data: "npm:^3.0.0"
-  checksum: 10c0/e43e4670ed8b7693dbf660ac1450b14fcfcdd8efca1eb0f501b6ad95af2d1fa06f8541db03e9511e82a5fee510a238fe0913330c9a58f8ac6892b985f6dd993e
   languageName: node
   linkType: hard
 

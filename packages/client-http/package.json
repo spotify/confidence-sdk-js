@@ -5,6 +5,10 @@
   "module": "build/esm/index.js",
   "main": "build/cjs/index.js",
   "types": "build/types/index.d.ts",
+  "engineStrict": true,
+  "engines": {
+    "node": ">=18.17.0"
+  },
   "scripts": {
     "build:esm": "tsc -p tsconfig.esm.json",
     "build:cjs": "tsc -p tsconfig.cjs.json",
