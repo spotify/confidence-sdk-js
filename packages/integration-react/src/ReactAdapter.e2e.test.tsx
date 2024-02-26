@@ -1,5 +1,4 @@
 import React from 'react';
-import fetch from 'node-fetch';
 import { OpenFeatureAPI, ProviderEvents } from '@openfeature/web-sdk';
 import { act } from 'react-dom/test-utils';
 import { render, screen } from '@testing-library/react';
@@ -15,7 +14,7 @@ const TestComponent = () => {
 
 const confidenceProvider = createConfidenceWebProvider({
   clientSecret: 'RxDVTrXvc6op1XxiQ4OaR31dKbJ39aYV',
-  fetchImplementation: fetch as any,
+  fetchImplementation: fetch,
   timeout: 1000,
 });
 
