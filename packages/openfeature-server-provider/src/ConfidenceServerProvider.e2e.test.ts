@@ -4,7 +4,6 @@ import { createConfidenceServerProvider } from './factory';
 describe('ConfidenceServerProvider E2E tests', () => {
   beforeEach(() => {
     const confidenceProvider = createConfidenceServerProvider({
-      fetchImplementation: fetch,
       clientSecret: 'RxDVTrXvc6op1XxiQ4OaR31dKbJ39aYV',
       timeout: 2000,
     });

@@ -4,16 +4,20 @@ import { ConfidenceClient, ConfidenceClientOptions } from '@spotify-confidence/c
 
 type ConfidenceWebProviderFactoryOptions = {
   region?: ConfidenceClientOptions['region'];
-  fetchImplementation: typeof fetch;
+  fetchImplementation?: typeof fetch;
   clientSecret: string;
   baseUrl?: string;
   apply?: 'access' | 'backend';
   timeout: number;
 };
 
-export function createConfidenceWebProvider(options: ConfidenceWebProviderFactoryOptions): Provider {
+export function createConfidenceWebProvider({
+  fetchImplementation = defaultFetchImplementation(),
+  ...options
+}: ConfidenceWebProviderFactoryOptions): Provider {
   const confidenceClient = new ConfidenceClient({
     ...options,
+    fetchImplementation,
     apply: options.apply === 'backend',
     sdk: {
       id: 'SDK_ID_JS_WEB_PROVIDER',
@@ -24,4 +28,13 @@ export function createConfidenceWebProvider(options: ConfidenceWebProviderFactor
   return new ConfidenceWebProvider(confidenceClient, {
     apply: options.apply || 'access',
   });
+}
+
+function defaultFetchImplementation(): typeof fetch {
+  if (!globalThis.fetch) {
+    throw new TypeError(
+      'No default fetch implementation found. Please provide provide the fetchImplementation option to createConfidenceWebProvider.',
+    );
+  }
+  return globalThis.fetch.bind(globalThis);
 }

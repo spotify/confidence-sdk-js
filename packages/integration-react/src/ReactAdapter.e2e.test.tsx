@@ -14,7 +14,6 @@ const TestComponent = () => {
 
 const confidenceProvider = createConfidenceWebProvider({
   clientSecret: 'RxDVTrXvc6op1XxiQ4OaR31dKbJ39aYV',
-  fetchImplementation: fetch,
   timeout: 1000,
 });
 

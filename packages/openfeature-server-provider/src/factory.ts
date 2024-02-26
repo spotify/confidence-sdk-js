@@ -6,15 +6,19 @@ import { ConfidenceServerProvider } from './ConfidenceServerProvider';
 
 type ConfidenceProviderFactoryOptions = {
   region?: ConfidenceClientOptions['region'];
-  fetchImplementation: typeof fetch;
+  fetchImplementation?: typeof fetch;
   clientSecret: string;
   baseUrl?: string;
   timeout: number;
 };
 
-export function createConfidenceServerProvider(options: ConfidenceProviderFactoryOptions): Provider {
+export function createConfidenceServerProvider({
+  fetchImplementation = defaultFetchImplementation(),
+  ...options
+}: ConfidenceProviderFactoryOptions): Provider {
   const confidenceClient = new ConfidenceClient({
     ...options,
+    fetchImplementation,
     apply: true,
     sdk: {
       id: 'SDK_ID_JS_SERVER_PROVIDER',
@@ -23,4 +27,13 @@ export function createConfidenceServerProvider(options: ConfidenceProviderFactor
   });
 
   return new ConfidenceServerProvider(confidenceClient);
+}
+
+function defaultFetchImplementation(): typeof fetch {
+  if (!globalThis.fetch) {
+    throw new TypeError(
+      'No default fetch implementation found. Please provide provide the fetchImplementation option to createConfidenceServerProvider.',
+    );
+  }
+  return globalThis.fetch.bind(globalThis);
 }
