@@ -4,7 +4,6 @@ import { createConfidenceWebProvider } from './factory';
 describe('ConfidenceHTTPProvider E2E tests', () => {
   beforeAll(() => {
     const confidenceProvider = createConfidenceWebProvider({
-      fetchImplementation: fetch,
       clientSecret: 'RxDVTrXvc6op1XxiQ4OaR31dKbJ39aYV',
       timeout: 1000,
     });
@@ -25,7 +24,6 @@ describe('ConfidenceHTTPProvider E2E tests', () => {
 
   it('should return defaults after the timeout', async () => {
     const confidenceProvider = createConfidenceWebProvider({
-      fetchImplementation: global.fetch.bind(global),
       region: 'eu',
       clientSecret: 'RxDVTrXvc6op1XxiQ4OaR31dKbJ39aYV',
       timeout: 0,
