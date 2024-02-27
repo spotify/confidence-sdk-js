@@ -1,2 +1,2 @@
 export type * from './ConfidenceWebProvider';
-export * from './factory';
+export { createConfidenceWebProvider } from './factory';
