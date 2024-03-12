@@ -1,6 +1,7 @@
 import {
   ErrorCode,
   EvaluationContext,
+  EvaluationContextValue,
   JsonValue,
   Logger,
   Provider,
@@ -10,32 +11,27 @@ import {
   ResolutionReason,
 } from '@openfeature/server-sdk';
 
-import { ConfidenceClient, ResolveContext, Configuration } from '@spotify-confidence/client-http';
+import { Confidence, Context, Value, FlagResolution } from '@spotify-confidence/sdk';
 
 export class ConfidenceServerProvider implements Provider {
   readonly metadata: ProviderMetadata = {
     name: 'ConfidenceServerProvider',
   };
   status: ProviderStatus = ProviderStatus.READY;
-  private readonly client: ConfidenceClient;
+  private readonly confidence: Confidence;
 
-  constructor(client: ConfidenceClient) {
-    this.client = client;
+  constructor(client: Confidence) {
+    this.confidence = client;
   }
 
-  private convertContext(context: EvaluationContext): ResolveContext {
-    const { targetingKey, ...rest } = context;
-    if (targetingKey) {
-      return {
-        ...rest,
-        targeting_key: targetingKey,
-      };
-    }
-    return rest;
+  private convertContext({ targetingKey, ...rest }: EvaluationContext): Context {
+    return {
+      openFeature: { targeting_key: targetingKey, ...(convertValue(rest) as Value.Struct) },
+    };
   }
 
   private getFlag<T>(
-    configuration: Configuration,
+    configuration: FlagResolution,
     flagKey: string,
     defaultValue: T,
     _logger: Logger,
@@ -60,16 +56,16 @@ export class ConfidenceServerProvider implements Provider {
         };
       }
 
-      if (Configuration.ResolveReason.NoSegmentMatch === flag.reason) {
+      if (FlagResolution.ResolveReason.NoSegmentMatch === flag.reason) {
         return {
           value: defaultValue,
           reason: 'DEFAULT',
         };
       }
 
-      let flagValue: Configuration.FlagValue;
+      let flagValue: FlagResolution.FlagValue;
       try {
-        flagValue = Configuration.FlagValue.traverse(flag, pathParts.join('.'));
+        flagValue = FlagResolution.FlagValue.traverse(flag, pathParts.join('.'));
       } catch (e) {
         return {
           errorCode: 'PARSE_ERROR' as ErrorCode,
@@ -83,7 +79,7 @@ export class ConfidenceServerProvider implements Provider {
           reason: mapConfidenceReason(flag.reason),
         };
       }
-      if (!Configuration.FlagValue.matches(flagValue, defaultValue)) {
+      if (!FlagResolution.FlagValue.matches(flagValue, defaultValue)) {
         return {
           errorCode: 'TYPE_MISMATCH' as ErrorCode,
           value: defaultValue,
@@ -114,11 +110,11 @@ export class ConfidenceServerProvider implements Provider {
     context: EvaluationContext,
     logger: Logger,
   ): Promise<ResolutionDetails<T>> {
-    const [flagName, ..._] = flagKey.split('.');
+    const [flagName] = flagKey.split('.');
 
-    const configuration = await this.client.resolve(this.convertContext(context || {}), {
-      flags: [`flags/${flagName}`],
-    });
+    const configuration = await this.confidence
+      .withContext(this.convertContext(context))
+      .resolve([`flags/${flagName}`]);
 
     return this.getFlag(configuration, flagKey, defaultValue, logger);
   }
@@ -160,15 +156,33 @@ export class ConfidenceServerProvider implements Provider {
   }
 }
 
-function mapConfidenceReason(reason: Configuration.ResolveReason): ResolutionReason {
+function mapConfidenceReason(reason: FlagResolution.ResolveReason): ResolutionReason {
   switch (reason) {
-    case Configuration.ResolveReason.Archived:
+    case FlagResolution.ResolveReason.Archived:
       return 'DISABLED';
-    case Configuration.ResolveReason.Unspecified:
+    case FlagResolution.ResolveReason.Unspecified:
       return 'UNKNOWN';
-    case Configuration.ResolveReason.Match:
+    case FlagResolution.ResolveReason.Match:
       return 'TARGETING_MATCH';
     default:
       return 'DEFAULT';
   }
+}
+
+function convertValue(value: EvaluationContextValue): Value {
+  if (value === null) return undefined;
+  if (typeof value === 'object') {
+    if (Array.isArray(value)) {
+      return value.map(convertValue);
+    }
+    if (value instanceof Date) {
+      return value.toISOString();
+    }
+    const struct: Record<string, Value> = {};
+    for (const key of Object.keys(value)) {
+      struct[key] = convertValue(value[key]);
+    }
+    return struct;
+  }
+  return value;
 }

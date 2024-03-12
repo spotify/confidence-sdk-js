@@ -6,7 +6,7 @@
   "main": "build/cjs/index.js",
   "types": "build/types/index.d.ts",
   "dependencies": {
-    "@spotify-confidence/client-http": "0.1.6"
+    "@spotify-confidence/sdk": "0.0.1"
   },
   "devDependencies": {
     "@openfeature/core": "^0.0.24",
