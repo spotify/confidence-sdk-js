@@ -1,12 +1,16 @@
 import { OpenFeature } from '@openfeature/server-sdk';
 import { createConfidenceServerProvider } from './factory';
+import { Confidence } from '@spotify-confidence/sdk';
+
+const confidence = Confidence.create({
+  clientSecret: 'RxDVTrXvc6op1XxiQ4OaR31dKbJ39aYV',
+  environment: 'backend',
+  timeout: 2000,
+});
 
 describe('ConfidenceServerProvider E2E tests', () => {
   beforeEach(() => {
-    const confidenceProvider = createConfidenceServerProvider({
-      clientSecret: 'RxDVTrXvc6op1XxiQ4OaR31dKbJ39aYV',
-      timeout: 2000,
-    });
+    const confidenceProvider = createConfidenceServerProvider(confidence);
 
     OpenFeature.setProvider(confidenceProvider);
     OpenFeature.setContext({
