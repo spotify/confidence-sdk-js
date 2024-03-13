@@ -1,36 +1,12 @@
 import { Provider } from '@openfeature/web-sdk';
 import { ConfidenceWebProvider } from './ConfidenceWebProvider';
-import { ConfidenceClient, ConfidenceClientOptions, FetchBuilder, TimeUnit } from '@spotify-confidence/client-http';
+import { Confidence, FetchBuilder, TimeUnit } from '@spotify-confidence/sdk';
 
-type ConfidenceWebProviderFactoryOptions = {
-  region?: ConfidenceClientOptions['region'];
-  fetchImplementation?: typeof fetch;
-  clientSecret: string;
-  baseUrl?: string;
-  apply?: 'access' | 'backend';
-  timeout: number;
-};
-
-export function createConfidenceWebProvider({
-  fetchImplementation = defaultFetchImplementation(),
-  ...options
-}: ConfidenceWebProviderFactoryOptions): Provider {
-  const confidenceClient = new ConfidenceClient({
-    ...options,
-    fetchImplementation: withRequestLogic(fetchImplementation),
-    apply: options.apply === 'backend',
-    sdk: {
-      id: 'SDK_ID_JS_WEB_PROVIDER',
-      version: '0.2.0', // x-release-please-version
-    },
-  });
-
-  return new ConfidenceWebProvider(confidenceClient, {
-    apply: options.apply || 'access',
-  });
+export function createConfidenceWebProvider(confidence: Confidence): Provider {
+  return new ConfidenceWebProvider(confidence);
 }
 
-// exported for testing
+// todo move request logic to Confidence
 export function withRequestLogic(fetchImplementation: (request: Request) => Promise<Response>): typeof fetch {
   const fetchResolve = new FetchBuilder()
     // always cancel previous resolve
@@ -64,13 +40,4 @@ export function withRequestLogic(fetchImplementation: (request: Request) => Prom
       // throw so we notice changes in endpoints that should be handled here
       .build(request => Promise.reject(new Error(`Unexpected url: ${request.url}`)))
   );
-}
-
-function defaultFetchImplementation(): typeof fetch {
-  if (!globalThis.fetch) {
-    throw new TypeError(
-      'No default fetch implementation found. Please provide provide the fetchImplementation option to createConfidenceWebProvider.',
-    );
-  }
-  return globalThis.fetch.bind(globalThis);
 }
