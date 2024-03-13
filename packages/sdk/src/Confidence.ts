@@ -1,3 +1,4 @@
+import { FlagResolution, FlagResolverClient } from "./flags"
 import { EventSenderEngine } from "./EventSenderEngine"
 import { Value } from "./Value"
 
@@ -14,6 +15,7 @@ export interface Contextual {
 interface Configuration {
     readonly clientSecret: string,
     readonly eventSenderEngine: EventSenderEngine
+    readonly flagResolverClient: FlagResolverClient
 }
 
 export class Confidence implements EventSender {
@@ -37,5 +39,8 @@ export class Confidence implements EventSender {
     }
     remove(name: string) {
         this._context.delete(name)
+    }
+    resolve(flagNames: string[]): Promise<FlagResolution> {
+        return this.config.flagResolverClient.resolve(this.context(), {apply:false, flags:flagNames})
     }
 }

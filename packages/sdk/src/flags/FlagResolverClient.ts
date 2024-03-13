@@ -1,4 +1,4 @@
-import { Configuration, ResolveContext } from './Configuration';
+import { FlagResolution, ResolveContext } from './FlagResolution';
 
 type ApplyRequest = {
   clientSecret: string;
@@ -34,9 +34,9 @@ export type ResolvedFlag<T = any> = {
   variant: string;
   value?: T;
   flagSchema?: ConfidenceFlagSchema;
-  reason: Configuration.ResolveReason;
+  reason: FlagResolution.ResolveReason;
 };
-export type ConfidenceClientOptions = {
+export type FlagResolverClientOptions = {
   fetchImplementation: typeof fetch;
   clientSecret: string;
   apply: boolean;
@@ -50,7 +50,7 @@ export type AppliedFlag = {
   applyTime: string;
 };
 
-export class ConfidenceClient {
+export class FlagResolverClient {
   private readonly backendApplyEnabled: boolean;
   private readonly baseUrl: string;
   private readonly clientSecret: string;
@@ -58,7 +58,7 @@ export class ConfidenceClient {
   private readonly sdk: SDK;
   private readonly fetchImplementation: typeof fetch;
 
-  constructor(options: ConfidenceClientOptions) {
+  constructor(options: FlagResolverClientOptions) {
     this.fetchImplementation = options.fetchImplementation;
     this.clientSecret = options.clientSecret;
     this.backendApplyEnabled = options.apply;
@@ -71,7 +71,7 @@ export class ConfidenceClient {
     }
   }
 
-  async resolve(context: ResolveContext, options?: { apply?: boolean; flags: string[] }): Promise<Configuration> {
+  async resolve(context: ResolveContext, options?: { apply?: boolean; flags: string[] }): Promise<FlagResolution> {
     const payload: ResolveRequest = {
       clientSecret: this.clientSecret,
       evaluationContext: context,
@@ -117,14 +117,14 @@ export class ConfidenceClient {
   }
 }
 
-function getConfidenceUrl(region?: ConfidenceClientOptions['region']): string {
+function getConfidenceUrl(region?: FlagResolverClientOptions['region']): string {
   if (region === 'global' || !region) {
     return 'https://resolver.confidence.dev';
   }
   return `https://resolver.${region}.confidence.dev`;
 }
 
-function resolvedFlagToFlag(flag: ResolvedFlag): Configuration.Flag {
+function resolvedFlagToFlag(flag: ResolvedFlag): FlagResolution.Flag {
   return {
     name: flag.flag.replace(/$flag\//, ''),
     reason: flag.reason,
@@ -134,7 +134,7 @@ function resolvedFlagToFlag(flag: ResolvedFlag): Configuration.Flag {
   };
 }
 
-function parseBaseType(obj: ConfidenceSimpleTypes): Configuration.FlagSchema {
+function parseBaseType(obj: ConfidenceSimpleTypes): FlagResolution.FlagSchema {
   if ('boolSchema' in obj) {
     return 'boolean';
   }
@@ -151,12 +151,12 @@ function parseBaseType(obj: ConfidenceSimpleTypes): Configuration.FlagSchema {
   throw new Error(`Confidence: cannot parse schema. unknown schema: ${JSON.stringify(obj)}`);
 }
 
-function parseSchema(schema: ConfidenceFlagSchema | undefined): Configuration.FlagSchema {
+function parseSchema(schema: ConfidenceFlagSchema | undefined): FlagResolution.FlagSchema {
   if (!schema) {
     return 'undefined';
   }
 
-  return Object.keys(schema.schema).reduce((acc: Record<string, Configuration.FlagSchema>, key) => {
+  return Object.keys(schema.schema).reduce((acc: Record<string, FlagResolution.FlagSchema>, key) => {
     const obj = schema.schema[key];
     if ('structSchema' in obj) {
       return {

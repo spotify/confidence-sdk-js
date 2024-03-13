@@ -1,9 +1,9 @@
-import { Configuration } from './Configuration';
+import { FlagResolution } from './FlagResolution';
 
-describe('Configuration', () => {
-  describe('Configuration.Flag.getFlagDetails', () => {
+describe('FlagResolution', () => {
+  describe('FlagResolution.Flag.getFlagDetails', () => {
     it('should get the value and the schema', () => {
-      const result: Configuration.FlagValue<string> = Configuration.FlagValue.traverse(
+      const result: FlagResolution.FlagValue<string> = FlagResolution.FlagValue.traverse(
         {
           schema: {
             a: {
@@ -25,7 +25,7 @@ describe('Configuration', () => {
 
     it('should throw an error when the path not traversable for the value and schema', () => {
       expect(() =>
-        Configuration.FlagValue.traverse(
+        FlagResolution.FlagValue.traverse(
           {
             schema: {
               a: {
@@ -44,13 +44,13 @@ describe('Configuration', () => {
     });
   });
 
-  describe('Configuration.FlagValue.matches', () => {
+  describe('FlagResolution.FlagValue.matches', () => {
     it('should match undefined value to "undefined" schema', () => {
-      expect(Configuration.FlagValue.matches({ schema: 'undefined', value: undefined }, undefined)).toEqual(true);
+      expect(FlagResolution.FlagValue.matches({ schema: 'undefined', value: undefined }, undefined)).toEqual(true);
     });
 
     it('should not match a string value to "undefined" schema', () => {
-      expect(Configuration.FlagValue.matches({ schema: 'undefined', value: undefined }, 'hello world')).toEqual(false);
+      expect(FlagResolution.FlagValue.matches({ schema: 'undefined', value: undefined }, 'hello world')).toEqual(false);
     });
   });
 });

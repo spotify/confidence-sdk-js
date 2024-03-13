@@ -1,11 +1,11 @@
-import { ConfidenceClient } from './client';
+import { FlagResolverClient } from './flags';
 import { ApplyManager } from './ApplyManager';
 
 const applyMock = jest.fn();
 const mockClient = {
   resolve: jest.fn(),
   apply: applyMock,
-} as jest.MockedObject<ConfidenceClient>;
+} as jest.MockedObject<FlagResolverClient>;
 
 describe('ApplyManager', () => {
   const fakeDate = new Date();

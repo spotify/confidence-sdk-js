@@ -13,10 +13,10 @@ import {
 } from '@openfeature/web-sdk';
 import equal from 'fast-deep-equal';
 
-import { ApplyManager, ConfidenceClient, Configuration, ResolveContext } from '@spotify-confidence/client-http';
+import { ApplyManager, Confidence, ResolveContext, FlagResolution } from '@spotify-confidence/sdk';
 
-const APPLY_TIMEOUT = 250;
-const MAX_APPLY_BUFFER_SIZE = 20;
+// const APPLY_TIMEOUT = 250;
+// const MAX_APPLY_BUFFER_SIZE = 20;
 
 export interface ConfidenceWebProviderOptions {
   apply: 'access' | 'backend';
@@ -27,28 +27,27 @@ export class ConfidenceWebProvider implements Provider {
     name: 'ConfidenceWebProvider',
   };
   status: ProviderStatus = ProviderStatus.NOT_READY;
-  configuration: Configuration | null = null;
+  flagResolution: FlagResolution | null = null;
   readonly events = new OpenFeatureEventEmitter();
 
-  private readonly client: ConfidenceClient;
+  private readonly confidence: Confidence;
   private readonly applyManager: ApplyManager | undefined = undefined;
 
-  constructor(client: ConfidenceClient, options: ConfidenceWebProviderOptions) {
-    this.client = client;
-    if (options.apply !== 'backend') {
-      this.applyManager = new ApplyManager({
-        client: this.client,
-        timeout: APPLY_TIMEOUT,
-        maxBufferSize: MAX_APPLY_BUFFER_SIZE,
-      });
-    }
+  constructor(confidence: Confidence) {
+    this.confidence = confidence;
+    // if (options.apply !== 'backend') {
+    //   this.applyManager = new ApplyManager({
+    //     client: this.confidence,
+    //     timeout: APPLY_TIMEOUT,
+    //     maxBufferSize: MAX_APPLY_BUFFER_SIZE,
+    //   });
+    // }
   }
 
   async initialize(context?: EvaluationContext): Promise<void> {
     try {
-      this.configuration = await this.client.resolve(this.convertContext(context || {}), {
-        flags: [],
-      });
+      if (context) this.confidence.put('openFeature', this.convertContext(context || {}))
+      this.flagResolution = await this.confidence.resolve([]);
       this.status = ProviderStatus.READY;
       return Promise.resolve();
     } catch (e) {
@@ -63,10 +62,8 @@ export class ConfidenceWebProvider implements Provider {
     }
     this.events.emit(ProviderEvents.Stale);
     try {
-      this.configuration = await this.client.resolve(this.convertContext(newContext || {}), {
-        apply: false,
-        flags: [],
-      });
+      this.confidence.put('openFeature', this.convertContext(newContext))
+      this.flagResolution = await this.confidence.resolve([])
       this.status = ProviderStatus.READY;
       this.events.emit(ProviderEvents.Ready);
     } catch (e) {
@@ -92,7 +89,7 @@ export class ConfidenceWebProvider implements Provider {
     context: EvaluationContext,
     logger: Logger,
   ): ResolutionDetails<T> {
-    if (!this.configuration) {
+    if (!this.flagResolution) {
       logger.warn('Provider not ready');
       return {
         errorCode: ErrorCode.PROVIDER_NOT_READY,
@@ -101,7 +98,7 @@ export class ConfidenceWebProvider implements Provider {
       };
     }
 
-    if (!equal(this.configuration.context, this.convertContext(context))) {
+    if (!equal(this.flagResolution.context, this.convertContext(context))) {
       return {
         value: defaultValue,
         reason: 'STALE',
@@ -111,7 +108,7 @@ export class ConfidenceWebProvider implements Provider {
     const [flagName, ...pathParts] = flagKey.split('.');
 
     try {
-      const flag = this.configuration.flags[flagName];
+      const flag = this.flagResolution.flags[flagName];
 
       if (!flag) {
         logger.warn('Flag "%s" was not found', flagName);
@@ -122,17 +119,17 @@ export class ConfidenceWebProvider implements Provider {
         };
       }
 
-      if (Configuration.ResolveReason.NoSegmentMatch === flag.reason) {
-        this.applyManager?.apply(this.configuration.resolveToken, flagName);
+      if (FlagResolution.ResolveReason.NoSegmentMatch === flag.reason) {
+        this.applyManager?.apply(this.flagResolution.resolveToken, flagName);
         return {
           value: defaultValue,
           reason: 'DEFAULT',
         };
       }
 
-      let flagValue: Configuration.FlagValue;
+      let flagValue: FlagResolution.FlagValue;
       try {
-        flagValue = Configuration.FlagValue.traverse(flag, pathParts.join('.'));
+        flagValue = FlagResolution.FlagValue.traverse(flag, pathParts.join('.'));
       } catch (e) {
         logger.warn('Value with path "%s" was not found in flag "%s"', pathParts.join('.'), flagName);
         return {
@@ -149,7 +146,7 @@ export class ConfidenceWebProvider implements Provider {
         };
       }
 
-      if (!Configuration.FlagValue.matches(flagValue, defaultValue)) {
+      if (!FlagResolution.FlagValue.matches(flagValue, defaultValue)) {
         logger.warn('Value for "%s" is of incorrect type', flagKey);
         return {
           errorCode: ErrorCode.TYPE_MISMATCH,
@@ -158,14 +155,14 @@ export class ConfidenceWebProvider implements Provider {
         };
       }
 
-      this.applyManager?.apply(this.configuration.resolveToken, flagName);
+      this.applyManager?.apply(this.flagResolution.resolveToken, flagName);
       logger.info('Value for "%s" successfully evaluated', flagKey);
       return {
         value: flagValue.value as T,
         reason: mapConfidenceReason(flag.reason),
         variant: flag.variant,
         flagMetadata: {
-          resolveToken: this.configuration.resolveToken,
+          resolveToken: this.flagResolution.resolveToken,
         },
       };
     } catch (e: unknown) {
@@ -215,13 +212,13 @@ export class ConfidenceWebProvider implements Provider {
   }
 }
 
-function mapConfidenceReason(reason: Configuration.ResolveReason): ResolutionReason {
+function mapConfidenceReason(reason: FlagResolution.ResolveReason): ResolutionReason {
   switch (reason) {
-    case Configuration.ResolveReason.Archived:
+    case FlagResolution.ResolveReason.Archived:
       return 'DISABLED';
-    case Configuration.ResolveReason.Unspecified:
+    case FlagResolution.ResolveReason.Unspecified:
       return 'UNKNOWN';
-    case Configuration.ResolveReason.Match:
+    case FlagResolution.ResolveReason.Match:
       return 'TARGETING_MATCH';
     default:
       return 'DEFAULT';

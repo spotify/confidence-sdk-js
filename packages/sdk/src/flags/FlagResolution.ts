@@ -1,6 +1,6 @@
 export type ResolveContext = { targeting_key?: string };
 
-export namespace Configuration {
+export namespace FlagResolution {
   export enum ResolveReason {
     Unspecified = 'RESOLVE_REASON_UNSPECIFIED',
     Match = 'RESOLVE_REASON_MATCH',
@@ -67,7 +67,7 @@ export namespace Configuration {
   }
 }
 
-function valueMatchesSchema(value: any, schema: Configuration.FlagSchema): boolean {
+function valueMatchesSchema(value: any, schema: FlagResolution.FlagSchema): boolean {
   if (value === null || schema === null) {
     return false;
   }
@@ -79,9 +79,9 @@ function valueMatchesSchema(value: any, schema: Configuration.FlagSchema): boole
   return Object.keys(value).every(key => valueMatchesSchema(value[key], schema[key]));
 }
 
-export interface Configuration {
+export interface FlagResolution {
   flags: Readonly<{
-    [name: string]: Configuration.Flag;
+    [name: string]: FlagResolution.Flag;
   }>;
   resolveToken: string;
   context: ResolveContext;

@@ -7,7 +7,8 @@ import {
   ProviderStatus,
 } from '@openfeature/web-sdk';
 import { ConfidenceWebProvider } from './ConfidenceWebProvider';
-import { ConfidenceClient, Configuration, ResolveContext } from '@spotify-confidence/client-http';
+import { Confidence, ResolveContext } from '@spotify-confidence/sdk';
+import { Configuration } from '@spotify-confidence/client-http';
 
 const mockApply = jest.fn();
 jest.mock('@spotify-confidence/client-http', () => {
@@ -23,7 +24,7 @@ const resolveMock = jest.fn();
 const mockClient = {
   resolve: resolveMock,
   apply: jest.fn(),
-} as unknown as ConfidenceClient;
+} as unknown as Confidence;
 
 const dummyContext: ResolveContext = { targeting_key: 'test' };
 const dummyEvaluationContext: EvaluationContext = { targetingKey: 'test' };
@@ -91,7 +92,7 @@ describe('ConfidenceProvider', () => {
   let instanceUnderTest: ConfidenceWebProvider;
 
   beforeEach(() => {
-    instanceUnderTest = new ConfidenceWebProvider(mockClient, { apply: 'access' });
+    instanceUnderTest = new ConfidenceWebProvider(mockClient);
     resolveMock.mockResolvedValue(dummyConfiguration);
   });
 
@@ -729,7 +730,7 @@ describe('events', () => {
 
   it('should emit ready stale ready on successful initialisation and context change', async () => {
     resolveMock.mockResolvedValue(dummyConfiguration);
-    openFeatureAPI.setProvider(new ConfidenceWebProvider(mockClient, { apply: 'backend' }));
+    openFeatureAPI.setProvider(new ConfidenceWebProvider(mockClient));
     await openFeatureAPI.setContext({ targetingKey: 'user-a', name: 'Kurt' });
 
     expect(readyHandler).toHaveBeenCalledTimes(2);
@@ -739,7 +740,7 @@ describe('events', () => {
 
   it('should emit error stale error on failed initialisation and context change', async () => {
     resolveMock.mockRejectedValue(new Error('some error'));
-    openFeatureAPI.setProvider(new ConfidenceWebProvider(mockClient, { apply: 'backend' }));
+    openFeatureAPI.setProvider(new ConfidenceWebProvider(mockClient));
 
     try {
       await openFeatureAPI.setContext({ targetingKey: 'user-a' });

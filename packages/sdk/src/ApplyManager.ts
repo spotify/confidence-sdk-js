@@ -1,9 +1,9 @@
-import { ConfidenceClient, AppliedFlag } from './client';
+import { FlagResolverClient, AppliedFlag } from './flags';
 
 export interface ApplyManagerOptions {
   timeout: number;
   maxBufferSize: number;
-  client: ConfidenceClient;
+  client: FlagResolverClient;
 }
 
 type TokenRecord = {
@@ -15,7 +15,7 @@ export class ApplyManager {
   private readonly tokenRecords: Map<string, TokenRecord> = new Map();
   private readonly timeout: number;
   private readonly maxBufferSize: number;
-  private client: ConfidenceClient;
+  private client: FlagResolverClient;
   private flushTimeout: ReturnType<typeof setTimeout> | null = null;
 
   constructor(options: ApplyManagerOptions) {

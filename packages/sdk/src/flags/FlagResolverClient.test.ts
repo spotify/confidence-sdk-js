@@ -1,9 +1,9 @@
-import { AppliedFlag, ConfidenceClient } from './ConfidenceClient';
-import { Configuration, ResolveContext } from './Configuration';
+import { AppliedFlag, FlagResolverClient } from './FlagResolverClient';
+import { FlagResolution, ResolveContext } from './FlagResolution';
 
-describe('ConfidenceClient', () => {
+describe('FlagResolverClient', () => {
   const mockFetch = jest.fn();
-  const instanceUnderTest = new ConfidenceClient({
+  const instanceUnderTest = new FlagResolverClient({
     clientSecret: 'test-secret',
     fetchImplementation: mockFetch,
     apply: true,
@@ -93,7 +93,7 @@ describe('ConfidenceClient', () => {
           }),
       });
 
-      const regionBasedInstance = new ConfidenceClient({
+      const regionBasedInstance = new FlagResolverClient({
         clientSecret: 'test-secret',
         fetchImplementation: mockFetch,
         apply: true,
@@ -119,7 +119,7 @@ describe('ConfidenceClient', () => {
           }),
       });
 
-      const regionBasedInstance = new ConfidenceClient({
+      const regionBasedInstance = new FlagResolverClient({
         clientSecret: 'test-secret',
         fetchImplementation: mockFetch,
         apply: true,
@@ -183,12 +183,12 @@ describe('ConfidenceClient', () => {
           str: 'test',
         },
         flagSchema: { schema: { str: { stringSchema: {} } } },
-        reason: Configuration.ResolveReason.Match,
+        reason: FlagResolution.ResolveReason.Match,
       };
       const fakeFlag1 = {
         flag: 'flags/test-flag1',
         variant: '',
-        reason: Configuration.ResolveReason.NoSegmentMatch,
+        reason: FlagResolution.ResolveReason.NoSegmentMatch,
       };
       mockFetch.mockResolvedValue({
         json: () =>
@@ -213,14 +213,14 @@ describe('ConfidenceClient', () => {
             value: {
               str: 'test',
             },
-            reason: Configuration.ResolveReason.Match,
+            reason: FlagResolution.ResolveReason.Match,
             variant: 'test',
           },
           ['test-flag1']: {
             name: 'test-flag1',
             schema: 'undefined',
             value: undefined,
-            reason: Configuration.ResolveReason.NoSegmentMatch,
+            reason: FlagResolution.ResolveReason.NoSegmentMatch,
             variant: '',
           },
         },
