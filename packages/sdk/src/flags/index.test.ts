@@ -1,5 +1,4 @@
-import { abortableSleep } from '@spotify-confidence/client-http';
-import { withRequestLogic } from './factory';
+import { abortableSleep, withRequestLogic } from '.';
 import { setMaxListeners } from 'node:events';
 const RESOLVE_ENDPOINT = 'https://resolver.confidence.dev/v1/flags:resolve';
 const APPLY_ENDPOINT = 'https://resolver.confidence.dev/v1/flags:apply';

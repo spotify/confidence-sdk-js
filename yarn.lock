@@ -3830,7 +3830,7 @@ __metadata:
   languageName: node
   linkType: hard
 
-"@spotify-confidence/client-http@npm:0.1.5, @spotify-confidence/client-http@workspace:packages/client-http":
+"@spotify-confidence/client-http@npm:*, @spotify-confidence/client-http@npm:0.1.5, @spotify-confidence/client-http@workspace:packages/client-http":
   version: 0.0.0-use.local
   resolution: "@spotify-confidence/client-http@workspace:packages/client-http"
   languageName: unknown
@@ -3882,6 +3882,8 @@ __metadata:
 "@spotify-confidence/sdk@npm:0.0.1, @spotify-confidence/sdk@workspace:packages/sdk":
   version: 0.0.0-use.local
   resolution: "@spotify-confidence/sdk@workspace:packages/sdk"
+  dependencies:
+    "@spotify-confidence/client-http": "npm:*"
   languageName: unknown
   linkType: soft
 

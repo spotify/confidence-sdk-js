@@ -1,6 +1,7 @@
 import {
   ErrorCode,
   EvaluationContext,
+  EvaluationContextValue,
   JsonValue,
   Logger,
   OpenFeatureEventEmitter,
@@ -13,14 +14,7 @@ import {
 } from '@openfeature/web-sdk';
 import equal from 'fast-deep-equal';
 
-import { ApplyManager, Confidence, ResolveContext, FlagResolution } from '@spotify-confidence/sdk';
-
-// const APPLY_TIMEOUT = 250;
-// const MAX_APPLY_BUFFER_SIZE = 20;
-
-export interface ConfidenceWebProviderOptions {
-  apply: 'access' | 'backend';
-}
+import { Confidence, FlagResolution, Value, Context } from '@spotify-confidence/sdk';
 
 export class ConfidenceWebProvider implements Provider {
   readonly metadata: ProviderMetadata = {
@@ -31,22 +25,14 @@ export class ConfidenceWebProvider implements Provider {
   readonly events = new OpenFeatureEventEmitter();
 
   private readonly confidence: Confidence;
-  private readonly applyManager: ApplyManager | undefined = undefined;
 
   constructor(confidence: Confidence) {
     this.confidence = confidence;
-    // if (options.apply !== 'backend') {
-    //   this.applyManager = new ApplyManager({
-    //     client: this.confidence,
-    //     timeout: APPLY_TIMEOUT,
-    //     maxBufferSize: MAX_APPLY_BUFFER_SIZE,
-    //   });
-    // }
   }
 
   async initialize(context?: EvaluationContext): Promise<void> {
     try {
-      if (context) this.confidence.put('openFeature', this.convertContext(context || {}))
+      if (context) this.confidence.put('openFeature', this.convertContext(context || {}));
       this.flagResolution = await this.confidence.resolve([]);
       this.status = ProviderStatus.READY;
       return Promise.resolve();
@@ -62,8 +48,8 @@ export class ConfidenceWebProvider implements Provider {
     }
     this.events.emit(ProviderEvents.Stale);
     try {
-      this.confidence.put('openFeature', this.convertContext(newContext))
-      this.flagResolution = await this.confidence.resolve([])
+      this.confidence.put('openFeature', this.convertContext(newContext));
+      this.flagResolution = await this.confidence.resolve([]);
       this.status = ProviderStatus.READY;
       this.events.emit(ProviderEvents.Ready);
     } catch (e) {
@@ -72,15 +58,26 @@ export class ConfidenceWebProvider implements Provider {
     }
   }
 
-  private convertContext(context: EvaluationContext): ResolveContext {
-    const { targetingKey, ...rest } = context;
-    if (targetingKey) {
-      return {
-        ...rest,
-        targeting_key: targetingKey,
-      };
+  private convertContext({ targetingKey, ...rest }: EvaluationContext): Context['openFeature'] {
+    return { targeting_key: targetingKey, ...(convert(rest) as Value.Struct) };
+
+    function convert(value: EvaluationContextValue): Value {
+      if (value === null) return undefined;
+      if (typeof value === 'object') {
+        if (Array.isArray(value)) {
+          return value.map(convert);
+        }
+        if (value instanceof Date) {
+          return value.toISOString();
+        }
+        const struct: Record<string, Value> = {};
+        for (const key of Object.keys(value)) {
+          struct[key] = convert(value[key]);
+        }
+        return struct;
+      }
+      return value;
     }
-    return rest;
   }
 
   private getFlag<T>(
@@ -120,7 +117,9 @@ export class ConfidenceWebProvider implements Provider {
       }
 
       if (FlagResolution.ResolveReason.NoSegmentMatch === flag.reason) {
-        this.applyManager?.apply(this.flagResolution.resolveToken, flagName);
+        if (this.confidence.environment === 'client') {
+          this.confidence.apply(this.flagResolution.resolveToken, flagName);
+        }
         return {
           value: defaultValue,
           reason: 'DEFAULT',
@@ -155,7 +154,9 @@ export class ConfidenceWebProvider implements Provider {
         };
       }
 
-      this.applyManager?.apply(this.flagResolution.resolveToken, flagName);
+      if (this.confidence.environment === 'client') {
+        this.confidence.apply(this.flagResolution.resolveToken, flagName);
+      }
       logger.info('Value for "%s" successfully evaluated', flagKey);
       return {
         value: flagValue.value as T,

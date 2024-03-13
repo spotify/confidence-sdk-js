@@ -7,7 +7,7 @@ describe('ConfidenceHTTPProvider E2E tests', () => {
     const confidence: Confidence = Confidence.create({
       clientSecret: 'RxDVTrXvc6op1XxiQ4OaR31dKbJ39aYV',
       timeout: 1000,
-      stack: 'client',
+      environment: 'client',
     });
     const confidenceProvider = createConfidenceWebProvider(confidence);
     const providerReadyPromise = new Promise<void>(resolve => {
@@ -30,7 +30,7 @@ describe('ConfidenceHTTPProvider E2E tests', () => {
       clientSecret: 'RxDVTrXvc6op1XxiQ4OaR31dKbJ39aYV',
       region: 'eu',
       timeout: 0,
-      stack: 'client',
+      environment: 'client',
     });
 
     const confidenceProvider = createConfidenceWebProvider(confidence);
