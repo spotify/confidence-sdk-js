@@ -1,4 +1,4 @@
-import { abortableSleep, withRequestLogic } from '.';
+import { abortableSleep, withRequestLogic } from './FlagResolverClient';
 import { setMaxListeners } from 'node:events';
 const RESOLVE_ENDPOINT = 'https://resolver.confidence.dev/v1/flags:resolve';
 const APPLY_ENDPOINT = 'https://resolver.confidence.dev/v1/flags:apply';

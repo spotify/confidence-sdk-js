@@ -32,7 +32,7 @@ export class ConfidenceWebProvider implements Provider {
 
   async initialize(context?: EvaluationContext): Promise<void> {
     try {
-      if (context) this.confidence.put('openFeature', this.convertContext(context || {}));
+      if (context) this.confidence.updateContext('openFeature', this.convertContext(context || {}));
       this.flagResolution = await this.confidence.resolve([]);
       this.status = ProviderStatus.READY;
       return Promise.resolve();
@@ -48,7 +48,7 @@ export class ConfidenceWebProvider implements Provider {
     }
     this.events.emit(ProviderEvents.Stale);
     try {
-      this.confidence.put('openFeature', this.convertContext(newContext));
+      this.confidence.updateContext('openFeature', this.convertContext(newContext));
       this.flagResolution = await this.confidence.resolve([]);
       this.status = ProviderStatus.READY;
       this.events.emit(ProviderEvents.Ready);

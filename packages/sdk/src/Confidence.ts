@@ -1,26 +1,13 @@
-import { FlagResolverClient, FlagResolution, ApplyManager } from './flags';
+import { FlagResolverClient, FlagResolution, ApplyManager } from './FlagResolverClient';
 import { EventSenderEngine } from './EventSenderEngine';
 import { Value } from './Value';
+import { EventSender } from './events';
+import { Context } from './context';
 
 export { FlagResolverClient, FlagResolution };
 
 const APPLY_TIMEOUT = 250;
 const MAX_APPLY_BUFFER_SIZE = 20;
-
-export interface EventSender extends Contextual {
-  sendEvent(name: string, message?: Value): void;
-}
-
-export interface Context extends Value.Struct {
-  openFeature?: {
-    targeting_key?: string;
-  };
-}
-export interface Contextual {
-  context(): Context;
-  put<K extends string>(name: K, value: Context[K]): void;
-  remove(name: string): void;
-}
 
 export interface ConfidenceOptions {
   clientSecret: string;
@@ -40,10 +27,12 @@ interface Configuration {
 
 export class Confidence implements EventSender {
   private readonly config: Configuration;
+  private readonly parent?: Confidence;
   private _context: Map<string, Value> = new Map();
 
-  constructor(config: Configuration) {
+  constructor(config: Configuration, parent?: Confidence) {
     this.config = config;
+    this.parent = parent;
   }
 
   get environment(): string {
@@ -51,20 +40,44 @@ export class Confidence implements EventSender {
   }
 
   sendEvent(name: string, message?: Value) {
-    this.config.eventSenderEngine.send(name, message, this.context());
+    this.config.eventSenderEngine.send(name, message, this.getContext());
   }
-  context(): Context {
+
+  private *contextEntries(): Iterable<[key: string, value: Value]> {
+    if (this.parent) {
+      for (const entry of this.parent.contextEntries()) {
+        // todo should we do a deep merge of entries?
+        if (!this._context.has(entry[0])) {
+          yield entry;
+        }
+      }
+    }
+    yield* this._context.entries();
+  }
+
+  getContext(): Context {
     const context: Record<string, Value> = {};
-    for (const [key, value] of this._context) {
+    for (const [key, value] of this.contextEntries()) {
       context[key] = value;
     }
     return Object.freeze(context);
   }
-  put<K extends string>(name: K, value: Context[K]) {
+
+  setContext(context: Context): void {
+    this._context.clear();
+    for (const [key, value] of Object.entries(context)) {
+      this.updateContext(key, value);
+    }
+  }
+
+  updateContext<K extends string>(name: K, value: Context[K]) {
     this._context.set(name, Value.clone(value));
   }
-  remove(name: string) {
-    this._context.delete(name);
+
+  withContext(context: Context): Confidence {
+    const child = new Confidence(this.config, this);
+    child.setContext(context);
+    return child;
   }
   /**
    * @internal
