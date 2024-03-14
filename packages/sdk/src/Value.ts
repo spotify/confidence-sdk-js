@@ -1,4 +1,3 @@
-export type Value = Value.Primitive | Value.Struct | Value.List;
 export namespace Value {
   export type Primitive = number | string | boolean | undefined;
   export type Struct = {
@@ -21,10 +20,12 @@ export namespace Value {
   }
 
   export function isStruct(value: Value): value is Struct {
-    return typeof value == 'object' && value !== null && !Array.isArray(value);
+    return typeof value === 'object' && value !== null && !Array.isArray(value);
   }
 
   export function isList(value: Value): value is List {
-    return typeof value == 'object' && value !== null && Array.isArray(value);
+    return typeof value === 'object' && value !== null && Array.isArray(value);
   }
 }
+// eslint-disable-next-line @typescript-eslint/no-redeclare
+export type Value = Value.Primitive | Value.Struct | Value.List;

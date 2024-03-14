@@ -65,8 +65,8 @@ export class Confidence implements EventSender {
 
   setContext(context: Context): void {
     this._context.clear();
-    for (const [key, value] of Object.entries(context)) {
-      this.updateContext(key, value);
+    for (const key of Object.keys(context)) {
+      this.updateContext(key, context[key]);
     }
   }
 
@@ -106,7 +106,7 @@ export class Confidence implements EventSender {
       region: options.region,
       baseUrl: options.baseUrl,
       timeout: options.timeout,
-      apply: options.environment == 'backend',
+      apply: options.environment === 'backend',
       environment: options.environment,
       fetchImplementation,
       sdk,
