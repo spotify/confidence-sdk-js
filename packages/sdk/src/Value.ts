@@ -26,6 +26,23 @@ export namespace Value {
   export function isList(value: Value): value is List {
     return typeof value === 'object' && value !== null && Array.isArray(value);
   }
+
+  export function isAssignable<T extends Value>(value: Value, schema: T): value is schema {
+    if (isStruct(schema)) {
+      if (!isStruct(value)) return false;
+      for (const key of Object.keys(schema)) {
+        if (!isAssignable(value[key], schema[key])) return false;
+      }
+      return true;
+    }
+    if (isList(schema)) {
+      if (!isList(value)) return false;
+      return value.every(value => isAssignable(value, schema[0]));
+    }
+    const type = typeof schema;
+    if (type === 'undefined') return true;
+    return type === typeof value;
+  }
 }
 // eslint-disable-next-line @typescript-eslint/no-redeclare
 export type Value = Value.Primitive | Value.Struct | Value.List;
