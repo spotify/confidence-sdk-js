@@ -1,9 +1,10 @@
-import { FlagResolverClient, FlagResolution } from './FlagResolverClient';
 import { EventSenderEngine } from './EventSenderEngine';
+import { FlagResolverClient } from './FlagResolverClientX';
 import { Value } from './Value';
 import { EventSender } from './events';
 import { Context } from './context';
 import { Logger } from './logger';
+import { FlagEvaluation, FlagResolution, FlagResolver } from './flags';
 
 export { FlagResolverClient, FlagResolution };
 
@@ -23,7 +24,7 @@ interface Configuration {
   readonly flagResolverClient: FlagResolverClient;
 }
 
-export class Confidence implements EventSender {
+export class Confidence implements EventSender, FlagResolver {
   private readonly config: Configuration;
   private readonly parent?: Confidence;
   private _context: Map<string, Value> = new Map();
@@ -98,6 +99,18 @@ export class Confidence implements EventSender {
     return this.config.flagResolverClient.resolve(this.getContext(), flagNames);
   }
 
+  resolveFlags(...names: string[]): Promise<FlagResolution> {
+    throw new Error('Not implemented');
+  }
+
+  evaluateFlag<T>(path: string, defaultValue: T): Promise<FlagEvaluation<T>> {
+    throw new Error('Not implemented');
+  }
+
+  getFlagValue<T>(path: string, defaultValue: T): Promise<T> {
+    throw new Error('Not implemented');
+  }
+
   /**
    * @internal
    */
@@ -116,7 +129,7 @@ export class Confidence implements EventSender {
   }: ConfidenceOptions): Confidence {
     const sdk = {
       id: 'SDK_ID_JS_CONFIDENCE',
-      version: '0.0.1', // x-release-please-version
+      version: '0.0.2', // x-release-please-version
     } as const;
     const flagResolverClient = new FlagResolverClient({
       clientSecret,

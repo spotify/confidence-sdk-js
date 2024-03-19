@@ -1,14 +1,14 @@
-import { Value } from './Value';
+import { Schema, TypeMismatchError, Value } from './Value';
 import { Context } from './context';
 import { FlagEvaluation, FlagResolution } from './flags';
 
-type ResolveRequest = {
-  clientSecret: string;
-  evaluationContext: Value.Struct;
-  apply?: boolean;
-  flags?: string[];
-  // sdk: SDK;
-};
+// type ResolveRequest = {
+//   clientSecret: string;
+//   evaluationContext: Value.Struct;
+//   apply?: boolean;
+//   flags?: string[];
+//   // sdk: SDK;
+// };
 type ResolveResponse = {
   resolvedFlags: ResolvedFlag[];
   resolveToken: string;
@@ -16,7 +16,8 @@ type ResolveResponse = {
 type ResolvedFlag = {
   flag: string;
   variant: string;
-  value: Value;
+  value: Value.Struct;
+  schema: Schema;
   reason:
     | 'RESOLVE_REASON_UNSPECIFIED'
     | 'RESOLVE_REASON_MATCH'
@@ -25,42 +26,52 @@ type ResolvedFlag = {
     | 'RESOLVE_REASON_FLAG_ARCHIVED';
 };
 
-class FlagResolutionImpl implements FlagResolution {
-  private readonly flags: Record<string, ResolvedFlag | undefined>;
+export class FlagResolutionImpl implements FlagResolution {
+  private readonly flags: Record<string, ResolvedFlag | undefined> = {};
 
-  constructor(flags: ResolveResponse) {}
+  constructor(resolveResponse: ResolveResponse, readonly context: Value.Struct) {
+    for (const resolvedFlag of resolveResponse.resolvedFlags) {
+      this.flags[resolvedFlag.flag] = resolvedFlag;
+    }
+  }
 
   evaluate<T extends Value>(path: string, defaultValue: T): FlagEvaluation<T> {
-    const [name, ...steps] = path.split('.');
-    const flag = this.flags[name];
-    if (!flag) {
-      return {
-        reason: 'ERROR',
-        value: defaultValue,
-        errorCode: 'FLAG_NOT_FOUND',
-        errorMessage: `Flag "${name}" not found`,
-      };
-    }
-    let value = flag.value;
-    const errorPath: string[] = [];
-    for (const step of steps) {
-      if (!Value.isStruct(value)) {
+    try {
+      const [name, ...steps] = path.split('.');
+      const flag = this.flags[name];
+      if (!flag) {
         return {
           reason: 'ERROR',
           value: defaultValue,
-          errorCode: 'TYPE_MISMATCH',
-          errorMessage: `Expected Struct at path "${errorPath.join('.')}" in flag "${name}"`,
+          errorCode: 'FLAG_NOT_FOUND',
+          errorMessage: `Flag "${name}" not found`,
         };
       }
-    }
-    if (!Value.isAssignable(value, defaultValue)) {
+      const value = Value.get(flag.value, ...steps) as T;
+      const schema = flag.schema.get(...steps);
+
+      schema.assertAssignsTo(defaultValue);
+
+      const reason = toEvaluationReason(flag.reason);
+      if (reason !== 'MATCH') {
+        return {
+          reason,
+          value: defaultValue,
+        };
+      }
+      return {
+        reason,
+        value,
+        variant: flag.variant,
+      };
+    } catch (e: any) {
       return {
         reason: 'ERROR',
         value: defaultValue,
-        errorCode: 'TYPE_MISMATCH',
+        errorCode: e instanceof TypeMismatchError ? 'TYPE_MISMATCH' : 'GENERAL',
+        errorMessage: e.message ?? 'Unknown error',
       };
     }
-    throw new Error('Method not implemented.');
   }
   getValue<T extends Value>(path: string, defaultValue: T): T {
     return this.evaluate(path, defaultValue).value;
@@ -72,4 +83,10 @@ export class FlagResolverClient {
   resolve(_context: Context, _flagNames: string[]): Promise<FlagResolution> {
     throw new Error('Not implemented');
   }
+}
+
+type ReasonSuffix<R> = R extends `RESOLVE_REASON_${infer S}` ? S : never;
+
+function toEvaluationReason<R extends ResolvedFlag['reason']>(reason: R): ReasonSuffix<R> {
+  return reason.slice('RESOLVE_REASON_'.length) as ReasonSuffix<R>;
 }
