@@ -1,15 +1,12 @@
 import { OpenFeature, ProviderEvents } from '@openfeature/web-sdk';
 import { createConfidenceWebProvider } from './factory';
-import { Confidence } from '@spotify-confidence/sdk';
 
 describe('ConfidenceHTTPProvider E2E tests', () => {
   beforeAll(() => {
-    const confidence: Confidence = Confidence.create({
+    const confidenceProvider = createConfidenceWebProvider({
       clientSecret: 'RxDVTrXvc6op1XxiQ4OaR31dKbJ39aYV',
       timeout: 1000,
-      environment: 'client',
     });
-    const confidenceProvider = createConfidenceWebProvider(confidence);
     const providerReadyPromise = new Promise<void>(resolve => {
       OpenFeature.addHandler(ProviderEvents.Ready, () => {
         resolve();
@@ -26,14 +23,11 @@ describe('ConfidenceHTTPProvider E2E tests', () => {
   });
 
   it('should return defaults after the timeout', async () => {
-    const confidence: Confidence = Confidence.create({
-      clientSecret: 'RxDVTrXvc6op1XxiQ4OaR31dKbJ39aYV',
+    const confidenceProvider = createConfidenceWebProvider({
       region: 'eu',
+      clientSecret: 'RxDVTrXvc6op1XxiQ4OaR31dKbJ39aYV',
       timeout: 0,
-      environment: 'client',
     });
-
-    const confidenceProvider = createConfidenceWebProvider(confidence);
 
     await confidenceProvider.onContextChange!({}, { targetingKey: 'user-a' });
 
