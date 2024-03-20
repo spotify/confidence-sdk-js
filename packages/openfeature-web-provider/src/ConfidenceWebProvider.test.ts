@@ -9,14 +9,14 @@ import {
 import { ConfidenceWebProvider } from './ConfidenceWebProvider';
 import { Confidence, FlagResolution } from '@spotify-confidence/sdk';
 
-const contextPutMock = jest.fn();
+const updateContextMock = jest.fn();
 const resolveMock = jest.fn();
 const applyMock = jest.fn();
-const mockClient = {
+const confidenceMock = {
   environment: 'client',
   resolve: resolveMock,
   apply: applyMock,
-  put: contextPutMock,
+  updateContext: updateContextMock,
 } as unknown as Confidence;
 
 const dummyContext: EvaluationContext = { targetingKey: 'test' };
@@ -85,7 +85,7 @@ describe('ConfidenceProvider', () => {
   let instanceUnderTest: ConfidenceWebProvider;
 
   beforeEach(() => {
-    instanceUnderTest = new ConfidenceWebProvider(mockClient);
+    instanceUnderTest = new ConfidenceWebProvider(confidenceMock);
     resolveMock.mockResolvedValue(dummyConfiguration);
   });
 
@@ -141,7 +141,7 @@ describe('ConfidenceProvider', () => {
     it('should resolve on onContextChange', async () => {
       await instanceUnderTest.onContextChange(dummyContext, { targetingKey: 'test1' });
 
-      expect(contextPutMock).toHaveBeenCalledWith('openFeature', {
+      expect(updateContextMock).toHaveBeenCalledWith('openFeature', {
         targeting_key: 'test1',
       });
       expect(resolveMock).toHaveBeenCalledWith([]);
@@ -637,7 +637,7 @@ describe('events', () => {
 
   it('should emit ready stale ready on successful initialisation and context change', async () => {
     resolveMock.mockResolvedValue(dummyConfiguration);
-    openFeatureAPI.setProvider(new ConfidenceWebProvider(mockClient));
+    openFeatureAPI.setProvider(new ConfidenceWebProvider(confidenceMock));
     await openFeatureAPI.setContext({ targetingKey: 'user-a', name: 'Kurt' });
 
     expect(readyHandler).toHaveBeenCalledTimes(2);
@@ -647,7 +647,7 @@ describe('events', () => {
 
   it('should emit error stale error on failed initialisation and context change', async () => {
     resolveMock.mockRejectedValue(new Error('some error'));
-    openFeatureAPI.setProvider(new ConfidenceWebProvider(mockClient));
+    openFeatureAPI.setProvider(new ConfidenceWebProvider(confidenceMock));
 
     try {
       await openFeatureAPI.setContext({ targetingKey: 'user-a' });
