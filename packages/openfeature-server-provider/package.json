@@ -2,17 +2,29 @@
   "name": "@spotify-confidence/openfeature-server-provider",
   "license": "Apache-2.0",
   "version": "0.2.3",
+  "type": "module",
   "module": "build/esm/index.js",
   "types": "build/types/index.d.ts",
   "devDependencies": {
+    "@microsoft/api-extractor": "*",
     "@openfeature/core": "^1.1.0",
-    "@openfeature/server-sdk": "^1.13.5"
+    "@openfeature/server-sdk": "^1.13.5",
+    "rollup": "*"
   },
   "peerDependencies": {
     "@openfeature/server-sdk": "^1.13.5",
     "@spotify-confidence/sdk": "^0.0.4"
   },
   "publishConfig": {
-    "access": "public"
-  }
+    "access": "public",
+    "types": "dist/index.d.ts",
+    "module": "dist/index.js"
+  },
+  "scripts": {
+    "build": "tsc",
+    "bundle": "api-extractor run ${CI:---local} && rollup -c"
+  },
+  "files": [
+    "dist/*"
+  ]
 }

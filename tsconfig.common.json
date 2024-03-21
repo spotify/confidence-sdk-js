@@ -1,8 +1,9 @@
 {
   "extends": "@spotify/tsconfig/tsconfig.json",
   "compilerOptions": {
-    "target": "ES2017",
-    "skipLibCheck": true,
+    "target": "ESNext",
+    "lib": ["ES2015", "DOM"],
+    "skipLibCheck": false,
     "composite": true,
     "noEmit": false,
     "declaration": true,
@@ -10,7 +11,11 @@
     "isolatedModules": false,
     "stripInternal": false,
     "sourceMap": true,
-    "jsx": "react"
+    "stripInternal": false,
+    "jsx": "react",
+    "moduleResolution": "Bundler",
+    "module": "ESNext",
+    "removeComments": false
   },
   "exclude": ["**/*.test.ts", "**/*.test.tsx"]
 }
