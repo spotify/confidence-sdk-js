@@ -26,11 +26,6 @@ type SimpleFetch = (request: Request) => Promise<Response>;
  */
 type FetchPrimitive = (next: SimpleFetch) => SimpleFetch;
 
-export const enum TimeUnit {
-  SECOND = 1000,
-  MINUTE = 60 * TimeUnit.SECOND,
-}
-
 export class RequestError extends Error {}
 export class TimeoutError extends RequestError {
   constructor() {

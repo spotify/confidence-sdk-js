@@ -1,0 +1,9 @@
+{
+  "files": [],
+  "compilerOptions": { "composite": true },
+  "references": [
+    { "path": "./packages/client-http" },
+    { "path": "./packages/openfeature-server-provider" },
+    { "path": "./packages/openfeature-web-provider" }
+  ]
+}

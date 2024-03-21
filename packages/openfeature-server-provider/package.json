@@ -3,7 +3,6 @@
   "license": "Apache-2.0",
   "version": "0.2.3",
   "module": "build/esm/index.js",
-  "main": "build/cjs/index.js",
   "types": "build/types/index.d.ts",
   "devDependencies": {
     "@openfeature/core": "^1.1.0",
@@ -12,12 +11,6 @@
   "peerDependencies": {
     "@openfeature/server-sdk": "^1.13.5",
     "@spotify-confidence/sdk": "^0.0.4"
-  },
-  "scripts": {
-    "build:esm": "tsc -p tsconfig.esm.json",
-    "build:cjs": "tsc -p tsconfig.cjs.json",
-    "build:types": "tsc -p tsconfig.types.json",
-    "clean": "rm -rf build"
   },
   "publishConfig": {
     "access": "public"
