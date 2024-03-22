@@ -45,6 +45,7 @@ export class Confidence implements EventSender {
 
   private *contextEntries(): Iterable<[key: string, value: Value]> {
     if (this.parent) {
+      // all parent entries except the ones child also has
       for (const entry of this.parent.contextEntries()) {
         // todo should we do a deep merge of entries?
         if (!this._context.has(entry[0])) {
@@ -52,7 +53,12 @@ export class Confidence implements EventSender {
         }
       }
     }
-    yield* this._context.entries();
+    // all child entries except undefined
+    for (const entry of this._context.entries()) {
+      if(typeof entry[1] !== 'undefined') {
+        yield entry;
+      }  
+    }
   }
 
   getContext(): Context {
@@ -66,12 +72,20 @@ export class Confidence implements EventSender {
   setContext(context: Context): void {
     this._context.clear();
     for (const key of Object.keys(context)) {
-      this.updateContext(key, context[key]);
+      this.updateContextEntry(key, context[key]);
     }
   }
 
-  updateContext<K extends string>(name: K, value: Context[K]) {
+  updateContextEntry<K extends string>(name: K, value: Context[K]) {
     this._context.set(name, Value.clone(value));
+  }
+
+  removeContextEntry(name: string): void {
+    this._context.set(name, undefined);
+  }
+
+  clearContext(): void {
+      this._context.clear();
   }
 
   withContext(context: Context): Confidence {

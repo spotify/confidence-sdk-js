@@ -15,7 +15,7 @@ describe('Confidence', () => {
     it('defensively copies values', () => {
       const confidence = new Confidence({} as any);
       const value = { pants: 'yellow' };
-      confidence.updateContext('clothes', value);
+      confidence.updateContextEntry('clothes', value);
       value.pants = 'blue';
       expect(confidence.getContext()).toEqual({ clothes: { pants: 'yellow' } });
     });
@@ -52,6 +52,23 @@ describe('Confidence', () => {
         pants: 'blue',
       });
     });
+    it('remove entry from context', () => {
+      const parent = new Confidence({} as any);
+      parent.setContext({
+        clothes: 'pants',
+      });
+      const child = parent.withContext({});
+      child.removeContextEntry('clothes');
+      expect(child.getContext()).toEqual({});
+      expect(parent.getContext()).toEqual({
+        clothes: 'pants',
+      });
+      expect(Object.keys(child.getContext())).toEqual([]);
+      child.clearContext()
+      expect(child.getContext()).toEqual({
+        clothes: 'pants',
+      });
+    })
   });
   describe('create', () => {
     it('creates a new confidence object', () => {
