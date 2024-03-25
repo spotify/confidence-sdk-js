@@ -134,6 +134,17 @@ describe('FetchBuilder', () => {
 
       expect(requestTimes).toEqual([0, 100, 300, 700]);
     });
+
+    it(`shouldn't retry aborted requests`, async () => {
+      const simpleFetchMock = jest.fn().mockRejectedValue(new Error('aborted'));
+      const retryingFetch = new FetchBuilder().retry().build(simpleFetchMock);
+
+      expect(retryingFetch('http://test.com', { signal: AbortSignal.abort() })).rejects.toThrow();
+
+      await jest.runAllTimersAsync();
+
+      expect(simpleFetchMock).toHaveBeenCalledTimes(1);
+    });
   });
 
   describe('timeout', () => {
