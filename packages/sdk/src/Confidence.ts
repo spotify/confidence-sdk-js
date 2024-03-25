@@ -39,8 +39,8 @@ export class Confidence implements EventSender {
     return this.config.environment;
   }
 
-  sendEvent(name: string, message?: Value) {
-    this.config.eventSenderEngine.send(name, message, this.getContext());
+  sendEvent(name: string, message?: Value.Struct) {
+    this.config.eventSenderEngine.send(this.getContext(), name, message);
   }
 
   private *contextEntries(): Iterable<[key: string, value: Value]> {
@@ -55,9 +55,9 @@ export class Confidence implements EventSender {
     }
     // all child entries except undefined
     for (const entry of this._context.entries()) {
-      if(typeof entry[1] !== 'undefined') {
+      if (typeof entry[1] !== 'undefined') {
         yield entry;
-      }  
+      }
     }
   }
 
@@ -85,7 +85,7 @@ export class Confidence implements EventSender {
   }
 
   clearContext(): void {
-      this._context.clear();
+    this._context.clear();
   }
 
   withContext(context: Context): Confidence {
@@ -128,7 +128,7 @@ export class Confidence implements EventSender {
     return new Confidence({
       environment: options.environment,
       flagResolverClient,
-      eventSenderEngine: new EventSenderEngine(),
+      eventSenderEngine: {} as any,
       applyManager: new ApplyManager({
         client: flagResolverClient,
         timeout: APPLY_TIMEOUT,

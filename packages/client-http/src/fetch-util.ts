@@ -129,10 +129,20 @@ export class FetchBuilder {
    * @returns the builder itself
    */
   rejectNotOk(): this {
+    return this.rejectOn(resp => !resp.ok);
+  }
+
+  /**
+   * Reject responses based on a callback examining the response.
+   * Will reject the response with {@link RequestError} if the callback returns true.
+   * @param callback
+   * @returns the builder itself
+   */
+  rejectOn(callback: (code: Response) => boolean) {
     return this.compose(
       next => request =>
         next(request).then(response => {
-          if (!response.ok) throw new RequestError(`${response.status}: ${response.statusText}`);
+          if (callback(response)) throw new RequestError(`${response.status}: ${response.statusText}`);
           return response;
         }),
     );
@@ -167,6 +177,7 @@ export class FetchBuilder {
    * @returns the builder itself
    */
   rateLimit(tokenFillRate: number, { maxTokens = tokenFillRate, initialTokens = tokenFillRate } = {}) {
+    precondition(tokenFillRate > 0, 'tokenFillRate must be positive');
     let lastRefillTime = Number.NEGATIVE_INFINITY;
     let tokens = initialTokens;
     let nextRun = Promise.resolve();
@@ -217,6 +228,7 @@ export class FetchBuilder {
     backoff = 2,
     jitter = 0,
   } = {}): this {
+    precondition(maxRetries >= 0, 'maxRetries must be larger or equal to zero');
     return this.compose(next => async request => {
       let retryCount = 0;
 
@@ -319,4 +331,8 @@ export function abortableSleep(milliseconds: number, signal?: AbortSignal): Prom
     }
     setTimeout(resolve, milliseconds);
   });
+}
+
+function precondition(condition: boolean, message: string): asserts condition is true {
+  if (!condition) throw new TypeError(message);
 }
