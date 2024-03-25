@@ -16,7 +16,7 @@ const confidenceMock = {
   environment: 'client',
   resolve: resolveMock,
   apply: applyMock,
-  updateContext: updateContextMock,
+  updateContextEntry: updateContextMock,
 } as unknown as Confidence;
 
 const dummyContext: EvaluationContext = { targetingKey: 'test' };
