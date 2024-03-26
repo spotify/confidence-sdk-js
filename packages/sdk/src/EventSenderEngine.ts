@@ -24,6 +24,7 @@ export interface EventSenderEngineOptions {
   rateLimitRps?: number;
   fetchImplementation: FetchImplementation;
   region: 'eu' | 'us';
+  maxOpenRequests: number;
 }
 
 type FetchImplementation = typeof fetch;
@@ -44,13 +45,14 @@ export class EventSenderEngine {
     fetchImplementation,
     region,
     rateLimitRps,
+    maxOpenRequests,
   }: EventSenderEngineOptions) {
     this.publishUrl = `https://events.${region}.confidence.dev/v1/events:publish`;
     this.clientSecret = clientSecret;
     this.maxBatchSize = maxBatchSize;
     this.flushTimeoutMilliseconds = flushTimeoutMilliseconds;
     const fetchBuilder = new FetchBuilder()
-      .limitPending(1000)
+      .limitPending(maxOpenRequests)
       .rejectNotOk()
       .timeout(30 * TimeUnit.MINUTE)
       .retry({ delay: 5 * TimeUnit.SECOND, backoff: 2, maxDelay: 5 * TimeUnit.MINUTE, jitter: 0.2 })
