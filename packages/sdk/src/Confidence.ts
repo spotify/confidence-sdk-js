@@ -105,8 +105,8 @@ export class Confidence implements EventSender {
 
   static create(options: ConfidenceOptions): Confidence {
     const sdk = {
-      id: 'SDK_ID_JS_WEB_PROVIDER',
-      version: '0.0.1-total-confidence',
+      id: 'SDK_ID_JS_CONFIDENCE',
+      version: '0.0.1', // x-release-please-version
     } as const;
     const fetchImplementation = options.fetchImplementation || defaultFetchImplementation();
     const flagResolverClient = new FlagResolverClient({
