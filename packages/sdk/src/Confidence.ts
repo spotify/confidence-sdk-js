@@ -36,7 +36,7 @@ export class Confidence implements EventSender {
   }
 
   sendEvent(name: string, message?: Value.Struct) {
-    this.config.eventSenderEngine.send(name, message, this.getContext());
+    this.config.eventSenderEngine.send(this.getContext(), name, message);
   }
 
   private *contextEntries(): Iterable<[key: string, value: Value]> {
@@ -121,7 +121,7 @@ export class Confidence implements EventSender {
     return new Confidence({
       environment: options.environment,
       flagResolverClient,
-      eventSenderEngine: new EventSenderEngine(),
+      eventSenderEngine: {} as any,
     });
   }
 }
