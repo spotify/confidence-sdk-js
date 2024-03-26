@@ -35,7 +35,7 @@ export class Confidence implements EventSender {
     return this.config.environment;
   }
 
-  sendEvent(name: string, message?: Value) {
+  sendEvent(name: string, message?: Value.Struct) {
     this.config.eventSenderEngine.send(name, message, this.getContext());
   }
 

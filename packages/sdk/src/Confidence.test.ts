@@ -36,7 +36,7 @@ describe('Confidence', () => {
       const additionalContext = {
         clothes: 'pants',
       };
-      let child = parent.withContext(additionalContext);
+      const child = parent.withContext(additionalContext);
       expect(child.getContext()).toEqual(additionalContext);
     });
     it('merge contexts', () => {
@@ -64,15 +64,15 @@ describe('Confidence', () => {
         clothes: 'pants',
       });
       expect(Object.keys(child.getContext())).toEqual([]);
-      child.clearContext()
+      child.clearContext();
       expect(child.getContext()).toEqual({
         clothes: 'pants',
       });
-    })
+    });
   });
   describe('create', () => {
     it('creates a new confidence object', () => {
-      const confidenceProvider = Confidence.create({
+      const confidence = Confidence.create({
         clientSecret: 'secret',
         region: 'us',
         baseUrl: 'https://www.spotify.com',
@@ -80,7 +80,7 @@ describe('Confidence', () => {
         fetchImplementation: {} as any,
         timeout: 10,
       });
-      expect(confidenceProvider.getContext()).toEqual({});
+      expect(confidence.getContext()).toEqual({});
     });
   });
 });
