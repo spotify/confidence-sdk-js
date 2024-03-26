@@ -7,21 +7,46 @@ import {
   ApplyManager,
   abortableSleep,
 } from '@spotify-confidence/client-http';
+import { Context } from './context';
 
-export interface FlagResolverOptions extends ConfidenceClientOptions {
+const APPLY_TIMEOUT = 250;
+const MAX_APPLY_BUFFER_SIZE = 20;
+export interface FlagResolverOptions extends Omit<ConfidenceClientOptions, 'apply'> {
   environment: 'client' | 'backend';
 }
 
-class FlagResolverClient extends ConfidenceClient {
+class FlagResolverClient {
+  private readonly legacyClient: ConfidenceClient;
+  private readonly applyManager?: ApplyManager;
+
   constructor({ fetchImplementation, environment, ...options }: FlagResolverOptions) {
-    super({
+    this.legacyClient = new ConfidenceClient({
       ...options,
+      apply: environment === 'backend',
       fetchImplementation: environment === 'client' ? withRequestLogic(fetchImplementation) : fetchImplementation,
     });
+    if (environment === 'client') {
+      this.applyManager = new ApplyManager({
+        client: this.legacyClient,
+        timeout: APPLY_TIMEOUT,
+        maxBufferSize: MAX_APPLY_BUFFER_SIZE,
+      });
+    }
+  }
+
+  resolve({ openFeature, ...context }: Context, flags: string[]): Promise<FlagResolution> {
+    if (openFeature) {
+      context = { ...context, ...openFeature };
+    }
+    return this.legacyClient.resolve(context, { flags });
+  }
+
+  apply(resolveToken: string, flagName: string): void {
+    this.applyManager?.apply(resolveToken, flagName);
   }
 }
 
-export { FlagResolverClient, FlagResolution, ApplyManager, abortableSleep };
+export { FlagResolverClient, FlagResolution, abortableSleep };
 
 export function withRequestLogic(fetchImplementation: (request: Request) => Promise<Response>): typeof fetch {
   const fetchResolve = new FetchBuilder()

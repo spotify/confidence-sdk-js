@@ -1,13 +1,10 @@
-import { FlagResolverClient, FlagResolution, ApplyManager } from './FlagResolverClient';
+import { FlagResolverClient, FlagResolution } from './FlagResolverClient';
 import { EventSenderEngine } from './EventSenderEngine';
 import { Value } from './Value';
 import { EventSender } from './events';
 import { Context } from './context';
 
 export { FlagResolverClient, FlagResolution };
-
-const APPLY_TIMEOUT = 250;
-const MAX_APPLY_BUFFER_SIZE = 20;
 
 export interface ConfidenceOptions {
   clientSecret: string;
@@ -22,7 +19,6 @@ interface Configuration {
   readonly environment: 'client' | 'backend';
   readonly eventSenderEngine: EventSenderEngine;
   readonly flagResolverClient: FlagResolverClient;
-  readonly applyManager: ApplyManager;
 }
 
 export class Confidence implements EventSender {
@@ -55,9 +51,9 @@ export class Confidence implements EventSender {
     }
     // all child entries except undefined
     for (const entry of this._context.entries()) {
-      if(typeof entry[1] !== 'undefined') {
+      if (typeof entry[1] !== 'undefined') {
         yield entry;
-      }  
+      }
     }
   }
 
@@ -85,7 +81,7 @@ export class Confidence implements EventSender {
   }
 
   clearContext(): void {
-      this._context.clear();
+    this._context.clear();
   }
 
   withContext(context: Context): Confidence {
@@ -97,16 +93,14 @@ export class Confidence implements EventSender {
    * @internal
    */
   resolve(flagNames: string[]): Promise<FlagResolution> {
-    // todo evaluationContext should be the whole context, but for now we take just the openFeature context to not break e2e tests
-    const evaluationContext: Value.Struct = (this._context.get('openFeature') || {}) as Value.Struct;
-    return this.config.flagResolverClient.resolve(evaluationContext, { apply: false, flags: flagNames });
+    return this.config.flagResolverClient.resolve(this.getContext(), flagNames);
   }
 
   /**
    * @internal
    */
   apply(resolveToken: string, flagName: string): void {
-    this.config.applyManager.apply(resolveToken, flagName);
+    this.config.flagResolverClient.apply(resolveToken, flagName);
   }
 
   static create(options: ConfidenceOptions): Confidence {
@@ -120,7 +114,6 @@ export class Confidence implements EventSender {
       region: options.region,
       baseUrl: options.baseUrl,
       timeout: options.timeout,
-      apply: options.environment === 'backend',
       environment: options.environment,
       fetchImplementation,
       sdk,
@@ -129,11 +122,6 @@ export class Confidence implements EventSender {
       environment: options.environment,
       flagResolverClient,
       eventSenderEngine: new EventSenderEngine(),
-      applyManager: new ApplyManager({
-        client: flagResolverClient,
-        timeout: APPLY_TIMEOUT,
-        maxBufferSize: MAX_APPLY_BUFFER_SIZE,
-      }),
     });
   }
 }
