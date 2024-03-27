@@ -7,6 +7,7 @@ describe('EventSenderEngine E2E Tests', () => {
     flushTimeoutMilliseconds: 0,
     fetchImplementation: fetch.bind(globalThis),
     region: 'eu',
+    maxOpenRequests: 1000
   });
 
   describe('flush', () => {
