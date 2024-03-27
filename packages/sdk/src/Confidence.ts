@@ -118,10 +118,27 @@ export class Confidence implements EventSender {
       fetchImplementation,
       sdk,
     });
+    const estEventSizeKb = 1;
+    const flushTimeoutMilliseconds = 500;
+    // default grpc payload limit is 4MB, so we aim for a 1MB batch-size
+    const maxBatchSize = Math.floor(1024 / estEventSizeKb);
+    const eventSenderEngine = new EventSenderEngine({
+      clientSecret: options.clientSecret,
+      maxBatchSize,
+      flushTimeoutMilliseconds,
+      fetchImplementation: fetchImplementation,
+      region: nonGlobalRegion(options.region),
+      // we set rate limit to support the flushTimeout
+      // on backend, the rate limit would be ∞
+      rateLimitRps: options.environment === 'client' ? 1000 / flushTimeoutMilliseconds : Number.POSITIVE_INFINITY,
+      // the request is queued or in flight in memory to be sent.
+      // max memory consumption is 50MB
+      maxOpenRequests: (50 * 1024) / (estEventSizeKb * maxBatchSize),
+    });
     return new Confidence({
       environment: options.environment,
       flagResolverClient,
-      eventSenderEngine: {} as any,
+      eventSenderEngine: eventSenderEngine,
     });
   }
 }
@@ -133,4 +150,8 @@ function defaultFetchImplementation(): typeof fetch {
     );
   }
   return globalThis.fetch.bind(globalThis);
+}
+
+function nonGlobalRegion(region: 'eu' | 'us' | 'global' = 'eu'): 'eu' | 'us' {
+  return region === 'global' ? 'eu' : region;
 }
