@@ -22,7 +22,7 @@ export function createConfidenceServerProvider({
     apply: true,
     sdk: {
       id: 'SDK_ID_JS_SERVER_PROVIDER',
-      version: '0.2.0', // x-release-please-version
+      version: '0.2.1', // x-release-please-version
     },
   });
 

@@ -18,6 +18,20 @@
   * devDependencies
     * @spotify-confidence/openfeature-web-provider bumped from ^0.1.4 to ^0.1.5
 
+## [0.2.1](https://github.com/spotify/confidence-openfeature-provider-js/compare/integration-react-v0.2.0...integration-react-v0.2.1) (2024-03-28)
+
+
+### ✨ New Features
+
+* make provider fetchImplementation optional ([0a7eb86](https://github.com/spotify/confidence-openfeature-provider-js/commit/0a7eb866c96352012deae19638f851049ed9894a))
+
+
+### Dependencies
+
+* The following workspace dependencies were updated
+  * devDependencies
+    * @spotify-confidence/openfeature-web-provider bumped from ^0.2.0 to ^0.2.1
+
 ## [0.2.0](https://github.com/spotify/confidence-openfeature-provider-js/compare/integration-react-v0.1.5...integration-react-v0.2.0) (2024-02-15)
 
 
