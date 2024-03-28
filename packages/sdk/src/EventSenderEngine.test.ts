@@ -12,6 +12,11 @@ describe('EventSenderEngine unit tests', () => {
     await sleep(UPLOAD_LATENCY);
     return new Response(JSON.stringify({ errors: [] }));
   });
+  const loggerMock = {
+    trace: jest.fn(),
+    warn: jest.fn(),
+    error: jest.fn(),
+  };
   const engine = new EventSenderEngine({
     clientSecret: 'some client secret',
     maxBatchSize: BATCH_SIZE,
@@ -19,6 +24,7 @@ describe('EventSenderEngine unit tests', () => {
     fetchImplementation: mockFetch as any,
     region: 'eu',
     maxOpenRequests: MAX_OPEN_REQUESTS,
+    logger: loggerMock,
   });
   const flushSpy = jest.spyOn(engine, 'flush');
   it('should write event to batch', () => {});

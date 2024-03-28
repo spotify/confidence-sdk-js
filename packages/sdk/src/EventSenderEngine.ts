@@ -1,5 +1,6 @@
 import { Value } from './Value';
 import { FetchBuilder, TimeUnit } from '@spotify-confidence/client-http';
+import { Logger } from './logger';
 interface Event {
   eventDefinition: string;
   eventTime: string;
@@ -25,6 +26,7 @@ export interface EventSenderEngineOptions {
   fetchImplementation: FetchImplementation;
   region: 'eu' | 'us';
   maxOpenRequests: number;
+  logger: Logger;
 }
 
 type FetchImplementation = typeof fetch;
@@ -36,6 +38,7 @@ export class EventSenderEngine {
   private readonly maxBatchSize: number;
   private readonly fetchImplementation: FetchImplementation;
   private readonly publishUrl: string;
+  private readonly logger: Logger;
   private pendingFlush: undefined | ReturnType<typeof setTimeout>;
 
   constructor({
@@ -44,13 +47,15 @@ export class EventSenderEngine {
     flushTimeoutMilliseconds,
     fetchImplementation,
     region,
-    rateLimitRps,
+    rateLimitRps = 1000 / flushTimeoutMilliseconds,
     maxOpenRequests,
+    logger,
   }: EventSenderEngineOptions) {
     this.publishUrl = `https://events.${region}.confidence.dev/v1/events:publish`;
     this.clientSecret = clientSecret;
     this.maxBatchSize = maxBatchSize;
     this.flushTimeoutMilliseconds = flushTimeoutMilliseconds;
+    this.logger = logger;
     const fetchBuilder = new FetchBuilder()
       .limitPending(maxOpenRequests)
       .rejectNotOk()
@@ -79,9 +84,7 @@ export class EventSenderEngine {
       eventTime: new Date().toISOString(),
       payload: { ...message, ...context },
     });
-    if (this.pendingFlush) {
-      clearTimeout(this.pendingFlush);
-    }
+    this.clearPendingFlush();
     if (this.writeQueue.length >= this.maxBatchSize) {
       this.flush();
     } else {
@@ -94,7 +97,9 @@ export class EventSenderEngine {
   }
 
   public flush(): Promise<boolean> {
-    if (this.writeQueue.length === 0) {
+    this.clearPendingFlush();
+    const batchSize = this.writeQueue.length;
+    if (batchSize === 0) {
       return Promise.resolve(true);
     }
     return this.upload({
@@ -102,8 +107,31 @@ export class EventSenderEngine {
       sendTime: new Date().toISOString(),
       events: this.writeQueue.splice(0, this.maxBatchSize),
     })
-      .then(errors => errors.length === 0)
-      .catch(_error => false);
+      .then(errors => {
+        if (errors.length === 0) {
+          this.logger.trace?.('Confidence: successfully uploaded %i events', batchSize);
+          return true;
+        }
+        const distinctErrorMessages = Array.from(new Set(errors.map(({ message }) => message)));
+        this.logger.warn?.(
+          'Confidence: failed to upload %i out of %i event(s) with the following errors: %o',
+          errors.length,
+          batchSize,
+          distinctErrorMessages,
+        );
+        return false;
+      })
+      .catch(error => {
+        this.logger.error?.('Confidence: failed to upload %i events.', batchSize, error);
+        return false;
+      });
+  }
+
+  public clearPendingFlush(): void {
+    if (this.pendingFlush) {
+      clearTimeout(this.pendingFlush);
+      this.pendingFlush = undefined;
+    }
   }
 
   private upload(batch: EventBatch): Promise<PublishError[]> {

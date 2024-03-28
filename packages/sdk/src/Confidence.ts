@@ -3,6 +3,7 @@ import { EventSenderEngine } from './EventSenderEngine';
 import { Value } from './Value';
 import { EventSender } from './events';
 import { Context } from './context';
+import { Logger } from './logger';
 
 export { FlagResolverClient, FlagResolution };
 
@@ -13,6 +14,7 @@ export interface ConfidenceOptions {
   environment: 'client' | 'backend';
   fetchImplementation?: typeof fetch;
   timeout: number;
+  logger?: Logger;
 }
 
 interface Configuration {
@@ -103,18 +105,25 @@ export class Confidence implements EventSender {
     this.config.flagResolverClient.apply(resolveToken, flagName);
   }
 
-  static create(options: ConfidenceOptions): Confidence {
+  static create({
+    clientSecret,
+    region,
+    baseUrl,
+    timeout,
+    environment,
+    fetchImplementation = defaultFetchImplementation(),
+    logger = Logger.noOp(),
+  }: ConfidenceOptions): Confidence {
     const sdk = {
       id: 'SDK_ID_JS_CONFIDENCE',
       version: '0.0.1', // x-release-please-version
     } as const;
-    const fetchImplementation = options.fetchImplementation || defaultFetchImplementation();
     const flagResolverClient = new FlagResolverClient({
-      clientSecret: options.clientSecret,
-      region: options.region,
-      baseUrl: options.baseUrl,
-      timeout: options.timeout,
-      environment: options.environment,
+      clientSecret,
+      region,
+      baseUrl,
+      timeout,
+      environment,
       fetchImplementation,
       sdk,
     });
@@ -123,20 +132,21 @@ export class Confidence implements EventSender {
     // default grpc payload limit is 4MB, so we aim for a 1MB batch-size
     const maxBatchSize = Math.floor(1024 / estEventSizeKb);
     const eventSenderEngine = new EventSenderEngine({
-      clientSecret: options.clientSecret,
+      clientSecret,
       maxBatchSize,
       flushTimeoutMilliseconds,
       fetchImplementation: fetchImplementation,
-      region: nonGlobalRegion(options.region),
+      region: nonGlobalRegion(region),
       // we set rate limit to support the flushTimeout
       // on backend, the rate limit would be ∞
-      rateLimitRps: options.environment === 'client' ? 1000 / flushTimeoutMilliseconds : Number.POSITIVE_INFINITY,
+      rateLimitRps: environment === 'client' ? 1000 / flushTimeoutMilliseconds : Number.POSITIVE_INFINITY,
       // the request is queued or in flight in memory to be sent.
       // max memory consumption is 50MB
       maxOpenRequests: (50 * 1024) / (estEventSizeKb * maxBatchSize),
+      logger,
     });
     return new Confidence({
-      environment: options.environment,
+      environment: environment,
       flagResolverClient,
       eventSenderEngine: eventSenderEngine,
     });
