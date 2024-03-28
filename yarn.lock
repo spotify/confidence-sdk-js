@@ -9613,23 +9613,13 @@ __metadata:
   languageName: node
   linkType: hard
 
-"follow-redirects@npm:^1.0.0":
-  version: 1.15.3
-  resolution: "follow-redirects@npm:1.15.3"
+"follow-redirects@npm:^1.0.0, follow-redirects@npm:^1.15.0":
+  version: 1.15.6
+  resolution: "follow-redirects@npm:1.15.6"
   peerDependenciesMeta:
     debug:
       optional: true
-  checksum: 10c0/915a2cf22e667bdf47b1a43cc6b7dce14d95039e9bbf9a24d0e739abfbdfa00077dd43c86d4a7a19efefcc7a99af144920a175eedc3888d268af5df67c272ee5
-  languageName: node
-  linkType: hard
-
-"follow-redirects@npm:^1.15.0":
-  version: 1.15.2
-  resolution: "follow-redirects@npm:1.15.2"
-  peerDependenciesMeta:
-    debug:
-      optional: true
-  checksum: 10c0/da5932b70e63944d38eecaa16954bac4347036f08303c913d166eda74809d8797d38386e3a0eb1d2fe37d2aaff2764cce8e9dbd99459d860cf2cdfa237923b5f
+  checksum: 10c0/9ff767f0d7be6aa6870c82ac79cf0368cd73e01bbc00e9eb1c2a16fbb198ec105e3c9b6628bb98e9f3ac66fe29a957b9645bcb9a490bb7aa0d35f908b6b85071
   languageName: node
   linkType: hard
 
@@ -10960,9 +10950,9 @@ __metadata:
   linkType: hard
 
 "ip@npm:^2.0.0":
-  version: 2.0.0
-  resolution: "ip@npm:2.0.0"
-  checksum: 10c0/8d186cc5585f57372847ae29b6eba258c68862055e18a75cc4933327232cb5c107f89800ce29715d542eef2c254fbb68b382e780a7414f9ee7caf60b7a473958
+  version: 2.0.1
+  resolution: "ip@npm:2.0.1"
+  checksum: 10c0/cab8eb3e88d0abe23e4724829621ec4c4c5cb41a7f936a2e626c947128c1be16ed543448d42af7cca95379f9892bfcacc1ccd8d09bc7e8bea0e86d492ce33616
   languageName: node
   linkType: hard
 
