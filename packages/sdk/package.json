@@ -1,6 +1,5 @@
 {
   "name": "@spotify-confidence/sdk",
-  "private": true,
   "license": "Apache-2.0",
   "version": "0.0.1",
   "module": "build/esm/index.js",
@@ -20,6 +19,6 @@
     "access": "public"
   },
   "dependencies": {
-    "@spotify-confidence/client-http": "*"
+    "@spotify-confidence/client-http": "0.1.5"
   }
 }
