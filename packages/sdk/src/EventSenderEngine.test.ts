@@ -12,11 +12,6 @@ describe('EventSenderEngine unit tests', () => {
     await sleep(UPLOAD_LATENCY);
     return new Response(JSON.stringify({ errors: [] }));
   });
-  const loggerMock = {
-    trace: jest.fn(),
-    warn: jest.fn(),
-    error: jest.fn(),
-  };
   const engine = new EventSenderEngine({
     clientSecret: 'some client secret',
     maxBatchSize: BATCH_SIZE,
@@ -24,21 +19,30 @@ describe('EventSenderEngine unit tests', () => {
     fetchImplementation: mockFetch as any,
     region: 'eu',
     maxOpenRequests: MAX_OPEN_REQUESTS,
-    logger: loggerMock,
+    logger: {},
   });
   const flushSpy = jest.spyOn(engine, 'flush');
-  it('should write event to batch', () => {});
-  it('should flush 10 millisecond after the last send', () => {});
+  it(`should flush ${FLUSH_TIMEOUT} millisecond after the last send`, async () => {
+    engine.send({}, 'some-event');
+    await jest.advanceTimersByTimeAsync(FLUSH_TIMEOUT - 1);
+    expect(flushSpy).toHaveBeenCalledTimes(0);
+
+    engine.send({}, 'some-event');
+    await jest.advanceTimersByTimeAsync(FLUSH_TIMEOUT - 1);
+    expect(flushSpy).toHaveBeenCalledTimes(0);
+
+    await jest.advanceTimersByTimeAsync(1);
+    expect(flushSpy).toHaveBeenCalledTimes(1);
+  });
   it('should flush once batch is full', async () => {
     for (let i = 0; i <= BATCH_SIZE; i++) {
       engine.send({ i: 'pants' }, 'event', { message: '' });
     }
+    expect(flushSpy).toHaveBeenCalledTimes(1);
     await jest.runAllTimersAsync();
     expect(mockFetch).toHaveBeenCalledTimes(2);
     expect(flushSpy).toHaveBeenCalledTimes(2);
   });
-  it('should retry with delay if event failed to send', () => {});
-  it('should close engine when done', () => {});
   it('should handle a lot of events', async () => {
     const eventCount = BATCH_SIZE * MAX_OPEN_REQUESTS * 2;
     for (let i = 0; i < eventCount; i++) {
