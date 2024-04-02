@@ -3883,7 +3883,7 @@ __metadata:
   version: 0.0.0-use.local
   resolution: "@spotify-confidence/sdk@workspace:packages/sdk"
   dependencies:
-    "@spotify-confidence/client-http": "npm:0.1.5"
+    "@spotify-confidence/client-http": "npm:0.1.6"
   languageName: unknown
   linkType: soft
 
