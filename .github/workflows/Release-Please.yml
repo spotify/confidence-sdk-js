@@ -9,7 +9,7 @@ permissions:
 
 name: Run Release Please
 jobs:
-  release-please:
+  Release-Please:
     runs-on: ubuntu-latest
     outputs:
       releases_created: ${{ steps.release.outputs.releases_created }}
@@ -26,7 +26,7 @@ jobs:
   Build-And-Publish:
     environment: deployment
     runs-on: ubuntu-latest
-    needs: [release-please]
+    needs: [Release-Please]
     if: ${{ needs.release-please.outputs.releases_created }}
     strategy:
       matrix:
@@ -36,12 +36,20 @@ jobs:
         uses: actions/checkout@v3
         with:
           ref: ${{ needs.release-please.outputs.release_tag_name }}
-      - id: setup-environment
-        uses: ./.github/actions/setup
+      - name: Setup Node
+        uses: actions/setup-node@v3
         with:
           node-version: ${{ matrix.node-version }}
-      - run: yarn build
+          scope: '@spotify-confidence'
+      - name: Install dependencies
+        shell: bash
+        # No frozen lockfile because that doesn't play with release-please
+        run: corepack enable && yarn install
+      - name: Build
+        shell: bash
+        run: yarn build
       - name: Publish to NPM
+        shell: bash
         env:
           NPM_TOKEN: ${{secrets.NPM_TOKEN}}
         run: |
