@@ -12,7 +12,8 @@
     "declaration": true,
     "declarationMap": true,
     "isolatedModules": false,
-    "sourceMap": true
+    "sourceMap": true,
+    "stripInternal": false
   },
   "exclude": ["**/*.setup.ts"],
   "include": ["packages/**/src/*"],
