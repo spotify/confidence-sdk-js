@@ -18,6 +18,20 @@
   * devDependencies
     * @spotify-confidence/openfeature-web-provider bumped from ^0.1.4 to ^0.1.5
 
+## [0.2.2](https://github.com/spotify/confidence-openfeature-provider-js/compare/integration-react-v0.2.1...integration-react-v0.2.2) (2024-04-03)
+
+
+### ✨ New Features
+
+* Total confidence fake PR ([#84](https://github.com/spotify/confidence-openfeature-provider-js/issues/84)) ([5cd8b22](https://github.com/spotify/confidence-openfeature-provider-js/commit/5cd8b22bb9e9be5e123d6c76223b6fb28732344a))
+
+
+### Dependencies
+
+* The following workspace dependencies were updated
+  * devDependencies
+    * @spotify-confidence/openfeature-web-provider bumped from ^0.2.1 to ^0.2.2
+
 ## [0.2.1](https://github.com/spotify/confidence-openfeature-provider-js/compare/integration-react-v0.2.0...integration-react-v0.2.1) (2024-03-28)
 
 
