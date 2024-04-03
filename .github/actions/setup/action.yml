@@ -1,7 +1,7 @@
 name: 'Setup Environment'
 description: 'Setup Environment'
 inputs:
-  node-verion:
+  node-version:
     description: 'Node version to setup'
     required: false
     default: 18.x
