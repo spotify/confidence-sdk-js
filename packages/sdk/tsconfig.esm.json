@@ -1,0 +1,9 @@
+{
+  "extends": "./tsconfig.json",
+  "compilerOptions": {
+    "module": "ES2015",
+    "outDir": "build/esm",
+    "tsBuildInfoFile": "./build/types/tsconfig.esm.tsbuildinfo"
+  },
+  "exclude": ["**/*.test.*"]
+}
