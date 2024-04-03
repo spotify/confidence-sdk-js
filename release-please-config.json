@@ -1,5 +1,6 @@
 {
   "plugins": ["node-workspace"],
+  "versioning": "prerelease",
   "packages": {
     "packages/client-http": {
       "component": "client-http",
@@ -16,6 +17,7 @@
       ]
     },
     "packages/integration-react": {
+      "prerelease-type": "alpha",
       "component": "integration-react",
       "changelog-path": "CHANGELOG.md",
       "bump-minor-pre-major": true,
@@ -49,6 +51,7 @@
       "changelog-path": "CHANGELOG.md",
       "bump-minor-pre-major": true,
       "bump-patch-for-minor-pre-major": true,
+      "release-as": "0.3.0-beta01",
       "extra-files": [
         "src/factory.ts",
         {
@@ -56,6 +59,21 @@
           "glob": true,
           "path": "/examples/*/package.json",
           "jsonpath": "$['dependencies']['@spotify-confidence/openfeature-web-provider']"
+        }
+      ]
+    },
+    "packages/sdk": {
+      "component": "sdk",
+      "changelog-path": "CHANGELOG.md",
+      "bump-minor-pre-major": true,
+      "bump-patch-for-minor-pre-major": true,
+      "extra-files": [
+        "src/Confidence.ts",
+        {
+          "type": "json",
+          "glob": true,
+          "path": "/examples/*/package.json",
+          "jsonpath": "$['dependencies']['@spotify-confidence/sdk']"
         }
       ]
     }

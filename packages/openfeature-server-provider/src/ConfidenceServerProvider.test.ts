@@ -1,5 +1,5 @@
 import { ErrorCode, Logger, ProviderStatus } from '@openfeature/web-sdk';
-import { ConfidenceClient, Configuration } from '@spotify-confidence/client-http';
+import { Confidence, FlagResolution } from '@spotify-confidence/sdk';
 import { ConfidenceServerProvider } from './ConfidenceServerProvider';
 
 const mockApply = jest.fn();
@@ -13,12 +13,16 @@ jest.mock('@spotify-confidence/client-http', () => {
 });
 
 const resolveMock = jest.fn();
+const withContextMock = jest.fn(function withContext() {
+  return this;
+});
 const mockClient = {
   resolve: resolveMock,
   apply: jest.fn(),
-} as unknown as ConfidenceClient;
+  withContext: withContextMock,
+} as unknown as Confidence;
 
-const dummyConfiguration: Configuration = {
+const dummyConfiguration: FlagResolution = {
   flags: {
     ['testFlag']: {
       name: 'testFlag',
@@ -35,7 +39,7 @@ const dummyConfiguration: Configuration = {
           dub: 3.5,
         },
       },
-      reason: Configuration.ResolveReason.Match,
+      reason: FlagResolution.ResolveReason.Match,
       schema: {
         bool: 'boolean',
         str: 'string',
@@ -55,13 +59,13 @@ const dummyConfiguration: Configuration = {
       value: {
         bool: true,
       },
-      reason: Configuration.ResolveReason.Match,
+      reason: FlagResolution.ResolveReason.Match,
       schema: { bool: 'boolean' },
     },
     ['no-seg-flag']: {
       name: 'no-seg-flag',
       variant: '',
-      reason: Configuration.ResolveReason.NoSegmentMatch,
+      reason: FlagResolution.ResolveReason.NoSegmentMatch,
       value: undefined,
       schema: 'undefined',
     },

@@ -8,7 +8,7 @@ type ApplyRequest = {
   sdk: SDK;
 };
 type SDK = {
-  id: 'SDK_ID_JS_WEB_PROVIDER' | 'SDK_ID_JS_SERVER_PROVIDER';
+  id: 'SDK_ID_JS_WEB_PROVIDER' | 'SDK_ID_JS_SERVER_PROVIDER' | 'SDK_ID_JS_CONFIDENCE';
   version: string;
 };
 type ResolveRequest = {
