@@ -7,28 +7,22 @@ import {
   ProviderStatus,
 } from '@openfeature/web-sdk';
 import { ConfidenceWebProvider } from './ConfidenceWebProvider';
-import { ConfidenceClient, Configuration, ResolveContext } from '@spotify-confidence/client-http';
+import { Confidence, FlagResolution } from '@spotify-confidence/sdk';
 
-const mockApply = jest.fn();
-jest.mock('@spotify-confidence/client-http', () => {
-  return {
-    ...jest.requireActual('@spotify-confidence/client-http'),
-    ApplyManager: jest.fn().mockImplementation(() => ({
-      apply: mockApply,
-    })),
-  };
-});
-
+const updateContextMock = jest.fn();
 const resolveMock = jest.fn();
-const mockClient = {
+const applyMock = jest.fn();
+const confidenceMock = {
+  environment: 'client',
   resolve: resolveMock,
-  apply: jest.fn(),
-} as unknown as ConfidenceClient;
+  apply: applyMock,
+  updateContextEntry: updateContextMock,
+} as unknown as Confidence;
 
-const dummyContext: ResolveContext = { targeting_key: 'test' };
-const dummyEvaluationContext: EvaluationContext = { targetingKey: 'test' };
+const dummyContext: EvaluationContext = { targetingKey: 'test' };
+// const dummyContext: EvaluationContext = { targetingKey: 'test' };
 
-const dummyConfiguration: Configuration = {
+const dummyConfiguration: FlagResolution = {
   flags: {
     ['testFlag']: {
       name: 'testFlag',
@@ -45,7 +39,7 @@ const dummyConfiguration: Configuration = {
           dub: 3.5,
         },
       },
-      reason: Configuration.ResolveReason.Match,
+      reason: FlagResolution.ResolveReason.Match,
       schema: {
         bool: 'boolean',
         str: 'string',
@@ -65,7 +59,7 @@ const dummyConfiguration: Configuration = {
       value: {
         bool: true,
       },
-      reason: Configuration.ResolveReason.Match,
+      reason: FlagResolution.ResolveReason.Match,
       schema: {
         bool: 'boolean',
       },
@@ -73,13 +67,13 @@ const dummyConfiguration: Configuration = {
     ['no-seg-flag']: {
       name: 'no-seg-flag',
       variant: '',
-      reason: Configuration.ResolveReason.NoSegmentMatch,
+      reason: FlagResolution.ResolveReason.NoSegmentMatch,
       value: undefined,
       schema: 'undefined',
     },
   },
   resolveToken: 'before-each',
-  context: dummyContext,
+  context: { targeting_key: 'test' },
 };
 const dummyConsole: Logger = {
   warn: jest.fn(),
@@ -91,7 +85,7 @@ describe('ConfidenceProvider', () => {
   let instanceUnderTest: ConfidenceWebProvider;
 
   beforeEach(() => {
-    instanceUnderTest = new ConfidenceWebProvider(mockClient, { apply: 'access' });
+    instanceUnderTest = new ConfidenceWebProvider(confidenceMock);
     resolveMock.mockResolvedValue(dummyConfiguration);
   });
 
@@ -100,14 +94,7 @@ describe('ConfidenceProvider', () => {
       it('should resolve', async () => {
         await instanceUnderTest.initialize({ targetingKey: 'test' });
 
-        expect(resolveMock).toHaveBeenCalledWith(
-          {
-            targeting_key: 'test',
-          },
-          {
-            flags: [],
-          },
-        );
+        expect(resolveMock).toHaveBeenCalledWith([]);
       });
 
       it('should change the provider status to READY', async () => {
@@ -154,15 +141,10 @@ describe('ConfidenceProvider', () => {
     it('should resolve on onContextChange', async () => {
       await instanceUnderTest.onContextChange(dummyContext, { targetingKey: 'test1' });
 
-      expect(resolveMock).toHaveBeenCalledWith(
-        {
-          targeting_key: 'test1',
-        },
-        {
-          flags: [],
-          apply: false,
-        },
-      );
+      expect(updateContextMock).toHaveBeenCalledWith('openFeature', {
+        targeting_key: 'test1',
+      });
+      expect(resolveMock).toHaveBeenCalledWith([]);
     });
 
     it('should not resolve on onContextChange with equal contexts', async () => {
@@ -213,16 +195,16 @@ describe('ConfidenceProvider', () => {
   describe('apply', () => {
     it('should apply when a flag has no segment match', async () => {
       await instanceUnderTest.initialize(dummyContext);
-      instanceUnderTest.resolveBooleanEvaluation('no-seg-flag.enabled', false, dummyEvaluationContext, dummyConsole);
+      instanceUnderTest.resolveBooleanEvaluation('no-seg-flag.enabled', false, dummyContext, dummyConsole);
 
-      expect(mockApply).toHaveBeenCalledWith(dummyConfiguration.resolveToken, 'no-seg-flag');
+      expect(applyMock).toHaveBeenCalledWith(dummyConfiguration.resolveToken, 'no-seg-flag');
     });
 
     it('should send an apply event', async () => {
       await instanceUnderTest.initialize(dummyContext);
-      instanceUnderTest.resolveBooleanEvaluation('testFlag.bool', false, dummyEvaluationContext, dummyConsole);
+      instanceUnderTest.resolveBooleanEvaluation('testFlag.bool', false, dummyContext, dummyConsole);
 
-      expect(mockApply).toHaveBeenCalledWith(dummyConfiguration.resolveToken, 'testFlag');
+      expect(applyMock).toHaveBeenCalledWith(dummyConfiguration.resolveToken, 'testFlag');
     });
   });
 
@@ -230,9 +212,7 @@ describe('ConfidenceProvider', () => {
     it('should resolve a boolean', async () => {
       await instanceUnderTest.initialize(dummyContext);
 
-      expect(
-        instanceUnderTest.resolveBooleanEvaluation('testFlag.bool', false, dummyEvaluationContext, dummyConsole),
-      ).toEqual({
+      expect(instanceUnderTest.resolveBooleanEvaluation('testFlag.bool', false, dummyContext, dummyConsole)).toEqual({
         variant: 'control',
         flagMetadata: {
           resolveToken: 'before-each',
@@ -245,7 +225,7 @@ describe('ConfidenceProvider', () => {
       await instanceUnderTest.initialize(dummyContext);
 
       expect(
-        instanceUnderTest.resolveBooleanEvaluation('no-seg-flag.enabled', false, dummyEvaluationContext, dummyConsole),
+        instanceUnderTest.resolveBooleanEvaluation('no-seg-flag.enabled', false, dummyContext, dummyConsole),
       ).toEqual({
         reason: 'DEFAULT',
         value: false,
@@ -256,7 +236,7 @@ describe('ConfidenceProvider', () => {
       await instanceUnderTest.initialize(dummyContext);
 
       expect(
-        instanceUnderTest.resolveBooleanEvaluation('testFlag.obj.bool', false, dummyEvaluationContext, dummyConsole),
+        instanceUnderTest.resolveBooleanEvaluation('testFlag.obj.bool', false, dummyContext, dummyConsole),
       ).toEqual({
         variant: 'control',
         flagMetadata: {
@@ -268,12 +248,7 @@ describe('ConfidenceProvider', () => {
     });
 
     it('should return default if the provider is not ready', () => {
-      const actual = instanceUnderTest.resolveBooleanEvaluation(
-        'testFlag.bool',
-        false,
-        dummyEvaluationContext,
-        dummyConsole,
-      );
+      const actual = instanceUnderTest.resolveBooleanEvaluation('testFlag.bool', false, dummyContext, dummyConsole);
 
       expect(actual).toEqual({
         value: false,
@@ -284,12 +259,7 @@ describe('ConfidenceProvider', () => {
 
     it('should return default if the flag is not found', async () => {
       await instanceUnderTest.initialize(dummyContext);
-      const actual = instanceUnderTest.resolveBooleanEvaluation(
-        'notARealFlag.bool',
-        false,
-        dummyEvaluationContext,
-        dummyConsole,
-      );
+      const actual = instanceUnderTest.resolveBooleanEvaluation('notARealFlag.bool', false, dummyContext, dummyConsole);
 
       expect(actual).toEqual({
         value: false,
@@ -300,12 +270,7 @@ describe('ConfidenceProvider', () => {
 
     it('should return default if the flag requested is the wrong type', async () => {
       await instanceUnderTest.initialize(dummyContext);
-      const actual = instanceUnderTest.resolveBooleanEvaluation(
-        'testFlag.str',
-        false,
-        dummyEvaluationContext,
-        dummyConsole,
-      );
+      const actual = instanceUnderTest.resolveBooleanEvaluation('testFlag.str', false, dummyContext, dummyConsole);
 
       expect(actual).toEqual({
         value: false,
@@ -316,12 +281,7 @@ describe('ConfidenceProvider', () => {
 
     it('should return default if the value requested is not in the flag schema', async () => {
       await instanceUnderTest.initialize(dummyContext);
-      const actual = instanceUnderTest.resolveBooleanEvaluation(
-        'testFlag.404',
-        false,
-        dummyEvaluationContext,
-        dummyConsole,
-      );
+      const actual = instanceUnderTest.resolveBooleanEvaluation('testFlag.404', false, dummyContext, dummyConsole);
 
       expect(actual).toEqual({
         value: false,
@@ -335,9 +295,7 @@ describe('ConfidenceProvider', () => {
     it('should resolve a int', async () => {
       await instanceUnderTest.initialize(dummyContext);
 
-      expect(
-        instanceUnderTest.resolveNumberEvaluation('testFlag.int', 1, dummyEvaluationContext, dummyConsole),
-      ).toEqual({
+      expect(instanceUnderTest.resolveNumberEvaluation('testFlag.int', 1, dummyContext, dummyConsole)).toEqual({
         variant: 'control',
         flagMetadata: {
           resolveToken: 'before-each',
@@ -350,9 +308,7 @@ describe('ConfidenceProvider', () => {
     it('should resolve a double', async () => {
       await instanceUnderTest.initialize(dummyContext);
 
-      expect(
-        instanceUnderTest.resolveNumberEvaluation('testFlag.dub', 1.5, dummyEvaluationContext, dummyConsole),
-      ).toEqual({
+      expect(instanceUnderTest.resolveNumberEvaluation('testFlag.dub', 1.5, dummyContext, dummyConsole)).toEqual({
         variant: 'control',
         flagMetadata: {
           resolveToken: 'before-each',
@@ -365,9 +321,7 @@ describe('ConfidenceProvider', () => {
     it('should resolve a int from a nested obj', async () => {
       await instanceUnderTest.initialize(dummyContext);
 
-      expect(
-        instanceUnderTest.resolveNumberEvaluation('testFlag.obj.int', 1, dummyEvaluationContext, dummyConsole),
-      ).toEqual({
+      expect(instanceUnderTest.resolveNumberEvaluation('testFlag.obj.int', 1, dummyContext, dummyConsole)).toEqual({
         variant: 'control',
         flagMetadata: {
           resolveToken: 'before-each',
@@ -380,9 +334,7 @@ describe('ConfidenceProvider', () => {
     it('should resolve a double from a nested obg', async () => {
       await instanceUnderTest.initialize(dummyContext);
 
-      expect(
-        instanceUnderTest.resolveNumberEvaluation('testFlag.obj.dub', 1.5, dummyEvaluationContext, dummyConsole),
-      ).toEqual({
+      expect(instanceUnderTest.resolveNumberEvaluation('testFlag.obj.dub', 1.5, dummyContext, dummyConsole)).toEqual({
         variant: 'control',
         flagMetadata: {
           resolveToken: 'before-each',
@@ -393,7 +345,7 @@ describe('ConfidenceProvider', () => {
     });
 
     it('should return default if the provider is not ready', () => {
-      const actual = instanceUnderTest.resolveNumberEvaluation('testFlag.int', 1, dummyEvaluationContext, dummyConsole);
+      const actual = instanceUnderTest.resolveNumberEvaluation('testFlag.int', 1, dummyContext, dummyConsole);
 
       expect(actual).toEqual({
         value: 1,
@@ -404,12 +356,7 @@ describe('ConfidenceProvider', () => {
 
     it('should return default if the flag is not found', async () => {
       await instanceUnderTest.initialize(dummyContext);
-      const actual = instanceUnderTest.resolveNumberEvaluation(
-        'notARealFlag.int',
-        1,
-        dummyEvaluationContext,
-        dummyConsole,
-      );
+      const actual = instanceUnderTest.resolveNumberEvaluation('notARealFlag.int', 1, dummyContext, dummyConsole);
 
       expect(actual).toEqual({
         value: 1,
@@ -420,7 +367,7 @@ describe('ConfidenceProvider', () => {
 
     it('should return default if the flag requested is the wrong type', async () => {
       await instanceUnderTest.initialize(dummyContext);
-      const actual = instanceUnderTest.resolveNumberEvaluation('testFlag.str', 1, dummyEvaluationContext, dummyConsole);
+      const actual = instanceUnderTest.resolveNumberEvaluation('testFlag.str', 1, dummyContext, dummyConsole);
 
       expect(actual).toEqual({
         value: 1,
@@ -431,7 +378,7 @@ describe('ConfidenceProvider', () => {
 
     it('should return default if the value requested is not in the flag schema', async () => {
       await instanceUnderTest.initialize(dummyContext);
-      const actual = instanceUnderTest.resolveNumberEvaluation('testFlag.404', 1, dummyEvaluationContext, dummyConsole);
+      const actual = instanceUnderTest.resolveNumberEvaluation('testFlag.404', 1, dummyContext, dummyConsole);
 
       expect(actual).toEqual({
         value: 1,
@@ -445,9 +392,7 @@ describe('ConfidenceProvider', () => {
     it('should resolve a string', async () => {
       await instanceUnderTest.initialize(dummyContext);
 
-      expect(
-        instanceUnderTest.resolveStringEvaluation('testFlag.str', 'default', dummyEvaluationContext, dummyConsole),
-      ).toEqual({
+      expect(instanceUnderTest.resolveStringEvaluation('testFlag.str', 'default', dummyContext, dummyConsole)).toEqual({
         variant: 'control',
         flagMetadata: {
           resolveToken: 'before-each',
@@ -461,7 +406,7 @@ describe('ConfidenceProvider', () => {
       await instanceUnderTest.initialize(dummyContext);
 
       expect(
-        instanceUnderTest.resolveStringEvaluation('testFlag.obj.str', 'default', dummyEvaluationContext, dummyConsole),
+        instanceUnderTest.resolveStringEvaluation('testFlag.obj.str', 'default', dummyContext, dummyConsole),
       ).toEqual({
         variant: 'control',
         flagMetadata: {
@@ -473,12 +418,7 @@ describe('ConfidenceProvider', () => {
     });
 
     it('should return default if the provider is not ready', () => {
-      const actual = instanceUnderTest.resolveStringEvaluation(
-        'testFlag.str',
-        'default',
-        dummyEvaluationContext,
-        dummyConsole,
-      );
+      const actual = instanceUnderTest.resolveStringEvaluation('testFlag.str', 'default', dummyContext, dummyConsole);
 
       expect(actual).toEqual({
         value: 'default',
@@ -492,7 +432,7 @@ describe('ConfidenceProvider', () => {
       const actual = instanceUnderTest.resolveStringEvaluation(
         'notARealFlag.str',
         'default',
-        dummyEvaluationContext,
+        dummyContext,
         dummyConsole,
       );
 
@@ -505,12 +445,7 @@ describe('ConfidenceProvider', () => {
 
     it('should return default if the flag requested is the wrong type', async () => {
       await instanceUnderTest.initialize(dummyContext);
-      const actual = instanceUnderTest.resolveStringEvaluation(
-        'testFlag.int',
-        'default',
-        dummyEvaluationContext,
-        dummyConsole,
-      );
+      const actual = instanceUnderTest.resolveStringEvaluation('testFlag.int', 'default', dummyContext, dummyConsole);
 
       expect(actual).toEqual({
         value: 'default',
@@ -524,7 +459,7 @@ describe('ConfidenceProvider', () => {
       const actual = instanceUnderTest.resolveStringEvaluation(
         'testFlag.obj.int',
         'default',
-        dummyEvaluationContext,
+        dummyContext,
         dummyConsole,
       );
 
@@ -537,12 +472,7 @@ describe('ConfidenceProvider', () => {
 
     it('should return default if the value requested is not in the flag schema', async () => {
       await instanceUnderTest.initialize(dummyContext);
-      const actual = instanceUnderTest.resolveStringEvaluation(
-        'testFlag.404',
-        'default',
-        dummyEvaluationContext,
-        dummyConsole,
-      );
+      const actual = instanceUnderTest.resolveStringEvaluation('testFlag.404', 'default', dummyContext, dummyConsole);
 
       expect(actual).toEqual({
         value: 'default',
@@ -556,9 +486,7 @@ describe('ConfidenceProvider', () => {
     it('should resolve a full object', async () => {
       await instanceUnderTest.initialize(dummyContext);
 
-      expect(
-        instanceUnderTest.resolveObjectEvaluation('testFlag.obj', {}, dummyEvaluationContext, dummyConsole),
-      ).toEqual({
+      expect(instanceUnderTest.resolveObjectEvaluation('testFlag.obj', {}, dummyContext, dummyConsole)).toEqual({
         variant: 'control',
         flagMetadata: {
           resolveToken: 'before-each',
@@ -582,7 +510,7 @@ describe('ConfidenceProvider', () => {
           {
             bool: false,
           },
-          dummyEvaluationContext,
+          dummyContext,
           dummyConsole,
         ),
       ).toEqual({
@@ -603,7 +531,7 @@ describe('ConfidenceProvider', () => {
     it('should resolve the full flag object', async () => {
       await instanceUnderTest.initialize(dummyContext);
 
-      expect(instanceUnderTest.resolveObjectEvaluation('testFlag', {}, dummyEvaluationContext, dummyConsole)).toEqual({
+      expect(instanceUnderTest.resolveObjectEvaluation('testFlag', {}, dummyContext, dummyConsole)).toEqual({
         variant: 'control',
         flagMetadata: {
           resolveToken: 'before-each',
@@ -633,7 +561,7 @@ describe('ConfidenceProvider', () => {
           {
             testBool: false,
           },
-          dummyEvaluationContext,
+          dummyContext,
           dummyConsole,
         ),
       ).toEqual({
@@ -646,12 +574,7 @@ describe('ConfidenceProvider', () => {
     });
 
     it('should return default if the provider is not ready', () => {
-      const actual = instanceUnderTest.resolveObjectEvaluation(
-        'testFlag.obj',
-        {},
-        dummyEvaluationContext,
-        dummyConsole,
-      );
+      const actual = instanceUnderTest.resolveObjectEvaluation('testFlag.obj', {}, dummyContext, dummyConsole);
 
       expect(actual).toEqual({
         value: {},
@@ -662,12 +585,7 @@ describe('ConfidenceProvider', () => {
 
     it('should return default if the flag is not found', async () => {
       await instanceUnderTest.initialize(dummyContext);
-      const actual = instanceUnderTest.resolveObjectEvaluation(
-        'notARealFlag.obj',
-        {},
-        dummyEvaluationContext,
-        dummyConsole,
-      );
+      const actual = instanceUnderTest.resolveObjectEvaluation('notARealFlag.obj', {}, dummyContext, dummyConsole);
 
       expect(actual).toEqual({
         value: {},
@@ -678,12 +596,7 @@ describe('ConfidenceProvider', () => {
 
     it('should return default if the flag requested is the wrong type', async () => {
       await instanceUnderTest.initialize(dummyContext);
-      const actual = instanceUnderTest.resolveObjectEvaluation(
-        'testFlag.str',
-        {},
-        dummyEvaluationContext,
-        dummyConsole,
-      );
+      const actual = instanceUnderTest.resolveObjectEvaluation('testFlag.str', {}, dummyContext, dummyConsole);
 
       expect(actual).toEqual({
         value: {},
@@ -694,12 +607,7 @@ describe('ConfidenceProvider', () => {
 
     it('should return default if the value requested is not in the flag schema', async () => {
       await instanceUnderTest.initialize(dummyContext);
-      const actual = instanceUnderTest.resolveObjectEvaluation(
-        'testFlag.404',
-        {},
-        dummyEvaluationContext,
-        dummyConsole,
-      );
+      const actual = instanceUnderTest.resolveObjectEvaluation('testFlag.404', {}, dummyContext, dummyConsole);
 
       expect(actual).toEqual({
         value: {},
@@ -729,7 +637,7 @@ describe('events', () => {
 
   it('should emit ready stale ready on successful initialisation and context change', async () => {
     resolveMock.mockResolvedValue(dummyConfiguration);
-    openFeatureAPI.setProvider(new ConfidenceWebProvider(mockClient, { apply: 'backend' }));
+    openFeatureAPI.setProvider(new ConfidenceWebProvider(confidenceMock));
     await openFeatureAPI.setContext({ targetingKey: 'user-a', name: 'Kurt' });
 
     expect(readyHandler).toHaveBeenCalledTimes(2);
@@ -739,7 +647,7 @@ describe('events', () => {
 
   it('should emit error stale error on failed initialisation and context change', async () => {
     resolveMock.mockRejectedValue(new Error('some error'));
-    openFeatureAPI.setProvider(new ConfidenceWebProvider(mockClient, { apply: 'backend' }));
+    openFeatureAPI.setProvider(new ConfidenceWebProvider(confidenceMock));
 
     try {
       await openFeatureAPI.setContext({ targetingKey: 'user-a' });
