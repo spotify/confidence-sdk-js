@@ -3891,6 +3891,14 @@ __metadata:
   languageName: unknown
   linkType: soft
 
+"@spotify-confidence/sdk@workspace:packages/sdk":
+  version: 0.0.0-use.local
+  resolution: "@spotify-confidence/sdk@workspace:packages/sdk"
+  dependencies:
+    "@spotify-confidence/client-http": "npm:0.1.4"
+  languageName: unknown
+  linkType: soft
+
 "@spotify/eslint-config-base@npm:^15.0.0":
   version: 15.0.0
   resolution: "@spotify/eslint-config-base@npm:15.0.0"
