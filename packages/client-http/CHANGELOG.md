@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.1.7](https://github.com/spotify/confidence-openfeature-provider-js/compare/client-http-v0.1.6...client-http-v0.1.7) (2024-04-04)
+
+
+### ✨ New Features
+
+* total confidence sdk ([627b222](https://github.com/spotify/confidence-openfeature-provider-js/commit/627b222836f6e76a0afdb62e35e9ca54915efaa9))
+
 ## [0.1.6](https://github.com/spotify/confidence-openfeature-provider-js/compare/client-http-v0.1.5...client-http-v0.1.6) (2024-03-28)
 
 
