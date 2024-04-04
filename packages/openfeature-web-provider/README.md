@@ -5,6 +5,8 @@
 JavaScript implementation of the Confidence OpenFeature web provider, to be used in conjunction wth the OpenFeature Web SDK.
 This implements the static paradigm of OpenFeature.
 
+Pre-release
+
 # Usage
 
 ## Adding the dependencies

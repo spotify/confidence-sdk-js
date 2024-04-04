@@ -5,6 +5,7 @@ import { render, screen } from '@testing-library/react';
 
 import { createConfidenceWebProvider } from '@spotify-confidence/openfeature-web-provider';
 import { useStringValue } from './ReactAdaptor';
+import { Confidence } from '@spotify-confidence/sdk';
 
 const TestComponent = () => {
   const str = useStringValue('web-sdk-e2e-flag.str', 'set-in-test');
@@ -12,10 +13,12 @@ const TestComponent = () => {
   return <p>{str}</p>;
 };
 
-const confidenceProvider = createConfidenceWebProvider({
+const confidence = Confidence.create({
   clientSecret: 'RxDVTrXvc6op1XxiQ4OaR31dKbJ39aYV',
+  environment: 'client',
   timeout: 1000,
 });
+const confidenceProvider = createConfidenceWebProvider(confidence);
 
 describe('ReactAdapter e2e', () => {
   it('should show suspense whilst loading then when the context is changed it should show control or treatment', async () => {

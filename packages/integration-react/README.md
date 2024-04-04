@@ -5,6 +5,8 @@
 This is a helper package to use `OpenFeature` in React and ReactNative. It is not official OpenFeature and relies on behaviour from
 the ConfidenceWebProvider specifically.
 
+Pre-release
+
 # Usage
 
 ## Adding the dependencies
