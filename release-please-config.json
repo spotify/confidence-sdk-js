@@ -58,6 +58,21 @@
           "jsonpath": "$['dependencies']['@spotify-confidence/openfeature-web-provider']"
         }
       ]
+    },
+    "packages/sdk": {
+      "component": "sdk",
+      "changelog-path": "CHANGELOG.md",
+      "bump-minor-pre-major": true,
+      "bump-patch-for-minor-pre-major": true,
+      "extra-files": [
+        "src/Confidence.ts",
+        {
+          "type": "json",
+          "glob": true,
+          "path": "/examples/*/package.json",
+          "jsonpath": "$['dependencies']['@spotify-confidence/sdk']"
+        }
+      ]
     }
   },
   "changelog-sections": [
