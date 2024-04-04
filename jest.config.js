@@ -34,6 +34,11 @@ module.exports = {
       ...projectCommonConfig,
     },
     {
+      displayName: 'sdk',
+      testMatch: ['<rootDir>/packages/sdk/src/**/*.test.ts*'],
+      ...projectCommonConfig,
+    },
+    {
       displayName: 'server-provider',
       testMatch: ['<rootDir>/packages/openfeature-server-provider/src/**/*.test.ts*'],
       ...projectCommonConfig,
