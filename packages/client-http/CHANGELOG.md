@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.3.0-rc.1](https://github.com/spotify/confidence-openfeature-provider-js/compare/client-http-v0.3.0-rc.0...client-http-v0.3.0-rc.1) (2024-04-04)
+
+
+### 🐛 Bug Fixes
+
+* allow lockfile changes in publish build ([499d9d7](https://github.com/spotify/confidence-openfeature-provider-js/commit/499d9d7c795aa0803cc6d7453e5cb131aeea37a6))
+
 ## [0.3.0-rc.0](https://github.com/spotify/confidence-openfeature-provider-js/compare/client-http-v0.1.6...client-http-v0.3.0-rc.0) (2024-04-04)
 
 

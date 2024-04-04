@@ -6,6 +6,20 @@
   * dependencies
     * @spotify-confidence/client-http bumped from ^0.1.2 to ^0.1.3
 
+## [0.3.0-rc.1](https://github.com/spotify/confidence-openfeature-provider-js/compare/openfeature-server-provider-v0.3.0-rc.0...openfeature-server-provider-v0.3.0-rc.1) (2024-04-04)
+
+
+### 🐛 Bug Fixes
+
+* allow lockfile changes in publish build ([499d9d7](https://github.com/spotify/confidence-openfeature-provider-js/commit/499d9d7c795aa0803cc6d7453e5cb131aeea37a6))
+
+
+### Dependencies
+
+* The following workspace dependencies were updated
+  * dependencies
+    * @spotify-confidence/sdk bumped from 0.3.0-rc.0 to 0.3.0-rc.1
+
 ## [0.3.0-rc.0](https://github.com/spotify/confidence-openfeature-provider-js/compare/openfeature-server-provider-v0.2.1...openfeature-server-provider-v0.3.0-rc.0) (2024-04-04)
 
 

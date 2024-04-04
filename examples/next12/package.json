@@ -12,8 +12,8 @@
     "@openfeature/core": "^0.0.24",
     "@openfeature/server-sdk": "^1.10.0",
     "@openfeature/web-sdk": "^0.4.11",
-    "@spotify-confidence/openfeature-server-provider": "0.3.0-rc.0",
-    "@spotify-confidence/openfeature-web-provider": "0.3.0-rc.0",
+    "@spotify-confidence/openfeature-server-provider": "0.3.0-rc.1",
+    "@spotify-confidence/openfeature-web-provider": "0.3.0-rc.1",
     "next": "13.5.3",
     "react": "18.2.0",
     "react-dom": "18.2.0"
