@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.1.7](https://github.com/spotify/confidence-openfeature-provider-js/compare/client-http-v0.1.6...client-http-v0.1.7) (2024-04-04)
+
+
+### ✨ New Features
+
+* Total confidence fake PR ([#84](https://github.com/spotify/confidence-openfeature-provider-js/issues/84)) ([f6a2037](https://github.com/spotify/confidence-openfeature-provider-js/commit/f6a203794e9bc9b717c94c7b9ee5a872faa91649))
+
 ## [0.1.6](https://github.com/spotify/confidence-openfeature-provider-js/compare/client-http-v0.1.5...client-http-v0.1.6) (2024-03-28)
 
 
