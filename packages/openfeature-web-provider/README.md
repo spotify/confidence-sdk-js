@@ -1,6 +1,6 @@
 # OpenFeature Web SDK JavaScript Confidence Provider
 
-![](https://img.shields.io/badge/lifecycle-beta-a0c3d2.svg)
+![](https://img.shields.io/badge/lifecycle-alpha-a0c3d2.svg)
 
 JavaScript implementation of the Confidence OpenFeature web provider, to be used in conjunction wth the OpenFeature Web SDK.
 This implements the static paradigm of OpenFeature.

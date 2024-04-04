@@ -43,6 +43,8 @@ jobs:
           scope: '@spotify-confidence'
       - name: Install dependencies
         shell: bash
+        env:
+          YARN_ENABLE_IMMUTABLE_INSTALLS: false
         # No frozen lockfile because that doesn't play with release-please
         run: corepack enable && yarn install
       - name: Build
