@@ -1,35 +1,18 @@
 import { Schema, TypeMismatchError, Value } from './Value';
 import { Context } from './context';
 import { FlagEvaluation, FlagResolution } from './flags';
-
-// type ResolveRequest = {
-//   clientSecret: string;
-//   evaluationContext: Value.Struct;
-//   apply?: boolean;
-//   flags?: string[];
-//   // sdk: SDK;
-// };
-type ResolveResponse = {
-  resolvedFlags: ResolvedFlag[];
-  resolveToken: string;
-};
-type ResolvedFlag = {
-  flag: string;
-  variant: string;
-  value: Value.Struct;
-  schema: Schema;
-  reason:
-    | 'RESOLVE_REASON_UNSPECIFIED'
-    | 'RESOLVE_REASON_MATCH'
-    | 'RESOLVE_REASON_NO_SEGMENT_MATCH'
-    | 'RESOLVE_REASON_NO_TREATMENT_MATCH'
-    | 'RESOLVE_REASON_FLAG_ARCHIVED';
-};
+import type {
+  ResolveFlagsRequest,
+  ResolveFlagsResponse,
+  ResolvedFlag,
+} from './generated/confidence/flags/resolver/v1/api';
+import { ResolveReason, Sdk } from './generated/confidence/flags/resolver/v1/types';
+import { SimpleFetch } from './types';
 
 export class FlagResolutionImpl implements FlagResolution {
   private readonly flags: Record<string, ResolvedFlag | undefined> = {};
 
-  constructor(resolveResponse: ResolveResponse, readonly context: Value.Struct) {
+  constructor(resolveResponse: ResolveFlagsResponse, readonly context: Value.Struct) {
     for (const resolvedFlag of resolveResponse.resolvedFlags) {
       this.flags[resolvedFlag.flag] = resolvedFlag;
     }
@@ -77,16 +60,56 @@ export class FlagResolutionImpl implements FlagResolution {
     return this.evaluate(path, defaultValue).value;
   }
 }
-export class FlagResolverClient {
-  // private readonly fetch: typeof fetch;
 
-  resolve(_context: Context, _flagNames: string[]): Promise<FlagResolution> {
-    throw new Error('Not implemented');
+export type FlagResolverClientOptions = {
+  fetchImplementation: SimpleFetch;
+  clientSecret: string;
+  sdk: Sdk;
+};
+export class FlagResolverClient {
+  private readonly fetchImplementation: SimpleFetch;
+  private readonly clientSecret: string;
+  private readonly sdk: Sdk;
+
+  constructor({ fetchImplementation, clientSecret, sdk }: FlagResolverClientOptions) {
+    this.fetchImplementation = fetchImplementation;
+    this.clientSecret = clientSecret;
+    this.sdk = sdk;
+  }
+
+  async resolve(context: Context, flags: string[]): Promise<FlagResolution> {
+    const request: ResolveFlagsRequest = {
+      clientSecret: this.clientSecret,
+      evaluationContext: context,
+      apply: false,
+      sdk: this.sdk,
+      flags: flags.map(name => `flags/${name}`),
+    };
+
+    const response = await this.resolveFlags(request);
+    console.log(response);
+    return new FlagResolutionImpl(response, context);
+  }
+
+  private async resolveFlags(request: ResolveFlagsRequest): Promise<ResolveFlagsResponse> {
+    const resp = await this.fetchImplementation(
+      new Request('https://resolver.confidence.dev/v1/flags:resolve', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(request),
+      }),
+    );
+    if (!resp.ok) {
+      throw new Error(`${resp.status}: ${resp.statusText}`);
+    }
+    return resp.json();
   }
 }
 
 type ReasonSuffix<R> = R extends `RESOLVE_REASON_${infer S}` ? S : never;
 
-function toEvaluationReason<R extends ResolvedFlag['reason']>(reason: R): ReasonSuffix<R> {
+function toEvaluationReason<R extends ResolveReason>(reason: R): ReasonSuffix<R> {
   return reason.slice('RESOLVE_REASON_'.length) as ReasonSuffix<R>;
 }

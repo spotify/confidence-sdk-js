@@ -42,9 +42,9 @@ export namespace Value {
     return Value.getType(value) === 'List';
   }
 
-  export function get(struct: Struct, path: string): Value;
-  export function get(struct: Struct, ...steps: string[]): Value;
-  export function get(struct: Struct, ...parts: string[]): Value {
+  export function get(struct: Struct | undefined, path: string): Value;
+  export function get(struct: Struct | undefined, ...steps: string[]): Value;
+  export function get(struct: Struct | undefined, ...parts: string[]): Value {
     let value: Value = struct;
     const errorPath: string[] = [];
     for (const step of parts.flatMap(part => part.split('.'))) {

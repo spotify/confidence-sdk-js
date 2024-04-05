@@ -13,6 +13,7 @@
     "build:esm": "tsc -p tsconfig.esm.json",
     "build:cjs": "tsc -p tsconfig.cjs.json",
     "build:types": "tsc -p tsconfig.types.json",
+    "gen:proto": "protoc --plugin=$(yarn bin protoc-gen-ts_proto) --ts_proto_out=src/generated --ts_proto_opt=outputEncodeMethods=false --ts_proto_opt=outputJsonMethods=false --ts_proto_opt=outputPartialMethods=false --ts_proto_opt=stringEnums=true -I proto proto/confidence/flags/resolver/v1/api.proto",
     "clean": "rm -rf build"
   },
   "publishConfig": {
@@ -20,5 +21,8 @@
   },
   "dependencies": {
     "@spotify-confidence/client-http": "0.1.4"
+  },
+  "devDependencies": {
+    "ts-proto": "^1.171.0"
   }
 }

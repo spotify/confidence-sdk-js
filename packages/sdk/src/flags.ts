@@ -50,7 +50,12 @@ export namespace FlagEvaluation {
   }
 
   export interface Unmatched<T> {
-    readonly reason: 'UNSPECIFIED' | 'NO_SEGMENT_MATCH' | 'NO_TREATMENT_MATCH' | 'FLAG_ARCHIVED';
+    readonly reason:
+      | 'UNSPECIFIED'
+      | 'NO_SEGMENT_MATCH'
+      | 'NO_TREATMENT_MATCH'
+      | 'FLAG_ARCHIVED'
+      | 'TARGETING_KEY_ERROR';
     readonly value: T;
   }
 
