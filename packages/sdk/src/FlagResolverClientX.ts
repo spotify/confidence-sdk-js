@@ -4,19 +4,23 @@ import { FlagEvaluation, FlagResolution } from './flags';
 import type {
   ResolveFlagsRequest,
   ResolveFlagsResponse,
-  ResolvedFlag,
+  // ResolvedFlag,
 } from './generated/confidence/flags/resolver/v1/api';
 import { ResolveReason, Sdk } from './generated/confidence/flags/resolver/v1/types';
 import { SimpleFetch } from './types';
 
-export class FlagResolutionImpl implements FlagResolution {
-  private readonly flags: Record<string, ResolvedFlag | undefined> = {};
-
-  constructor(resolveResponse: ResolveFlagsResponse, readonly context: Value.Struct) {
-    for (const resolvedFlag of resolveResponse.resolvedFlags) {
-      this.flags[resolvedFlag.flag] = resolvedFlag;
+type ResolvedFlags = Record<
+  string,
+  | undefined
+  | {
+      schema: Schema;
+      value: Value.Struct;
+      variant?: string;
+      reason: '';
     }
-  }
+>;
+export class FlagResolutionImpl implements FlagResolution {
+  constructor(private readonly flags: ResolvedFlags, readonly context: Value.Struct) {}
 
   evaluate<T extends Value>(path: string, defaultValue: T): FlagEvaluation<T> {
     try {
