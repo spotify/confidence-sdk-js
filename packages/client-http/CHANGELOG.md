@@ -1,5 +1,17 @@
 # Changelog
 
+## [0.1.6](https://github.com/spotify/confidence-openfeature-provider-js/compare/client-http-v0.1.5...client-http-v0.1.6) (2024-04-08)
+
+
+### 🐛 Bug Fixes
+
+* this is a fake fix ([b6928b8](https://github.com/spotify/confidence-openfeature-provider-js/commit/b6928b8b430eb930573e1bc58dce106d4339c9ac))
+
+
+### ✨ New Features
+
+* this is a fake feature ([e3a98e2](https://github.com/spotify/confidence-openfeature-provider-js/commit/e3a98e2c121fdc24bdacf3428a65087489fe3fba))
+
 ## [0.1.5](https://github.com/spotify/confidence-openfeature-provider-js/compare/client-http-v0.1.4...client-http-v0.1.5) (2024-04-04)
 
 

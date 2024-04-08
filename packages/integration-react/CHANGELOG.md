@@ -18,6 +18,25 @@
   * devDependencies
     * @spotify-confidence/openfeature-web-provider bumped from ^0.1.4 to ^0.1.5
 
+## [0.2.1-rc.0](https://github.com/spotify/confidence-openfeature-provider-js/compare/integration-react-v0.2.0-rc.0...integration-react-v0.2.1-rc.0) (2024-04-08)
+
+
+### 🐛 Bug Fixes
+
+* this is a fake fix ([b6928b8](https://github.com/spotify/confidence-openfeature-provider-js/commit/b6928b8b430eb930573e1bc58dce106d4339c9ac))
+
+
+### ✨ New Features
+
+* this is a fake feature ([e3a98e2](https://github.com/spotify/confidence-openfeature-provider-js/commit/e3a98e2c121fdc24bdacf3428a65087489fe3fba))
+
+
+### Dependencies
+
+* The following workspace dependencies were updated
+  * devDependencies
+    * @spotify-confidence/openfeature-web-provider bumped from ^0.2.0-rc.0 to ^0.2.1-rc.0
+
 ## [0.2.0-rc.0](https://github.com/spotify/confidence-openfeature-provider-js/compare/integration-react-v0.1.5...integration-react-v0.2.0-rc.0) (2024-04-04)
 
 
