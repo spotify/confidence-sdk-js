@@ -1,7 +1,7 @@
 on:
   push:
     branches:
-      - main
+      - fake-main
 
 permissions:
   contents: write
@@ -19,7 +19,7 @@ jobs:
         id: release
         with:
           command: manifest
-          default-branch: main
+          default-branch: fake-main
           monorepo-tags: true
 
   Build-And-Publish:

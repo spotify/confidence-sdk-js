@@ -2,7 +2,7 @@ name: Commitlint Workflow
 
 on:
   pull_request:
-    branches: [main]
+    branches: [fake-main]
 
 jobs:
   Check-Commit-Message:

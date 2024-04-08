@@ -2,9 +2,9 @@ name: Build, Test, Lint
 
 on:
   push:
-    branches: [main]
+    branches: [fake-main]
   pull_request:
-    branches: [main]
+    branches: [fake-main]
 
 jobs:
   Build-And-Test:
