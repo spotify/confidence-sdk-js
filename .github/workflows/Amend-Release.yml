@@ -26,6 +26,8 @@ jobs:
       - name: Run yarn build
         shell: bash
         run: yarn build
+        env:
+          YARN_ENABLE_IMMUTABLE_INSTALLS: false
       - name: Commit and push changes
         run: |
           git status && \
