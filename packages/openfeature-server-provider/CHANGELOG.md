@@ -6,6 +6,25 @@
   * dependencies
     * @spotify-confidence/client-http bumped from ^0.1.2 to ^0.1.3
 
+## [0.2.1-rc.0](https://github.com/spotify/confidence-openfeature-provider-js/compare/openfeature-server-provider-v0.2.0-rc.0...openfeature-server-provider-v0.2.1-rc.0) (2024-04-08)
+
+
+### 🐛 Bug Fixes
+
+* this is a fake fix ([b6928b8](https://github.com/spotify/confidence-openfeature-provider-js/commit/b6928b8b430eb930573e1bc58dce106d4339c9ac))
+
+
+### ✨ New Features
+
+* this is a fake feature ([e3a98e2](https://github.com/spotify/confidence-openfeature-provider-js/commit/e3a98e2c121fdc24bdacf3428a65087489fe3fba))
+
+
+### Dependencies
+
+* The following workspace dependencies were updated
+  * dependencies
+    * @spotify-confidence/sdk bumped from 0.0.2 to 0.0.3
+
 ## [0.2.0-rc.0](https://github.com/spotify/confidence-openfeature-provider-js/compare/openfeature-server-provider-v0.1.5...openfeature-server-provider-v0.2.0-rc.0) (2024-04-04)
 
 
