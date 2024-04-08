@@ -1,0 +1,39 @@
+name: Amend Release with yarn.lock update
+
+on:
+  push:
+    branches:
+      - 'release-please**'
+
+jobs:
+  Amend-Release:
+    strategy:
+      matrix:
+        node-version: [18.x]
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event.ref }}
+      - name: Setup Node
+        uses: actions/setup-node@v3
+        with:
+          node-version: ${{ matrix.node-version }}
+          scope: '@spotify-confidence'
+      - name: Install dependencies
+        shell: bash
+        run: corepack enable && yarn install
+      - name: Run yarn build
+        shell: bash
+        run: yarn build
+      - name: Commit and push changes
+        run: |
+          git status && \
+          git --no-pager diff && \
+          git config user.name "confidence-bot" && \
+          git config user.email "confidence+bot@spotify.com" && \
+          git add yarn.lock && \
+          git commit -m "chore: auto update yarn.lock" && \
+          git push
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
