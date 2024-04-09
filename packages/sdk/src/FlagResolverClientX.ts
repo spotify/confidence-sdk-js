@@ -1,7 +1,9 @@
-import { Schema, TypeMismatchError, Value } from './Value';
+import { Schema } from './Schema';
+import { Value } from './Value';
 import { Context } from './context';
+import { TypeMismatchError } from './error';
 import { FlagEvaluation, FlagResolution } from './flags';
-import type {
+import {
   ResolveFlagsRequest,
   ResolveFlagsResponse,
   // ResolvedFlag,
@@ -9,23 +11,50 @@ import type {
 import { ResolveReason, Sdk } from './generated/confidence/flags/resolver/v1/types';
 import { SimpleFetch } from './types';
 
-type ResolvedFlags = Record<
-  string,
-  | undefined
-  | {
-      schema: Schema;
-      value: Value.Struct;
-      variant?: string;
-      reason: '';
-    }
->;
+const FLAG_PREFIX = 'flags/';
+
+type ResolvedFlag = {
+  schema: Schema;
+  value: Value.Struct;
+  variant: string;
+  reason:
+    | 'UNSPECIFIED'
+    | 'MATCH'
+    | 'NO_SEGMENT_MATCH'
+    | 'NO_TREATMENT_MATCH'
+    | 'FLAG_ARCHIVED'
+    | 'TARGETING_KEY_ERROR'
+    | 'ERROR';
+};
+
+type Applier = (flag: string, resolveToken: string) => void;
 export class FlagResolutionImpl implements FlagResolution {
-  constructor(private readonly flags: ResolvedFlags, readonly context: Value.Struct) {}
+  private readonly flags: Map<string, ResolvedFlag> = new Map();
+  readonly resolveToken: Uint8Array;
+
+  constructor(
+    readonly context: Value.Struct,
+    resolveResponse: ResolveFlagsResponse,
+    private readonly applier?: Applier,
+  ) {
+    this.resolveToken = resolveResponse.resolveToken;
+    for (const { flag, variant, value, reason, flagSchema } of resolveResponse.resolvedFlags) {
+      const name = flag.slice(FLAG_PREFIX.length);
+
+      const schema = flagSchema ? Schema.parse({ structSchema: flagSchema }) : Schema.UNDEFINED;
+      this.flags.set(name, {
+        schema,
+        value: value! as Value.Struct,
+        variant,
+        reason: toEvaluationReason(reason),
+      });
+    }
+  }
 
   evaluate<T extends Value>(path: string, defaultValue: T): FlagEvaluation<T> {
     try {
       const [name, ...steps] = path.split('.');
-      const flag = this.flags[name];
+      const flag = this.flags.get(name);
       if (!flag) {
         return {
           reason: 'ERROR',
@@ -34,18 +63,23 @@ export class FlagResolutionImpl implements FlagResolution {
           errorMessage: `Flag "${name}" not found`,
         };
       }
-      const value = Value.get(flag.value, ...steps) as T;
+      const reason = flag.reason;
+      if (reason === 'ERROR') throw new Error('Unknown resolve error');
+
+      const value = TypeMismatchError.hoist(name, () => Value.get(flag.value, ...steps) as T);
+
       const schema = flag.schema.get(...steps);
+      TypeMismatchError.hoist(['defaultValue', ...steps], () => {
+        schema.assertAssignsTo(defaultValue);
+      });
 
-      schema.assertAssignsTo(defaultValue);
-
-      const reason = toEvaluationReason(flag.reason);
       if (reason !== 'MATCH') {
         return {
           reason,
           value: defaultValue,
         };
       }
+      this.applier?.(FLAG_PREFIX + name, '');
       return {
         reason,
         value,
@@ -90,30 +124,62 @@ export class FlagResolverClient {
       flags: flags.map(name => `flags/${name}`),
     };
 
-    const response = await this.resolveFlags(request);
-    console.log(response);
-    return new FlagResolutionImpl(response, context);
+    const response = await this.resolveFlagsJson(request);
+    // console.log('response:', response);
+    return new FlagResolutionImpl(context, response);
   }
 
-  private async resolveFlags(request: ResolveFlagsRequest): Promise<ResolveFlagsResponse> {
+  // async apply();
+
+  // async resolveFlagsProto(request: ResolveFlagsRequest): Promise<ResolveFlagsResponse> {
+  //   const resp = await this.fetchImplementation(
+  //     new Request('https://resolver.confidence.dev/v1/flags:resolve', {
+  //       method: 'POST',
+  //       headers: {
+  //         'Content-Type': 'application/x-protobuf',
+  //       },
+  //       body: ResolveFlagsRequest.encode(request).finish(),
+  //     }),
+  //   );
+  //   if (!resp.ok) {
+  //     throw new Error(`${resp.status}: ${resp.statusText}`);
+  //   }
+  //   return ResolveFlagsResponse.decode(new Uint8Array(await resp.arrayBuffer()));
+  // }
+
+  async resolveFlagsJson(request: ResolveFlagsRequest): Promise<ResolveFlagsResponse> {
     const resp = await this.fetchImplementation(
       new Request('https://resolver.confidence.dev/v1/flags:resolve', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
         },
-        body: JSON.stringify(request),
+        body: JSON.stringify(ResolveFlagsRequest.toJSON(request)),
       }),
     );
     if (!resp.ok) {
       throw new Error(`${resp.status}: ${resp.statusText}`);
     }
-    return resp.json();
+    return ResolveFlagsResponse.fromJSON(await resp.json());
   }
 }
 
-type ReasonSuffix<R> = R extends `RESOLVE_REASON_${infer S}` ? S : never;
-
-function toEvaluationReason<R extends ResolveReason>(reason: R): ReasonSuffix<R> {
-  return reason.slice('RESOLVE_REASON_'.length) as ReasonSuffix<R>;
+function toEvaluationReason(reason: ResolveReason): FlagEvaluation<unknown>['reason'] {
+  switch (reason) {
+    case ResolveReason.RESOLVE_REASON_UNSPECIFIED:
+      return 'UNSPECIFIED';
+    case ResolveReason.RESOLVE_REASON_MATCH:
+      return 'MATCH';
+    case ResolveReason.RESOLVE_REASON_NO_SEGMENT_MATCH:
+      return 'NO_SEGMENT_MATCH';
+    case ResolveReason.RESOLVE_REASON_NO_TREATMENT_MATCH:
+      return 'NO_TREATMENT_MATCH';
+    case ResolveReason.RESOLVE_REASON_FLAG_ARCHIVED:
+      return 'FLAG_ARCHIVED';
+    case ResolveReason.RESOLVE_REASON_TARGETING_KEY_ERROR:
+      return 'TARGETING_KEY_ERROR';
+    case ResolveReason.RESOLVE_REASON_ERROR:
+      return 'ERROR';
+  }
+  return 'UNSPECIFIED';
 }
