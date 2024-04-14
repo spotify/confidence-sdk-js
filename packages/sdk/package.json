@@ -19,9 +19,6 @@
   "publishConfig": {
     "access": "public"
   },
-  "dependencies": {
-    "@spotify-confidence/client-http": "0.1.4"
-  },
   "devDependencies": {
     "prettier": "*",
     "ts-proto": "^1.171.0"

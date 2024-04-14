@@ -31,62 +31,58 @@ export class ConfidenceWebProvider implements Provider {
   }
 
   async initialize(context?: EvaluationContext): Promise<void> {
-    try {
-      if (context) this.confidence.updateContextEntry('openFeature', this.convertContext(context || {}));
-      this.flagResolution = await this.confidence.resolve([]);
-      this.status = ProviderStatus.READY;
-      return Promise.resolve();
-    } catch (e) {
-      this.status = ProviderStatus.ERROR;
-      throw e;
-    }
+    Value.assertValue(context);
+    Value.assertType('Struct', context);
+    if (context) this.confidence.setContext(context);
+    this.flagResolution = await this.confidence.resolve([]);
+    this.status = ProviderStatus.READY;
+    return Promise.resolve();
   }
 
   async onContextChange(oldContext: EvaluationContext, newContext: EvaluationContext): Promise<void> {
     if (equal(oldContext, newContext)) {
       return;
     }
+    this.flagResolution = null;
     this.events.emit(ProviderEvents.Stale);
-    try {
-      this.confidence.updateContextEntry('openFeature', this.convertContext(newContext));
-      this.flagResolution = await this.confidence.resolve([]);
-      this.status = ProviderStatus.READY;
-      this.events.emit(ProviderEvents.Ready);
-    } catch (e) {
-      this.status = ProviderStatus.ERROR;
-      this.events.emit(ProviderEvents.Error);
-    }
+    Value.assertValue(newContext);
+    Value.assertType('Struct', newContext);
+    this.confidence.setContext(newContext);
+    this.flagResolution = await this.confidence.resolve([]);
+    this.status = ProviderStatus.READY;
+    this.events.emit(ProviderEvents.Ready);
   }
 
-  private convertContext({ targetingKey, ...rest }: EvaluationContext): Context['openFeature'] {
-    return { targeting_key: targetingKey, ...(convert(rest) as Value.Struct) };
+  // private convertContext({ targetingKey, ...rest }: EvaluationContext): Context['openFeature'] {
+  //   return { targeting_key: targetingKey, ...(convert(rest) as Value.Struct) };
 
-    function convert(value: EvaluationContextValue): Value {
-      if (value === null) return undefined;
-      if (typeof value === 'object') {
-        if (Array.isArray(value)) {
-          return value.map(convert);
-        }
-        if (value instanceof Date) {
-          return value.toISOString();
-        }
-        const struct: Record<string, Value> = {};
-        for (const key of Object.keys(value)) {
-          struct[key] = convert(value[key]);
-        }
-        return struct;
-      }
-      return value;
-    }
-  }
+  //   function convert(value: EvaluationContextValue): Value {
+  //     if (value === null) return undefined;
+  //     if (typeof value === 'object') {
+  //       if (Array.isArray(value)) {
+  //         return value.map(convert);
+  //       }
+  //       if (value instanceof Date) {
+  //         return value.toISOString();
+  //       }
+  //       const struct: Record<string, Value> = {};
+  //       for (const key of Object.keys(value)) {
+  //         struct[key] = convert(value[key]);
+  //       }
+  //       return struct;
+  //     }
+  //     return value;
+  //   }
+  // }
 
-  private getFlag<T>(
+  private evaluateFlag<T extends Value>(
     flagKey: string,
     defaultValue: T,
     context: EvaluationContext,
     logger: Logger,
   ): ResolutionDetails<T> {
-    if (!this.flagResolution) {
+    Value.assertValue(context);
+    if (!this.flagResolution || !Value.equal(context, this.flagResolution.context)) {
       logger.warn('Provider not ready');
       return {
         errorCode: ErrorCode.PROVIDER_NOT_READY,
@@ -94,86 +90,15 @@ export class ConfidenceWebProvider implements Provider {
         reason: 'ERROR',
       };
     }
-
-    if (!equal(this.flagResolution.context, this.convertContext(context))) {
+    const evaluation = this.flagResolution.evaluate(flagKey, defaultValue);
+    if (evaluation.reason === 'ERROR') {
+      const { errorCode, ...rest } = evaluation;
       return {
-        value: defaultValue,
-        reason: 'STALE',
+        ...rest,
+        errorCode: ErrorCode[errorCode],
       };
     }
-
-    const [flagName, ...pathParts] = flagKey.split('.');
-
-    try {
-      const flag = this.flagResolution.flags[flagName];
-
-      if (!flag) {
-        logger.warn('Flag "%s" was not found', flagName);
-        return {
-          errorCode: ErrorCode.FLAG_NOT_FOUND,
-          value: defaultValue,
-          reason: 'ERROR',
-        };
-      }
-
-      if (FlagResolution.ResolveReason.NoSegmentMatch === flag.reason) {
-        if (this.confidence.environment === 'client') {
-          this.confidence.apply(this.flagResolution.resolveToken, flagName);
-        }
-        return {
-          value: defaultValue,
-          reason: 'DEFAULT',
-        };
-      }
-
-      let flagValue: FlagResolution.FlagValue;
-      try {
-        flagValue = FlagResolution.FlagValue.traverse(flag, pathParts.join('.'));
-      } catch (e) {
-        logger.warn('Value with path "%s" was not found in flag "%s"', pathParts.join('.'), flagName);
-        return {
-          errorCode: ErrorCode.PARSE_ERROR,
-          value: defaultValue,
-          reason: 'ERROR',
-        };
-      }
-
-      if (flagValue.value === null) {
-        return {
-          value: defaultValue,
-          reason: mapConfidenceReason(flag.reason),
-        };
-      }
-
-      if (!FlagResolution.FlagValue.matches(flagValue, defaultValue)) {
-        logger.warn('Value for "%s" is of incorrect type', flagKey);
-        return {
-          errorCode: ErrorCode.TYPE_MISMATCH,
-          value: defaultValue,
-          reason: 'ERROR',
-        };
-      }
-
-      if (this.confidence.environment === 'client') {
-        this.confidence.apply(this.flagResolution.resolveToken, flagName);
-      }
-      logger.info('Value for "%s" successfully evaluated', flagKey);
-      return {
-        value: flagValue.value as T,
-        reason: mapConfidenceReason(flag.reason),
-        variant: flag.variant,
-        flagMetadata: {
-          resolveToken: this.flagResolution.resolveToken,
-        },
-      };
-    } catch (e: unknown) {
-      logger.warn('Error %o occurred in flag evaluation', e);
-      return {
-        errorCode: ErrorCode.GENERAL,
-        value: defaultValue,
-        reason: 'ERROR',
-      };
-    }
+    return evaluation;
   }
 
   resolveBooleanEvaluation(
@@ -182,7 +107,7 @@ export class ConfidenceWebProvider implements Provider {
     context: EvaluationContext,
     logger: Logger,
   ): ResolutionDetails<boolean> {
-    return this.getFlag(flagKey, defaultValue, context, logger);
+    return this.evaluateFlag(flagKey, defaultValue, context, logger);
   }
 
   resolveNumberEvaluation(
@@ -191,7 +116,7 @@ export class ConfidenceWebProvider implements Provider {
     context: EvaluationContext,
     logger: Logger,
   ): ResolutionDetails<number> {
-    return this.getFlag(flagKey, defaultValue, context, logger);
+    return this.evaluateFlag(flagKey, defaultValue, context, logger);
   }
 
   resolveObjectEvaluation<T extends JsonValue>(
@@ -200,7 +125,9 @@ export class ConfidenceWebProvider implements Provider {
     context: EvaluationContext,
     logger: Logger,
   ): ResolutionDetails<T> {
-    return this.getFlag(flagKey, defaultValue, context, logger);
+    // this might throw but will be caught by OpenFeature
+    Value.assertValue(defaultValue);
+    return this.evaluateFlag(flagKey, defaultValue, context, logger);
   }
 
   resolveStringEvaluation(
@@ -209,19 +136,14 @@ export class ConfidenceWebProvider implements Provider {
     context: EvaluationContext,
     logger: Logger,
   ): ResolutionDetails<string> {
-    return this.getFlag(flagKey, defaultValue, context, logger);
+    return this.evaluateFlag(flagKey, defaultValue, context, logger);
   }
 }
 
-function mapConfidenceReason(reason: FlagResolution.ResolveReason): ResolutionReason {
-  switch (reason) {
-    case FlagResolution.ResolveReason.Archived:
-      return 'DISABLED';
-    case FlagResolution.ResolveReason.Unspecified:
-      return 'UNKNOWN';
-    case FlagResolution.ResolveReason.Match:
-      return 'TARGETING_MATCH';
-    default:
-      return 'DEFAULT';
-  }
-}
+// function mapValues<T,S>(object:Record<string, T>, fn:(value:T, key:string) => S):Record<string,S> {
+//   const mapped:Record<string, S> = {};
+//   for(const key of Object.keys(object)) {
+//     mapped[key] = fn(object[key], key);
+//   }
+//   return mapped;
+// }

@@ -3903,7 +3903,7 @@ __metadata:
   languageName: node
   linkType: hard
 
-"@spotify-confidence/client-http@npm:0.1.4, @spotify-confidence/client-http@workspace:packages/client-http":
+"@spotify-confidence/client-http@workspace:packages/client-http":
   version: 0.0.0-use.local
   resolution: "@spotify-confidence/client-http@workspace:packages/client-http"
   languageName: unknown
@@ -3968,7 +3968,6 @@ __metadata:
   version: 0.0.0-use.local
   resolution: "@spotify-confidence/sdk@workspace:packages/sdk"
   dependencies:
-    "@spotify-confidence/client-http": "npm:0.1.4"
     prettier: "npm:*"
     ts-proto: "npm:^1.171.0"
   languageName: unknown

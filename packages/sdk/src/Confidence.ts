@@ -1,10 +1,11 @@
 import { EventSenderEngine } from './EventSenderEngine';
-import { FlagResolverClient } from './FlagResolverClientX';
+import { FlagResolverClient } from './FlagResolverClient';
 import { Value } from './Value';
 import { EventSender } from './events';
 import { Context } from './context';
 import { Logger } from './logger';
 import { FlagEvaluation, FlagResolution, FlagResolver } from './flags';
+import { SdkId } from './generated/confidence/flags/resolver/v1/types';
 
 export { FlagResolverClient, FlagResolution };
 
@@ -99,23 +100,19 @@ export class Confidence implements EventSender, FlagResolver {
     return this.config.flagResolverClient.resolve(this.getContext(), flagNames);
   }
 
-  resolveFlags(...names: string[]): Promise<FlagResolution> {
-    throw new Error('Not implemented');
+  resolveFlags(...flagNames: string[]): Promise<FlagResolution> {
+    // TODO cache the resolution if context hasn't changed
+    return this.config.flagResolverClient.resolve(this.getContext(), flagNames);
   }
 
-  evaluateFlag<T>(path: string, defaultValue: T): Promise<FlagEvaluation<T>> {
-    throw new Error('Not implemented');
+  evaluateFlag<T extends Value>(path: string, defaultValue: T): Promise<FlagEvaluation<T>> {
+    const [name] = path.split('.');
+    return this.resolveFlags(name).then(resolution => resolution.evaluate(path, defaultValue));
   }
 
-  getFlagValue<T>(path: string, defaultValue: T): Promise<T> {
-    throw new Error('Not implemented');
-  }
-
-  /**
-   * @internal
-   */
-  apply(resolveToken: string, flagName: string): void {
-    this.config.flagResolverClient.apply(resolveToken, flagName);
+  getFlag<T extends Value>(path: string, defaultValue: T): Promise<T> {
+    const [name] = path.split('.');
+    return this.resolveFlags(name).then(resolution => resolution.evaluate(path, defaultValue).value);
   }
 
   static create({
@@ -128,15 +125,15 @@ export class Confidence implements EventSender, FlagResolver {
     logger = Logger.noOp(),
   }: ConfidenceOptions): Confidence {
     const sdk = {
-      id: 'SDK_ID_JS_CONFIDENCE',
+      id: SdkId.SDK_ID_JS_CONFIDENCE,
       version: '0.0.2', // x-release-please-version
     } as const;
     const flagResolverClient = new FlagResolverClient({
       clientSecret,
-      region,
-      baseUrl,
-      timeout,
-      environment,
+      // region,
+      // baseUrl,
+      // timeout,
+      // environment,
       fetchImplementation,
       sdk,
     });
@@ -161,7 +158,7 @@ export class Confidence implements EventSender, FlagResolver {
     return new Confidence({
       environment: environment,
       flagResolverClient,
-      eventSenderEngine: eventSenderEngine,
+      eventSenderEngine,
     });
   }
 }

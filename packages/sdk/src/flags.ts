@@ -76,6 +76,6 @@ export interface FlagResolution {
 
 export interface FlagResolver {
   resolveFlags(...names: string[]): Promise<FlagResolution>;
-  evaluateFlag<T>(path: string, defaultValue: T): Promise<FlagEvaluation<T>>;
-  getFlagValue<T>(path: string, defaultValue: T): Promise<T>;
+  evaluateFlag<T extends Value>(path: string, defaultValue: T): Promise<FlagEvaluation<T>>;
+  getFlag<T extends Value>(path: string, defaultValue: T): Promise<T>;
 }
