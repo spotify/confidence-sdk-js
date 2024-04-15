@@ -4,7 +4,10 @@ const { defineConfig } = require('@yarnpkg/types');
 module.exports = defineConfig({
   async constraints({ Yarn }) {
     for (const workspace of Yarn.workspaces()) {
-      if (!workspace.cwd.startsWith('packages/')) continue;
+      if (!workspace.cwd.startsWith('packages/')) {
+        workspace.set('private', true);
+        continue;
+      }
       workspace.set('type', 'module');
       workspace.set('module', 'build/esm/index.js');
       workspace.set('types', 'build/types/index.d.ts');
