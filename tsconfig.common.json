@@ -9,7 +9,6 @@
     "declaration": true,
     "declarationMap": true,
     "isolatedModules": false,
-    "stripInternal": false,
     "sourceMap": true,
     "stripInternal": false,
     "jsx": "react",

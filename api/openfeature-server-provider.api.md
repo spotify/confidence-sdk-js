@@ -4,8 +4,7 @@
 
 ```ts
 
-import { ConfidenceClient } from '@spotify-confidence/client-http';
-import { ConfidenceClientOptions } from '@spotify-confidence/client-http';
+import { Confidence } from '@spotify-confidence/sdk';
 import { EvaluationContext } from '@openfeature/server-sdk';
 import { JsonValue } from '@openfeature/server-sdk';
 import { Logger } from '@openfeature/server-sdk';
@@ -16,7 +15,7 @@ import { ResolutionDetails } from '@openfeature/server-sdk';
 
 // @public (undocumented)
 export class ConfidenceServerProvider implements Provider {
-    constructor(client: ConfidenceClient);
+    constructor(client: Confidence);
     // (undocumented)
     readonly metadata: ProviderMetadata;
     // (undocumented)
@@ -34,7 +33,10 @@ export class ConfidenceServerProvider implements Provider {
 // Warning: (ae-forgotten-export) The symbol "ConfidenceProviderFactoryOptions" needs to be exported by the entry point index.d.ts
 //
 // @public (undocumented)
-export function createConfidenceServerProvider({ fetchImplementation, ...options }: ConfidenceProviderFactoryOptions): Provider;
+export function createConfidenceServerProvider(options: ConfidenceProviderFactoryOptions): Provider;
+
+// @public (undocumented)
+export function createConfidenceServerProvider(confidence: Confidence): Provider;
 
 // (No @packageDocumentation comment for this package)
 

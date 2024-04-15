@@ -4,10 +4,9 @@
 
 ```ts
 
-import { ConfidenceClient } from '@spotify-confidence/client-http';
-import { ConfidenceClientOptions } from '@spotify-confidence/client-http';
-import { Configuration } from '@spotify-confidence/client-http';
+import { Confidence } from '@spotify-confidence/sdk';
 import { EvaluationContext } from '@openfeature/web-sdk';
+import { FlagResolution } from '@spotify-confidence/sdk';
 import { JsonValue } from '@openfeature/web-sdk';
 import { Logger } from '@openfeature/web-sdk';
 import { OpenFeatureEventEmitter } from '@openfeature/web-sdk';
@@ -18,11 +17,11 @@ import { ResolutionDetails } from '@openfeature/web-sdk';
 
 // @public (undocumented)
 export class ConfidenceWebProvider implements Provider {
-    constructor(client: ConfidenceClient, options: ConfidenceWebProviderOptions);
-    // (undocumented)
-    configuration: Configuration | null;
+    constructor(confidence: Confidence);
     // (undocumented)
     readonly events: OpenFeatureEventEmitter;
+    // (undocumented)
+    flagResolution: FlagResolution | null;
     // (undocumented)
     initialize(context?: EvaluationContext): Promise<void>;
     // (undocumented)
@@ -41,16 +40,13 @@ export class ConfidenceWebProvider implements Provider {
     status: ProviderStatus;
 }
 
-// @public (undocumented)
-export interface ConfidenceWebProviderOptions {
-    // (undocumented)
-    apply: 'access' | 'backend';
-}
-
 // Warning: (ae-forgotten-export) The symbol "ConfidenceWebProviderFactoryOptions" needs to be exported by the entry point index.d.ts
 //
 // @public (undocumented)
-export function createConfidenceWebProvider({ fetchImplementation, ...options }: ConfidenceWebProviderFactoryOptions): Provider;
+export function createConfidenceWebProvider(options: ConfidenceWebProviderFactoryOptions): Provider;
+
+// @public (undocumented)
+export function createConfidenceWebProvider(confidence: Confidence): Provider;
 
 // (No @packageDocumentation comment for this package)
 

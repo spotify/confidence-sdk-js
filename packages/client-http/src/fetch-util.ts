@@ -3,6 +3,11 @@
  */
 type Fetch = typeof fetch;
 
+export const enum TimeUnit {
+  SECOND = 1000,
+  MINUTE = 60 * TimeUnit.SECOND,
+}
+
 /**
  * The full fetch API has overloaded variants which makes it very cumbersome
  * to compose, therefore we define SimpleFetch, as just the simplest of the fetch

@@ -133,6 +133,7 @@ export class FetchBuilder {
         initialTokens?: number | undefined;
     }): this;
     rejectNotOk(): this;
+    rejectOn(callback: (code: Response) => boolean): this;
     retry({ maxRetries, delay, maxDelay, backoff, jitter, }?: {
         maxRetries?: number | undefined;
         delay?: number | undefined;
@@ -166,6 +167,14 @@ export type ResolvedFlag<T = any> = {
 // @public (undocumented)
 export class TimeoutError extends RequestError {
     constructor();
+}
+
+// @public (undocumented)
+export const enum TimeUnit {
+    // (undocumented)
+    MINUTE = 60000,
+    // (undocumented)
+    SECOND = 1000
 }
 
 // Warnings were encountered during analysis:
