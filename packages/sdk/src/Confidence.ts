@@ -2,7 +2,7 @@ import { FlagResolverClient, FlagResolution } from './FlagResolverClient';
 import { EventSenderEngine } from './EventSenderEngine';
 import { Value } from './Value';
 import { EventSender } from './events';
-import { Context } from './context';
+import { Context, ContextProvider } from './context';
 import { Logger } from './logger';
 
 export { FlagResolverClient, FlagResolution };
@@ -23,10 +23,12 @@ interface Configuration {
   readonly flagResolverClient: FlagResolverClient;
 }
 
+type ValueProvider = () => Value | Promise<Value>
+
 export class Confidence implements EventSender {
   private readonly config: Configuration;
   private readonly parent?: Confidence;
-  private _context: Map<string, Value> = new Map();
+  private _context: Map<string, ValueProvider | undefined> = new Map();
 
   constructor(config: Configuration, parent?: Confidence) {
     this.config = config;
@@ -37,15 +39,14 @@ export class Confidence implements EventSender {
     return this.config.environment;
   }
 
-  sendEvent(name: string, message?: Value.Struct) {
-    this.config.eventSenderEngine.send(this.getContext(), name, message);
+  async sendEvent(name: string, message?: Value.Struct) {
+    this.config.eventSenderEngine.send(await this.getContext(), name, message);
   }
 
-  private *contextEntries(): Iterable<[key: string, value: Value]> {
+  private *contextEntries(): Iterable<[key: string, value: ValueProvider]> {
     if (this.parent) {
       // all parent entries except the ones child also has
       for (const entry of this.parent.contextEntries()) {
-        // todo should we do a deep merge of entries?
         if (!this._context.has(entry[0])) {
           yield entry;
         }
@@ -54,15 +55,24 @@ export class Confidence implements EventSender {
     // all child entries except undefined
     for (const entry of this._context.entries()) {
       if (typeof entry[1] !== 'undefined') {
-        yield entry;
+        // this cast is necessary cause TS doesn't track that the check above ensures the provider isn't undefined 
+        yield entry as [string, ValueProvider];
       }
     }
   }
 
-  getContext(): Context {
+  async getContext(): Promise<Context> {
     const context: Record<string, Value> = {};
-    for (const [key, value] of this.contextEntries()) {
-      context[key] = value;
+    for (const [key, provider] of this.contextEntries()) {
+      try {
+        const value  = await provider();
+        if(typeof value !== 'undefined'){
+          context[key] = value;
+        }
+      }
+      catch(e) {
+        // TODO log provider error
+      }
     }
     return Object.freeze(context);
   }
@@ -74,8 +84,16 @@ export class Confidence implements EventSender {
     }
   }
 
-  updateContextEntry<K extends string>(name: K, value: Context[K]) {
-    this._context.set(name, Value.clone(value));
+  updateContextEntry<K extends string>(name: K, value: Context[K] | ContextProvider<K>) {
+    let provider:ValueProvider;
+    if(typeof value === 'function') {
+      // TODO consider cloning the value of the provider before returning it
+      provider = value;
+    } else {
+      const copy = Value.clone(value);
+      provider = () => copy;
+    }
+    this._context.set(name, provider);
   }
 
   removeContextEntry(name: string): void {
@@ -94,8 +112,8 @@ export class Confidence implements EventSender {
   /**
    * @internal
    */
-  resolve(flagNames: string[]): Promise<FlagResolution> {
-    return this.config.flagResolverClient.resolve(this.getContext(), flagNames);
+  async resolve(flagNames: string[]): Promise<FlagResolution> {
+    return this.config.flagResolverClient.resolve(await this.getContext(), flagNames);
   }
 
   /**

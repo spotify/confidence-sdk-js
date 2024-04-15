@@ -2,9 +2,9 @@ import { Confidence } from './Confidence';
 
 describe('Confidence', () => {
   describe('context', () => {
-    it('returns immutable values', () => {
+    it('returns immutable values', async () => {
       const confidence = new Confidence({} as any);
-      const context = confidence.getContext();
+      const context = await confidence.getContext();
       expect(() => {
         // @ts-expect-error
         context.pants = 'yellow';
@@ -12,34 +12,34 @@ describe('Confidence', () => {
     });
   });
   describe('put', () => {
-    it('defensively copies values', () => {
+    it('defensively copies values', async () => {
       const confidence = new Confidence({} as any);
       const value = { pants: 'yellow' };
       confidence.updateContextEntry('clothes', value);
       value.pants = 'blue';
-      expect(confidence.getContext()).toEqual({ clothes: { pants: 'yellow' } });
+      expect(await confidence.getContext()).toEqual({ clothes: { pants: 'yellow' } });
     });
   });
   describe('setContext', () => {
-    it('sets context', () => {
+    it('sets context', async () => {
       const confidence = new Confidence({} as any);
       const newContext = {
         pants: 'yellow',
       };
       confidence.setContext(newContext);
-      expect(confidence.getContext()).toEqual(newContext);
+      expect(await confidence.getContext()).toEqual(newContext);
     });
   });
   describe('withContext', () => {
-    it('creates a child context', () => {
+    it('creates a child context', async () => {
       const parent = new Confidence({} as any);
       const additionalContext = {
         clothes: 'pants',
       };
       const child = parent.withContext(additionalContext);
-      expect(child.getContext()).toEqual(additionalContext);
+      expect(await child.getContext()).toEqual(additionalContext);
     });
-    it('merge contexts', () => {
+    it('merge contexts', async () => {
       const parent = new Confidence({} as any);
       parent.setContext({
         clothes: 'pants',
@@ -47,31 +47,31 @@ describe('Confidence', () => {
       const child = parent.withContext({
         pants: 'blue',
       });
-      expect(child.getContext()).toEqual({
+      expect(await child.getContext()).toEqual({
         clothes: 'pants',
         pants: 'blue',
       });
     });
-    it('remove entry from context', () => {
+    it('remove entry from context', async () => {
       const parent = new Confidence({} as any);
       parent.setContext({
         clothes: 'pants',
       });
       const child = parent.withContext({});
       child.removeContextEntry('clothes');
-      expect(child.getContext()).toEqual({});
-      expect(parent.getContext()).toEqual({
+      expect(await child.getContext()).toEqual({});
+      expect(await parent.getContext()).toEqual({
         clothes: 'pants',
       });
-      expect(Object.keys(child.getContext())).toEqual([]);
+      expect(Object.keys(await child.getContext())).toEqual([]);
       child.clearContext();
-      expect(child.getContext()).toEqual({
+      expect(await child.getContext()).toEqual({
         clothes: 'pants',
       });
     });
   });
   describe('create', () => {
-    it('creates a new confidence object', () => {
+    it('creates a new confidence object', async () => {
       const confidence = Confidence.create({
         clientSecret: 'secret',
         region: 'us',
@@ -80,7 +80,7 @@ describe('Confidence', () => {
         fetchImplementation: {} as any,
         timeout: 10,
       });
-      expect(confidence.getContext()).toEqual({});
+      expect(await confidence.getContext()).toEqual({});
     });
   });
 });
