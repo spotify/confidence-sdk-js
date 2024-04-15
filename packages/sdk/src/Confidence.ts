@@ -1,7 +1,7 @@
 import { FlagResolverClient, FlagResolution } from './FlagResolverClient';
 import { EventSenderEngine } from './EventSenderEngine';
 import { Value } from './Value';
-import { EventSender } from './events';
+import { EventSender, Producer } from './events';
 import { Context, ContextProvider } from './context';
 import { Logger } from './logger';
 
@@ -39,10 +39,6 @@ export class Confidence implements EventSender {
     return this.config.environment;
   }
 
-  async sendEvent(name: string, message?: Value.Struct) {
-    this.config.eventSenderEngine.send(await this.getContext(), name, message);
-  }
-
   private *contextEntries(): Iterable<[key: string, value: ValueProvider]> {
     if (this.parent) {
       // all parent entries except the ones child also has
@@ -78,7 +74,6 @@ export class Confidence implements EventSender {
   }
 
   setContext(context: Context): void {
-    this._context.clear();
     for (const key of Object.keys(context)) {
       this.updateContextEntry(key, context[key]);
     }
@@ -109,6 +104,29 @@ export class Confidence implements EventSender {
     child.setContext(context);
     return child;
   }
+
+  async sendEvent(name: string, message?: Value.Struct) {
+    this.config.eventSenderEngine.send(await this.getContext(), name, message);
+  }
+
+  track(producer: Producer): void {
+    this.runProducer(producer).catch(e => {
+      // TODO log  error
+    })
+  }
+
+  private async runProducer(producer:Producer):Promise<void> {
+    for await(const event of producer) {
+      const { context, ...events } = event;
+      if(event.context) {
+        this.setContext(event.context);
+      }
+      for(const name of Object.keys(events)) {
+        this.sendEvent(name, event[name]);
+      }
+    }
+  }
+
   /**
    * @internal
    */

@@ -1,6 +1,49 @@
 import { Value } from './Value';
-import { Contextual } from './context';
+import { Context, Contextual } from './context';
+
+export interface Event {
+  [eventName: string]: Value.Struct | undefined;
+  context?: Context;
+}
+export type Producer = AsyncIterable<Event>;
 
 export interface EventSender extends Contextual<EventSender> {
   sendEvent(name: string, message?: Value.Struct): void;
+  track(producer: Producer): void;
+}
+
+export function createProducer(executor: (emit: (event?: Event) => void) => void): Producer {
+  let closed = false;
+  let wakeUp: (() => void) | undefined;
+  const queue: Event[] = [];
+
+  const emit = (event?: Event) => {
+    if (closed) throw new Error('Producer closed');
+    if (!event) {
+      closed = true;
+    } else {
+      queue.push(event);
+    }
+    wakeUp?.();
+  };
+
+  async function* producer(): AsyncIterable<Event> {
+    try {
+      executor(emit);
+      while (!closed) {
+        while (queue.length) {
+          yield queue.pop()!;
+        }
+        await new Promise<void>(resolve => {
+          wakeUp = resolve;
+        });
+        wakeUp = undefined;
+      }
+    } finally {
+      closed = true;
+      queue.length = 0;
+    }
+  }
+
+  return producer();
 }

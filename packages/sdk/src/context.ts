@@ -1,6 +1,8 @@
 import { Value } from './Value';
 
 export type ContextProvider<K extends string> = () => Context[K] | Promise<Context[K]>
+
+
 export interface Contextual<Self extends Contextual<Self>> {
   getContext(): Promise<Context>;
   setContext(context: Context): void;
@@ -16,6 +18,7 @@ type Brand = {
 };
 
 export interface Context extends Value.Struct {
+  visitorId?: string,
   openFeature?: Value.Struct & {
     targeting_key?: string;
   };
@@ -32,3 +35,5 @@ export interface Context extends Value.Struct {
     url: string;
   };
 }
+
+
