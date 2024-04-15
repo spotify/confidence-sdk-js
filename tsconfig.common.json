@@ -3,7 +3,7 @@
   "compilerOptions": {
     "target": "ESNext",
     "lib": ["ES2015", "DOM"],
-    "skipLibCheck": false,
+    "skipLibCheck": true,
     "composite": true,
     "noEmit": false,
     "declaration": true,

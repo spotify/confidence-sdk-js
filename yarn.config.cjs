@@ -11,7 +11,7 @@ module.exports = defineConfig({
       workspace.set('type', 'module');
       workspace.set('module', 'build/esm/index.js');
       workspace.set('types', 'build/types/index.d.ts');
-      workspace.set('files', ['dist/*']);
+      workspace.set('files', ['dist/index.*']);
       workspace.set('scripts.build', 'tsc');
       workspace.set('scripts.bundle', 'api-extractor run ${CI:---local} && rollup -c');
       workspace.set('publishConfig', {

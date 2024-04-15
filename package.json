@@ -7,15 +7,15 @@
   ],
   "scripts": {
     "build": "tsc -b tsconfig.json",
-    "clean": "rm -rf packages/*/build",
+    "bundle": "yarn workspaces foreach -Ap run bundle",
+    "clean": "rm -rf packages/*/{build,dist}",
     "format": "prettier --config prettier.config.js -w .",
     "format:check": "prettier --config prettier.config.js -c .",
     "lint": "eslint 'packages/*/src/**/*.{tsx,ts}'",
     "test": "jest",
     "prepare": "husky install",
     "cm": "git-cz",
-    "release": "lerna version",
-    "publish-if-missing": "lerna publish from-package --yes"
+    "publish-if-missing": "yarn workspaces foreach -R --from 'packages/*' npm publish --tolerate-republish"
   },
   "devDependencies": {
     "@commitlint/cli": "^17.6.7",
@@ -50,7 +50,6 @@
     "jest": "^29.5.0",
     "jest-environment-jsdom": "^29.6.1",
     "jest-extended": "^4.0.0",
-    "lerna": "^7.1.4",
     "prettier": "^2.8.8",
     "rollup": "^4.14.2",
     "ts-jest": "^29.1.0",

@@ -28,6 +28,6 @@
     "bundle": "api-extractor run ${CI:---local} && rollup -c"
   },
   "files": [
-    "dist/*"
+    "dist/index.*"
   ]
 }
