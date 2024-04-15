@@ -13,13 +13,25 @@
     "build:esm": "tsc -p tsconfig.esm.json",
     "build:cjs": "tsc -p tsconfig.cjs.json",
     "build:types": "tsc -p tsconfig.types.json",
-    "clean": "rm -rf build"
+    "clean": "rm -rf build",
+    "build": "tsc",
+    "bundle": "api-extractor run ${CI:---local} && rollup -c"
   },
   "publishConfig": {
-    "access": "public"
+    "access": "public",
+    "types": "dist/index.d.ts",
+    "module": "dist/index.js"
   },
   "dependencies": {
     "@spotify-confidence/client-http": "0.1.6",
     "web-vitals": "^3.5.2"
+  },
+  "type": "module",
+  "files": [
+    "dist/*"
+  ],
+  "devDependencies": {
+    "@microsoft/api-extractor": "*",
+    "rollup": "*"
   }
 }

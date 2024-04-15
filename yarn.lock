@@ -3994,7 +3994,9 @@ __metadata:
   version: 0.0.0-use.local
   resolution: "@spotify-confidence/sdk@workspace:packages/sdk"
   dependencies:
+    "@microsoft/api-extractor": "npm:*"
     "@spotify-confidence/client-http": "npm:0.1.6"
+    rollup: "npm:*"
     web-vitals: "npm:^3.5.2"
   languageName: unknown
   linkType: soft
