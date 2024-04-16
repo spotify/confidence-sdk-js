@@ -110,7 +110,7 @@ export class Confidence implements EventSender {
   }
 
   track(producer: Producer): void {
-    this.runProducer(producer).catch(e => {
+    this.runProducer(producer).catch(_e => {
       // TODO log  error
     })
   }
