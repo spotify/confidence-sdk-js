@@ -2,14 +2,35 @@ import React, { useEffect } from 'react';
 import { ClientProviderEvents, OpenFeature } from '@openfeature/web-sdk';
 import TestComponent from './TestComponent';
 import { createConfidenceWebProvider } from '@spotify-confidence/openfeature-web-provider';
+import { Confidence, pageViews } from '@spotify-confidence/sdk';
+import { FetchBuilder } from '@spotify-confidence/client-http';
+import { ConfidenceProvider } from './ConfidenceContext';
 
-export const webProvider = createConfidenceWebProvider({
+const fetchImplementation = new FetchBuilder()
+  .route(
+    url => url.endsWith('/events:publish'),
+    async req => {
+      const { events } = await req.json();
+      // @ts-ignore
+      for (const { eventDefinition, payload } of events) {
+        console.log(eventDefinition.split('/')[1], payload);
+      }
+      return new Response(JSON.stringify({ errors: [] }));
+    },
+  )
+  .build(fetch.bind(window));
+
+const confidence = Confidence.create({
   clientSecret: 'RxDVTrXvc6op1XxiQ4OaR31dKbJ39aYV',
   region: 'eu',
-  fetchImplementation: window.fetch.bind(window),
-  apply: 'access',
+  environment: 'client',
+  fetchImplementation,
   timeout: 1000,
 });
+
+confidence.track(pageViews());
+
+export const webProvider = createConfidenceWebProvider(confidence);
 
 OpenFeature.getClient().addHandler(ClientProviderEvents.Ready, () => console.log('ready!'));
 function App() {
@@ -18,15 +39,19 @@ function App() {
       targetingKey: 'user-a',
     });
     OpenFeature.setProvider(webProvider);
+    confidence.sendEvent('test');
   }, []);
 
   return (
-    <>
+    <ConfidenceProvider confidence={confidence}>
       <h1>React 18 Example</h1>
-      <React.Suspense fallback={<p>Loading... </p>}>
-        <TestComponent />
-      </React.Suspense>
-    </>
+      <div style={{ height: 2000 }}>
+        <React.Suspense fallback={<p>Loading... </p>}>
+          <TestComponent />
+        </React.Suspense>
+      </div>
+      <p>bottom</p>
+    </ConfidenceProvider>
   );
 }
 

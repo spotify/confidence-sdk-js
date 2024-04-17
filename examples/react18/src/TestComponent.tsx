@@ -1,16 +1,18 @@
 import React from 'react';
 import { useStringValue } from '@spotify-confidence/integration-react';
 import { OpenFeature } from '@openfeature/web-sdk';
+import { useConfidence, withContext } from './ConfidenceContext';
 
-export const TestComponent = () => {
+const TestComponent = () => {
   const str = useStringValue('web-sdk-e2e-flag.str', 'default');
-
+  const confidence = useConfidence();
   return (
     <>
       <p>The string flag value is: {str}</p>
       <button
         onClick={() => {
           OpenFeature.setContext({ targetingKey: `user-${Math.random()}` });
+          confidence.sendEvent('click');
         }}
       >
         Randomise OpenFeature Context
@@ -19,4 +21,4 @@ export const TestComponent = () => {
   );
 };
 
-export default TestComponent;
+export default withContext({ component: 'TestComponent' })(TestComponent);

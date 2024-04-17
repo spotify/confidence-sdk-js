@@ -1,9 +1,10 @@
 import { FlagResolverClient, FlagResolution } from './FlagResolverClient';
 import { EventSenderEngine } from './EventSenderEngine';
 import { Value } from './Value';
-import { EventSender, Producer } from './events';
-import { Context, ContextProvider } from './context';
+import { EventSender, EventProducer, kContext } from './events';
+import { Context, LazyContext } from './context';
 import { Logger } from './logger';
+import { visitorId } from './producers';
 
 export { FlagResolverClient, FlagResolution };
 
@@ -73,13 +74,13 @@ export class Confidence implements EventSender {
     return Object.freeze(context);
   }
 
-  setContext(context: Context): void {
+  setContext(context: LazyContext): void {
     for (const key of Object.keys(context)) {
       this.updateContextEntry(key, context[key]);
     }
   }
 
-  updateContextEntry<K extends string>(name: K, value: Context[K] | ContextProvider<K>) {
+  updateContextEntry<K extends string>(name: K, value: LazyContext[K]) {
     let provider:ValueProvider;
     if(typeof value === 'function') {
       // TODO consider cloning the value of the provider before returning it
@@ -91,15 +92,15 @@ export class Confidence implements EventSender {
     this._context.set(name, provider);
   }
 
-  removeContextEntry(name: string): void {
-    this._context.set(name, undefined);
-  }
+  // removeContextEntry(name: string): void {
+  //   this._context.set(name, undefined);
+  // }
 
   clearContext(): void {
     this._context.clear();
   }
 
-  withContext(context: Context): Confidence {
+  withContext(context: LazyContext): Confidence {
     const child = new Confidence(this.config, this);
     child.setContext(context);
     return child;
@@ -109,19 +110,18 @@ export class Confidence implements EventSender {
     this.config.eventSenderEngine.send(await this.getContext(), name, message);
   }
 
-  track(producer: Producer): void {
+  track(producer: EventProducer): void {
     this.runProducer(producer).catch(_e => {
       // TODO log  error
     })
   }
 
-  private async runProducer(producer:Producer):Promise<void> {
+  private async runProducer(producer:EventProducer):Promise<void> {
     for await(const event of producer) {
-      const { context, ...events } = event;
-      if(event.context) {
-        this.setContext(event.context);
+      if(event[kContext]) {
+        this.setContext(event[kContext]);
       }
-      for(const name of Object.keys(events)) {
+      for(const name of Object.keys(event)) {
         this.sendEvent(name, event[name]);
       }
     }
@@ -181,11 +181,15 @@ export class Confidence implements EventSender {
       maxOpenRequests: (50 * 1024) / (estEventSizeKb * maxBatchSize),
       logger,
     });
-    return new Confidence({
+    const root = new Confidence({
       environment: environment,
       flagResolverClient,
       eventSenderEngine: eventSenderEngine,
     });
+    if(environment === 'client') {
+      root.updateContextEntry('visitorId', visitorId)
+    }
+    return root;
   }
 }
 

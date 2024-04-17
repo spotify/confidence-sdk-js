@@ -1,18 +1,19 @@
 import { Value } from './Value';
-import { Context, Contextual } from './context';
+import { Contextual, LazyContext } from './context';
 
+export const kContext = Symbol('Context');
 export interface Event {
   [eventName: string]: Value.Struct | undefined;
-  context?: Context;
+  [kContext]?: LazyContext;
 }
-export type Producer = AsyncIterable<Event>;
+export type EventProducer = AsyncIterable<Event>;
 
 export interface EventSender extends Contextual<EventSender> {
   sendEvent(name: string, message?: Value.Struct): void;
-  track(producer: Producer): void;
+  track(producer: EventProducer): void;
 }
 
-export function createProducer(executor: (emit: (event?: Event) => void) => void): Producer {
+export function createProducer(executor: (emit: (event?: Event) => void) => void): EventProducer {
   let closed = false;
   let wakeUp: (() => void) | undefined;
   const queue: Event[] = [];

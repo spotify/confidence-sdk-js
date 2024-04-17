@@ -1,14 +1,18 @@
 import { Value } from './Value';
 
-export type ContextProvider<K extends string> = () => Context[K] | Promise<Context[K]>
+
+type Provider<T> = (() => T | Promise<T>)
+// type Lazy<T> = (T extends Value.Struct ? { [K in keyof T]: Lazy<T[K]> } : T | Provider<T>);
+
+export type LazyContext = { [K in keyof Context]: Context[K] | Provider<Context[K]> }
 
 
 export interface Contextual<Self extends Contextual<Self>> {
   getContext(): Promise<Context>;
-  setContext(context: Context): void;
-  updateContextEntry<K extends string>(name: K, value: Context[K] | ContextProvider<K>): void;
-  removeContextEntry(name: string): void;
-  withContext(context: Context): Self;
+  setContext(context: LazyContext): void;
+  // updateContextEntry<K extends string>(name: K, value: Context[K] | ContextProvider<K>): void;
+  // removeContextEntry(name: string): void;
+  withContext(context: LazyContext): Self;
   clearContext(): void;
 }
 
@@ -35,5 +39,4 @@ export interface Context extends Value.Struct {
     url: string;
   };
 }
-
 

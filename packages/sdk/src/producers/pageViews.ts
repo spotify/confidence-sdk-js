@@ -1,45 +1,84 @@
-import { createProducer } from '../events';
-import { Event as Action } from '../events';
+import { createProducer, kContext } from '../events';
+import { Event as ConfidenceEvent } from '../events';
 
 export type PageViewsProduceOptions = {
-    // Add options here
-    shouldEmitEvent?: boolean;
-    shouldUseHashChange?: boolean;
+  // Add options here
+  shouldEmitEvent?: boolean;
 };
 
-export function pageViews({shouldEmitEvent = true, shouldUseHashChange = false}: PageViewsProduceOptions = {}) {
+export function pageViews({ shouldEmitEvent = true }: PageViewsProduceOptions = {}) {
   return createProducer(emit => {
     let previousPath: string;
 
-    pageChanged();
+    spyOn(history, 'pushState', () => {
+      pageChanged({ type: 'pushstate' });
+    });
+    spyOn(history, 'replaceState', () => {
+      pageChanged({ type: 'replacestate' });
+    });
+
     // listen to history push states
-    window.addEventListener('popstate', pageChanged);
-    if(shouldUseHashChange) {
-        // treat hash changes as page views
-        window.addEventListener('hashchange', pageChanged);
-    }
-    
-    function pageChanged(event?: Event) {
-        // if (location.pathname === previousPath) return;
-        const action: Action = {
-            context: {
-                page: {
-                    path: location.pathname,
-                    search: location.search,
-                    referrer: document.referrer,
-                    title: document.title,
-                    url: location.href,
-                }
-            }
+    listenOn(window, 'popstate', pageChanged);
+
+    // treat hash changes as page views
+    listenOn(window, 'hashchange', pageChanged);
+
+    pageChanged({ type: 'initial' });
+
+    function pageChanged({ type }: { type: string }) {
+      // if (location.pathname === previousPath) return;
+      const action: ConfidenceEvent = {
+        [kContext]: {
+          page: {
+            path: location.pathname,
+            search: location.search,
+            referrer: document.referrer,
+            title: document.title,
+            url: location.href,
+          },
+        },
+      };
+      if (shouldEmitEvent) {
+        action['page-view'] = {
+          previousPath,
+          trigger: type,
         };
-        if (shouldEmitEvent) {
-            action['page-view'] = {
-                previousPath,
-                trigger: event?.type ?? "initial",
-            };
-        }
-        emit(action);
-        previousPath = location.pathname;
+      }
+      emit(action);
+      previousPath = location.pathname;
     }
   });
+}
+
+type CleanupFn = () => void;
+type PickFn<T> = {
+  [K in keyof Required<T> as T[K] extends (...args: any) => any ? K : never]: T[K] extends (...args: any) => any
+    ? T[K]
+    : never;
+};
+
+function spyOn<T extends {}, N extends keyof PickFn<T>>(
+  target: T,
+  fnName: N,
+  callback: (...args: Parameters<PickFn<T>[N]>) => void,
+): CleanupFn {
+  const t = target as any;
+  const originalFn = t[fnName];
+  t[fnName] = function (...args: any): any {
+    try {
+      return originalFn.call(this, ...args);
+    } finally {
+      callback(...args);
+    }
+  };
+  return () => {
+    t[fnName] = originalFn;
+  };
+}
+
+function listenOn(target: EventTarget, type: string, listener: (e: Event) => void): CleanupFn {
+  target.addEventListener(type, listener);
+  return () => {
+    target.removeEventListener(type, listener);
+  };
 }
