@@ -1,7 +1,7 @@
 import { FlagResolverClient, FlagResolution } from './FlagResolverClient';
 import { EventSenderEngine } from './EventSenderEngine';
 import { Value } from './Value';
-import { EventSender, EventProducer, kContext } from './events';
+import { EventSender, EventProducer } from './events';
 import { Context, LazyContext } from './context';
 import { Logger } from './logger';
 import { visitorId } from './producers';
@@ -25,19 +25,34 @@ interface Configuration {
 }
 
 type ValueProvider = () => Value | Promise<Value>
-
+type OnCloseListener = () => void
 export class Confidence implements EventSender {
   private readonly config: Configuration;
   private readonly parent?: Confidence;
+  private readonly onCloseListeners = new Set<OnCloseListener>();
   private _context: Map<string, ValueProvider | undefined> = new Map();
+  private closed = false;
 
   constructor(config: Configuration, parent?: Confidence) {
     this.config = config;
     this.parent = parent;
+
+    if(parent) {
+      parent.onClose(this.close.bind(this));
+    }
+
   }
 
   get environment(): string {
     return this.config.environment;
+  }
+
+  get isClosed():boolean {
+    return this.closed;
+  }
+
+  private assertOpen() {
+    if(this.closed) throw new Error('Confidence instance is closed.')
   }
 
   private *contextEntries(): Iterable<[key: string, value: ValueProvider]> {
@@ -107,23 +122,45 @@ export class Confidence implements EventSender {
   }
 
   async sendEvent(name: string, message?: Value.Struct) {
+    // TODO log if closed
+    if(this.closed) return;
     this.config.eventSenderEngine.send(await this.getContext(), name, message);
   }
 
   track(producer: EventProducer): void {
-    this.runProducer(producer).catch(_e => {
-      // TODO log  error
-    })
+    // TODO log if closed
+    if(this.closed) return;
+    const destructor = producer(this);
+    if(destructor) {
+      this.onClose(destructor);
+    }
   }
 
-  private async runProducer(producer:EventProducer):Promise<void> {
-    for await(const event of producer) {
-      if(event[kContext]) {
-        this.setContext(event[kContext]);
+  close() {
+    if(this.closed) return;
+    this.closed = true
+    for(const listener of this.onCloseListeners) {
+      try {
+        listener()
+      } catch(e) {
+        // TODO log error
       }
-      for(const name of Object.keys(event)) {
-        this.sendEvent(name, event[name]);
+    }
+    this.onCloseListeners.clear();
+  }
+
+  /**
+   * @internal
+   */
+  onClose(listener:OnCloseListener):void {
+    if(this.closed) {
+      try {
+        listener()
+      } catch(e) {
+        // TODO log error
       }
+    } else {
+      this.onCloseListeners.add(listener);
     }
   }
 
@@ -131,6 +168,7 @@ export class Confidence implements EventSender {
    * @internal
    */
   async resolve(flagNames: string[]): Promise<FlagResolution> {
+    this.assertOpen();
     return this.config.flagResolverClient.resolve(await this.getContext(), flagNames);
   }
 

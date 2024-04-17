@@ -1,53 +1,52 @@
-import { createProducer, kContext } from '../events';
-import { Event as ConfidenceEvent } from '../events';
+import { Destructor, EventProducer } from '../events';
 
 export type PageViewsProduceOptions = {
   // Add options here
   shouldEmitEvent?: boolean;
 };
 
-export function pageViews({ shouldEmitEvent = true }: PageViewsProduceOptions = {}) {
-  return createProducer(emit => {
+export function pageViews({ shouldEmitEvent = true }: PageViewsProduceOptions = {}): EventProducer {
+  return confidence => {
     let previousPath: string;
-
-    spyOn(history, 'pushState', () => {
-      pageChanged({ type: 'pushstate' });
-    });
-    spyOn(history, 'replaceState', () => {
-      pageChanged({ type: 'replacestate' });
-    });
-
-    // listen to history push states
-    listenOn(window, 'popstate', pageChanged);
-
-    // treat hash changes as page views
-    listenOn(window, 'hashchange', pageChanged);
 
     pageChanged({ type: 'initial' });
 
+    return Destructor.combine(
+      spyOn(history, 'pushState', () => {
+        pageChanged({ type: 'pushstate' });
+      }),
+
+      spyOn(history, 'replaceState', () => {
+        pageChanged({ type: 'replacestate' });
+      }),
+
+      // listen to history push state
+      listenOn(window, 'popstate', pageChanged),
+
+      // treat hash changes as page views
+      listenOn(window, 'hashchange', pageChanged),
+    );
+
     function pageChanged({ type }: { type: string }) {
       // if (location.pathname === previousPath) return;
-      const action: ConfidenceEvent = {
-        [kContext]: {
-          page: {
-            path: location.pathname,
-            search: location.search,
-            referrer: document.referrer,
-            title: document.title,
-            url: location.href,
-          },
+      confidence.setContext({
+        page: {
+          path: location.pathname,
+          search: location.search,
+          referrer: document.referrer,
+          title: document.title,
+          url: location.href,
         },
-      };
+      });
       if (shouldEmitEvent) {
-        action['page-view'] = {
+        confidence.sendEvent('page-view', {
           previousPath,
           trigger: type,
-        };
+        });
       }
-      emit(action);
       previousPath = location.pathname;
     }
-  });
+  };
 }
 
 type CleanupFn = () => void;

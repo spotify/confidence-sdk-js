@@ -13,6 +13,7 @@ const TestComponent = () => {
         onClick={() => {
           OpenFeature.setContext({ targetingKey: `user-${Math.random()}` });
           confidence.sendEvent('click');
+          confidence.close();
         }}
       >
         Randomise OpenFeature Context

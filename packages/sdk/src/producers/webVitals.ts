@@ -1,5 +1,5 @@
 import { onLCP, onFID, onCLS, type LCPMetric, type FIDMetric, type CLSMetric } from 'web-vitals';
-import { type Event as _Event, EventProducer, createProducer } from '../events';
+import { EventProducer } from '../events';
 import { type Confidence } from '../Confidence';
 
 type Metric = LCPMetric | FIDMetric | CLSMetric;
@@ -48,21 +48,19 @@ export type WebVitalsOptions = {
  * @public
  */
 export function webVitals({ lcp = true, fid = true, cls = true }: WebVitalsOptions = {}): EventProducer {
-  return createProducer(emit => {
+  return confidence => {
     const handleMetric = ({ name, id, delta }: Metric) => {
+      if (confidence.isClosed) return;
       // TODO consider this example https://www.npmjs.com/package/web-vitals#send-attribution-data. Should we have some metric event?
       const metricKey = name.toLocaleLowerCase() as 'lcp' | 'fid' | 'cls';
       const eventName = `web-vitals-${metricKey}` as const;
-      emit({
-        [eventName]: {
-          id,
-          delta,
-        },
+      confidence.sendEvent(eventName, {
+        id,
+        delta,
       });
     };
-
     if (lcp) onLCP(handleMetric);
     if (fid) onFID(handleMetric);
     if (cls) onCLS(handleMetric);
-  });
+  };
 }
