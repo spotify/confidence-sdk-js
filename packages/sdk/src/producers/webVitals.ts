@@ -5,8 +5,8 @@ import { type Confidence } from '../Confidence';
 type Metric = LCPMetric | FIDMetric | CLSMetric | TTFBMetric;
 
 type WebVitalsMetricMessage = {
-  id: string;
-  delta: number;
+  metric_id: string;
+  metric_delta: number;
 };
 declare module '../events' {
   export interface Event {
@@ -62,8 +62,8 @@ export function webVitals({ lcp = true, fid = true, cls = true, ttfb = false }: 
       const metricKey = name.toLocaleLowerCase() as 'lcp' | 'fid' | 'cls' | 'ttfb';
       const eventName = `web-vitals-${metricKey}` as const;
       confidence.sendEvent(eventName, {
-        id,
-        delta,
+        metric_id: id,
+        metric_delta: delta,
       });
     };
     if (lcp) onLCP(handleMetric);
