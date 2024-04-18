@@ -58,7 +58,9 @@ describe('Confidence', () => {
         clothes: 'pants',
       });
       const child = parent.withContext({});
-      child.removeContextEntry('clothes');
+      child.setContext(
+        { clothes: undefined }
+        );
       expect(await child.getContext()).toEqual({});
       expect(await parent.getContext()).toEqual({
         clothes: 'pants',
