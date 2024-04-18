@@ -16,8 +16,12 @@ const TestComponent = () => {
           confidence.close();
         }}
       >
-        Randomise OpenFeature Context
+        Randomize OpenFeature Context
       </button>
+      <p>
+        // TODO wrap this amazing new kitten feature in a feature flag so it doesn't show up in production
+        <img src="https://thepetshow.com/wp-content/uploads/2015/07/lion-mirror.jpg" alt="confident kitten" />
+      </p>
     </>
   );
 };

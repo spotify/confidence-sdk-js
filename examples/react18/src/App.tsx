@@ -2,7 +2,7 @@ import React, { useEffect } from 'react';
 import { ClientProviderEvents, OpenFeature } from '@openfeature/web-sdk';
 import TestComponent from './TestComponent';
 import { createConfidenceWebProvider } from '@spotify-confidence/openfeature-web-provider';
-import { Confidence, pageViews } from '@spotify-confidence/sdk';
+import { Confidence, pageViews, webVitals } from '@spotify-confidence/sdk';
 import { FetchBuilder } from '@spotify-confidence/client-http';
 import { ConfidenceProvider } from './ConfidenceContext';
 
@@ -28,18 +28,18 @@ const confidence = Confidence.create({
   timeout: 1000,
 });
 
-confidence.track(pageViews());
+confidence.track(webVitals());
 
 export const webProvider = createConfidenceWebProvider(confidence);
 
 OpenFeature.getClient().addHandler(ClientProviderEvents.Ready, () => console.log('ready!'));
 function App() {
   useEffect(() => {
-    OpenFeature.setContext({
-      targetingKey: 'user-a',
-    });
+    // OpenFeature.setContext({
+    //   targetingKey: 'user-a',
+    // });
     OpenFeature.setProvider(webProvider);
-    confidence.sendEvent('test');
+    // confidence.sendEvent('test');
   }, []);
 
   return (
