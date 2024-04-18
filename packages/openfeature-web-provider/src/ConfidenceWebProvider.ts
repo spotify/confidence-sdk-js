@@ -94,8 +94,9 @@ export class ConfidenceWebProvider implements Provider {
         reason: 'ERROR',
       };
     }
-
-    if (!equal(this.flagResolution.context, this.convertContext(context))) {
+    const currContext: any = this.convertContext(context);
+    const cachedContext: any = this.flagResolution.context;
+    if (Object.keys(currContext).some(key => !equal(currContext[key], cachedContext[key]))) {
       return {
         value: defaultValue,
         reason: 'STALE',
