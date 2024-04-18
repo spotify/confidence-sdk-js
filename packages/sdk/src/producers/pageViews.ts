@@ -9,7 +9,15 @@ export function pageViews({ shouldEmitEvent = true }: PageViewsProduceOptions = 
   return confidence => {
     let previousPath: string;
 
-    pageChanged({ type: 'initial' });
+    confidence.setContext({
+      page: {
+        path: location.pathname,
+        search: location.search,
+        referrer: document.referrer,
+        title: document.title,
+        url: location.href,
+      },
+    });
 
     return Destructor.combine(
       spyOn(history, 'pushState', () => {
@@ -25,6 +33,8 @@ export function pageViews({ shouldEmitEvent = true }: PageViewsProduceOptions = 
 
       // treat hash changes as page views
       listenOn(window, 'hashchange', pageChanged),
+
+      listenOn(window, 'load', pageChanged),
     );
 
     function pageChanged({ type }: { type: string }) {

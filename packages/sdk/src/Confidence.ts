@@ -1,7 +1,7 @@
 import { FlagResolverClient, FlagResolution } from './FlagResolverClient';
 import { EventSenderEngine } from './EventSenderEngine';
 import { Value } from './Value';
-import { EventSender, EventProducer } from './events';
+import { EventSender, EventProducer, Destructor } from './events';
 import { Context, LazyContext } from './context';
 import { Logger } from './logger';
 import { visitorId } from './producers';
@@ -127,13 +127,23 @@ export class Confidence implements EventSender {
     this.config.eventSenderEngine.send(await this.getContext(), name, message);
   }
 
-  track(producer: EventProducer): void {
+  track(producer: EventProducer): Destructor {
     // TODO log if closed
-    if(this.closed) return;
-    const destructor = producer(this);
-    if(destructor) {
-      this.onClose(destructor);
+    if(!this.closed) {
+      const destructor = producer(this);
+      if(destructor) {
+        let destructorCalled = false;
+        const destroyOnce = () => {
+          if(destructorCalled) return;
+          destructorCalled = true;
+          this.onCloseListeners.delete(destroyOnce);
+          destructor();
+        }
+        this.onCloseListeners.add(destroyOnce);
+        return destroyOnce;
+      }
     }
+    return () => {}
   }
 
   close() {

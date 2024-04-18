@@ -20,5 +20,5 @@ export type EventProducer = (confidence: Confidence) => void | Destructor;
 
 export interface EventSender extends Contextual<EventSender> {
   sendEvent(name: string, message?: Value.Struct): void;
-  track(producer: EventProducer): void;
+  track(producer: EventProducer): Destructor;
 }
