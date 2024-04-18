@@ -2,7 +2,7 @@ import { LazyContext } from '../context';
 
 const COOKIE_NAME = 'cnfdVisitorId';
 
-export const visitorId: LazyContext['visitorId'] = () => {
+export const visitorId: LazyContext['Visitor'] = () => {
   // TODO sore in mem after reading?
   let value = getCookie(COOKIE_NAME);
   if (!value) {

@@ -225,7 +225,7 @@ export class Confidence implements EventSender {
       eventSenderEngine: eventSenderEngine,
     });
     if(environment === 'client') {
-      root.updateContextEntry('visitorId', visitorId)
+      root.updateContextEntry('Visitor', visitorId)
     }
     return root;
   }
