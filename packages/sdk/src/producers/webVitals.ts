@@ -54,7 +54,7 @@ export type WebVitalsOptions = {
  * @returns a {@link EventProducer} to be used with {@link Confidence.track }
  * @public
  */
-export function webVitals({ lcp = true, fid = true, cls = true, ttfb = true }: WebVitalsOptions = {}): EventProducer {
+export function webVitals({ lcp = true, fid = true, cls = true, ttfb = false }: WebVitalsOptions = {}): EventProducer {
   return confidence => {
     const handleMetric = ({ name, id, delta }: Metric) => {
       if (confidence.isClosed) return;
