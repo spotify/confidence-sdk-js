@@ -1,8 +1,8 @@
-import { onLCP, onFID, onCLS, type LCPMetric, type FIDMetric, type CLSMetric } from 'web-vitals';
+import { onLCP, onFID, onCLS, onTTFB, type LCPMetric, type FIDMetric, type CLSMetric, type TTFBMetric } from 'web-vitals';
 import { EventProducer } from '../events';
 import { type Confidence } from '../Confidence';
 
-type Metric = LCPMetric | FIDMetric | CLSMetric;
+type Metric = LCPMetric | FIDMetric | CLSMetric | TTFBMetric;
 
 type WebVitalsMetricMessage = {
   id: string;
@@ -13,6 +13,7 @@ declare module '../events' {
     'web-vitals-lpc'?: WebVitalsMetricMessage;
     'web-vitals-fid'?: WebVitalsMetricMessage;
     'web-vitals-cls'?: WebVitalsMetricMessage;
+    'web-vitals-ttfb'?: WebVitalsMetricMessage;
   }
 }
 
@@ -38,6 +39,12 @@ export type WebVitalsOptions = {
    * @defaultValue true
    */
   cls?: boolean;
+
+  /**
+   * Measure Time To First Byte
+   * @defaultValue true
+   */
+  ttfb?: boolean;
 };
 
 /**
@@ -47,12 +54,12 @@ export type WebVitalsOptions = {
  * @returns a {@link EventProducer} to be used with {@link Confidence.track }
  * @public
  */
-export function webVitals({ lcp = true, fid = true, cls = true }: WebVitalsOptions = {}): EventProducer {
+export function webVitals({ lcp = true, fid = true, cls = true, ttfb = true }: WebVitalsOptions = {}): EventProducer {
   return confidence => {
     const handleMetric = ({ name, id, delta }: Metric) => {
       if (confidence.isClosed) return;
       // TODO consider this example https://www.npmjs.com/package/web-vitals#send-attribution-data. Should we have some metric event?
-      const metricKey = name.toLocaleLowerCase() as 'lcp' | 'fid' | 'cls';
+      const metricKey = name.toLocaleLowerCase() as 'lcp' | 'fid' | 'cls' | 'ttfb';
       const eventName = `web-vitals-${metricKey}` as const;
       confidence.sendEvent(eventName, {
         id,
@@ -62,5 +69,6 @@ export function webVitals({ lcp = true, fid = true, cls = true }: WebVitalsOptio
     if (lcp) onLCP(handleMetric);
     if (fid) onFID(handleMetric);
     if (cls) onCLS(handleMetric);
+    if (ttfb) onTTFB(handleMetric);
   };
 }
