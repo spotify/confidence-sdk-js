@@ -1,11 +1,9 @@
 import { Value } from './Value';
 
-
-type Provider<T> = (() => T | Promise<T>)
+type Provider<T> = () => T | Promise<T>;
 // type Lazy<T> = (T extends Value.Struct ? { [K in keyof T]: Lazy<T[K]> } : T | Provider<T>);
 
-export type LazyContext = { [K in keyof Context]: Context[K] | Provider<Context[K]> }
-
+export type LazyContext = { [K in keyof Context]: Context[K] | Provider<Context[K]> };
 
 export interface Contextual<Self extends Contextual<Self>> {
   getContext(): Promise<Context>;
@@ -22,7 +20,7 @@ type Brand = {
 };
 
 export interface Context extends Value.Struct {
-  Visitor?: string,
+  Visitor?: string;
   openFeature?: Value.Struct & {
     targeting_key?: string;
   };
@@ -39,4 +37,3 @@ export interface Context extends Value.Struct {
     url: string;
   };
 }
-

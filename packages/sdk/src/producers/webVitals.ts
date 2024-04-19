@@ -1,4 +1,13 @@
-import { onLCP, onFID, onCLS, onTTFB, type LCPMetric, type FIDMetric, type CLSMetric, type TTFBMetric } from 'web-vitals';
+import {
+  onLCP,
+  onFID,
+  onCLS,
+  onTTFB,
+  type LCPMetric,
+  type FIDMetric,
+  type CLSMetric,
+  type TTFBMetric,
+} from 'web-vitals';
 import { EventProducer } from '../events';
 import { type Confidence } from '../Confidence';
 

@@ -25,8 +25,8 @@ interface Configuration {
   readonly logger: Logger;
 }
 
-type ValueProvider = () => Value | Promise<Value>
-type OnCloseListener = () => void
+type ValueProvider = () => Value | Promise<Value>;
+type OnCloseListener = () => void;
 export class Confidence implements EventSender {
   private readonly config: Configuration;
   private readonly parent?: Confidence;
@@ -37,22 +37,21 @@ export class Confidence implements EventSender {
   constructor(config: Configuration, parent?: Confidence) {
     this.config = config;
     this.parent = parent;
-    if(parent) {
+    if (parent) {
       parent.onClose(this.close.bind(this));
     }
-
   }
 
   get environment(): string {
     return this.config.environment;
   }
 
-  get isClosed():boolean {
+  get isClosed(): boolean {
     return this.closed;
   }
 
   private assertOpen() {
-    if(this.closed) throw new Error('Confidence instance is closed.')
+    if (this.closed) throw new Error('Confidence instance is closed.');
   }
 
   private *contextEntries(): Iterable<[key: string, value: ValueProvider]> {
@@ -67,7 +66,7 @@ export class Confidence implements EventSender {
     // all child entries except undefined
     for (const entry of this._context.entries()) {
       if (typeof entry[1] !== 'undefined') {
-        // this cast is necessary cause TS doesn't track that the check above ensures the provider isn't undefined 
+        // this cast is necessary cause TS doesn't track that the check above ensures the provider isn't undefined
         yield entry as [string, ValueProvider];
       }
     }
@@ -77,12 +76,11 @@ export class Confidence implements EventSender {
     const context: Record<string, Value> = {};
     for (const [key, provider] of this.contextEntries()) {
       try {
-        const value  = await provider();
-        if(typeof value !== 'undefined'){
+        const value = await provider();
+        if (typeof value !== 'undefined') {
           context[key] = value;
         }
-      }
-      catch(e) {
+      } catch (e) {
         this.config.logger.error?.('Error getting context for key', key, e);
       }
     }
@@ -96,8 +94,8 @@ export class Confidence implements EventSender {
   }
 
   updateContextEntry<K extends string>(name: K, value: LazyContext[K]) {
-    let provider:ValueProvider;
-    if(typeof value === 'function') {
+    let provider: ValueProvider;
+    if (typeof value === 'function') {
       // TODO consider cloning the value of the provider before returning it
       provider = value;
     } else {
@@ -118,7 +116,7 @@ export class Confidence implements EventSender {
   }
 
   async sendEvent(name: string, message?: Value.Struct) {
-    if(this.closed) {
+    if (this.closed) {
       this.config.logger.warn?.('Confidence instance is closed. Event not sent.');
       return;
     }
@@ -126,32 +124,32 @@ export class Confidence implements EventSender {
   }
 
   track(producer: EventProducer): Destructor {
-    if(this.closed) {
+    if (this.closed) {
       this.config.logger.warn?.('Confidence instance is closed. Cannot track.');
     } else {
       const destructor = producer(this);
-      if(destructor) {
+      if (destructor) {
         let destructorCalled = false;
         const destroyOnce = () => {
-          if(destructorCalled) return;
+          if (destructorCalled) return;
           destructorCalled = true;
           this.onCloseListeners.delete(destroyOnce);
           destructor();
-        }
+        };
         this.onCloseListeners.add(destroyOnce);
         return destroyOnce;
       }
     }
-    return () => {}
+    return () => {};
   }
 
   close() {
-    if(this.closed) return;
-    this.closed = true
-    for(const listener of this.onCloseListeners) {
+    if (this.closed) return;
+    this.closed = true;
+    for (const listener of this.onCloseListeners) {
       try {
-        listener()
-      } catch(e) {
+        listener();
+      } catch (e) {
         this.config.logger.error?.('Error calling onClose listener', e);
       }
     }
@@ -161,11 +159,11 @@ export class Confidence implements EventSender {
   /**
    * @internal
    */
-  onClose(listener:OnCloseListener):void {
-    if(this.closed) {
+  onClose(listener: OnCloseListener): void {
+    if (this.closed) {
       try {
-        listener()
-      } catch(e) {
+        listener();
+      } catch (e) {
         this.config.logger.error?.('Error calling onClose listener', e);
       }
     } else {
@@ -234,8 +232,8 @@ export class Confidence implements EventSender {
       eventSenderEngine: eventSenderEngine,
       logger,
     });
-    if(environment === 'client') {
-      root.updateContextEntry('visitor_id', visitorId)
+    if (environment === 'client') {
+      root.updateContextEntry('visitor_id', visitorId);
     }
     return root;
   }
