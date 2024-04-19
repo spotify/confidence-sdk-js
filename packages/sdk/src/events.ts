@@ -15,6 +15,8 @@ export namespace Destructor {
     };
   }
 }
+
+// eslint-disable-next-line @typescript-eslint/no-redeclare
 export type Destructor = () => void;
 export type EventProducer = (confidence: Confidence) => void | Destructor;
 

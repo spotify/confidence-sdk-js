@@ -46,8 +46,8 @@ function setCookie(key: string, value: string, opt: CookieOptions = {}) {
 
 export function getCookie(key: string): string | undefined {
   const prefix = `${encodeURIComponent(key)}=`;
-  const cookie = document.cookie.split(/;\s*/g).find(cookie => cookie.startsWith(prefix));
-  return cookie && decodeURIComponent(cookie.slice(prefix.length));
+  const documentCookie = document.cookie.split(/;\s*/g).find(cookie => cookie.startsWith(prefix));
+  return documentCookie && decodeURIComponent(documentCookie.slice(prefix.length));
 }
 
 export function removeCookie(key: string) {
