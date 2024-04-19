@@ -1,11 +1,11 @@
 import { Destructor, EventProducer } from '../events';
 
-export type PageViewsProduceOptions = {
+export type PageViewsProducerOptions = {
   // Add options here
   shouldEmitEvent?: boolean;
 };
 
-export function pageViews({ shouldEmitEvent = true }: PageViewsProduceOptions = {}): EventProducer {
+export function pageViews({ shouldEmitEvent = true }: PageViewsProducerOptions = {}): EventProducer {
   return confidence => {
     let previousPath: string;
 
@@ -38,7 +38,6 @@ export function pageViews({ shouldEmitEvent = true }: PageViewsProduceOptions = 
     );
 
     function pageChanged({ type }: { type: string }) {
-      // if (location.pathname === previousPath) return;
       confidence.setContext({
         page: {
           path: location.pathname,

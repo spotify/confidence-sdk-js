@@ -22,6 +22,7 @@ interface Configuration {
   readonly environment: 'client' | 'backend';
   readonly eventSenderEngine: EventSenderEngine;
   readonly flagResolverClient: FlagResolverClient;
+  readonly logger: Logger;
 }
 
 type ValueProvider = () => Value | Promise<Value>
@@ -36,7 +37,6 @@ export class Confidence implements EventSender {
   constructor(config: Configuration, parent?: Confidence) {
     this.config = config;
     this.parent = parent;
-
     if(parent) {
       parent.onClose(this.close.bind(this));
     }
@@ -83,7 +83,7 @@ export class Confidence implements EventSender {
         }
       }
       catch(e) {
-        // TODO log provider error
+        this.config.logger.error?.('Error getting context for key', key, e);
       }
     }
     return Object.freeze(context);
@@ -107,10 +107,6 @@ export class Confidence implements EventSender {
     this._context.set(name, provider);
   }
 
-  // removeContextEntry(name: string): void {
-  //   this._context.set(name, undefined);
-  // }
-
   clearContext(): void {
     this._context.clear();
   }
@@ -122,14 +118,17 @@ export class Confidence implements EventSender {
   }
 
   async sendEvent(name: string, message?: Value.Struct) {
-    // TODO log if closed
-    if(this.closed) return;
+    if(this.closed) {
+      this.config.logger.warn?.('Confidence instance is closed. Event not sent.');
+      return;
+    }
     this.config.eventSenderEngine.send(await this.getContext(), name, message);
   }
 
   track(producer: EventProducer): Destructor {
-    // TODO log if closed
-    if(!this.closed) {
+    if(this.closed) {
+      this.config.logger.warn?.('Confidence instance is closed. Cannot track.');
+    } else {
       const destructor = producer(this);
       if(destructor) {
         let destructorCalled = false;
@@ -153,7 +152,7 @@ export class Confidence implements EventSender {
       try {
         listener()
       } catch(e) {
-        // TODO log error
+        this.config.logger.error?.('Error calling onClose listener', e);
       }
     }
     this.onCloseListeners.clear();
@@ -167,7 +166,7 @@ export class Confidence implements EventSender {
       try {
         listener()
       } catch(e) {
-        // TODO log error
+        this.config.logger.error?.('Error calling onClose listener', e);
       }
     } else {
       this.onCloseListeners.add(listener);
@@ -233,9 +232,10 @@ export class Confidence implements EventSender {
       environment: environment,
       flagResolverClient,
       eventSenderEngine: eventSenderEngine,
+      logger,
     });
     if(environment === 'client') {
-      root.updateContextEntry('Visitor', visitorId)
+      root.updateContextEntry('visitor_id', visitorId)
     }
     return root;
   }
