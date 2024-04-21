@@ -2,9 +2,9 @@ import { FlagResolverClient, FlagResolution } from './FlagResolverClient';
 import { EventSenderEngine } from './EventSenderEngine';
 import { Value } from './Value';
 import { EventSender, EventProducer, Destructor } from './events';
-import { Context, LazyContext } from './context';
+import { Context } from './context';
 import { Logger } from './logger';
-import { visitorId } from './producers';
+import { visitorIdentity } from './producers';
 
 export { FlagResolverClient, FlagResolution };
 
@@ -25,13 +25,12 @@ interface Configuration {
   readonly logger: Logger;
 }
 
-type ValueProvider = () => Value | Promise<Value>;
 type OnCloseListener = () => void;
 export class Confidence implements EventSender {
   private readonly config: Configuration;
   private readonly parent?: Confidence;
   private readonly onCloseListeners = new Set<OnCloseListener>();
-  private _context: Map<string, ValueProvider | undefined> = new Map();
+  private _context: Map<string, Value> = new Map();
   private closed = false;
 
   constructor(config: Configuration, parent?: Confidence) {
@@ -55,7 +54,7 @@ export class Confidence implements EventSender {
     if (this.closed) throw new Error('Confidence instance is closed.');
   }
 
-  private *contextEntries(): Iterable<[key: string, value: ValueProvider]> {
+  private *contextEntries(): Iterable<[key: string, value: Value]> {
     if (this.parent) {
       // all parent entries except the ones child also has
       for (const entry of this.parent.contextEntries()) {
@@ -68,49 +67,34 @@ export class Confidence implements EventSender {
     for (const entry of this._context.entries()) {
       if (typeof entry[1] !== 'undefined') {
         // this cast is necessary cause TS doesn't track that the check above ensures the provider isn't undefined
-        yield entry as [string, ValueProvider];
+        yield entry as [string, Value];
       }
     }
   }
 
-  async getContext(): Promise<Context> {
+  getContext(): Context {
     const context: Record<string, Value> = {};
-    for (const [key, provider] of this.contextEntries()) {
-      try {
-        const value = await provider();
-        if (typeof value !== 'undefined') {
-          context[key] = value;
-        }
-      } catch (e) {
-        this.config.logger.error?.('Error getting context for key', key, e);
-      }
+    for (const [key, value] of this.contextEntries()) {
+      context[key] = value;
     }
     return Object.freeze(context);
   }
 
-  setContext(context: LazyContext): void {
+  setContext(context: Context): void {
     for (const key of Object.keys(context)) {
       this.updateContextEntry(key, context[key]);
     }
   }
 
-  updateContextEntry<K extends string>(name: K, value: LazyContext[K]) {
-    let provider: ValueProvider;
-    if (typeof value === 'function') {
-      // TODO consider cloning the value of the provider before returning it
-      provider = value;
-    } else {
-      const copy = Value.clone(value);
-      provider = () => copy;
-    }
-    this._context.set(name, provider);
+  private updateContextEntry<K extends string>(name: K, value: Context[K]) {
+    this._context.set(name, Value.clone(value));
   }
 
   clearContext(): void {
     this._context.clear();
   }
 
-  withContext(context: LazyContext): Confidence {
+  withContext(context: Context): Confidence {
     const child = new Confidence(this.config, this);
     child.setContext(context);
     return child;
@@ -234,7 +218,7 @@ export class Confidence implements EventSender {
       logger,
     });
     if (environment === 'client') {
-      root.updateContextEntry('visitor_id', visitorId);
+      root.track(visitorIdentity())
     }
     return root;
   }

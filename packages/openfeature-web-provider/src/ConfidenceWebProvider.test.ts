@@ -9,14 +9,14 @@ import {
 import { ConfidenceWebProvider } from './ConfidenceWebProvider';
 import { Confidence, FlagResolution } from '@spotify-confidence/sdk';
 
-const updateContextMock = jest.fn();
+const setContextMock = jest.fn();
 const resolveMock = jest.fn();
 const applyMock = jest.fn();
 const confidenceMock = {
   environment: 'client',
   resolve: resolveMock,
   apply: applyMock,
-  updateContextEntry: updateContextMock,
+  setContext: setContextMock,
 } as unknown as Confidence;
 
 const dummyContext: EvaluationContext = { targetingKey: 'test' };
@@ -141,8 +141,10 @@ describe('ConfidenceProvider', () => {
     it('should resolve on onContextChange', async () => {
       await instanceUnderTest.onContextChange(dummyContext, { targetingKey: 'test1' });
 
-      expect(updateContextMock).toHaveBeenCalledWith('openFeature', {
-        targeting_key: 'test1',
+      expect(setContextMock).toHaveBeenCalledWith({
+        openFeature: {
+          targeting_key: 'test1',
+        },
       });
       expect(resolveMock).toHaveBeenCalledWith([]);
     });

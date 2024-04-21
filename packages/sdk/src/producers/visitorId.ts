@@ -1,16 +1,16 @@
-import { LazyContext } from '../context';
+import { EventProducer } from '../events';
 
 const COOKIE_NAME = 'cnfdVisitorId';
 
-export const visitorId: LazyContext['Visitor'] = () => {
-  // TODO sore in mem after reading?
+export const visitorIdentity = (): EventProducer => confidence => {
+  if (typeof document === 'undefined') return;
   let value = getCookie(COOKIE_NAME);
   if (!value) {
     value = uuid();
     // TODO check correct cookie options
     setCookie(COOKIE_NAME, value, { maxAge: 60 * 60 * 24 * 365 * 5 });
   }
-  return value;
+  confidence.setContext({ Visitor: value });
 };
 
 function uuid(): string {

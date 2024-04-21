@@ -14,9 +14,9 @@ describe('Confidence', () => {
   describe('put', () => {
     it('defensively copies values', async () => {
       const confidence = new Confidence({} as any);
-      const value = { pants: 'yellow' };
-      confidence.updateContextEntry('clothes', value);
-      value.pants = 'blue';
+      const clothes = { pants: 'yellow' };
+      confidence.setContext({ clothes });
+      clothes.pants = 'blue';
       expect(await confidence.getContext()).toEqual({ clothes: { pants: 'yellow' } });
     });
   });
