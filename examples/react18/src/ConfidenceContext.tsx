@@ -1,5 +1,5 @@
 import { Confidence, Context } from '@spotify-confidence/sdk';
-import React, { createContext, FC, PropsWithChildren, useContext } from 'react';
+import { createContext, FC, PropsWithChildren, useContext, useMemo } from 'react';
 
 const ConfidenceContext = createContext<Confidence | null>(null);
 
@@ -8,23 +8,15 @@ export const ConfidenceProvider: FC<PropsWithChildren<{ confidence: Confidence }
 );
 
 export const WithConfidenceContext: FC<PropsWithChildren<{ context: Context }>> = ({ context, children }) => {
-  const confidence = useConfidence();
-  return <ConfidenceProvider confidence={confidence.withContext(context)}>{children}</ConfidenceProvider>;
-};
-export const useConfidence = () => {
-  const confidence = useContext(ConfidenceContext);
-  if (!confidence)
-    throw new Error('No Confidence instance found, did you forget to wrap your component in ConfidenceProvider?');
-  return confidence;
+  return <ConfidenceProvider confidence={useConfidence(context)}>{children}</ConfidenceProvider>;
 };
 
-export function withContext(context: Context): <T extends JSX.IntrinsicAttributes>(wrapped: FC<T>) => FC<T> {
-  function wrap<T extends JSX.IntrinsicAttributes>(Wrapped: FC<T>): FC<T> {
-    return (props: T) => (
-      <WithConfidenceContext context={context}>
-        <Wrapped {...props} />
-      </WithConfidenceContext>
-    );
-  }
-  return wrap;
-}
+export const useConfidence = (withContext?: Context): Confidence => {
+  const parent = useContext(ConfidenceContext);
+  if (!parent)
+    throw new Error('No Confidence instance found, did you forget to wrap your component in ConfidenceProvider?');
+
+  return useMemo(() => {
+    return withContext ? parent.withContext(withContext) : parent;
+  }, [parent, JSON.stringify(withContext)]);
+};
