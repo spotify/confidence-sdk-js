@@ -66,7 +66,6 @@ export type WebVitalsOptions = {
 export function webVitals({ lcp = true, inp = true, cls = true, ttfb = false }: WebVitalsOptions = {}): EventProducer {
   return confidence => {
     const handleMetric = ({ name, id, delta }: Metric) => {
-      if (confidence.isClosed) return;
       // TODO consider this example https://www.npmjs.com/package/web-vitals#send-attribution-data. Should we have some metric event?
       const metricKey = name.toLocaleLowerCase() as 'lcp' | 'inp' | 'cls' | 'ttfb';
       const eventName = `web-vitals-${metricKey}` as const;

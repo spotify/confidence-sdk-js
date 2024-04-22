@@ -8,6 +8,7 @@ import { visitorIdentity } from './producers';
 
 export { FlagResolverClient, FlagResolution };
 
+const noOpFn = () => {}
 export interface ConfidenceOptions {
   clientSecret: string;
   region?: 'global' | 'eu' | 'us';
@@ -25,33 +26,22 @@ interface Configuration {
   readonly logger: Logger;
 }
 
-type OnCloseListener = () => void;
 export class Confidence implements EventSender {
   private readonly config: Configuration;
   private readonly parent?: Confidence;
-  private readonly onCloseListeners = new Set<OnCloseListener>();
   private _context: Map<string, Value> = new Map();
-  private closed = false;
 
   constructor(config: Configuration, parent?: Confidence) {
     this.config = config;
     this.parent = parent;
-    if (parent) {
-      // TODO this creates a reference from parent to child, it might be problematic and should at least be cleaned up on close
-      parent.onClose(this.close.bind(this));
-    }
+    // if (parent) {
+    //   // TODO this creates a reference from parent to child, it might be problematic and should at least be cleaned up on close
+    //   parent.onClose(this.close.bind(this));
+    // }
   }
 
   get environment(): string {
     return this.config.environment;
-  }
-
-  get isClosed(): boolean {
-    return this.closed;
-  }
-
-  private assertOpen() {
-    if (this.closed) throw new Error('Confidence instance is closed.');
   }
 
   private *contextEntries(): Iterable<[key: string, value: Value]> {
@@ -101,66 +91,17 @@ export class Confidence implements EventSender {
   }
 
   async sendEvent(name: string, message?: Value.Struct) {
-    if (this.closed) {
-      this.config.logger.warn?.('Confidence instance is closed. Event not sent.');
-      return;
-    }
     this.config.eventSenderEngine.send(await this.getContext(), name, message);
   }
 
   track(producer: EventProducer): Destructor {
-    if (this.closed) {
-      this.config.logger.warn?.('Confidence instance is closed. Cannot track.');
-    } else {
-      const destructor = producer(this);
-      if (destructor) {
-        let destructorCalled = false;
-        const destroyOnce = () => {
-          if (destructorCalled) return;
-          destructorCalled = true;
-          this.onCloseListeners.delete(destroyOnce);
-          destructor();
-        };
-        this.onCloseListeners.add(destroyOnce);
-        return destroyOnce;
-      }
-    }
-    return () => {};
-  }
-
-  close() {
-    if (this.closed) return;
-    this.closed = true;
-    for (const listener of this.onCloseListeners) {
-      try {
-        listener();
-      } catch (e) {
-        this.config.logger.error?.('Error calling onClose listener', e);
-      }
-    }
-    this.onCloseListeners.clear();
-  }
-
-  /**
-   * @internal
-   */
-  onClose(listener: OnCloseListener): void {
-    if (this.closed) {
-      try {
-        listener();
-      } catch (e) {
-        this.config.logger.error?.('Error calling onClose listener', e);
-      }
-    } else {
-      this.onCloseListeners.add(listener);
-    }
+    return producer(this) ?? noOpFn
   }
 
   /**
    * @internal
    */
   async resolve(flagNames: string[]): Promise<FlagResolution> {
-    this.assertOpen();
     return this.config.flagResolverClient.resolve(await this.getContext(), flagNames);
   }
 
