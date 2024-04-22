@@ -1,17 +1,17 @@
 import {
   onLCP,
-  onFID,
+  onINP,
   onCLS,
   onTTFB,
   type LCPMetric,
-  type FIDMetric,
+  type INPMetric,
   type CLSMetric,
   type TTFBMetric,
 } from 'web-vitals';
 import { EventProducer } from '../events';
 import { type Confidence } from '../Confidence';
 
-type Metric = LCPMetric | FIDMetric | CLSMetric | TTFBMetric;
+type Metric = LCPMetric | INPMetric | CLSMetric | TTFBMetric;
 
 type WebVitalsMetricMessage = {
   metric_id: string;
@@ -19,8 +19,8 @@ type WebVitalsMetricMessage = {
 };
 declare module '../events' {
   export interface Event {
-    'web-vitals-lpc'?: WebVitalsMetricMessage;
-    'web-vitals-fid'?: WebVitalsMetricMessage;
+    'web-vitals-lcp'?: WebVitalsMetricMessage;
+    'web-vitals-inp'?: WebVitalsMetricMessage;
     'web-vitals-cls'?: WebVitalsMetricMessage;
     'web-vitals-ttfb'?: WebVitalsMetricMessage;
   }
@@ -38,10 +38,10 @@ export type WebVitalsOptions = {
   lcp?: boolean;
 
   /**
-   * Measure First Input Delay
+   * Measure Interaction Next Paint
    * @defaultValue true
    */
-  fid?: boolean;
+  inp?: boolean;
 
   /**
    * Measure Cumulative Layout Shift
@@ -63,12 +63,12 @@ export type WebVitalsOptions = {
  * @returns a {@link EventProducer} to be used with {@link Confidence.track }
  * @public
  */
-export function webVitals({ lcp = true, fid = true, cls = true, ttfb = false }: WebVitalsOptions = {}): EventProducer {
+export function webVitals({ lcp = true, inp = true, cls = true, ttfb = false }: WebVitalsOptions = {}): EventProducer {
   return confidence => {
     const handleMetric = ({ name, id, delta }: Metric) => {
       if (confidence.isClosed) return;
       // TODO consider this example https://www.npmjs.com/package/web-vitals#send-attribution-data. Should we have some metric event?
-      const metricKey = name.toLocaleLowerCase() as 'lcp' | 'fid' | 'cls' | 'ttfb';
+      const metricKey = name.toLocaleLowerCase() as 'lcp' | 'inp' | 'cls' | 'ttfb';
       const eventName = `web-vitals-${metricKey}` as const;
       confidence.sendEvent(eventName, {
         metric_id: id,
@@ -76,7 +76,7 @@ export function webVitals({ lcp = true, fid = true, cls = true, ttfb = false }: 
       });
     };
     if (lcp) onLCP(handleMetric);
-    if (fid) onFID(handleMetric);
+    if (inp) onINP(handleMetric);
     if (cls) onCLS(handleMetric);
     if (ttfb) onTTFB(handleMetric);
   };
