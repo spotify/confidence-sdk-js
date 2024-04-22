@@ -48,7 +48,7 @@ export function pageViews({ shouldEmitEvent = true }: PageViewsProducerOptions =
         },
       });
       if (shouldEmitEvent) {
-        confidence.sendEvent('page-view', {
+        confidence.sendEvent('page-viewed', {
           previousPath,
           trigger: type,
         });
