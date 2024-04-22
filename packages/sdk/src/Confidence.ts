@@ -218,7 +218,7 @@ export class Confidence implements EventSender {
       logger,
     });
     if (environment === 'client') {
-      root.track(visitorIdentity())
+      root.track(visitorIdentity());
     }
     return root;
   }
