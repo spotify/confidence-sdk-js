@@ -13,7 +13,7 @@ type Brand = {
 };
 
 export interface Context extends Value.Struct {
-  Visitor?: string;
+  visitor_id?: string;
   openFeature?: Value.Struct & {
     targeting_key?: string;
   };

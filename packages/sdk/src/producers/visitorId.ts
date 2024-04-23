@@ -10,7 +10,7 @@ export const visitorIdentity = (): Trackable.Manager => confidence => {
     // TODO check correct cookie options
     setCookie(COOKIE_NAME, value, { maxAge: 60 * 60 * 24 * 365 * 5 });
   }
-  confidence.setContext({ Visitor: value });
+  confidence.setContext({ visitor_id: value });
 };
 
 function uuid(): string {
