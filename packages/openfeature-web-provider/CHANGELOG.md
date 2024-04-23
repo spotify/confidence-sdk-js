@@ -6,6 +6,26 @@
   * dependencies
     * @spotify-confidence/client-http bumped from ^0.1.2 to ^0.1.3
 
+## [0.2.1-rc.0](https://github.com/spotify/confidence-openfeature-provider-js/compare/openfeature-web-provider-v0.2.0-rc.0...openfeature-web-provider-v0.2.1-rc.0) (2024-04-23)
+
+
+### 🐛 Bug Fixes
+
+* of providers stale due to other context ([c8cf4f7](https://github.com/spotify/confidence-openfeature-provider-js/commit/c8cf4f72a65716e774f1228bb541d53043dac2f7))
+* return the prev assigned value while provider is stale ([#103](https://github.com/spotify/confidence-openfeature-provider-js/issues/103)) ([2faf4c0](https://github.com/spotify/confidence-openfeature-provider-js/commit/2faf4c0f249f4e94d3cdd1d75d959d7c5db960a9))
+
+
+### 🔙 Reverts
+
+* context provider support ([2ee8194](https://github.com/spotify/confidence-openfeature-provider-js/commit/2ee8194229e9e5c26fcca29fac582571a6ccd879))
+
+
+### Dependencies
+
+* The following workspace dependencies were updated
+  * dependencies
+    * @spotify-confidence/sdk bumped from 0.0.2 to 0.0.3
+
 ## [0.2.0-rc.0](https://github.com/spotify/confidence-openfeature-provider-js/compare/openfeature-web-provider-v0.1.5...openfeature-web-provider-v0.2.0-rc.0) (2024-04-04)
 
 
