@@ -41,6 +41,10 @@ export class Confidence implements EventSender, Trackable {
     return this.config.environment;
   }
 
+  async sendEvent(name: string, message?: Value.Struct) {
+    this.config.eventSenderEngine.send(await this.getContext(), name, message);
+  }
+
   private *contextEntries(): Iterable<[key: string, value: Value]> {
     if (this.parent) {
       // all parent entries except the ones child also has
@@ -53,8 +57,7 @@ export class Confidence implements EventSender, Trackable {
     // all child entries except undefined
     for (const entry of this._context.entries()) {
       if (typeof entry[1] !== 'undefined') {
-        // this cast is necessary cause TS doesn't track that the check above ensures the provider isn't undefined
-        yield entry as [string, Value];
+        yield entry;
       }
     }
   }
@@ -85,10 +88,6 @@ export class Confidence implements EventSender, Trackable {
     const child = new Confidence(this.config, this);
     child.setContext(context);
     return child;
-  }
-
-  async sendEvent(name: string, message?: Value.Struct) {
-    this.config.eventSenderEngine.send(await this.getContext(), name, message);
   }
 
   track(manager: Trackable.Manager): Closer {
