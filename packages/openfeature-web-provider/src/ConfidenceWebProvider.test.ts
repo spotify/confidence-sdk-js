@@ -155,14 +155,14 @@ describe('ConfidenceProvider', () => {
       expect(resolveMock).not.toHaveBeenCalled();
     });
 
-    it('should return default with reason stale during fetch', async () => {
+    it('should return previously assigned with reason stale during fetch', async () => {
       await instanceUnderTest.initialize({ targetingKey: 'A' });
 
       expect(
         instanceUnderTest.resolveBooleanEvaluation('testFlag.bool', false, { targetingKey: 'B' }, dummyConsole),
       ).toEqual(
         expect.objectContaining({
-          value: false,
+          value: true,
           reason: 'STALE',
         }),
       );

@@ -94,14 +94,6 @@ export class ConfidenceWebProvider implements Provider {
         reason: 'ERROR',
       };
     }
-    const currContext: any = this.convertContext(context);
-    const cachedContext: any = this.flagResolution.context;
-    if (Object.keys(currContext).some(key => !equal(currContext[key], cachedContext[key]))) {
-      return {
-        value: defaultValue,
-        reason: 'STALE',
-      };
-    }
 
     const [flagName, ...pathParts] = flagKey.split('.');
 
@@ -159,9 +151,15 @@ export class ConfidenceWebProvider implements Provider {
         this.confidence.apply(this.flagResolution.resolveToken, flagName);
       }
       logger.info('Value for "%s" successfully evaluated', flagKey);
+      const currContext: any = this.convertContext(context);
+      const cachedContext: any = this.flagResolution.context;
+      const reason = Object.keys(currContext).some(key => !equal(currContext[key], cachedContext[key]))
+        ? 'STALE'
+        : mapConfidenceReason(flag.reason);
+
       return {
         value: flagValue.value as T,
-        reason: mapConfidenceReason(flag.reason),
+        reason: reason,
         variant: flag.variant,
         flagMetadata: {
           resolveToken: this.flagResolution.resolveToken,
