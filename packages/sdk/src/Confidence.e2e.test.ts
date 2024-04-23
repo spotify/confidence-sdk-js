@@ -16,23 +16,23 @@ describe('Confidence E2E Tests', () => {
 
   describe('sendEvent', () => {
     it('should log a trace message when all events succeed', async () => {
-      confidence.sendEvent('js-sdk-e2e-test', { pants: 'blue' });
-      confidence.sendEvent('js-sdk-e2e-test', { pants: 'yellow' });
+      confidence.sendEvent('js-sdk-e2e-tests', { pants: 'blue' });
+      confidence.sendEvent('js-sdk-e2e-tests', { pants: 'yellow' });
       expect(await nextMockArgs(loggerMock.trace)).toEqual(['Confidence: successfully uploaded %i events', 2]);
     });
     it('should log a warning message when some events fail', async () => {
-      confidence.sendEvent('js-sdk-e2e-test', { pants: 'red' });
-      confidence.sendEvent('js-sdk-e2e-test', { pants: 3 });
-      confidence.sendEvent('js-sdk-e2e-test', { pants: true });
-      confidence.sendEvent('js-sdk-e2e-test', { pants: 4 });
+      confidence.sendEvent('js-sdk-e2e-tests', { pants: 'red' });
+      confidence.sendEvent('js-sdk-e2e-tests', { pants: 3 });
+      confidence.sendEvent('js-sdk-e2e-tests', { pants: true });
+      confidence.sendEvent('js-sdk-e2e-tests', { pants: 4 });
 
       expect(await nextMockArgs(loggerMock.warn)).toEqual([
         'Confidence: failed to upload %i out of %i event(s) with the following errors: %o',
         3,
         4,
         [
-          'pants: Field was expected to be of type string, was number',
-          'pants: Field was expected to be of type string, was bool',
+          'message.pants: Field was expected to be of type string, was number',
+          'message.pants: Field was expected to be of type string, was bool',
         ],
       ]);
     });
