@@ -41,8 +41,8 @@ export class Confidence implements EventSender, Trackable {
     return this.config.environment;
   }
 
-  async sendEvent(name: string, message?: Value.Struct) {
-    this.config.eventSenderEngine.send(await this.getContext(), name, message);
+  sendEvent(name: string, message?: Value.Struct) {
+    this.config.eventSenderEngine.send(this.getContext(), name, message);
   }
 
   private *contextEntries(): Iterable<[key: string, value: Value]> {
@@ -97,8 +97,8 @@ export class Confidence implements EventSender, Trackable {
   /**
    * @internal
    */
-  async resolve(flagNames: string[]): Promise<FlagResolution> {
-    return this.config.flagResolverClient.resolve(await this.getContext(), flagNames);
+  resolve(flagNames: string[]): Promise<FlagResolution> {
+    return this.config.flagResolverClient.resolve(this.getContext(), flagNames);
   }
 
   /**
