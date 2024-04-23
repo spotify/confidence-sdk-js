@@ -1,5 +1,6 @@
 {
   "plugins": ["node-workspace"],
+  "versioning": "prerelease",
   "packages": {
     "packages/client-http": {
       "component": "client-http",
