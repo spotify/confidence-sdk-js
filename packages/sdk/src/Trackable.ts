@@ -8,7 +8,7 @@ export namespace Trackable {
   export type Cleanup = void | Closer;
   export type Manager = (controller: Controller) => Cleanup;
 
-  class RevocableController implements Controller {
+  class ForwardingController implements Controller {
     #delegate: () => Controller;
 
     constructor(delegate: () => Controller) {
@@ -29,7 +29,7 @@ export namespace Trackable {
       return controller;
     };
     try {
-      const cleanup = manager(new RevocableController(delegate));
+      const cleanup = manager(new ForwardingController(delegate));
       return () => {
         if (isClosed) return;
         try {
