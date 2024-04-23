@@ -3,7 +3,6 @@ import { ClientProviderEvents, OpenFeature } from '@openfeature/web-sdk';
 import TestComponent from './TestComponent';
 import { createConfidenceWebProvider } from '@spotify-confidence/openfeature-web-provider';
 import { Confidence, pageViews } from '@spotify-confidence/sdk';
-import { FetchBuilder } from '@spotify-confidence/client-http';
 import { ConfidenceProvider } from './ConfidenceContext';
 
 const confidence = Confidence.create({
