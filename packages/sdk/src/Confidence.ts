@@ -35,10 +35,6 @@ export class Confidence implements EventSender, Trackable {
   constructor(config: Configuration, parent?: Confidence) {
     this.config = config;
     this.parent = parent;
-    // if (parent) {
-    //   // TODO this creates a reference from parent to child, it might be problematic and should at least be cleaned up on close
-    //   parent.onClose(this.close.bind(this));
-    // }
   }
 
   get environment(): string {
