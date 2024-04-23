@@ -12,19 +12,6 @@ import { Trackable } from '../Trackable';
 
 type Metric = LCPMetric | INPMetric | CLSMetric | TTFBMetric;
 
-type WebVitalsMetricMessage = {
-  metric_id: string;
-  metric_delta: number;
-};
-declare module '../events' {
-  export interface Event {
-    'web-vitals-lcp'?: WebVitalsMetricMessage;
-    'web-vitals-inp'?: WebVitalsMetricMessage;
-    'web-vitals-cls'?: WebVitalsMetricMessage;
-    'web-vitals-ttfb'?: WebVitalsMetricMessage;
-  }
-}
-
 /**
  * Options defining which Web Vital metrics to emit. By default all core metrics will be emitted.
  * @public
