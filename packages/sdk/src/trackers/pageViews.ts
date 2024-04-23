@@ -24,10 +24,8 @@ export function pageViews(): Trackable.Manager {
         pageChanged({ type: 'replacestate' });
       }),
 
-      // listen to history push state
       listenOn(window, 'popstate', pageChanged),
 
-      // treat hash changes as page views
       listenOn(window, 'hashchange', pageChanged),
 
       listenOn(window, 'load', pageChanged),
