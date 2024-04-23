@@ -2,7 +2,7 @@ import { Trackable } from '../Trackable';
 
 const COOKIE_NAME = 'cnfdVisitorId';
 
-export const visitorIdentity = (): Trackable.Manager => confidence => {
+export const visitorIdentity = (): Trackable.Manager => controller => {
   if (typeof document === 'undefined') return;
   let value = getCookie(COOKIE_NAME);
   if (!value) {
@@ -10,7 +10,7 @@ export const visitorIdentity = (): Trackable.Manager => confidence => {
     // TODO check correct cookie options
     setCookie(COOKIE_NAME, value, { maxAge: 60 * 60 * 24 * 365 * 5 });
   }
-  confidence.setContext({ visitor_id: value });
+  controller.setContext({ visitor_id: value });
 };
 
 function uuid(): string {

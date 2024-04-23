@@ -1,19 +1,15 @@
 import { Closer } from '../Closer';
 import { Trackable } from '../Trackable';
 
-export type PageViewsOptions = {
-  shouldEmitEvent?: boolean;
-};
+export function pageViews(): Trackable.Manager {
+  return controller => {
+    let referrer: string = document.referrer;
 
-export function pageViews({ shouldEmitEvent = true }: PageViewsOptions = {}): Trackable.Manager {
-  return confidence => {
-    let previousPath: string;
-
-    confidence.setContext({
+    controller.setContext({
       page: {
         path: location.pathname,
         search: location.search,
-        referrer: document.referrer,
+        referrer: referrer,
         title: document.title,
         url: location.href,
       },
@@ -38,22 +34,19 @@ export function pageViews({ shouldEmitEvent = true }: PageViewsOptions = {}): Tr
     );
 
     function pageChanged({ type }: { type: string }) {
-      confidence.setContext({
+      controller.setContext({
         page: {
           path: location.pathname,
           search: location.search,
-          referrer: document.referrer,
+          referrer: referrer,
           title: document.title,
           url: location.href,
         },
       });
-      if (shouldEmitEvent) {
-        confidence.sendEvent('page-viewed', {
-          previous_path: previousPath,
-          trigger: type,
-        });
-      }
-      previousPath = location.pathname;
+      // console.log('page viewed due to', type);
+      controller.sendEvent('page-viewed');
+
+      referrer = location.href;
     }
   };
 }
