@@ -17,7 +17,6 @@ confidence.track(pageViews());
 const webProvider = createConfidenceWebProvider(confidence);
 await OpenFeature.setProviderAndWait(webProvider);
 function App() {
-
   return (
     <ConfidenceProvider confidence={confidence}>
       <h1>React 18 Example</h1>
