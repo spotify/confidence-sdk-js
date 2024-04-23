@@ -1,10 +1,10 @@
 import { Closer } from './Closer';
+import { Confidence } from './Confidence';
 import { Value } from './Value';
 import { Context } from './context';
-import { EventSender } from './events';
 
 export namespace Trackable {
-  export type Controller = Pick<EventSender, 'setContext' | 'sendEvent'>;
+  export type Controller = Pick<Confidence, 'setContext' | 'sendEvent' | 'config'>;
   export type Cleanup = void | Closer;
   export type Manager = (controller: Controller) => Cleanup;
 
@@ -19,6 +19,9 @@ export namespace Trackable {
     }
     sendEvent(name: string, message?: Value.Struct | undefined): void {
       return this.#delegate().sendEvent(name, message);
+    }
+    get config() {
+      return this.#delegate().config;
     }
   }
 

@@ -43,7 +43,7 @@ export function pageViews(): Trackable.Manager {
           url: location.href,
         },
       });
-      // console.log('page viewed due to', type);
+      controller.config.logger.debug?.('page viewed', { type });
       controller.sendEvent('page-viewed');
 
       referrer = location.href;

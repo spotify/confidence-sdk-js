@@ -22,13 +22,15 @@ export interface ConfidenceOptions {
 
 interface Configuration {
   readonly environment: 'client' | 'backend';
-  readonly eventSenderEngine: EventSenderEngine;
-  readonly flagResolverClient: FlagResolverClient;
   readonly logger: Logger;
+  /** @internal */
+  readonly eventSenderEngine: EventSenderEngine;
+  /** @internal */
+  readonly flagResolverClient: FlagResolverClient;
 }
 
 export class Confidence implements EventSender, Trackable {
-  private readonly config: Configuration;
+  readonly config: Configuration;
   private readonly parent?: Confidence;
   private _context: Map<string, Value> = new Map();
 
