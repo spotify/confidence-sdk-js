@@ -2,7 +2,6 @@ import { Closer } from '../Closer';
 import { Trackable } from '../Trackable';
 
 export type PageViewsOptions = {
-  // Add options here
   shouldEmitEvent?: boolean;
 };
 
@@ -50,7 +49,7 @@ export function pageViews({ shouldEmitEvent = true }: PageViewsOptions = {}): Tr
       });
       if (shouldEmitEvent) {
         confidence.sendEvent('page-viewed', {
-          previousPath,
+          previous_path: previousPath,
           trigger: type,
         });
       }
