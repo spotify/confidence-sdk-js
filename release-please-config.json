@@ -4,6 +4,7 @@
     "packages/client-http": {
       "component": "client-http",
       "changelog-path": "CHANGELOG.md",
+      "versioning": "prerelease",
       "bump-minor-pre-major": true,
       "bump-patch-for-minor-pre-major": true,
       "extra-files": [
@@ -18,6 +19,7 @@
     "packages/integration-react": {
       "component": "integration-react",
       "changelog-path": "CHANGELOG.md",
+      "versioning": "prerelease",
       "bump-minor-pre-major": true,
       "bump-patch-for-minor-pre-major": true,
       "extra-files": [
@@ -32,6 +34,7 @@
     "packages/openfeature-server-provider": {
       "component": "openfeature-server-provider",
       "changelog-path": "CHANGELOG.md",
+      "versioning": "prerelease",
       "bump-minor-pre-major": true,
       "bump-patch-for-minor-pre-major": true,
       "extra-files": [
@@ -47,6 +50,7 @@
     "packages/openfeature-web-provider": {
       "component": "openfeature-web-provider",
       "changelog-path": "CHANGELOG.md",
+      "versioning": "prerelease",
       "bump-minor-pre-major": true,
       "bump-patch-for-minor-pre-major": true,
       "extra-files": [
@@ -62,6 +66,7 @@
     "packages/sdk": {
       "component": "sdk",
       "changelog-path": "CHANGELOG.md",
+      "versioning": "prerelease",
       "bump-minor-pre-major": true,
       "bump-patch-for-minor-pre-major": true,
       "extra-files": [
