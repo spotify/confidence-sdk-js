@@ -1,8 +1,8 @@
-import { EventProducer } from '../events';
+import { Trackable } from '../Trackable';
 
 const COOKIE_NAME = 'cnfdVisitorId';
 
-export const visitorIdentity = (): EventProducer => confidence => {
+export const visitorIdentity = (): Trackable.Manager => confidence => {
   if (typeof document === 'undefined') return;
   let value = getCookie(COOKIE_NAME);
   if (!value) {

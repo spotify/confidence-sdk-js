@@ -83,4 +83,22 @@ describe('Confidence', () => {
       expect(await confidence.getContext()).toEqual({});
     });
   });
+
+  describe('track', () => {
+    it('sets up a subscription that can be closed once', () => {
+      const confidence = new Confidence({} as any);
+      const mockManager = jest.fn();
+      const mockCloser = jest.fn();
+      mockManager.mockReturnValue(mockCloser);
+
+      const closer = confidence.track(mockManager);
+      expect(mockManager).toHaveBeenCalled();
+      expect(mockCloser).not.toHaveBeenCalled();
+      // close
+      closer();
+      closer();
+
+      expect(mockCloser).toHaveBeenCalledOnce();
+    });
+  });
 });

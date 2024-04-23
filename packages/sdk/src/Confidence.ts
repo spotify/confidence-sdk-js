@@ -1,14 +1,15 @@
 import { FlagResolverClient, FlagResolution } from './FlagResolverClient';
 import { EventSenderEngine } from './EventSenderEngine';
 import { Value } from './Value';
-import { EventSender, EventProducer, Destructor } from './events';
+import { EventSender } from './events';
 import { Context } from './context';
 import { Logger } from './logger';
 import { visitorIdentity } from './producers';
+import { Trackable } from './Trackable';
+import { Closer } from './Closer';
 
 export { FlagResolverClient, FlagResolution };
 
-const noOpFn = () => {}
 export interface ConfidenceOptions {
   clientSecret: string;
   region?: 'global' | 'eu' | 'us';
@@ -26,7 +27,7 @@ interface Configuration {
   readonly logger: Logger;
 }
 
-export class Confidence implements EventSender {
+export class Confidence implements EventSender, Trackable {
   private readonly config: Configuration;
   private readonly parent?: Confidence;
   private _context: Map<string, Value> = new Map();
@@ -94,8 +95,8 @@ export class Confidence implements EventSender {
     this.config.eventSenderEngine.send(await this.getContext(), name, message);
   }
 
-  track(producer: EventProducer): Destructor {
-    return producer(this) ?? noOpFn
+  track(manager: Trackable.Manager): Closer {
+    return Trackable.setup(this, manager);
   }
 
   /**

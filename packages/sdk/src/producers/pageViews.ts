@@ -1,11 +1,12 @@
-import { Destructor, EventProducer } from '../events';
+import { Closer } from '../Closer';
+import { Trackable } from '../Trackable';
 
-export type PageViewsProducerOptions = {
+export type PageViewsOptions = {
   // Add options here
   shouldEmitEvent?: boolean;
 };
 
-export function pageViews({ shouldEmitEvent = true }: PageViewsProducerOptions = {}): EventProducer {
+export function pageViews({ shouldEmitEvent = true }: PageViewsOptions = {}): Trackable.Manager {
   return confidence => {
     let previousPath: string;
 
@@ -19,7 +20,7 @@ export function pageViews({ shouldEmitEvent = true }: PageViewsProducerOptions =
       },
     });
 
-    return Destructor.combine(
+    return Closer.combine(
       spyOn(history, 'pushState', () => {
         pageChanged({ type: 'pushstate' });
       }),

@@ -8,8 +8,7 @@ import {
   type CLSMetric,
   type TTFBMetric,
 } from 'web-vitals';
-import { EventProducer } from '../events';
-import { type Confidence } from '../Confidence';
+import { Trackable } from '../Trackable';
 
 type Metric = LCPMetric | INPMetric | CLSMetric | TTFBMetric;
 
@@ -60,16 +59,21 @@ export type WebVitalsOptions = {
  * Emit {@link https://web.dev/articles/vitals | Web Vitals} metric events.
  *
  * @param options - specifying which metrics to emit
- * @returns a {@link EventProducer} to be used with {@link Confidence.track }
+ * @returns a {@link Topic} to be used with {@link Confidence.track }
  * @public
  */
-export function webVitals({ lcp = true, inp = true, cls = true, ttfb = false }: WebVitalsOptions = {}): EventProducer {
-  return confidence => {
+export function webVitals({
+  lcp = true,
+  inp = true,
+  cls = true,
+  ttfb = false,
+}: WebVitalsOptions = {}): Trackable.Manager {
+  return controller => {
     const handleMetric = ({ name, id, delta }: Metric) => {
       // TODO consider this example https://www.npmjs.com/package/web-vitals#send-attribution-data. Should we have some metric event?
       const metricKey = name.toLocaleLowerCase() as 'lcp' | 'inp' | 'cls' | 'ttfb';
       const eventName = `web-vitals-${metricKey}` as const;
-      confidence.sendEvent(eventName, {
+      controller.sendEvent(eventName, {
         metric_id: id,
         metric_delta: delta,
       });
