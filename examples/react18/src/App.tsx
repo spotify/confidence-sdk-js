@@ -1,5 +1,5 @@
-import React, { useEffect } from 'react';
-import { ClientProviderEvents, OpenFeature } from '@openfeature/web-sdk';
+import React from 'react';
+import { OpenFeature } from '@openfeature/web-sdk';
 import TestComponent from './TestComponent';
 import { createConfidenceWebProvider } from '@spotify-confidence/openfeature-web-provider';
 import { Confidence, pageViews } from '@spotify-confidence/sdk';
@@ -14,17 +14,9 @@ const confidence = Confidence.create({
 
 confidence.track(pageViews());
 
-export const webProvider = createConfidenceWebProvider(confidence);
-
-OpenFeature.getClient().addHandler(ClientProviderEvents.Ready, () => console.log('ready!'));
+const webProvider = createConfidenceWebProvider(confidence);
+await OpenFeature.setProviderAndWait(webProvider);
 function App() {
-  useEffect(() => {
-    OpenFeature.setContext({
-      targetingKey: 'user-a',
-    });
-    OpenFeature.setProvider(webProvider);
-    confidence.sendEvent('test');
-  }, []);
 
   return (
     <ConfidenceProvider confidence={confidence}>
