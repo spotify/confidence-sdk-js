@@ -19,6 +19,7 @@
     "access": "public"
   },
   "dependencies": {
-    "@spotify-confidence/client-http": "0.1.5"
+    "@spotify-confidence/client-http": "0.1.5",
+    "web-vitals": "^3.5.2"
   }
 }

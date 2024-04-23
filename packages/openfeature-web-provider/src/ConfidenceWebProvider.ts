@@ -32,7 +32,7 @@ export class ConfidenceWebProvider implements Provider {
 
   async initialize(context?: EvaluationContext): Promise<void> {
     try {
-      if (context) this.confidence.updateContextEntry('openFeature', this.convertContext(context || {}));
+      if (context) this.confidence.setContext({ openFeature: this.convertContext(context || {}) });
       this.flagResolution = await this.confidence.resolve([]);
       this.status = ProviderStatus.READY;
       return Promise.resolve();
@@ -48,7 +48,7 @@ export class ConfidenceWebProvider implements Provider {
     }
     this.events.emit(ProviderEvents.Stale);
     try {
-      this.confidence.updateContextEntry('openFeature', this.convertContext(newContext));
+      this.confidence.setContext({ openFeature: this.convertContext(newContext) });
       this.flagResolution = await this.confidence.resolve([]);
       this.status = ProviderStatus.READY;
       this.events.emit(ProviderEvents.Ready);
@@ -92,13 +92,6 @@ export class ConfidenceWebProvider implements Provider {
         errorCode: ErrorCode.PROVIDER_NOT_READY,
         value: defaultValue,
         reason: 'ERROR',
-      };
-    }
-
-    if (!equal(this.flagResolution.context, this.convertContext(context))) {
-      return {
-        value: defaultValue,
-        reason: 'STALE',
       };
     }
 
@@ -158,9 +151,15 @@ export class ConfidenceWebProvider implements Provider {
         this.confidence.apply(this.flagResolution.resolveToken, flagName);
       }
       logger.info('Value for "%s" successfully evaluated', flagKey);
+      const currContext: any = this.convertContext(context);
+      const cachedContext: any = this.flagResolution.context;
+      const reason = Object.keys(currContext).some(key => !equal(currContext[key], cachedContext[key]))
+        ? 'STALE'
+        : mapConfidenceReason(flag.reason);
+
       return {
         value: flagValue.value as T,
-        reason: mapConfidenceReason(flag.reason),
+        reason: reason,
         variant: flag.variant,
         flagMetadata: {
           resolveToken: this.flagResolution.resolveToken,
