@@ -6,6 +6,20 @@
   * dependencies
     * @spotify-confidence/client-http bumped from ^0.1.2 to ^0.1.3
 
+## [0.2.1-rc.0](https://github.com/spotify/confidence-openfeature-provider-js/compare/openfeature-web-provider-v0.2.0-rc.0...openfeature-web-provider-v0.2.1-rc.0) (2024-04-24)
+
+
+### ✨ New Features
+
+* managed context and events ([b2cae86](https://github.com/spotify/confidence-openfeature-provider-js/commit/b2cae86bff24cd18417fd154b8ee28f2c8350a84))
+
+
+### Dependencies
+
+* The following workspace dependencies were updated
+  * dependencies
+    * @spotify-confidence/sdk bumped from 0.0.2 to 0.0.3
+
 ## [0.2.0-rc.0](https://github.com/spotify/confidence-openfeature-provider-js/compare/openfeature-web-provider-v0.1.5...openfeature-web-provider-v0.2.0-rc.0) (2024-04-04)
 
 
