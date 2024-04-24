@@ -94,8 +94,7 @@ export class Confidence implements EventSender, Trackable {
 
   track(name: string, message?: Value.Struct): void;
   track(manager: Trackable.Manager): Closer;
-  track(nameOrManager: string | Trackable.Manager, message?: Value.Struct): Closer | undefined 
-  {
+  track(nameOrManager: string | Trackable.Manager, message?: Value.Struct): Closer | undefined {
     if (typeof nameOrManager === 'function') {
       return Trackable.setup(this, nameOrManager);
     }
