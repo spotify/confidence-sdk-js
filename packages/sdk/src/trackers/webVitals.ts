@@ -60,7 +60,7 @@ export function webVitals({
       // TODO consider this example https://www.npmjs.com/package/web-vitals#send-attribution-data. Should we have some metric event?
       const metricKey = name.toLocaleLowerCase() as 'lcp' | 'inp' | 'cls' | 'ttfb';
       const eventName = `web-vitals-${metricKey}` as const;
-      controller.sendEvent(eventName, {
+      controller.track(eventName, {
         metric_id: id,
         metric_delta: delta,
       });

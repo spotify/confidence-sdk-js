@@ -43,7 +43,7 @@ export class Confidence implements EventSender, Trackable {
     return this.config.environment;
   }
 
-  sendEvent(name: string, message?: Value.Struct) {
+  private sendEvent(name: string, message?: Value.Struct): void {
     this.config.eventSenderEngine.send(this.getContext(), name, message);
   }
 
@@ -92,8 +92,14 @@ export class Confidence implements EventSender, Trackable {
     return child;
   }
 
-  track(manager: Trackable.Manager): Closer {
-    return Trackable.setup(this, manager);
+  track(name: string, message?: Value.Struct): void;
+  track(manager: Trackable.Manager): Closer;
+  track(nameOrManager: string | Trackable.Manager, message?: Value.Struct): Closer | undefined {
+    if (typeof nameOrManager === 'function') {
+      return Trackable.setup(this, nameOrManager);
+    }
+    this.sendEvent(nameOrManager, message);
+    return undefined;
   }
 
   /**

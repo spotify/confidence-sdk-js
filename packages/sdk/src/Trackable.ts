@@ -4,47 +4,69 @@ import { Value } from './Value';
 import { Context } from './context';
 
 export namespace Trackable {
-  export type Controller = Pick<Confidence, 'setContext' | 'sendEvent' | 'config'>;
+  export type Controller = Pick<Confidence, 'setContext' | 'track' | 'config'>;
   export type Cleanup = void | Closer;
   export type Manager = (controller: Controller) => Cleanup;
 
-  class ForwardingController implements Controller {
-    #delegate: () => Controller;
+  class RevocableController implements Controller {
+    #isRevoked = false;
+    #delegate: Controller;
+    #childTrackers: Closer[] = [];
 
-    constructor(delegate: () => Controller) {
+    constructor(delegate: Controller) {
       this.#delegate = delegate;
     }
     setContext(context: Context): void {
-      return this.#delegate().setContext(context);
+      this.assertNonRevoked();
+      return this.#delegate.setContext(context);
     }
-    sendEvent(name: string, message?: Value.Struct | undefined): void {
-      return this.#delegate().sendEvent(name, message);
+
+    track(name: string, message?: Value.Struct): void;
+    track(manager: Trackable.Manager): Closer;
+    track(nameOrManager: string | Trackable.Manager, message?: Value.Struct): Closer | void {
+      this.assertNonRevoked();
+      if (typeof nameOrManager === 'function') {
+        // if the manager starts tracking something
+        const closer = this.#delegate.track(nameOrManager);
+        this.#childTrackers.push(closer);
+        return closer;
+      }
+      return this.#delegate.track(nameOrManager, message);
     }
     get config() {
-      return this.#delegate().config;
+      this.assertNonRevoked();
+      return this.#delegate.config;
+    }
+
+    get isRevoked() {
+      return this.#isRevoked;
+    }
+
+    revoke() {
+      if (this.#isRevoked) return;
+      this.#isRevoked = true;
+      while (this.#childTrackers.length > 0) {
+        const closer = this.#childTrackers.pop()!;
+        closer();
+      }
+    }
+
+    private assertNonRevoked(): void {
+      if (this.#isRevoked) throw new Error('The tracker is closed');
     }
   }
 
   export function setup(controller: Controller, manager: Manager): Closer {
-    let isClosed = false;
-    const delegate = () => {
-      if (isClosed) throw new Error('Controller is closed');
-      return controller;
+    const revocableController = new RevocableController(controller);
+    const cleanup = manager(revocableController);
+    return () => {
+      if (revocableController.isRevoked) return;
+      try {
+        cleanup?.();
+      } finally {
+        revocableController.revoke();
+      }
     };
-    try {
-      const cleanup = manager(new ForwardingController(delegate));
-      return () => {
-        if (isClosed) return;
-        try {
-          cleanup?.();
-        } finally {
-          isClosed = true;
-        }
-      };
-    } catch (e) {
-      isClosed = true;
-      throw e;
-    }
   }
 }
 export interface Trackable {
