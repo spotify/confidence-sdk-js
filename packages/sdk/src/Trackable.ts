@@ -8,47 +8,58 @@ export namespace Trackable {
   export type Cleanup = void | Closer;
   export type Manager = (controller: Controller) => Cleanup;
 
-  class ForwardingController implements Controller {
-    #delegate: () => Controller;
+  class RevocableController implements Controller {
+    #isRevoked = false;
+    #delegate: Controller;
+    #childTrackers: Closer[] = [];
 
-    constructor(delegate: () => Controller) {
+    constructor(delegate: Controller) {
       this.#delegate = delegate;
     }
     setContext(context: Context): void {
-      return this.#delegate().setContext(context);
+      this.assertNonRevoked();
+      return this.#delegate.setContext(context);
     }
 
     track(name: string, message?: Value.Struct): void;
     track(manager: Trackable.Manager): Closer;
     track(nameOrManager: string | Trackable.Manager, message?: Value.Struct): Closer | void {
-      return this.#delegate().track(nameOrManager, message);
+      this.assertNonRevoked();
+      if (typeof nameOrManager === 'function') {
+        // if the manager starts tracking something
+        const closer = this.#delegate.track(nameOrManager);
+        this.#childTrackers.push(closer);
+        return closer;
+      }
+      return this.#delegate.track(nameOrManager, message);
     }
     get config() {
-      return this.#delegate().config;
+      this.assertNonRevoked();
+      return this.#delegate.config;
+    }
+
+    revoke() {
+      this.#isRevoked = true;
+      for (const closer of this.#childTrackers) {
+        closer();
+      }
+    }
+
+    private assertNonRevoked(): void {
+      if (this.#isRevoked) throw new Error('The tracker is closed');
     }
   }
 
   export function setup(controller: Controller, manager: Manager): Closer {
-    let isClosed = false;
-    const delegate = () => {
-      if (isClosed) throw new Error('Controller is closed');
-      return controller;
+    const revocableController = new RevocableController(controller);
+    const cleanup = manager(revocableController);
+    return () => {
+      try {
+        cleanup?.();
+      } finally {
+        revocableController.revoke();
+      }
     };
-    try {
-      const cleanup = manager(new ForwardingController(delegate));
-      return () => {
-        if (isClosed) return;
-        // TODO also make sure any track calls opened from manager are also closed
-        try {
-          cleanup?.();
-        } finally {
-          isClosed = true;
-        }
-      };
-    } catch (e) {
-      isClosed = true;
-      throw e;
-    }
   }
 }
 export interface Trackable {
