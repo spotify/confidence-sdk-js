@@ -38,9 +38,15 @@ export namespace Trackable {
       return this.#delegate.config;
     }
 
+    get isRevoked() {
+      return this.#isRevoked;
+    }
+
     revoke() {
+      if (this.#isRevoked) return;
       this.#isRevoked = true;
-      for (const closer of this.#childTrackers) {
+      while (this.#childTrackers.length > 0) {
+        const closer = this.#childTrackers.pop()!;
         closer();
       }
     }
@@ -54,6 +60,7 @@ export namespace Trackable {
     const revocableController = new RevocableController(controller);
     const cleanup = manager(revocableController);
     return () => {
+      if (revocableController.isRevoked) return;
       try {
         cleanup?.();
       } finally {
