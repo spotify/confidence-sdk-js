@@ -14,7 +14,7 @@ const TestComponent = () => {
       <button
         onClick={() => {
           OpenFeature.setContext({ targetingKey: `user-${Math.random()}` });
-          confidence.sendEvent('click');
+          confidence.track('click');
           setClickCount(value => value + 1);
         }}
       >

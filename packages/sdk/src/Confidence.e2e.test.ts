@@ -14,7 +14,7 @@ describe('Confidence E2E Tests', () => {
     logger: loggerMock,
   });
 
-  describe('sendEvent', () => {
+  describe('track event sends an event', () => {
     it('should log a trace message when all events succeed', async () => {
       confidence.track('js-sdk-e2e-tests', { pants: 'blue' });
       confidence.track('js-sdk-e2e-tests', { pants: 'yellow' });
