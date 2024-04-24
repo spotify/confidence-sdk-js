@@ -16,15 +16,15 @@ describe('Confidence E2E Tests', () => {
 
   describe('sendEvent', () => {
     it('should log a trace message when all events succeed', async () => {
-      confidence.sendEvent('js-sdk-e2e-tests', { pants: 'blue' });
-      confidence.sendEvent('js-sdk-e2e-tests', { pants: 'yellow' });
+      confidence.track('js-sdk-e2e-tests', { pants: 'blue' });
+      confidence.track('js-sdk-e2e-tests', { pants: 'yellow' });
       expect(await nextMockArgs(loggerMock.trace)).toEqual(['Confidence: successfully uploaded %i events', 2]);
     });
     it('should log a warning message when some events fail', async () => {
-      confidence.sendEvent('js-sdk-e2e-tests', { pants: 'red' });
-      confidence.sendEvent('js-sdk-e2e-tests', { pants: 3 });
-      confidence.sendEvent('js-sdk-e2e-tests', { pants: true });
-      confidence.sendEvent('js-sdk-e2e-tests', { pants: 4 });
+      confidence.track('js-sdk-e2e-tests', { pants: 'red' });
+      confidence.track('js-sdk-e2e-tests', { pants: 3 });
+      confidence.track('js-sdk-e2e-tests', { pants: true });
+      confidence.track('js-sdk-e2e-tests', { pants: 4 });
 
       expect(await nextMockArgs(loggerMock.warn)).toEqual([
         'Confidence: failed to upload %i out of %i event(s) with the following errors: %o',

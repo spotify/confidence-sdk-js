@@ -4,7 +4,7 @@ import { Value } from './Value';
 import { Context } from './context';
 
 export namespace Trackable {
-  export type Controller = Pick<Confidence, 'setContext' | 'sendEvent' | 'config'>;
+  export type Controller = Pick<Confidence, 'setContext' | 'track' | 'config'>;
   export type Cleanup = void | Closer;
   export type Manager = (controller: Controller) => Cleanup;
 
@@ -17,8 +17,11 @@ export namespace Trackable {
     setContext(context: Context): void {
       return this.#delegate().setContext(context);
     }
-    sendEvent(name: string, message?: Value.Struct | undefined): void {
-      return this.#delegate().sendEvent(name, message);
+
+    track(name: string, message?: Value.Struct): void;
+    track(manager: Trackable.Manager): Closer;
+    track(nameOrManager: string | Trackable.Manager, message?: Value.Struct): Closer | void {
+      return this.#delegate().track(nameOrManager, message);
     }
     get config() {
       return this.#delegate().config;
@@ -35,6 +38,7 @@ export namespace Trackable {
       const cleanup = manager(new ForwardingController(delegate));
       return () => {
         if (isClosed) return;
+        // TODO also make sure any track calls opened from manager are also closed
         try {
           cleanup?.();
         } finally {
