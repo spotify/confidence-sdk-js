@@ -14,9 +14,9 @@ describe('Confidence', () => {
   describe('put', () => {
     it('defensively copies values', () => {
       const confidence = new Confidence({} as any);
-      const value = { pants: 'yellow' };
-      confidence.updateContextEntry('clothes', value);
-      value.pants = 'blue';
+      const clothes = { pants: 'yellow' };
+      confidence.setContext({ clothes });
+      clothes.pants = 'blue';
       expect(confidence.getContext()).toEqual({ clothes: { pants: 'yellow' } });
     });
   });
@@ -58,7 +58,7 @@ describe('Confidence', () => {
         clothes: 'pants',
       });
       const child = parent.withContext({});
-      child.removeContextEntry('clothes');
+      child.setContext({ clothes: undefined });
       expect(child.getContext()).toEqual({});
       expect(parent.getContext()).toEqual({
         clothes: 'pants',
@@ -81,6 +81,24 @@ describe('Confidence', () => {
         timeout: 10,
       });
       expect(confidence.getContext()).toEqual({});
+    });
+  });
+
+  describe('track', () => {
+    it('sets up a subscription that can be closed once', () => {
+      const confidence = new Confidence({} as any);
+      const mockManager = jest.fn();
+      const mockCloser = jest.fn();
+      mockManager.mockReturnValue(mockCloser);
+
+      const closer = confidence.track(mockManager);
+      expect(mockManager).toHaveBeenCalled();
+      expect(mockCloser).not.toHaveBeenCalled();
+      // close
+      closer();
+      closer();
+
+      expect(mockCloser).toHaveBeenCalledOnce();
     });
   });
 });

@@ -4,6 +4,9 @@ import { Value } from './Value';
 import { EventSender } from './events';
 import { Context } from './context';
 import { Logger } from './logger';
+import { visitorIdentity } from './trackers';
+import { Trackable } from './Trackable';
+import { Closer } from './Closer';
 
 export { FlagResolverClient, FlagResolution };
 
@@ -19,12 +22,15 @@ export interface ConfidenceOptions {
 
 interface Configuration {
   readonly environment: 'client' | 'backend';
+  readonly logger: Logger;
+  /** @internal */
   readonly eventSenderEngine: EventSenderEngine;
+  /** @internal */
   readonly flagResolverClient: FlagResolverClient;
 }
 
-export class Confidence implements EventSender {
-  private readonly config: Configuration;
+export class Confidence implements EventSender, Trackable {
+  readonly config: Configuration;
   private readonly parent?: Confidence;
   private _context: Map<string, Value> = new Map();
 
@@ -45,7 +51,6 @@ export class Confidence implements EventSender {
     if (this.parent) {
       // all parent entries except the ones child also has
       for (const entry of this.parent.contextEntries()) {
-        // todo should we do a deep merge of entries?
         if (!this._context.has(entry[0])) {
           yield entry;
         }
@@ -68,18 +73,13 @@ export class Confidence implements EventSender {
   }
 
   setContext(context: Context): void {
-    this._context.clear();
     for (const key of Object.keys(context)) {
       this.updateContextEntry(key, context[key]);
     }
   }
 
-  updateContextEntry<K extends string>(name: K, value: Context[K]) {
+  private updateContextEntry<K extends string>(name: K, value: Context[K]) {
     this._context.set(name, Value.clone(value));
-  }
-
-  removeContextEntry(name: string): void {
-    this._context.set(name, undefined);
   }
 
   clearContext(): void {
@@ -91,6 +91,11 @@ export class Confidence implements EventSender {
     child.setContext(context);
     return child;
   }
+
+  track(manager: Trackable.Manager): Closer {
+    return Trackable.setup(this, manager);
+  }
+
   /**
    * @internal
    */
@@ -145,11 +150,16 @@ export class Confidence implements EventSender {
       maxOpenRequests: (50 * 1024) / (estEventSizeKb * maxBatchSize),
       logger,
     });
-    return new Confidence({
+    const root = new Confidence({
       environment: environment,
       flagResolverClient,
       eventSenderEngine: eventSenderEngine,
+      logger,
     });
+    if (environment === 'client') {
+      root.track(visitorIdentity());
+    }
+    return root;
   }
 }
 

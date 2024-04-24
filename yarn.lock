@@ -3884,6 +3884,7 @@ __metadata:
   resolution: "@spotify-confidence/sdk@workspace:packages/sdk"
   dependencies:
     "@spotify-confidence/client-http": "npm:0.1.5"
+    web-vitals: "npm:^3.5.2"
   languageName: unknown
   linkType: soft
 
@@ -19526,6 +19527,13 @@ __metadata:
   version: 2.1.4
   resolution: "web-vitals@npm:2.1.4"
   checksum: 10c0/c71ab674936c6b4d51679e037e3819c24bdad9f30410fe8a84fd8218d29d9bacf15ae9fd570d361f3e9621aa8454f61277f66ac1a5c19b50facf3220a37a73eb
+  languageName: node
+  linkType: hard
+
+"web-vitals@npm:^3.5.2":
+  version: 3.5.2
+  resolution: "web-vitals@npm:3.5.2"
+  checksum: 10c0/662b385d6e96a18677cf8726454b65f3aecfdca330df72a82f73f293a5708ba9d191964649f8d363a1e64062a826a99805ade8c573a6492b91e02275b6860308
   languageName: node
   linkType: hard
 
