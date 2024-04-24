@@ -16,6 +16,8 @@ import equal from 'fast-deep-equal';
 
 import { Confidence, FlagResolution, Value, Context } from '@spotify-confidence/sdk';
 
+type Mutable<T> = { -readonly [K in keyof T]: T[K] };
+
 export class ConfidenceWebProvider implements Provider {
   readonly metadata: ProviderMetadata = {
     name: 'ConfidenceWebProvider',
@@ -32,7 +34,7 @@ export class ConfidenceWebProvider implements Provider {
 
   async initialize(context?: EvaluationContext): Promise<void> {
     try {
-      if (context) this.confidence.setContext({ openFeature: this.convertContext(context || {}) });
+      if (context) this.confidence.setContext(convertContext(context));
       this.flagResolution = await this.confidence.resolve([]);
       this.status = ProviderStatus.READY;
       return Promise.resolve();
@@ -43,40 +45,19 @@ export class ConfidenceWebProvider implements Provider {
   }
 
   async onContextChange(oldContext: EvaluationContext, newContext: EvaluationContext): Promise<void> {
-    if (equal(oldContext, newContext)) {
+    const changes = contextChanges(oldContext, newContext);
+    if (Object.keys(changes).length === 0) {
       return;
     }
     this.events.emit(ProviderEvents.Stale);
     try {
-      this.confidence.setContext({ openFeature: this.convertContext(newContext) });
+      this.confidence.setContext(convertContext(changes));
       this.flagResolution = await this.confidence.resolve([]);
       this.status = ProviderStatus.READY;
       this.events.emit(ProviderEvents.Ready);
     } catch (e) {
       this.status = ProviderStatus.ERROR;
       this.events.emit(ProviderEvents.Error);
-    }
-  }
-
-  private convertContext({ targetingKey, ...rest }: EvaluationContext): Context['openFeature'] {
-    return { targeting_key: targetingKey, ...(convert(rest) as Value.Struct) };
-
-    function convert(value: EvaluationContextValue): Value {
-      if (value === null) return undefined;
-      if (typeof value === 'object') {
-        if (Array.isArray(value)) {
-          return value.map(convert);
-        }
-        if (value instanceof Date) {
-          return value.toISOString();
-        }
-        const struct: Record<string, Value> = {};
-        for (const key of Object.keys(value)) {
-          struct[key] = convert(value[key]);
-        }
-        return struct;
-      }
-      return value;
     }
   }
 
@@ -151,8 +132,8 @@ export class ConfidenceWebProvider implements Provider {
         this.confidence.apply(this.flagResolution.resolveToken, flagName);
       }
       logger.info('Value for "%s" successfully evaluated', flagKey);
-      const currContext: any = this.convertContext(context);
-      const cachedContext: any = this.flagResolution.context;
+      const currContext: Context = convertContext(context);
+      const cachedContext: Context = this.flagResolution.context;
       const reason = Object.keys(currContext).some(key => !equal(currContext[key], cachedContext[key]))
         ? 'STALE'
         : mapConfidenceReason(flag.reason);
@@ -210,6 +191,41 @@ export class ConfidenceWebProvider implements Provider {
   ): ResolutionDetails<string> {
     return this.getFlag(flagKey, defaultValue, context, logger);
   }
+}
+
+function contextChanges(oldContext: EvaluationContext, newContext: EvaluationContext): EvaluationContext {
+  const uniqueKeys = new Set([...Object.keys(newContext), ...Object.keys(oldContext)]);
+  const changes: EvaluationContext = {};
+  for (const key of uniqueKeys) {
+    if (!equal(newContext[key], oldContext[key])) {
+      changes[key] = newContext[key] ?? null;
+    }
+  }
+  return changes;
+}
+
+function convertContext({ targetingKey, ...context }: EvaluationContext): Context {
+  const targetingContext = typeof targetingKey !== 'undefined' ? { targeting_key: targetingKey } : {};
+  return { ...targetingContext, ...convertStruct(context) };
+}
+
+function convertValue(value: EvaluationContextValue): Value {
+  if (typeof value === 'object') {
+    if (value === null) return undefined;
+    if (value instanceof Date) return value.toISOString();
+    if (Array.isArray(value)) return value.map(convertValue);
+    return convertStruct(value);
+  }
+  return value;
+}
+
+function convertStruct(value: { [key: string]: EvaluationContextValue }): Value.Struct {
+  const struct: Mutable<Value.Struct> = {};
+  for (const key of Object.keys(value)) {
+    if (typeof value[key] === 'undefined') continue;
+    struct[key] = convertValue(value[key]);
+  }
+  return struct;
 }
 
 function mapConfidenceReason(reason: FlagResolution.ResolveReason): ResolutionReason {

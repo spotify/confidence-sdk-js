@@ -34,8 +34,8 @@ class FlagResolverClient {
     }
   }
 
-  resolve({ openFeature, ...context }: Context, flags: string[]): Promise<FlagResolution> {
-    return this.legacyClient.resolve({ ...context, ...openFeature }, { flags });
+  resolve(context: Context, flags: string[]): Promise<FlagResolution> {
+    return this.legacyClient.resolve(context, { flags });
   }
 
   apply(resolveToken: string, flagName: string): void {

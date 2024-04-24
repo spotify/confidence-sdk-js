@@ -9,9 +9,7 @@ export interface Contextual<Self extends Contextual<Self>> {
 
 export interface Context extends Value.Struct {
   visitor_id?: string;
-  openFeature?: Value.Struct & {
-    targeting_key?: string;
-  };
+  targeting_key?: string;
   page?: {
     path: string;
     referrer: string;

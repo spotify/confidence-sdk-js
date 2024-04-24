@@ -142,9 +142,7 @@ describe('ConfidenceProvider', () => {
       await instanceUnderTest.onContextChange(dummyContext, { targetingKey: 'test1' });
 
       expect(setContextMock).toHaveBeenCalledWith({
-        openFeature: {
-          targeting_key: 'test1',
-        },
+        targeting_key: 'test1',
       });
       expect(resolveMock).toHaveBeenCalledWith([]);
     });
