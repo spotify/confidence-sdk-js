@@ -34,8 +34,8 @@ class FlagResolverClient {
     }
   }
 
-  resolve(context: Context, flags: string[]): Promise<FlagResolution> {
-    return this.legacyClient.resolve(context, { flags });
+  resolve(context: Context, flags: string[], signal: AbortSignal): Promise<FlagResolution> {
+    return this.legacyClient.resolve(context, { flags, signal });
   }
 
   apply(resolveToken: string, flagName: string): void {

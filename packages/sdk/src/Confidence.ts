@@ -34,27 +34,29 @@ export class Confidence implements EventSender, Trackable {
   readonly config: Configuration;
   private readonly parent?: Confidence;
   private _context: Map<string, Value> = new Map();
-  private contextChanged?:Observer<string[]>
+  private contextChanged?: Observer<string[]>;
 
   /** @internal */
-  readonly contextChanges:Subscribe<string[]>
+  readonly contextChanges: Subscribe<string[]>;
 
   constructor(config: Configuration, parent?: Confidence) {
     this.config = config;
     this.parent = parent;
-    this.contextChanges = debounceUnique(subject(observer => {
-      let parentSubscription:Closer | void
-      if(parent) {
-        parentSubscription = parent.contextChanges(keys => {
-          observer(keys.filter(key => !this._context.has(key)));
-        })
-      }
-      this.contextChanged = observer;
-      return () => {
-        parentSubscription?.();
-        this.contextChanged = undefined;
-      }
-    }))
+    this.contextChanges = debounceUnique(
+      subject(observer => {
+        let parentSubscription: Closer | void;
+        if (parent) {
+          parentSubscription = parent.contextChanges(keys => {
+            observer(keys.filter(key => !this._context.has(key)));
+          });
+        }
+        this.contextChanged = observer;
+        return () => {
+          parentSubscription?.();
+          this.contextChanged = undefined;
+        };
+      }),
+    );
   }
 
   get environment(): string {
@@ -98,7 +100,7 @@ export class Confidence implements EventSender, Trackable {
 
   private updateContextEntry<K extends string>(name: K, value: Context[K]) {
     const currentValue = this._context.get(name);
-    if(!Value.equal(currentValue, value)) {
+    if (!Value.equal(currentValue, value)) {
       this._context.set(name, Value.clone(value));
       this.contextChanged?.([name]);
     }
@@ -106,7 +108,7 @@ export class Confidence implements EventSender, Trackable {
 
   clearContext(): void {
     this._context.clear();
-    if(this.contextChanged) {
+    if (this.contextChanged) {
       this.contextChanged(Array.from(this._context.keys()));
     }
   }
@@ -130,7 +132,7 @@ export class Confidence implements EventSender, Trackable {
   /**
    * @internal
    */
-  resolve(flagNames: string[]): Promise<FlagResolution> {
+  resolve(flagNames: string[], signal: AbortSignal): Promise<FlagResolution> {
     return this.config.flagResolverClient.resolve(this.getContext(), flagNames);
   }
 

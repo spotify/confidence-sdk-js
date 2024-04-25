@@ -27,21 +27,38 @@ export class ConfidenceWebProvider implements Provider {
   readonly events = new OpenFeatureEventEmitter();
 
   private readonly confidence: Confidence;
+  private initialized: Promise<void>;
 
   constructor(confidence: Confidence) {
     this.confidence = confidence;
+    let controller: AbortController | undefined;
+    let resolvePromise: (value: void | PromiseLike<void>) => void;
+    let rejectPromise: (reason?: any) => void;
+    this.initialized = new Promise((resolve, reject) => {
+      resolvePromise = resolve;
+      rejectPromise = reject;
+    });
+    this.confidence.contextChanges(async () => {
+      this.events.emit(ProviderEvents.Stale);
+      try {
+        controller?.abort();
+        controller = new AbortController();
+        this.flagResolution = await this.confidence.resolve([], controller.signal);
+        controller = undefined;
+        this.status = ProviderStatus.READY;
+        this.events.emit(ProviderEvents.Ready);
+        resolvePromise();
+      } catch (e) {
+        this.status = ProviderStatus.ERROR;
+        this.events.emit(ProviderEvents.Error);
+        rejectPromise();
+      }
+    });
   }
 
   async initialize(context?: EvaluationContext): Promise<void> {
-    try {
-      if (context) this.confidence.setContext(convertContext(context));
-      this.flagResolution = await this.confidence.resolve([]);
-      this.status = ProviderStatus.READY;
-      return Promise.resolve();
-    } catch (e) {
-      this.status = ProviderStatus.ERROR;
-      throw e;
-    }
+    if (context) this.confidence.setContext(convertContext(context));
+    return this.initialized;
   }
 
   async onContextChange(oldContext: EvaluationContext, newContext: EvaluationContext): Promise<void> {
@@ -49,16 +66,7 @@ export class ConfidenceWebProvider implements Provider {
     if (Object.keys(changes).length === 0) {
       return;
     }
-    this.events.emit(ProviderEvents.Stale);
-    try {
-      this.confidence.setContext(convertContext(changes));
-      this.flagResolution = await this.confidence.resolve([]);
-      this.status = ProviderStatus.READY;
-      this.events.emit(ProviderEvents.Ready);
-    } catch (e) {
-      this.status = ProviderStatus.ERROR;
-      this.events.emit(ProviderEvents.Error);
-    }
+    this.confidence.setContext(convertContext(changes));
   }
 
   private getFlag<T>(
