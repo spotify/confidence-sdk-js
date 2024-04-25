@@ -182,12 +182,10 @@ describe('ConfidenceProvider', () => {
       );
 
       expect(setContextMock).toHaveBeenCalledTimes(1);
-      expect(setContextMock).toHaveBeenCalledWith(
-        expect.objectContaining({
-          targeting_key: null,
-          pants: { color: 'Yellow' },
-        }),
-      );
+      expect(setContextMock).toHaveBeenCalledWith({
+        targeting_key: undefined,
+        pants: { color: 'Yellow' },
+      });
     });
 
     it('should not resolve on onContextChange with equal contexts', async () => {

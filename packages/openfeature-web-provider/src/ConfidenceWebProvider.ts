@@ -198,7 +198,12 @@ function contextChanges(oldContext: EvaluationContext, newContext: EvaluationCon
   const changes: EvaluationContext = {};
   for (const key of uniqueKeys) {
     if (!equal(newContext[key], oldContext[key])) {
-      changes[key] = newContext[key] ?? null;
+      if (key === 'targetingKey') {
+        // targetingKey is a special case, it should never set to null but rather undefined
+        changes[key] = newContext[key];
+      } else {
+        changes[key] = newContext[key] ?? null;
+      }
     }
   }
   return changes;
