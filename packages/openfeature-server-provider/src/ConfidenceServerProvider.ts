@@ -108,9 +108,9 @@ export class ConfidenceServerProvider implements Provider {
   ): Promise<ResolutionDetails<T>> {
     const [flagName] = flagKey.split('.');
 
-    const configuration = await this.confidence.withContext(convertContext(context)).resolve([`flags/${flagName}`]);
+    const flagResolution = await this.confidence.withContext(convertContext(context)).resolve([`flags/${flagName}`]);
 
-    return this.getFlag(configuration, flagKey, defaultValue, logger);
+    return this.getFlag(flagResolution, flagKey, defaultValue, logger);
   }
 
   resolveBooleanEvaluation(
