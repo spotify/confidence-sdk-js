@@ -147,6 +147,49 @@ describe('ConfidenceProvider', () => {
       expect(resolveMock).toHaveBeenCalledWith([]);
     });
 
+    it('should diff context and set only the changes to confidence', async () => {
+      await instanceUnderTest.onContextChange(
+        { targetingKey: 'test1', pantsPattern: 'Checkered' },
+        { targetingKey: 'test2', pantsColor: 'Yellow' },
+      );
+
+      expect(setContextMock).toHaveBeenCalledTimes(1);
+      expect(setContextMock).toHaveBeenCalledWith(
+        expect.objectContaining({
+          targeting_key: 'test2',
+          pantsColor: 'Yellow',
+          pantsPattern: undefined,
+        }),
+      );
+    });
+
+    it('should diff context but only shallow', async () => {
+      await instanceUnderTest.onContextChange(
+        { targetingKey: 'test1', pants: { color: 'Green', pattern: 'Checkered' } },
+        { targetingKey: 'test1', pants: { color: 'Green' } },
+      );
+
+      expect(setContextMock).toHaveBeenCalledTimes(1);
+      expect(setContextMock).toHaveBeenCalledWith({
+        pants: { color: 'Green' },
+      });
+    });
+
+    it('removal of targeting key should send undefined in setContext', async () => {
+      await instanceUnderTest.onContextChange(
+        { targetingKey: 'test1', pants: { color: 'Green' } },
+        { pants: { color: 'Yellow' } },
+      );
+
+      expect(setContextMock).toHaveBeenCalledTimes(1);
+      expect(setContextMock).toHaveBeenCalledWith(
+        expect.objectContaining({
+          targeting_key: null,
+          pants: { color: 'Yellow' },
+        }),
+      );
+    });
+
     it('should not resolve on onContextChange with equal contexts', async () => {
       await instanceUnderTest.onContextChange(dummyContext, dummyContext);
 
