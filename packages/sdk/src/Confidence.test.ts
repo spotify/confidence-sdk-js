@@ -101,4 +101,42 @@ describe('Confidence', () => {
       expect(mockCloser).toHaveBeenCalledOnce();
     });
   });
+
+  describe('contextChanges', () => {
+    it('should emit one change on multiple context changes', async () => {
+      const confidence = new Confidence({} as any);
+
+      const observerMock = jest.fn();
+
+      const close = confidence.contextChanges(observerMock);
+
+      confidence.setContext({ pantsOn: true, pantsColor: 'yellow' });
+      confidence.setContext({ pantsPattern: 'striped' });
+
+      await Promise.resolve();
+
+      expect(observerMock).toHaveBeenCalledOnce();
+      expect(observerMock).toHaveBeenCalledWith(['pantsOn', 'pantsColor', 'pantsPattern']);
+
+      close();
+    });
+    it('should emit one change on multiple context changes from parent', async () => {
+      const parent = new Confidence({} as any);
+      const child = parent.withContext({ pantsColor: 'blue' });
+
+      const observerMock = jest.fn();
+
+      const close = child.contextChanges(observerMock);
+
+      parent.setContext({ pantsOn: true, pantsColor: 'yellow' });
+      child.setContext({ pantsPattern: 'striped' });
+
+      await Promise.resolve();
+
+      expect(observerMock).toHaveBeenCalledOnce();
+      expect(observerMock).toHaveBeenCalledWith(['pantsPattern', 'pantsOn']);
+
+      close();
+    });
+  });
 });

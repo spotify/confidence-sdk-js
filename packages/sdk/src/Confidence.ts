@@ -7,6 +7,7 @@ import { Logger } from './logger';
 import { visitorIdentity } from './trackers';
 import { Trackable } from './Trackable';
 import { Closer } from './Closer';
+import { Subscribe, Observer, subject, debounceUnique } from './observing';
 
 export { FlagResolverClient, FlagResolution };
 
@@ -33,10 +34,27 @@ export class Confidence implements EventSender, Trackable {
   readonly config: Configuration;
   private readonly parent?: Confidence;
   private _context: Map<string, Value> = new Map();
+  private contextChanged?:Observer<string[]>
+
+  /** @internal */
+  readonly contextChanges:Subscribe<string[]>
 
   constructor(config: Configuration, parent?: Confidence) {
     this.config = config;
     this.parent = parent;
+    this.contextChanges = debounceUnique(subject(observer => {
+      let parentSubscription:Closer | void
+      if(parent) {
+        parentSubscription = parent.contextChanges(keys => {
+          observer(keys.filter(key => !this._context.has(key)));
+        })
+      }
+      this.contextChanged = observer;
+      return () => {
+        parentSubscription?.();
+        this.contextChanged = undefined;
+      }
+    }))
   }
 
   get environment(): string {
@@ -79,11 +97,18 @@ export class Confidence implements EventSender, Trackable {
   }
 
   private updateContextEntry<K extends string>(name: K, value: Context[K]) {
-    this._context.set(name, Value.clone(value));
+    const currentValue = this._context.get(name);
+    if(!Value.equal(currentValue, value)) {
+      this._context.set(name, Value.clone(value));
+      this.contextChanged?.([name]);
+    }
   }
 
   clearContext(): void {
     this._context.clear();
+    if(this.contextChanged) {
+      this.contextChanged(Array.from(this._context.keys()));
+    }
   }
 
   withContext(context: Context): Confidence {
