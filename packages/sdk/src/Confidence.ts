@@ -1,4 +1,4 @@
-import { FlagResolverClient, FlagResolution } from './FlagResolverClient';
+import { FlagResolverClient, FlagResolution, PendingFlagResolution } from './FlagResolverClient';
 import { EventSenderEngine } from './EventSenderEngine';
 import { Value } from './Value';
 import { EventSender } from './events';
@@ -9,7 +9,7 @@ import { Trackable } from './Trackable';
 import { Closer } from './Closer';
 import { Subscribe, Observer, subject, debounceUnique } from './observing';
 
-export { FlagResolverClient, FlagResolution };
+export { FlagResolverClient, FlagResolution, PendingFlagResolution };
 
 export interface ConfidenceOptions {
   clientSecret: string;
@@ -42,8 +42,7 @@ export class Confidence implements EventSender, Trackable {
   constructor(config: Configuration, parent?: Confidence) {
     this.config = config;
     this.parent = parent;
-    this.contextChanges = debounceUnique(
-      subject(observer => {
+    this.contextChanges = debounceUnique(subject(observer => {
         let parentSubscription: Closer | void;
         if (parent) {
           parentSubscription = parent.contextChanges(keys => {
@@ -55,8 +54,7 @@ export class Confidence implements EventSender, Trackable {
           parentSubscription?.();
           this.contextChanged = undefined;
         };
-      }),
-    );
+      }));
   }
 
   get environment(): string {
@@ -93,23 +91,25 @@ export class Confidence implements EventSender, Trackable {
   }
 
   setContext(context: Context): void {
+    const current = this.getContext();
+    const changedKeys:string[] = [] 
     for (const key of Object.keys(context)) {
-      this.updateContextEntry(key, context[key]);
+      if(Value.equal(current[key], context[key])) continue;
+      changedKeys.push(key);
+      this._context.set(key, Value.clone(context[key]))
     }
-  }
-
-  private updateContextEntry<K extends string>(name: K, value: Context[K]) {
-    const currentValue = this._context.get(name);
-    if (!Value.equal(currentValue, value)) {
-      this._context.set(name, Value.clone(value));
-      this.contextChanged?.([name]);
+    if(this.contextChanged && changedKeys.length > 0) {
+      this.contextChanged(changedKeys);
     }
   }
 
   clearContext(): void {
+    const oldContext = this.getContext();
     this._context.clear();
     if (this.contextChanged) {
-      this.contextChanged(Array.from(this._context.keys()));
+      const newContext = this.getContext();
+      const uniqueKeys = Array.from(new Set([...Object.keys(oldContext), ...Object.keys(newContext)]));
+      this.contextChanged(uniqueKeys.filter(key => !Value.equal(oldContext[key], newContext[key])));
     }
   }
 
@@ -132,7 +132,7 @@ export class Confidence implements EventSender, Trackable {
   /**
    * @internal
    */
-  resolve(flagNames: string[], signal: AbortSignal): Promise<FlagResolution> {
+  resolve(flagNames: string[]): PendingFlagResolution {
     return this.config.flagResolverClient.resolve(this.getContext(), flagNames);
   }
 

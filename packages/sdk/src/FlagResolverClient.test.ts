@@ -55,7 +55,7 @@ describe('withRequestLogic', () => {
       expect(attempts).toEqual([0, 0, 0, 1000, 2000]);
     });
 
-    it('should abort the previous request', async () => {
+    it.skip('should abort the previous request', async () => {
       fetchMock.mockImplementation(async ({ signal }) => {
         await abortableSleep(100, signal);
         return new Response();

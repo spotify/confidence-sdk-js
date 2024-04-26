@@ -14,7 +14,7 @@ import {
 } from '@openfeature/web-sdk';
 import equal from 'fast-deep-equal';
 
-import { Confidence, FlagResolution, Value, Context } from '@spotify-confidence/sdk';
+import { Confidence, FlagResolution, Value, Context, PendingFlagResolution } from '@spotify-confidence/sdk';
 
 type Mutable<T> = { -readonly [K in keyof T]: T[K] };
 
@@ -22,43 +22,30 @@ export class ConfidenceWebProvider implements Provider {
   readonly metadata: ProviderMetadata = {
     name: 'ConfidenceWebProvider',
   };
-  status: ProviderStatus = ProviderStatus.NOT_READY;
-  flagResolution: FlagResolution | null = null;
   readonly events = new OpenFeatureEventEmitter();
+  status: ProviderStatus = ProviderStatus.NOT_READY;
 
+  private flagResolution?: PendingFlagResolution;
+  private unsubscribe?: () => void;
   private readonly confidence: Confidence;
-  private initialized: Promise<void>;
 
   constructor(confidence: Confidence) {
     this.confidence = confidence;
-    let controller: AbortController | undefined;
-    let resolvePromise: (value: void | PromiseLike<void>) => void;
-    let rejectPromise: (reason?: any) => void;
-    this.initialized = new Promise((resolve, reject) => {
-      resolvePromise = resolve;
-      rejectPromise = reject;
-    });
-    this.confidence.contextChanges(async () => {
-      this.events.emit(ProviderEvents.Stale);
-      try {
-        controller?.abort();
-        controller = new AbortController();
-        this.flagResolution = await this.confidence.resolve([], controller.signal);
-        controller = undefined;
-        this.status = ProviderStatus.READY;
-        this.events.emit(ProviderEvents.Ready);
-        resolvePromise();
-      } catch (e) {
-        this.status = ProviderStatus.ERROR;
-        this.events.emit(ProviderEvents.Error);
-        rejectPromise();
-      }
-    });
   }
 
   async initialize(context?: EvaluationContext): Promise<void> {
     if (context) this.confidence.setContext(convertContext(context));
-    return this.initialized;
+    this.unsubscribe = this.confidence.contextChanges(() => {
+      this.events.emit(ProviderEvents.Stale);
+      this.resolve();
+    });
+    await this.resolve();
+  }
+
+  async onClose(): Promise<void> {
+    this.unsubscribe?.();
+    this.flagResolution?.cancel();
+    this.flagResolution = undefined;
   }
 
   async onContextChange(oldContext: EvaluationContext, newContext: EvaluationContext): Promise<void> {
@@ -67,6 +54,22 @@ export class ConfidenceWebProvider implements Provider {
       return;
     }
     this.confidence.setContext(convertContext(changes));
+    // following await makes sure that our subscription to context changes has fired (if the context changed)
+    await Promise.resolve();
+    await this.flagResolution;
+  }
+
+  private async resolve(): Promise<void> {
+    try {
+      this.flagResolution?.cancel();
+      this.flagResolution = this.confidence.resolve([]);
+      await this.flagResolution;
+      this.status = ProviderStatus.READY;
+      this.events.emit(ProviderEvents.Ready);
+    } catch (e) {
+      this.status = ProviderStatus.ERROR;
+      this.events.emit(ProviderEvents.Error);
+    }
   }
 
   private getFlag<T>(
@@ -75,7 +78,7 @@ export class ConfidenceWebProvider implements Provider {
     context: EvaluationContext,
     logger: Logger,
   ): ResolutionDetails<T> {
-    if (!this.flagResolution) {
+    if (!this.flagResolution?.isReady) {
       logger.warn('Provider not ready');
       return {
         errorCode: ErrorCode.PROVIDER_NOT_READY,

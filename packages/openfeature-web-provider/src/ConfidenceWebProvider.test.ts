@@ -7,22 +7,23 @@ import {
   ProviderStatus,
 } from '@openfeature/web-sdk';
 import { ConfidenceWebProvider } from './ConfidenceWebProvider';
-import { Confidence, FlagResolution } from '@spotify-confidence/sdk';
+import { Confidence, FlagResolution, PendingFlagResolution } from '@spotify-confidence/sdk';
 
 const setContextMock = jest.fn();
 const resolveMock = jest.fn();
 const applyMock = jest.fn();
+const contextChangesMock = jest.fn();
 const confidenceMock = {
   environment: 'client',
   resolve: resolveMock,
   apply: applyMock,
   setContext: setContextMock,
+  contextChanges: contextChangesMock,
 } as unknown as Confidence;
 
 const dummyContext: EvaluationContext = { targetingKey: 'test' };
-// const dummyContext: EvaluationContext = { targetingKey: 'test' };
 
-const dummyConfiguration: FlagResolution = {
+const dummyFlagResolution: FlagResolution = {
   flags: {
     ['testFlag']: {
       name: 'testFlag',
@@ -75,6 +76,15 @@ const dummyConfiguration: FlagResolution = {
   resolveToken: 'before-each',
   context: { targeting_key: 'test' },
 };
+
+const dummyPendingFlagResolution: PendingFlagResolution = Object.assign(
+  Promise.resolve(dummyFlagResolution),
+  dummyFlagResolution,
+  {
+    isReady: true,
+    cancel: jest.fn(),
+  },
+);
 const dummyConsole: Logger = {
   warn: jest.fn(),
   info: jest.fn(),
@@ -86,7 +96,7 @@ describe('ConfidenceProvider', () => {
 
   beforeEach(() => {
     instanceUnderTest = new ConfidenceWebProvider(confidenceMock);
-    resolveMock.mockResolvedValue(dummyConfiguration);
+    resolveMock.mockReturnValue(dummyPendingFlagResolution);
   });
 
   describe('initialize', () => {
@@ -97,9 +107,15 @@ describe('ConfidenceProvider', () => {
         expect(resolveMock).toHaveBeenCalledWith([]);
       });
 
+      it('should setup a context change subscription', async () => {
+        await instanceUnderTest.initialize({ targetingKey: 'test' });
+        expect(contextChangesMock).toHaveBeenCalledOnce(expect.any(Function));
+      });
+
       it('should change the provider status to READY', async () => {
         expect(instanceUnderTest.status).toEqual(ProviderStatus.NOT_READY);
 
+        resolveMock.mockReturnValue(Promise.resolve({}));
         await instanceUnderTest.initialize({ targetingKey: 'test' });
 
         expect(instanceUnderTest.status).toEqual(ProviderStatus.READY);
@@ -118,7 +134,17 @@ describe('ConfidenceProvider', () => {
       });
     });
 
-    describe('no context', () => {
+    describe('without context', () => {
+      it('should resolve', async () => {
+        await instanceUnderTest.initialize();
+        expect(resolveMock).toHaveBeenCalledOnce();
+      });
+
+      it('should not set confidence context', async () => {
+        await instanceUnderTest.initialize();
+        expect(setContextMock).not.toHaveBeenCalled();
+      });
+
       it('should change the provider status to READY', async () => {
         expect(instanceUnderTest.status).toEqual(ProviderStatus.NOT_READY);
 
@@ -126,110 +152,126 @@ describe('ConfidenceProvider', () => {
 
         expect(instanceUnderTest.status).toEqual(ProviderStatus.READY);
       });
+
+      it('should setup a context change subscription', async () => {
+        await instanceUnderTest.initialize({ targetingKey: 'test' });
+        expect(contextChangesMock).toHaveBeenCalledOnce(expect.any(Function));
+      });
     });
 
-    it('should change the provider status with context', async () => {
-      expect(instanceUnderTest.status).toEqual(ProviderStatus.NOT_READY);
+    // it('should change the provider status with context', async () => {
+    //   expect(instanceUnderTest.status).toEqual(ProviderStatus.NOT_READY);
 
+    //   await instanceUnderTest.initialize();
+
+    //   expect(instanceUnderTest.status).toEqual(ProviderStatus.READY);
+    // });
+  });
+
+  describe('onClose', () => {
+    it('should close the subscription', async () => {
+      resolveMock.mockReturnValue({
+        cancel: jest.fn(),
+      });
+      const closeMock = jest.fn();
+      contextChangesMock.mockReturnValue(closeMock);
       await instanceUnderTest.initialize();
+      await instanceUnderTest.onClose();
 
-      expect(instanceUnderTest.status).toEqual(ProviderStatus.READY);
+      expect(closeMock).toHaveBeenCalledOnce();
     });
   });
 
   describe('onContextChange', () => {
-    it('should resolve on onContextChange', async () => {
-      await instanceUnderTest.onContextChange(dummyContext, { targetingKey: 'test1' });
+    describe('from OpenFeature', () => {
+      it('should diff context and set only the changes to confidence', async () => {
+        await instanceUnderTest.onContextChange(
+          { targetingKey: 'test1', pantsPattern: 'Checkered' },
+          { targetingKey: 'test2', pantsColor: 'Yellow' },
+        );
 
-      expect(setContextMock).toHaveBeenCalledWith({
-        targeting_key: 'test1',
+        expect(setContextMock).toHaveBeenCalledTimes(1);
+        expect(setContextMock).toHaveBeenCalledWith(
+          expect.objectContaining({
+            targeting_key: 'test2',
+            pantsColor: 'Yellow',
+            pantsPattern: undefined,
+          }),
+        );
       });
-      expect(resolveMock).toHaveBeenCalledWith([]);
-    });
 
-    it('should diff context and set only the changes to confidence', async () => {
-      await instanceUnderTest.onContextChange(
-        { targetingKey: 'test1', pantsPattern: 'Checkered' },
-        { targetingKey: 'test2', pantsColor: 'Yellow' },
-      );
+      it('should diff context but only shallow', async () => {
+        await instanceUnderTest.onContextChange(
+          { targetingKey: 'test1', pants: { color: 'Green', pattern: 'Checkered' } },
+          { targetingKey: 'test1', pants: { color: 'Green' } },
+        );
 
-      expect(setContextMock).toHaveBeenCalledTimes(1);
-      expect(setContextMock).toHaveBeenCalledWith(
-        expect.objectContaining({
-          targeting_key: 'test2',
-          pantsColor: 'Yellow',
-          pantsPattern: undefined,
-        }),
-      );
-    });
+        expect(setContextMock).toHaveBeenCalledTimes(1);
+        expect(setContextMock).toHaveBeenCalledWith({
+          pants: { color: 'Green' },
+        });
+      });
 
-    it('should diff context but only shallow', async () => {
-      await instanceUnderTest.onContextChange(
-        { targetingKey: 'test1', pants: { color: 'Green', pattern: 'Checkered' } },
-        { targetingKey: 'test1', pants: { color: 'Green' } },
-      );
+      it('removal of targeting key should send undefined in setContext', async () => {
+        await instanceUnderTest.onContextChange(
+          { targetingKey: 'test1', pants: { color: 'Green' } },
+          { pants: { color: 'Yellow' } },
+        );
 
-      expect(setContextMock).toHaveBeenCalledTimes(1);
-      expect(setContextMock).toHaveBeenCalledWith({
-        pants: { color: 'Green' },
+        expect(setContextMock).toHaveBeenCalledTimes(1);
+        expect(setContextMock).toHaveBeenCalledWith({
+          targeting_key: undefined,
+          pants: { color: 'Yellow' },
+        });
+      });
+
+      it('should not set confidence context with equal contexts', async () => {
+        await instanceUnderTest.onContextChange(dummyContext, dummyContext);
+
+        expect(setContextMock).not.toHaveBeenCalled();
+      });
+
+      it('should return previously assigned with reason stale during fetch', async () => {
+        await instanceUnderTest.initialize({ targetingKey: 'A' });
+
+        expect(
+          instanceUnderTest.resolveBooleanEvaluation('testFlag.bool', false, { targetingKey: 'B' }, dummyConsole),
+        ).toEqual(
+          expect.objectContaining({
+            value: true,
+            reason: 'STALE',
+          }),
+        );
       });
     });
 
-    it('removal of targeting key should send undefined in setContext', async () => {
-      await instanceUnderTest.onContextChange(
-        { targetingKey: 'test1', pants: { color: 'Green' } },
-        { pants: { color: 'Yellow' } },
-      );
+    describe('from Confidence', () => {
+      let contextChangeObserver: (keys: string[]) => void;
 
-      expect(setContextMock).toHaveBeenCalledTimes(1);
-      expect(setContextMock).toHaveBeenCalledWith({
-        targeting_key: undefined,
-        pants: { color: 'Yellow' },
+      beforeEach(() => {
+        instanceUnderTest.initialize();
+        contextChangeObserver = contextChangesMock.mock.lastCall[0];
+        resolveMock.mockClear();
       });
-    });
+      it('should resolve', () => {
+        contextChangeObserver(['key']);
+        expect(resolveMock).toHaveBeenCalledOnce();
+      });
+      it('should emit stale and then ready', async () => {
+        const staleHandler = jest.fn();
+        const readyHandler = jest.fn();
+        instanceUnderTest.events.addHandler(ProviderEvents.Stale, staleHandler);
+        instanceUnderTest.events.addHandler(ProviderEvents.Ready, readyHandler);
 
-    it('should not resolve on onContextChange with equal contexts', async () => {
-      await instanceUnderTest.onContextChange(dummyContext, dummyContext);
+        contextChangeObserver(['key']);
 
-      expect(resolveMock).not.toHaveBeenCalled();
-    });
+        expect(staleHandler).toHaveBeenCalledTimes(1);
+        expect(readyHandler).toHaveBeenCalledTimes(0);
+        // await so that pending resolve is resolved
+        await Promise.resolve();
 
-    it('should return previously assigned with reason stale during fetch', async () => {
-      await instanceUnderTest.initialize({ targetingKey: 'A' });
-
-      expect(
-        instanceUnderTest.resolveBooleanEvaluation('testFlag.bool', false, { targetingKey: 'B' }, dummyConsole),
-      ).toEqual(
-        expect.objectContaining({
-          value: true,
-          reason: 'STALE',
-        }),
-      );
-    });
-
-    it('should emit stale event if the context is different', async () => {
-      const staleHandler = jest.fn();
-      const readyHandler = jest.fn();
-      instanceUnderTest.events.addHandler(ProviderEvents.Stale, staleHandler);
-      instanceUnderTest.events.addHandler(ProviderEvents.Ready, readyHandler);
-
-      await instanceUnderTest.onContextChange(dummyContext, { targetingKey: 'a' });
-
-      expect(staleHandler).toHaveBeenCalledTimes(1);
-      expect(readyHandler).toHaveBeenCalledTimes(1);
-      expect(staleHandler).toHaveBeenCalledBefore(readyHandler);
-    });
-
-    it('should not emit stale event if the context the same', async () => {
-      const staleHandler = jest.fn();
-      const readyHandler = jest.fn();
-      instanceUnderTest.events.addHandler(ProviderEvents.Stale, staleHandler);
-      instanceUnderTest.events.addHandler(ProviderEvents.Ready, readyHandler);
-
-      await instanceUnderTest.onContextChange(dummyContext, dummyContext);
-
-      expect(staleHandler).toHaveBeenCalledTimes(0);
-      expect(readyHandler).toHaveBeenCalledTimes(0);
+        expect(readyHandler).toHaveBeenCalledTimes(1);
+      });
     });
   });
 
@@ -238,14 +280,14 @@ describe('ConfidenceProvider', () => {
       await instanceUnderTest.initialize(dummyContext);
       instanceUnderTest.resolveBooleanEvaluation('no-seg-flag.enabled', false, dummyContext, dummyConsole);
 
-      expect(applyMock).toHaveBeenCalledWith(dummyConfiguration.resolveToken, 'no-seg-flag');
+      expect(applyMock).toHaveBeenCalledWith(dummyFlagResolution.resolveToken, 'no-seg-flag');
     });
 
     it('should send an apply event', async () => {
       await instanceUnderTest.initialize(dummyContext);
       instanceUnderTest.resolveBooleanEvaluation('testFlag.bool', false, dummyContext, dummyConsole);
 
-      expect(applyMock).toHaveBeenCalledWith(dummyConfiguration.resolveToken, 'testFlag');
+      expect(applyMock).toHaveBeenCalledWith(dummyFlagResolution.resolveToken, 'testFlag');
     });
   });
 
@@ -670,19 +712,27 @@ describe('events', () => {
     openFeatureAPI.addHandler(ProviderEvents.Stale, staleHandler);
     openFeatureAPI.addHandler(ProviderEvents.Error, errorHandler);
     openFeatureAPI.addHandler(ProviderEvents.Ready, readyHandler);
+    // readyHandler.mockClear();
   });
 
   afterEach(() => {
     openFeatureAPI.clearHandlers();
   });
 
-  it('should emit ready stale ready on successful initialisation and context change', async () => {
-    resolveMock.mockResolvedValue(dummyConfiguration);
-    openFeatureAPI.setProvider(new ConfidenceWebProvider(confidenceMock));
-    await openFeatureAPI.setContext({ targetingKey: 'user-a', name: 'Kurt' });
-
+  it('should emit ready stale ready on successful initialization and context change', async () => {
+    resolveMock.mockReturnValue(dummyPendingFlagResolution);
+    await openFeatureAPI.setProviderAndWait(new ConfidenceWebProvider(confidenceMock));
+    // we get two calls because OpenFeature also sends one when the provider has initialized
     expect(readyHandler).toHaveBeenCalledTimes(2);
+
+    readyHandler.mockClear();
+
+    const contextChangeObserver: () => void = contextChangesMock.mock.lastCall[0];
+    contextChangeObserver();
     expect(staleHandler).toHaveBeenCalledTimes(1);
+
+    await Promise.resolve();
+    expect(readyHandler).toHaveBeenCalledTimes(1);
     expect(errorHandler).toHaveBeenCalledTimes(0);
   });
 

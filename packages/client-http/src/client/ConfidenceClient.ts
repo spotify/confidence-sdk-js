@@ -73,7 +73,7 @@ export class ConfidenceClient {
 
   async resolve(
     context: ResolveContext,
-    { signal, ...options }: { apply?: boolean; flags: string[]; signal?: AbortSignal },
+    { signal, ...options }: { apply?: boolean; flags?: string[]; signal?: AbortSignal } = {},
   ): Promise<Configuration> {
     const payload: ResolveRequest = {
       clientSecret: this.clientSecret,
@@ -84,9 +84,9 @@ export class ConfidenceClient {
     };
     const controller = new AbortController();
     if (signal) {
-      signal.onabort = () => {
-        controller.abort();
-      };
+      signal.addEventListener('abort', () => {
+        controller.abort(signal.reason);
+      });
     }
     const timeoutId = setTimeout(() => controller.abort(), this.timeout);
 
