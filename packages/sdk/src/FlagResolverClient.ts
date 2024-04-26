@@ -19,6 +19,17 @@ export interface PendingFlagResolution extends FlagResolution, PromiseLike<FlagR
   readonly isReady: boolean;
   cancel(): void;
 }
+export namespace PendingFlagResolution {
+  export type Factory = (context: Context) => PendingFlagResolution;
+
+  export function factory(resolver: (context: Context, signal: AbortSignal) => Promise<FlagResolution>): Factory {
+    return context => {
+      const controller = new AbortController();
+      const promise = resolver(context, controller.signal);
+      return new PendingFlagResolutionImpl(context, promise, controller);
+    };
+  }
+}
 class PendingFlagResolutionImpl implements PendingFlagResolution {
   #promise: Promise<FlagResolution>;
   #resolved: FlagResolution | undefined;
