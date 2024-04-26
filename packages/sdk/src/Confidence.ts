@@ -132,8 +132,8 @@ export class Confidence implements EventSender, Trackable {
   /**
    * @internal
    */
-  resolve(flagNames: string[], signal: AbortSignal): Promise<FlagResolution> {
-    return this.config.flagResolverClient.resolve(this.getContext(), flagNames);
+  resolve(flagNames: string[], signal?: AbortSignal): Promise<FlagResolution> {
+    return this.config.flagResolverClient.resolve(this.getContext(), flagNames, signal);
   }
 
   /**
