@@ -2,7 +2,7 @@ import { Value } from './Value';
 
 export interface Contextual<Self extends Contextual<Self>> {
   getContext(): Context;
-  setContext(context: Context): void;
+  setContext(context: Context): boolean;
   withContext(context: Context): Self;
   clearContext(): void;
 }

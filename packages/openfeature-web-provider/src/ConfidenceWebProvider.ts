@@ -14,7 +14,7 @@ import {
 } from '@openfeature/web-sdk';
 import equal from 'fast-deep-equal';
 
-import { Confidence, FlagResolution, Value, Context, PendingFlagResolution } from '@spotify-confidence/sdk';
+import { Confidence, FlagResolution, Value, Context } from '@spotify-confidence/sdk';
 
 type Mutable<T> = { -readonly [K in keyof T]: T[K] };
 
@@ -25,7 +25,7 @@ export class ConfidenceWebProvider implements Provider {
   readonly events = new OpenFeatureEventEmitter();
   status: ProviderStatus = ProviderStatus.NOT_READY;
 
-  private flagResolution?: PendingFlagResolution;
+  private flagResolution?: FlagResolution;
   private unsubscribe?: () => void;
   private readonly confidence: Confidence;
 
@@ -35,17 +35,43 @@ export class ConfidenceWebProvider implements Provider {
 
   async initialize(context?: EvaluationContext): Promise<void> {
     if (context) this.confidence.setContext(convertContext(context));
-    this.unsubscribe = this.confidence.contextChanges(() => {
-      this.events.emit(ProviderEvents.Stale);
-      this.resolve();
+    this.unsubscribe = this.confidence.flagResolutions((flagResolution?: FlagResolution) => {
+      if (flagResolution) {
+        this.flagResolution = flagResolution;
+        this.events.emit(ProviderEvents.Ready);
+        this.status = ProviderStatus.READY;
+      } else if (this.flagResolution) {
+        this.events.emit(ProviderEvents.Stale);
+        this.status = ProviderStatus.STALE;
+      }
     });
-    await this.resolve();
+    await this.waitForReady().then(isReady => {
+      if (!isReady) {
+        this.events.emit(ProviderEvents.Error);
+        this.status = ProviderStatus.ERROR;
+      }
+    });
   }
 
   async onClose(): Promise<void> {
     this.unsubscribe?.();
-    this.flagResolution?.cancel();
     this.flagResolution = undefined;
+    this.status = ProviderStatus.NOT_READY;
+  }
+
+  private waitForReady(): Promise<boolean> {
+    return new Promise(resolve => {
+      const handler = () => {
+        resolve(true);
+        this.events.removeHandler(ProviderEvents.Ready, handler);
+        clearTimeout(timeoutId);
+      };
+      const timeoutId = setTimeout(() => {
+        resolve(false);
+        this.events.removeHandler(ProviderEvents.Ready, handler);
+      }, this.confidence.config.timeout);
+      this.events.addHandler(ProviderEvents.Ready, handler);
+    });
   }
 
   async onContextChange(oldContext: EvaluationContext, newContext: EvaluationContext): Promise<void> {
@@ -53,24 +79,25 @@ export class ConfidenceWebProvider implements Provider {
     if (Object.keys(changes).length === 0) {
       return;
     }
-    this.confidence.setContext(convertContext(changes));
-    // following await makes sure that our subscription to context changes has fired (if the context changed)
-    await Promise.resolve();
-    await this.flagResolution;
-  }
-
-  private async resolve(): Promise<void> {
-    try {
-      this.flagResolution?.cancel();
-      this.flagResolution = this.confidence.resolve([]);
-      await this.flagResolution;
-      this.status = ProviderStatus.READY;
-      this.events.emit(ProviderEvents.Ready);
-    } catch (e) {
-      this.status = ProviderStatus.ERROR;
-      this.events.emit(ProviderEvents.Error);
+    if (this.confidence.setContext(convertContext(changes))) {
+      await this.waitForReady();
+      // this.events.emit(ProviderEvents.Ready);
+      // this.status = ProviderStatus.READY;
     }
   }
+
+  // private async resolve(): Promise<void> {
+  //   try {
+  //     this.flagResolution?.cancel();
+  //     this.flagResolution = this.confidence.resolve([]);
+  //     await this.flagResolution;
+  //     this.status = ProviderStatus.READY;
+  //     this.events.emit(ProviderEvents.Ready);
+  //   } catch (e) {
+  //     this.status = ProviderStatus.ERROR;
+  //     this.events.emit(ProviderEvents.Error);
+  //   }
+  // }
 
   private getFlag<T>(
     flagKey: string,
@@ -78,7 +105,7 @@ export class ConfidenceWebProvider implements Provider {
     context: EvaluationContext,
     logger: Logger,
   ): ResolutionDetails<T> {
-    if (!this.flagResolution?.isReady) {
+    if (!this.flagResolution) {
       logger.warn('Provider not ready');
       return {
         errorCode: ErrorCode.PROVIDER_NOT_READY,

@@ -24,6 +24,7 @@ export interface ConfidenceOptions {
 interface Configuration {
   readonly environment: 'client' | 'backend';
   readonly logger: Logger;
+  readonly timeout:number;
   /** @internal */
   readonly eventSenderEngine: EventSenderEngine;
   /** @internal */
@@ -38,6 +39,7 @@ export class Confidence implements EventSender, Trackable {
 
   /** @internal */
   readonly contextChanges: Subscribe<string[]>;
+  readonly flagResolutions: Subscribe<FlagResolution | undefined>
 
   constructor(config: Configuration, parent?: Confidence) {
     this.config = config;
@@ -55,6 +57,31 @@ export class Confidence implements EventSender, Trackable {
           this.contextChanged = undefined;
         };
       }));
+    this.flagResolutions = subject((observer) => {
+      let pendingFlagResolution:PendingFlagResolution | undefined
+      const resolve = async ():Promise<void> => {
+        pendingFlagResolution?.cancel();
+        pendingFlagResolution = this.resolve([]);
+        try {
+          await pendingFlagResolution;
+          observer(pendingFlagResolution);
+        } catch(e) {
+          console.log('error in resolve:', e)
+        }
+      }
+      resolve()
+      const closeContextChanges = this.contextChanges(() => {
+        observer(undefined);
+        resolve()
+      })
+
+      return () => {
+        closeContextChanges();
+        pendingFlagResolution?.cancel();
+      }
+
+
+    })
   }
 
   get environment(): string {
@@ -90,7 +117,7 @@ export class Confidence implements EventSender, Trackable {
     return Object.freeze(context);
   }
 
-  setContext(context: Context): void {
+  setContext(context: Context): boolean {
     const current = this.getContext();
     const changedKeys:string[] = [] 
     for (const key of Object.keys(context)) {
@@ -101,6 +128,7 @@ export class Confidence implements EventSender, Trackable {
     if(this.contextChanged && changedKeys.length > 0) {
       this.contextChanged(changedKeys);
     }
+    return changedKeys.length !== 0;
   }
 
   clearContext(): void {
@@ -188,6 +216,7 @@ export class Confidence implements EventSender, Trackable {
       flagResolverClient,
       eventSenderEngine: eventSenderEngine,
       logger,
+      timeout
     });
     if (environment === 'client') {
       root.track(visitorIdentity());
