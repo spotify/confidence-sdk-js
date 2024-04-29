@@ -81,23 +81,8 @@ export class ConfidenceWebProvider implements Provider {
     }
     if (this.confidence.setContext(convertContext(changes))) {
       await this.waitForReady();
-      // this.events.emit(ProviderEvents.Ready);
-      // this.status = ProviderStatus.READY;
     }
   }
-
-  // private async resolve(): Promise<void> {
-  //   try {
-  //     this.flagResolution?.cancel();
-  //     this.flagResolution = this.confidence.resolve([]);
-  //     await this.flagResolution;
-  //     this.status = ProviderStatus.READY;
-  //     this.events.emit(ProviderEvents.Ready);
-  //   } catch (e) {
-  //     this.status = ProviderStatus.ERROR;
-  //     this.events.emit(ProviderEvents.Error);
-  //   }
-  // }
 
   private getFlag<T>(
     flagKey: string,
