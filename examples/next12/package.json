@@ -9,9 +9,9 @@
     "lint": "next lint"
   },
   "dependencies": {
-    "@openfeature/core": "^0.0.24",
-    "@openfeature/server-sdk": "^1.10.0",
-    "@openfeature/web-sdk": "^0.4.11",
+    "@openfeature/core": "^1.1.0",
+    "@openfeature/server-sdk": "^1.13.5",
+    "@openfeature/web-sdk": "^1.0.3",
     "@spotify-confidence/openfeature-server-provider": "0.2.0-rc.0",
     "@spotify-confidence/openfeature-web-provider": "0.2.1-rc.0",
     "next": "13.5.3",

@@ -3607,28 +3607,28 @@ __metadata:
   languageName: node
   linkType: hard
 
-"@openfeature/core@npm:^0.0.24":
-  version: 0.0.24
-  resolution: "@openfeature/core@npm:0.0.24"
-  checksum: 10c0/9ed6fe1b8cb0fa8c9cf64beb2bab95df411e97bb0f2c22a71254b6b910265eefd735cb36cf22390bf1d8918307db8958ccf108a8c718913f70e42a0303b52a35
+"@openfeature/core@npm:^1.1.0":
+  version: 1.1.0
+  resolution: "@openfeature/core@npm:1.1.0"
+  checksum: 10c0/fbb248ad415ae72efebf135c827164bf9ca703b12f26753b3a009bbc87674b9aceed59566b47161ae0a27dac3d8aad28108562877bd6534384ef53e12d002859
   languageName: node
   linkType: hard
 
-"@openfeature/server-sdk@npm:^1.10.0":
-  version: 1.10.0
-  resolution: "@openfeature/server-sdk@npm:1.10.0"
+"@openfeature/server-sdk@npm:^1.13.5":
+  version: 1.13.5
+  resolution: "@openfeature/server-sdk@npm:1.13.5"
   peerDependencies:
-    "@openfeature/core": 0.0.24
-  checksum: 10c0/bd3f2292db1ecb43287e7e8f25580cd6482ad9de88204ac5c905ad1d8a652de7d07e7ab0d394e8b50a36e39cace31ae86e7c441a1b69f48490e60fcf9ce250f7
+    "@openfeature/core": 1.1.0
+  checksum: 10c0/1d9f3ebf86c10c70693f563aab184c9bb9fd8e0673e19d89c8cac78ee6ad4ef5070b1285835137e7aa5f261a5d1386665a19f9dffc486381e8cc35f5968fb3f4
   languageName: node
   linkType: hard
 
-"@openfeature/web-sdk@npm:^0.4.11":
-  version: 0.4.11
-  resolution: "@openfeature/web-sdk@npm:0.4.11"
+"@openfeature/web-sdk@npm:^1.0.3":
+  version: 1.0.3
+  resolution: "@openfeature/web-sdk@npm:1.0.3"
   peerDependencies:
-    "@openfeature/core": 0.0.24
-  checksum: 10c0/532c9452cd31cb7e1c548559face22cbbbf3676156e612256118fc2e9f136cc281dec39f68f6e08d554697fdde3943f14a3378d29c19749a3fb78f4e5c71d80f
+    "@openfeature/core": 1.1.0
+  checksum: 10c0/7917a2a73ffbf53adaa8d7ca3bd2a32ae49b9cc4d41007f698781d4aa70fc825ec82e8eed69746dcfdfb93f9b55ec2018d4b8c8922f19379c578bcdfc3744cba
   languageName: node
   linkType: hard
 
@@ -3852,8 +3852,8 @@ __metadata:
   version: 0.0.0-use.local
   resolution: "@spotify-confidence/integration-react@workspace:packages/integration-react"
   dependencies:
-    "@openfeature/core": "npm:^0.0.24"
-    "@openfeature/web-sdk": "npm:^0.4.11"
+    "@openfeature/core": "npm:^1.1.0"
+    "@openfeature/web-sdk": "npm:^1.0.3"
     "@spotify-confidence/openfeature-web-provider": "npm:^0.2.1-rc.0"
     "@testing-library/jest-dom": "npm:^5.16.5"
     "@testing-library/react": "npm:^14.0.0"
@@ -3861,7 +3861,7 @@ __metadata:
     react: "npm:^18.2.0"
     use-sync-external-store: "npm:^1.2.0"
   peerDependencies:
-    "@openfeature/web-sdk": ^0.4.11
+    "@openfeature/web-sdk": ^1.0.3
     react-dom: ">=16 <19"
   languageName: unknown
   linkType: soft
@@ -3881,11 +3881,11 @@ __metadata:
   version: 0.0.0-use.local
   resolution: "@spotify-confidence/openfeature-server-provider@workspace:packages/openfeature-server-provider"
   dependencies:
-    "@openfeature/core": "npm:^0.0.24"
-    "@openfeature/server-sdk": "npm:^1.10.0"
+    "@openfeature/core": "npm:^1.1.0"
+    "@openfeature/server-sdk": "npm:^1.13.5"
     "@spotify-confidence/sdk": "npm:0.0.3"
   peerDependencies:
-    "@openfeature/server-sdk": ^1.10.0
+    "@openfeature/server-sdk": ^1.13.5
   languageName: unknown
   linkType: soft
 
@@ -3893,12 +3893,12 @@ __metadata:
   version: 0.0.0-use.local
   resolution: "@spotify-confidence/openfeature-web-provider@workspace:packages/openfeature-web-provider"
   dependencies:
-    "@openfeature/core": "npm:^0.0.24"
-    "@openfeature/web-sdk": "npm:^0.4.11"
+    "@openfeature/core": "npm:^1.1.0"
+    "@openfeature/web-sdk": "npm:^1.0.3"
     "@spotify-confidence/sdk": "npm:0.0.3"
     fast-deep-equal: "npm:^3.1.3"
   peerDependencies:
-    "@openfeature/web-sdk": ^0.4.11
+    "@openfeature/web-sdk": ^1.0.3
   languageName: unknown
   linkType: soft
 
@@ -14036,9 +14036,9 @@ __metadata:
   version: 0.0.0-use.local
   resolution: "next12@workspace:examples/next12"
   dependencies:
-    "@openfeature/core": "npm:^0.0.24"
-    "@openfeature/server-sdk": "npm:^1.10.0"
-    "@openfeature/web-sdk": "npm:^0.4.11"
+    "@openfeature/core": "npm:^1.1.0"
+    "@openfeature/server-sdk": "npm:^1.13.5"
+    "@openfeature/web-sdk": "npm:^1.0.3"
     "@spotify-confidence/openfeature-server-provider": "npm:0.2.0-rc.0"
     "@spotify-confidence/openfeature-web-provider": "npm:0.2.1-rc.0"
     eslint: "npm:8.50.0"
@@ -14053,9 +14053,9 @@ __metadata:
   version: 0.0.0-use.local
   resolution: "next13@workspace:examples/next13"
   dependencies:
-    "@openfeature/core": "npm:^0.0.24"
-    "@openfeature/server-sdk": "npm:^1.10.0"
-    "@openfeature/web-sdk": "npm:^0.4.11"
+    "@openfeature/core": "npm:^1.1.0"
+    "@openfeature/server-sdk": "npm:^1.13.5"
+    "@openfeature/web-sdk": "npm:^1.0.3"
     "@spotify-confidence/openfeature-server-provider": "npm:0.2.0-rc.0"
     "@spotify-confidence/openfeature-web-provider": "npm:0.2.1-rc.0"
     "@types/node": "npm:20.6.5"
@@ -14205,8 +14205,8 @@ __metadata:
   version: 0.0.0-use.local
   resolution: "node-example-commonjs@workspace:examples/nodeCJS"
   dependencies:
-    "@openfeature/core": "npm:^0.0.24"
-    "@openfeature/server-sdk": "npm:^1.10.0"
+    "@openfeature/core": "npm:^1.1.0"
+    "@openfeature/server-sdk": "npm:^1.13.5"
     "@spotify-confidence/openfeature-server-provider": "npm:0.2.0-rc.0"
   languageName: unknown
   linkType: soft
@@ -14215,8 +14215,8 @@ __metadata:
   version: 0.0.0-use.local
   resolution: "node-example@workspace:examples/node"
   dependencies:
-    "@openfeature/core": "npm:^0.0.24"
-    "@openfeature/server-sdk": "npm:^1.10.0"
+    "@openfeature/core": "npm:^1.1.0"
+    "@openfeature/server-sdk": "npm:^1.13.5"
     "@spotify-confidence/openfeature-server-provider": "npm:0.2.0-rc.0"
   languageName: unknown
   linkType: soft
@@ -16637,8 +16637,8 @@ __metadata:
     "@babel/plugin-syntax-flow": "npm:^7.22.5"
     "@babel/plugin-transform-private-property-in-object": "npm:^7.22.11"
     "@babel/plugin-transform-react-jsx": "npm:^7.22.15"
-    "@openfeature/core": "npm:^0.0.24"
-    "@openfeature/web-sdk": "npm:^0.4.11"
+    "@openfeature/core": "npm:^1.1.0"
+    "@openfeature/web-sdk": "npm:^1.0.3"
     "@spotify-confidence/integration-react": "npm:0.2.0-rc.0"
     "@spotify-confidence/openfeature-web-provider": "npm:0.2.1-rc.0"
     "@testing-library/dom": "npm:^7.29.6"

@@ -6,7 +6,7 @@
   "main": "build/cjs/index.js",
   "types": "build/types/index.d.ts",
   "peerDependencies": {
-    "@openfeature/web-sdk": "^0.4.11",
+    "@openfeature/web-sdk": "^1.0.3",
     "react-dom": ">=16 <19"
   },
   "scripts": {
@@ -16,8 +16,8 @@
     "clean": "rm -rf build"
   },
   "devDependencies": {
-    "@openfeature/core": "^0.0.24",
-    "@openfeature/web-sdk": "^0.4.11",
+    "@openfeature/core": "^1.1.0",
+    "@openfeature/web-sdk": "^1.0.3",
     "@spotify-confidence/openfeature-web-provider": "^0.2.1-rc.0",
     "@testing-library/jest-dom": "^5.16.5",
     "@testing-library/react": "^14.0.0",
