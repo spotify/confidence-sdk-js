@@ -87,7 +87,7 @@ export class ConfidenceWebProvider implements Provider {
   private getFlag<T>(
     flagKey: string,
     defaultValue: T,
-    context: EvaluationContext,
+    _context: EvaluationContext,
     logger: Logger,
   ): ResolutionDetails<T> {
     if (!this.flagResolution) {
@@ -155,11 +155,7 @@ export class ConfidenceWebProvider implements Provider {
         this.confidence.apply(this.flagResolution.resolveToken, flagName);
       }
       logger.info('Value for "%s" successfully evaluated', flagKey);
-      const currContext: Context = convertContext(context);
-      const cachedContext: Context = this.flagResolution.context;
-      const reason = Object.keys(currContext).some(key => !equal(currContext[key], cachedContext[key]))
-        ? 'STALE'
-        : mapConfidenceReason(flag.reason);
+      const reason = this.status === ProviderStatus.STALE ? 'STALE' : mapConfidenceReason(flag.reason);
 
       return {
         value: flagValue.value as T,
