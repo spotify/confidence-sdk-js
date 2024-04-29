@@ -24,7 +24,7 @@ export interface ConfidenceOptions {
 interface Configuration {
   readonly environment: 'client' | 'backend';
   readonly logger: Logger;
-  readonly timeout:number;
+  readonly timeout: number;
   /** @internal */
   readonly eventSenderEngine: EventSenderEngine;
   /** @internal */
@@ -39,12 +39,13 @@ export class Confidence implements EventSender, Trackable {
 
   /** @internal */
   readonly contextChanges: Subscribe<string[]>;
-  readonly flagResolutions: Subscribe<FlagResolution | undefined>
+  readonly flagResolutions: Subscribe<FlagResolution | undefined>;
 
   constructor(config: Configuration, parent?: Confidence) {
     this.config = config;
     this.parent = parent;
-    this.contextChanges = debounceUnique(subject(observer => {
+    this.contextChanges = debounceUnique(
+      subject(observer => {
         let parentSubscription: Closer | void;
         if (parent) {
           parentSubscription = parent.contextChanges(keys => {
@@ -56,32 +57,31 @@ export class Confidence implements EventSender, Trackable {
           parentSubscription?.();
           this.contextChanged = undefined;
         };
-      }));
-    this.flagResolutions = subject((observer) => {
-      let pendingFlagResolution:PendingFlagResolution | undefined
-      const resolve = async ():Promise<void> => {
+      }),
+    );
+    this.flagResolutions = subject(observer => {
+      let pendingFlagResolution: PendingFlagResolution | undefined;
+      const resolve = async (): Promise<void> => {
         pendingFlagResolution?.cancel();
         pendingFlagResolution = this.resolve([]);
         try {
           await pendingFlagResolution;
           observer(pendingFlagResolution);
-        } catch(e) {
-          console.log('error in resolve:', e)
+        } catch (e) {
+          console.log('error in resolve:', e);
         }
-      }
-      resolve()
+      };
+      resolve();
       const closeContextChanges = this.contextChanges(() => {
         observer(undefined);
-        resolve()
-      })
+        resolve();
+      });
 
       return () => {
         closeContextChanges();
         pendingFlagResolution?.cancel();
-      }
-
-
-    })
+      };
+    });
   }
 
   get environment(): string {
@@ -119,13 +119,13 @@ export class Confidence implements EventSender, Trackable {
 
   setContext(context: Context): boolean {
     const current = this.getContext();
-    const changedKeys:string[] = [] 
+    const changedKeys: string[] = [];
     for (const key of Object.keys(context)) {
-      if(Value.equal(current[key], context[key])) continue;
+      if (Value.equal(current[key], context[key])) continue;
       changedKeys.push(key);
-      this._context.set(key, Value.clone(context[key]))
+      this._context.set(key, Value.clone(context[key]));
     }
-    if(this.contextChanged && changedKeys.length > 0) {
+    if (this.contextChanged && changedKeys.length > 0) {
       this.contextChanged(changedKeys);
     }
     return changedKeys.length !== 0;
@@ -216,7 +216,7 @@ export class Confidence implements EventSender, Trackable {
       flagResolverClient,
       eventSenderEngine: eventSenderEngine,
       logger,
-      timeout
+      timeout,
     });
     if (environment === 'client') {
       root.track(visitorIdentity());
