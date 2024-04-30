@@ -24,6 +24,26 @@
   * devDependencies
     * @spotify-confidence/openfeature-web-provider bumped from ^0.2.0-rc.0 to ^0.2.1-rc.0
 
+## [0.2.2-rc.0](https://github.com/spotify/confidence-openfeature-provider-js/compare/integration-react-v0.2.1-rc.0...integration-react-v0.2.2-rc.0) (2024-04-30)
+
+
+### 🧹 Chore
+
+* of bump core 1.1.0, web 1.0.3, server 1.13.5 ([#117](https://github.com/spotify/confidence-openfeature-provider-js/issues/117)) ([7934996](https://github.com/spotify/confidence-openfeature-provider-js/commit/793499690e5b18b1c26a6f8e317bce27252574d7))
+* remove next.js examples ([#119](https://github.com/spotify/confidence-openfeature-provider-js/issues/119)) ([c2929b1](https://github.com/spotify/confidence-openfeature-provider-js/commit/c2929b1f772b6cab83413360a0944b43737b4d47))
+
+
+### 📚 Documentation
+
+* react integration deprecation ([#123](https://github.com/spotify/confidence-openfeature-provider-js/issues/123)) ([8e86d16](https://github.com/spotify/confidence-openfeature-provider-js/commit/8e86d165546dd5d6fd5e9b11b0f2af92f91f0adf))
+
+
+### Dependencies
+
+* The following workspace dependencies were updated
+  * devDependencies
+    * @spotify-confidence/openfeature-web-provider bumped from ^0.2.1-rc.0 to ^0.2.2-rc.0
+
 ## [0.2.0-rc.0](https://github.com/spotify/confidence-openfeature-provider-js/compare/integration-react-v0.1.5...integration-react-v0.2.0-rc.0) (2024-04-04)
 
 

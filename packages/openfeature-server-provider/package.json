@@ -1,12 +1,12 @@
 {
   "name": "@spotify-confidence/openfeature-server-provider",
   "license": "Apache-2.0",
-  "version": "0.2.1-rc.0",
+  "version": "0.2.2-rc.0",
   "module": "build/esm/index.js",
   "main": "build/cjs/index.js",
   "types": "build/types/index.d.ts",
   "dependencies": {
-    "@spotify-confidence/sdk": "0.0.3"
+    "@spotify-confidence/sdk": "0.0.4"
   },
   "devDependencies": {
     "@openfeature/core": "^1.1.0",

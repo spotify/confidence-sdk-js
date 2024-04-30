@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.0.4](https://github.com/spotify/confidence-openfeature-provider-js/compare/sdk-v0.0.3...sdk-v0.0.4) (2024-04-30)
+
+
+### 🔄 Refactoring
+
+* remove message container ([#122](https://github.com/spotify/confidence-openfeature-provider-js/issues/122)) ([fbc8c2a](https://github.com/spotify/confidence-openfeature-provider-js/commit/fbc8c2a12fd2b560b1722869c831dbf6b60c8cd4))
+
 ## [0.0.3](https://github.com/spotify/confidence-openfeature-provider-js/compare/sdk-v0.0.2...sdk-v0.0.3) (2024-04-24)
 
 
