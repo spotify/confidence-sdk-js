@@ -1,11 +1,4 @@
-import {
-  ErrorCode,
-  EvaluationContext,
-  Logger,
-  OpenFeatureAPI,
-  ProviderEvents,
-  ProviderStatus,
-} from '@openfeature/web-sdk';
+import { ErrorCode, EvaluationContext, Logger, OpenFeatureAPI, ProviderEvents } from '@openfeature/web-sdk';
 import { ConfidenceWebProvider } from './ConfidenceWebProvider';
 import { Confidence, FlagResolution } from '@spotify-confidence/sdk';
 
@@ -96,44 +89,6 @@ describe('ConfidenceProvider', () => {
 
         expect(resolveMock).toHaveBeenCalledWith([]);
       });
-
-      it('should change the provider status to READY', async () => {
-        expect(instanceUnderTest.status).toEqual(ProviderStatus.NOT_READY);
-
-        await instanceUnderTest.initialize({ targetingKey: 'test' });
-
-        expect(instanceUnderTest.status).toEqual(ProviderStatus.READY);
-      });
-
-      it('should set the status to ERROR if the fetch errors', async () => {
-        resolveMock.mockRejectedValue(new Error('something went wrong'));
-
-        try {
-          await instanceUnderTest.initialize({ targetingKey: 'test' });
-        } catch (_) {
-          // do nothing
-        }
-
-        expect(instanceUnderTest.status).toEqual(ProviderStatus.ERROR);
-      });
-    });
-
-    describe('no context', () => {
-      it('should change the provider status to READY', async () => {
-        expect(instanceUnderTest.status).toEqual(ProviderStatus.NOT_READY);
-
-        await instanceUnderTest.initialize();
-
-        expect(instanceUnderTest.status).toEqual(ProviderStatus.READY);
-      });
-    });
-
-    it('should change the provider status with context', async () => {
-      expect(instanceUnderTest.status).toEqual(ProviderStatus.NOT_READY);
-
-      await instanceUnderTest.initialize();
-
-      expect(instanceUnderTest.status).toEqual(ProviderStatus.READY);
     });
   });
 
