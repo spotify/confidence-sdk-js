@@ -3836,19 +3836,7 @@ __metadata:
   languageName: unknown
   linkType: soft
 
-"@spotify-confidence/integration-react@npm:0.2.0-rc.0":
-  version: 0.2.0-rc.0
-  resolution: "@spotify-confidence/integration-react@npm:0.2.0-rc.0"
-  dependencies:
-    use-sync-external-store: "npm:^1.2.0"
-  peerDependencies:
-    "@openfeature/web-sdk": ^0.4.11
-    react-dom: ">=16 <19"
-  checksum: 10c0/7d8c38a3b204b197f8c136b4e420a1c699e2c28f8aebd49fbc5d4e0234f18ab5acc741746dca41fb9d7f799bd7cdf4525b83713e5a128a5d5ab51e045a0194ae
-  languageName: node
-  linkType: hard
-
-"@spotify-confidence/integration-react@workspace:packages/integration-react":
+"@spotify-confidence/integration-react@npm:0.2.1-rc.0, @spotify-confidence/integration-react@workspace:packages/integration-react":
   version: 0.0.0-use.local
   resolution: "@spotify-confidence/integration-react@workspace:packages/integration-react"
   dependencies:
@@ -16639,7 +16627,7 @@ __metadata:
     "@babel/plugin-transform-react-jsx": "npm:^7.22.15"
     "@openfeature/core": "npm:^1.1.0"
     "@openfeature/web-sdk": "npm:^1.0.3"
-    "@spotify-confidence/integration-react": "npm:0.2.0-rc.0"
+    "@spotify-confidence/integration-react": "npm:0.2.1-rc.0"
     "@spotify-confidence/openfeature-web-provider": "npm:0.2.1-rc.0"
     "@testing-library/dom": "npm:^7.29.6"
     "@testing-library/jest-dom": "npm:^5.14.1"
