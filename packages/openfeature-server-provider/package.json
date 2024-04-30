@@ -9,11 +9,11 @@
     "@spotify-confidence/sdk": "0.0.3"
   },
   "devDependencies": {
-    "@openfeature/core": "^0.0.24",
-    "@openfeature/server-sdk": "^1.10.0"
+    "@openfeature/core": "^1.1.0",
+    "@openfeature/server-sdk": "^1.13.5"
   },
   "peerDependencies": {
-    "@openfeature/server-sdk": "^1.10.0"
+    "@openfeature/server-sdk": "^1.13.5"
   },
   "scripts": {
     "build:esm": "tsc -p tsconfig.esm.json",

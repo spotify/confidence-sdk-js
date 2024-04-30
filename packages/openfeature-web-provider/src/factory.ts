@@ -2,7 +2,7 @@ import { Provider } from '@openfeature/web-sdk';
 import { ConfidenceWebProvider } from './ConfidenceWebProvider';
 import { Confidence } from '@spotify-confidence/sdk';
 
-type ConfidenceWebProviderFactoryOptions = {
+export type ConfidenceWebProviderOptions = {
   region?: 'global' | 'eu' | 'us';
   fetchImplementation?: typeof fetch;
   clientSecret: string;
@@ -11,11 +11,9 @@ type ConfidenceWebProviderFactoryOptions = {
   timeout: number;
 };
 
-export function createConfidenceWebProvider(options: ConfidenceWebProviderFactoryOptions): Provider;
+export function createConfidenceWebProvider(options: ConfidenceWebProviderOptions): Provider;
 export function createConfidenceWebProvider(confidence: Confidence): Provider;
-export function createConfidenceWebProvider(
-  confidenceOrOptions: Confidence | ConfidenceWebProviderFactoryOptions,
-): Provider {
+export function createConfidenceWebProvider(confidenceOrOptions: Confidence | ConfidenceWebProviderOptions): Provider {
   if (confidenceOrOptions instanceof Confidence) {
     return new ConfidenceWebProvider(confidenceOrOptions);
   }

@@ -8,7 +8,6 @@ import {
   Provider,
   ProviderEvents,
   ProviderMetadata,
-  ProviderStatus,
   ResolutionDetails,
   ResolutionReason,
 } from '@openfeature/web-sdk';
@@ -20,7 +19,6 @@ export class ConfidenceWebProvider implements Provider {
   readonly metadata: ProviderMetadata = {
     name: 'ConfidenceWebProvider',
   };
-  status: ProviderStatus = ProviderStatus.NOT_READY;
   flagResolution: FlagResolution | null = null;
   readonly events = new OpenFeatureEventEmitter();
 
@@ -34,10 +32,8 @@ export class ConfidenceWebProvider implements Provider {
     try {
       if (context) this.confidence.setContext({ openFeature: this.convertContext(context || {}) });
       this.flagResolution = await this.confidence.resolve([]);
-      this.status = ProviderStatus.READY;
       return Promise.resolve();
     } catch (e) {
-      this.status = ProviderStatus.ERROR;
       throw e;
     }
   }
@@ -50,10 +46,8 @@ export class ConfidenceWebProvider implements Provider {
     try {
       this.confidence.setContext({ openFeature: this.convertContext(newContext) });
       this.flagResolution = await this.confidence.resolve([]);
-      this.status = ProviderStatus.READY;
       this.events.emit(ProviderEvents.Ready);
     } catch (e) {
-      this.status = ProviderStatus.ERROR;
       this.events.emit(ProviderEvents.Error);
     }
   }

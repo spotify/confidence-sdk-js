@@ -10,11 +10,11 @@
     "fast-deep-equal": "^3.1.3"
   },
   "devDependencies": {
-    "@openfeature/core": "^0.0.24",
-    "@openfeature/web-sdk": "^0.4.11"
+    "@openfeature/core": "^1.1.0",
+    "@openfeature/web-sdk": "^1.0.3"
   },
   "peerDependencies": {
-    "@openfeature/web-sdk": "^0.4.11"
+    "@openfeature/web-sdk": "^1.0.3"
   },
   "scripts": {
     "build:esm": "tsc -p tsconfig.esm.json",
