@@ -25,10 +25,15 @@ jobs:
         run: corepack enable && yarn install
         env:
           YARN_ENABLE_IMMUTABLE_INSTALLS: false
-      - name: Commit and push changes
+      - name: Check for changes in yarn.lock
+        id: git-check
         run: |
-          git status && \
-          git --no-pager diff && \
+          git status
+          git add yarn.lock
+          git diff --staged --exit-code || echo "::set-output name=changed::true"
+      - name: Commit and push changes
+        if: steps.git-check.outputs.changed == 'true'
+        run: |
           git config user.name "confidence-bot" && \
           git config user.email "confidence+bot@spotify.com" && \
           git add yarn.lock && \
