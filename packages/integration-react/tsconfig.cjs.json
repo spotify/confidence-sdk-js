@@ -1,9 +1,0 @@
-{
-  "extends": "./tsconfig.json",
-  "compilerOptions": {
-    "module": "CommonJS",
-    "outDir": "build/cjs",
-    "tsBuildInfoFile": "./build/types/tsconfig.cjs.tsbuildinfo"
-  },
-  "exclude": ["**/*.test.*", "jest.setup.ts"]
-}
