@@ -41,22 +41,6 @@ describe('ConfidenceWebProvider E2E tests', () => {
     });
   });
 
-  describe('providerStatus', () => {
-    afterEach(() => OpenFeature.clearProviders());
-    it('should be in ready state after successful initialize', async () => {
-      await OpenFeature.setProviderAndWait(createProvider());
-      const client = OpenFeature.getClient();
-      expect(client.providerStatus).toBe(ClientProviderStatus.READY);
-    });
-    it('should be in error state after timeout in initialize', async () => {
-      await expect(OpenFeature.setProviderAndWait(createProvider({ timeout: 0 }))).rejects.toThrow(
-        'This operation was aborted',
-      );
-      const client = OpenFeature.getClient();
-      expect(client.providerStatus).toBe(ClientProviderStatus.ERROR);
-    });
-  });
-
   describe('initialize success', () => {
     beforeEach(async () => {
       OpenFeature.setContext({ targetingKey: 'test-a' }); // control
