@@ -14,7 +14,7 @@ import {
 } from '@openfeature/web-sdk';
 import equal from 'fast-deep-equal';
 
-import { Confidence, FlagResolution, Value, Context, PendingFlagResolution } from '@spotify-confidence/sdk';
+import { Confidence, FlagResolution, Value, Context } from '@spotify-confidence/sdk';
 
 type Mutable<T> = { -readonly [K in keyof T]: T[K] };
 
@@ -25,7 +25,8 @@ export class ConfidenceWebProvider implements Provider {
   readonly events = new OpenFeatureEventEmitter();
   status: ProviderStatus = ProviderStatus.NOT_READY;
 
-  private flagResolution?: PendingFlagResolution;
+  private pendingFlagResolution?: Promise<FlagResolution>;
+  private flagResolution?: FlagResolution;
   private unsubscribe?: () => void;
   private readonly confidence: Confidence;
 
@@ -36,7 +37,10 @@ export class ConfidenceWebProvider implements Provider {
   async initialize(context?: EvaluationContext): Promise<void> {
     if (context) this.confidence.setContext(convertContext(context));
     this.unsubscribe = this.confidence.contextChanges(() => {
-      this.events.emit(ProviderEvents.Stale);
+      if (this.status !== ProviderStatus.STALE) {
+        this.events.emit(ProviderEvents.Stale);
+        this.status = ProviderStatus.STALE;
+      }
       this.resolve();
     });
     await this.resolve();
@@ -44,7 +48,7 @@ export class ConfidenceWebProvider implements Provider {
 
   async onClose(): Promise<void> {
     this.unsubscribe?.();
-    this.flagResolution?.cancel();
+    // this.flagResolution?.cancel();
     this.flagResolution = undefined;
   }
 
@@ -59,26 +63,40 @@ export class ConfidenceWebProvider implements Provider {
     await this.flagResolution;
   }
 
+  // private awaitReady():Provider<void> {
+  //   return new Promise<void>(resolve => {
+  //     const handler = () => {
+  //       resolve();
+  //       this.events.removeHandler(ProviderEvents.Ready, handler);
+  //     }
+  //     this.events.addHandler(ProviderEvents.Ready, handler);
+  //   })
+  // }
+
   private async resolve(): Promise<void> {
+    const pending = (this.pendingFlagResolution = this.confidence.resolve([]));
     try {
-      this.flagResolution?.cancel();
-      this.flagResolution = this.confidence.resolve([]);
-      await this.flagResolution;
-      this.status = ProviderStatus.READY;
-      this.events.emit(ProviderEvents.Ready);
+      const resolved = await pending;
+      if (pending === this.pendingFlagResolution) {
+        this.flagResolution = resolved;
+        this.status = ProviderStatus.READY;
+        this.events.emit(ProviderEvents.Ready);
+      }
     } catch (e) {
-      this.status = ProviderStatus.ERROR;
-      this.events.emit(ProviderEvents.Error);
+      if (pending === this.pendingFlagResolution) {
+        this.status = ProviderStatus.ERROR;
+        this.events.emit(ProviderEvents.Error);
+      }
     }
   }
 
   private getFlag<T>(
     flagKey: string,
     defaultValue: T,
-    context: EvaluationContext,
+    _context: EvaluationContext,
     logger: Logger,
   ): ResolutionDetails<T> {
-    if (!this.flagResolution?.isReady) {
+    if (!this.flagResolution) {
       logger.warn('Provider not ready');
       return {
         errorCode: ErrorCode.PROVIDER_NOT_READY,
@@ -143,11 +161,7 @@ export class ConfidenceWebProvider implements Provider {
         this.confidence.apply(this.flagResolution.resolveToken, flagName);
       }
       logger.info('Value for "%s" successfully evaluated', flagKey);
-      const currContext: Context = convertContext(context);
-      const cachedContext: Context = this.flagResolution.context;
-      const reason = Object.keys(currContext).some(key => !equal(currContext[key], cachedContext[key]))
-        ? 'STALE'
-        : mapConfidenceReason(flag.reason);
+      const reason = this.status === ProviderStatus.STALE ? 'STALE' : mapConfidenceReason(flag.reason);
 
       return {
         value: flagValue.value as T,

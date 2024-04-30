@@ -73,3 +73,31 @@ export namespace Cookie {
     set(key, '', { maxAge: 0 });
   }
 }
+
+export class AbortablePromise<T> extends Promise<T> {
+  readonly #controller: AbortController;
+
+  constructor(
+    executor: (
+      resolve: (value: T | PromiseLike<T>) => void,
+      reject: (reason?: any) => void,
+      signal: AbortSignal,
+    ) => void,
+  ) {
+    const controller = new AbortController();
+    super((resolve, reject) => {
+      const signal = controller.signal;
+      signal.addEventListener('abort', () => {
+        reject(signal.reason);
+      });
+      executor(resolve, reject, signal);
+    });
+    this.#controller = controller;
+  }
+
+  abort(reason?: any) {
+    this.#controller.abort(reason);
+  }
+}
+
+AbortablePromise.prototype.constructor = Promise;

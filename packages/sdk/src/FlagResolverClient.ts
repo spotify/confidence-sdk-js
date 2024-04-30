@@ -15,61 +15,19 @@ export interface FlagResolverOptions extends Omit<ConfidenceClientOptions, 'appl
   environment: 'client' | 'backend';
 }
 
-export interface PendingFlagResolution extends FlagResolution, PromiseLike<FlagResolution> {
-  readonly isReady: boolean;
-  cancel(): void;
-}
-export namespace PendingFlagResolution {
-  export type Factory = (context: Context) => PendingFlagResolution;
+export class PendingFlagResolution implements PromiseLike<FlagResolution> {
+  readonly #controller = new AbortController();
 
-  export function factory(resolver: (context: Context, signal: AbortSignal) => Promise<FlagResolution>): Factory {
-    return context => {
-      const controller = new AbortController();
-      const promise = resolver(context, controller.signal);
-      return new PendingFlagResolutionImpl(context, promise, controller);
-    };
-  }
-}
-class PendingFlagResolutionImpl implements PendingFlagResolution {
-  #promise: Promise<FlagResolution>;
-  #resolved: FlagResolution | undefined;
-  #abortController: AbortController;
-  readonly context: Context;
-
-  private get resolved(): FlagResolution {
-    if (!this.#resolved) throw new Error('FlagResolution not ready.');
-    return this.#resolved;
-  }
-
-  constructor(context: Context, configurationPromise: Promise<FlagResolution>, abortController: AbortController) {
-    this.context = context;
-    this.#promise = configurationPromise.then(flagResolution => {
-      return (this.#resolved = flagResolution);
-    });
-    this.#abortController = abortController;
-  }
-
-  get isReady(): boolean {
-    return typeof this.#resolved !== 'undefined';
-  }
-
-  get flags(): Readonly<{ [name: string]: FlagResolution.Flag<unknown> }> {
-    return this.resolved.flags;
-  }
-
-  get resolveToken(): string {
-    return this.resolved.resolveToken;
-  }
-
-  cancel() {
-    this.#abortController.abort(new Error('Canceled'));
-  }
-
-  then<TResult1 = FlagResolution, TResult2 = never>(
+  readonly then: <TResult1 = FlagResolution, TResult2 = never>(
     onfulfilled?: ((value: FlagResolution) => TResult1 | PromiseLike<TResult1>) | null | undefined,
     onrejected?: ((reason: any) => TResult2 | PromiseLike<TResult2>) | null | undefined,
-  ): PromiseLike<TResult1 | TResult2> {
-    return this.#promise.then(onfulfilled, onrejected);
+  ) => PromiseLike<TResult1 | TResult2>;
+  readonly abort: (reason?: any) => void;
+
+  constructor(readonly context: Context, executor: (signal: AbortSignal) => Promise<FlagResolution>) {
+    const promise = executor(this.#controller.signal);
+    this.then = promise.then.bind(promise);
+    this.abort = this.#controller.abort.bind(this.#controller);
   }
 }
 export class FlagResolverClient {
@@ -92,9 +50,7 @@ export class FlagResolverClient {
   }
 
   resolve(context: Context, flags: string[]): PendingFlagResolution {
-    const abortController = new AbortController();
-    const configPromise = this.legacyClient.resolve(context, { flags, signal: abortController.signal });
-    return new PendingFlagResolutionImpl(context, configPromise, abortController);
+    return new PendingFlagResolution(context, signal => this.legacyClient.resolve(context, { flags, signal }));
   }
 
   apply(resolveToken: string, flagName: string): void {

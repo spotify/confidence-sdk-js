@@ -9,7 +9,7 @@ import { Trackable } from './Trackable';
 import { Closer } from './Closer';
 import { Subscribe, Observer, subject, debounceUnique } from './observing';
 
-export { FlagResolverClient, FlagResolution, PendingFlagResolution };
+export { FlagResolverClient, FlagResolution };
 
 export interface ConfidenceOptions {
   clientSecret: string;
@@ -39,10 +39,13 @@ export class Confidence implements EventSender, Trackable {
   /** @internal */
   readonly contextChanges: Subscribe<string[]>;
 
+  private flagResolution?: PendingFlagResolution;
+
   constructor(config: Configuration, parent?: Confidence) {
     this.config = config;
     this.parent = parent;
-    this.contextChanges = debounceUnique(subject(observer => {
+    this.contextChanges = debounceUnique(
+      subject(observer => {
         let parentSubscription: Closer | void;
         if (parent) {
           parentSubscription = parent.contextChanges(keys => {
@@ -54,7 +57,8 @@ export class Confidence implements EventSender, Trackable {
           parentSubscription?.();
           this.contextChanged = undefined;
         };
-      }));
+      }),
+    );
   }
 
   get environment(): string {
@@ -92,13 +96,13 @@ export class Confidence implements EventSender, Trackable {
 
   setContext(context: Context): void {
     const current = this.getContext();
-    const changedKeys:string[] = [] 
+    const changedKeys: string[] = [];
     for (const key of Object.keys(context)) {
-      if(Value.equal(current[key], context[key])) continue;
+      if (Value.equal(current[key], context[key])) continue;
       changedKeys.push(key);
-      this._context.set(key, Value.clone(context[key]))
+      this._context.set(key, Value.clone(context[key]));
     }
-    if(this.contextChanged && changedKeys.length > 0) {
+    if (this.contextChanged && changedKeys.length > 0) {
       this.contextChanged(changedKeys);
     }
   }
@@ -132,8 +136,13 @@ export class Confidence implements EventSender, Trackable {
   /**
    * @internal
    */
-  resolve(flagNames: string[]): PendingFlagResolution {
-    return this.config.flagResolverClient.resolve(this.getContext(), flagNames);
+  resolve(flagNames: string[]): PromiseLike<FlagResolution> {
+    const context = this.getContext();
+    if (!this.flagResolution || !Value.equal(context, this.flagResolution.context)) {
+      this.flagResolution?.abort();
+      this.flagResolution = this.config.flagResolverClient.resolve(context, flagNames);
+    }
+    return this.flagResolution;
   }
 
   /**
