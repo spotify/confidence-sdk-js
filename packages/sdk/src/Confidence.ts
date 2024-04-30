@@ -68,7 +68,7 @@ export class Confidence implements EventSender, Trackable {
           await pendingFlagResolution;
           observer(pendingFlagResolution);
         } catch (e) {
-          console.log('error in resolve:', e);
+          // ignore
         }
       };
       resolve();
