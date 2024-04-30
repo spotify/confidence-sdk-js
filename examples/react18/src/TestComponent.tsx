@@ -1,10 +1,10 @@
 import { useState } from 'react';
-import { useStringValue } from '@spotify-confidence/integration-react';
+import { useStringFlagValue } from '@openfeature/react-sdk';
 import { useConfidence } from './ConfidenceContext';
 import { OpenFeature } from '@openfeature/web-sdk';
 
 const TestComponent = () => {
-  const str = useStringValue('web-sdk-e2e-flag.str', 'default');
+  const str = useStringFlagValue('web-sdk-e2e-flag.str', 'default');
   const [clickCount, setClickCount] = useState(0);
   const confidence = useConfidence({ component: 'Test' });
   return (
