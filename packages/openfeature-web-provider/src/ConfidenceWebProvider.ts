@@ -36,7 +36,11 @@ export class ConfidenceWebProvider implements Provider {
     if (context) this.confidence.setContext(convertContext(context));
     this.unsubscribe = this.confidence.contextChanges(() => {
       this.events.emit(ProviderEvents.Stale);
-      this.resolve();
+      try {
+        this.resolve();
+      } catch (e) {
+        // ignore
+      }
     });
     await this.resolve();
   }
@@ -55,7 +59,7 @@ export class ConfidenceWebProvider implements Provider {
     this.confidence.setContext(convertContext(changes));
     // following await makes sure that our subscription to context changes has fired (if the context changed)
     await Promise.resolve();
-    await this.flagResolution;
+    await this.pendingFlagResolution;
   }
 
   // private awaitReady():Provider<void> {
@@ -74,11 +78,14 @@ export class ConfidenceWebProvider implements Provider {
       const resolved = await pending;
       if (pending === this.pendingFlagResolution) {
         this.flagResolution = resolved;
+        this.pendingFlagResolution = undefined;
         this.events.emit(ProviderEvents.Ready);
       }
     } catch (e) {
       if (pending === this.pendingFlagResolution) {
+        this.pendingFlagResolution = undefined;
         this.events.emit(ProviderEvents.Error);
+        throw e;
       }
     }
   }

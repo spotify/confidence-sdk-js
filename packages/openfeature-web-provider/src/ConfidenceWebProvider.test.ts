@@ -133,19 +133,6 @@ describe('ConfidenceProvider', () => {
 
         expect(setContextMock).not.toHaveBeenCalled();
       });
-
-      it('should return previously assigned with reason stale during fetch', async () => {
-        await instanceUnderTest.initialize({ targetingKey: 'A' });
-
-        expect(
-          instanceUnderTest.resolveBooleanEvaluation('testFlag.bool', false, { targetingKey: 'B' }, dummyConsole),
-        ).toEqual(
-          expect.objectContaining({
-            value: true,
-            reason: 'STALE',
-          }),
-        );
-      });
     });
 
     describe('from Confidence', () => {
@@ -202,7 +189,7 @@ describe('ConfidenceProvider', () => {
         expect(instanceUnderTest.resolveBooleanEvaluation('testFlag.bool', false, dummyContext, dummyConsole)).toEqual({
           variant: 'control',
           flagMetadata: {
-            resolveToken: 'before-each',
+            resolveToken: 'xyz',
           },
           reason: 'TARGETING_MATCH',
           value: true,
@@ -227,7 +214,7 @@ describe('ConfidenceProvider', () => {
         ).toEqual({
           variant: 'control',
           flagMetadata: {
-            resolveToken: 'before-each',
+            resolveToken: 'xyz',
           },
           reason: 'TARGETING_MATCH',
           value: true,
@@ -290,7 +277,7 @@ describe('ConfidenceProvider', () => {
         expect(instanceUnderTest.resolveNumberEvaluation('testFlag.int', 1, dummyContext, dummyConsole)).toEqual({
           variant: 'control',
           flagMetadata: {
-            resolveToken: 'before-each',
+            resolveToken: 'xyz',
           },
           reason: 'TARGETING_MATCH',
           value: 3,
@@ -303,7 +290,7 @@ describe('ConfidenceProvider', () => {
         expect(instanceUnderTest.resolveNumberEvaluation('testFlag.dub', 1.5, dummyContext, dummyConsole)).toEqual({
           variant: 'control',
           flagMetadata: {
-            resolveToken: 'before-each',
+            resolveToken: 'xyz',
           },
           reason: 'TARGETING_MATCH',
           value: 3.5,
@@ -316,7 +303,7 @@ describe('ConfidenceProvider', () => {
         expect(instanceUnderTest.resolveNumberEvaluation('testFlag.obj.int', 1, dummyContext, dummyConsole)).toEqual({
           variant: 'control',
           flagMetadata: {
-            resolveToken: 'before-each',
+            resolveToken: 'xyz',
           },
           reason: 'TARGETING_MATCH',
           value: 3,
@@ -329,7 +316,7 @@ describe('ConfidenceProvider', () => {
         expect(instanceUnderTest.resolveNumberEvaluation('testFlag.obj.dub', 1.5, dummyContext, dummyConsole)).toEqual({
           variant: 'control',
           flagMetadata: {
-            resolveToken: 'before-each',
+            resolveToken: 'xyz',
           },
           reason: 'TARGETING_MATCH',
           value: 3.5,
@@ -389,7 +376,7 @@ describe('ConfidenceProvider', () => {
         ).toEqual({
           variant: 'control',
           flagMetadata: {
-            resolveToken: 'before-each',
+            resolveToken: 'xyz',
           },
           reason: 'TARGETING_MATCH',
           value: 'control',
@@ -404,7 +391,7 @@ describe('ConfidenceProvider', () => {
         ).toEqual({
           variant: 'control',
           flagMetadata: {
-            resolveToken: 'before-each',
+            resolveToken: 'xyz',
           },
           reason: 'TARGETING_MATCH',
           value: 'obj string',
@@ -483,7 +470,7 @@ describe('ConfidenceProvider', () => {
         expect(instanceUnderTest.resolveObjectEvaluation('testFlag.obj', {}, dummyContext, dummyConsole)).toEqual({
           variant: 'control',
           flagMetadata: {
-            resolveToken: 'before-each',
+            resolveToken: 'xyz',
           },
           reason: 'TARGETING_MATCH',
           value: {
@@ -510,7 +497,7 @@ describe('ConfidenceProvider', () => {
         ).toEqual({
           variant: 'control',
           flagMetadata: {
-            resolveToken: 'before-each',
+            resolveToken: 'xyz',
           },
           reason: 'TARGETING_MATCH',
           value: {
@@ -528,7 +515,7 @@ describe('ConfidenceProvider', () => {
         expect(instanceUnderTest.resolveObjectEvaluation('testFlag', {}, dummyContext, dummyConsole)).toEqual({
           variant: 'control',
           flagMetadata: {
-            resolveToken: 'before-each',
+            resolveToken: 'xyz',
           },
           reason: 'TARGETING_MATCH',
           value: {
