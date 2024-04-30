@@ -63,8 +63,8 @@ describe('EventSenderEngine unit tests', () => {
           eventDefinition: 'my_event',
           eventTime: expect.any(String),
           payload: {
-            message: { a: 0, message: 1 },
-            a: 2,
+            a: 0,
+            message: 1,
           },
         },
       ],

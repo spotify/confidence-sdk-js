@@ -31,8 +31,8 @@ describe('Confidence E2E Tests', () => {
         3,
         4,
         [
-          'message.pants: Field was expected to be of type string, was number',
-          'message.pants: Field was expected to be of type string, was bool',
+          'pants: Field was expected to be of type string, was number',
+          'pants: Field was expected to be of type string, was bool',
         ],
       ]);
     });
