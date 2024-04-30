@@ -82,7 +82,7 @@ export class EventSenderEngine {
     this.writeQueue.push({
       eventDefinition: name,
       eventTime: new Date().toISOString(),
-      payload: { ...context, ...{ message: message } },
+      payload: { ...context, ...message },
     });
     this.clearPendingFlush();
     if (this.writeQueue.length >= this.maxBatchSize) {

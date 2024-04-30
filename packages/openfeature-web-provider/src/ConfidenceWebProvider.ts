@@ -8,7 +8,6 @@ import {
   Provider,
   ProviderEvents,
   ProviderMetadata,
-  ProviderStatus,
   ResolutionDetails,
   ResolutionReason,
 } from '@openfeature/web-sdk';
@@ -23,9 +22,8 @@ export class ConfidenceWebProvider implements Provider {
     name: 'ConfidenceWebProvider',
   };
   readonly events = new OpenFeatureEventEmitter();
-  status: ProviderStatus = ProviderStatus.NOT_READY;
 
-  private pendingFlagResolution?: Promise<FlagResolution>;
+  private pendingFlagResolution?: PromiseLike<FlagResolution>;
   private flagResolution?: FlagResolution;
   private unsubscribe?: () => void;
   private readonly confidence: Confidence;
@@ -37,10 +35,7 @@ export class ConfidenceWebProvider implements Provider {
   async initialize(context?: EvaluationContext): Promise<void> {
     if (context) this.confidence.setContext(convertContext(context));
     this.unsubscribe = this.confidence.contextChanges(() => {
-      if (this.status !== ProviderStatus.STALE) {
-        this.events.emit(ProviderEvents.Stale);
-        this.status = ProviderStatus.STALE;
-      }
+      this.events.emit(ProviderEvents.Stale);
       this.resolve();
     });
     await this.resolve();
@@ -79,12 +74,10 @@ export class ConfidenceWebProvider implements Provider {
       const resolved = await pending;
       if (pending === this.pendingFlagResolution) {
         this.flagResolution = resolved;
-        this.status = ProviderStatus.READY;
         this.events.emit(ProviderEvents.Ready);
       }
     } catch (e) {
       if (pending === this.pendingFlagResolution) {
-        this.status = ProviderStatus.ERROR;
         this.events.emit(ProviderEvents.Error);
       }
     }
@@ -161,7 +154,7 @@ export class ConfidenceWebProvider implements Provider {
         this.confidence.apply(this.flagResolution.resolveToken, flagName);
       }
       logger.info('Value for "%s" successfully evaluated', flagKey);
-      const reason = this.status === ProviderStatus.STALE ? 'STALE' : mapConfidenceReason(flag.reason);
+      const reason = this.pendingFlagResolution ? 'STALE' : mapConfidenceReason(flag.reason);
 
       return {
         value: flagValue.value as T,
