@@ -1,4 +1,4 @@
-import { FlagResolverClient, FlagResolution, PendingFlagResolution } from './FlagResolverClient';
+import { FlagResolverClient, FlagResolution, FlagResolutionPromise } from './FlagResolverClient';
 import { EventSenderEngine } from './EventSenderEngine';
 import { Value } from './Value';
 import { EventSender } from './events';
@@ -39,7 +39,7 @@ export class Confidence implements EventSender, Trackable {
   /** @internal */
   readonly contextChanges: Subscribe<string[]>;
 
-  private flagResolution?: PendingFlagResolution;
+  private flagResolution?: FlagResolutionPromise;
 
   constructor(config: Configuration, parent?: Confidence) {
     this.config = config;
@@ -136,7 +136,7 @@ export class Confidence implements EventSender, Trackable {
   /**
    * @internal
    */
-  resolve(flagNames: string[]): PromiseLike<FlagResolution> {
+  resolve(flagNames: string[]): Promise<FlagResolution> {
     const context = this.getContext();
     if (!this.flagResolution || !Value.equal(context, this.flagResolution.context)) {
       this.flagResolution?.abort();

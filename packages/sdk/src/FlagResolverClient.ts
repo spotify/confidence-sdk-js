@@ -15,21 +15,11 @@ export interface FlagResolverOptions extends Omit<ConfidenceClientOptions, 'appl
   environment: 'client' | 'backend';
 }
 
-export class PendingFlagResolution implements PromiseLike<FlagResolution> {
-  readonly #controller = new AbortController();
-
-  readonly then: <TResult1 = FlagResolution, TResult2 = never>(
-    onfulfilled?: ((value: FlagResolution) => TResult1 | PromiseLike<TResult1>) | null | undefined,
-    onrejected?: ((reason: any) => TResult2 | PromiseLike<TResult2>) | null | undefined,
-  ) => PromiseLike<TResult1 | TResult2>;
+export type FlagResolutionPromise = Promise<FlagResolution> & {
+  readonly context: Context;
   readonly abort: (reason?: any) => void;
+};
 
-  constructor(readonly context: Context, executor: (signal: AbortSignal) => Promise<FlagResolution>) {
-    const promise = executor(this.#controller.signal);
-    this.then = promise.then.bind(promise);
-    this.abort = this.#controller.abort.bind(this.#controller);
-  }
-}
 export class FlagResolverClient {
   private readonly legacyClient: ConfidenceClient;
   private readonly applyManager?: ApplyManager;
@@ -49,8 +39,11 @@ export class FlagResolverClient {
     }
   }
 
-  resolve(context: Context, flags: string[]): PendingFlagResolution {
-    return new PendingFlagResolution(context, signal => this.legacyClient.resolve(context, { flags, signal }));
+  resolve(context: Context, flags: string[]): FlagResolutionPromise {
+    const abortController = new AbortController();
+    const abort = abortController.abort.bind(abortController);
+    const promise = this.legacyClient.resolve(context, { flags, signal: abortController.signal });
+    return Object.assign(promise, { context, abort });
   }
 
   apply(resolveToken: string, flagName: string): void {

@@ -23,8 +23,8 @@ export class ConfidenceWebProvider implements Provider {
   };
   readonly events = new OpenFeatureEventEmitter();
 
-  private pendingFlagResolution?: PromiseLike<FlagResolution>;
-  private flagResolution?: FlagResolution;
+  private pendingFlagResolution?: Promise<FlagResolution>;
+  private currentFlagResolution?: FlagResolution;
   private unsubscribe?: () => void;
   private readonly confidence: Confidence;
 
@@ -48,7 +48,7 @@ export class ConfidenceWebProvider implements Provider {
   async onClose(): Promise<void> {
     this.unsubscribe?.();
     // this.flagResolution?.cancel();
-    this.flagResolution = undefined;
+    this.currentFlagResolution = undefined;
   }
 
   async onContextChange(oldContext: EvaluationContext, newContext: EvaluationContext): Promise<void> {
@@ -77,7 +77,7 @@ export class ConfidenceWebProvider implements Provider {
     try {
       const resolved = await pending;
       if (pending === this.pendingFlagResolution) {
-        this.flagResolution = resolved;
+        this.currentFlagResolution = resolved;
         this.pendingFlagResolution = undefined;
         this.events.emit(ProviderEvents.Ready);
       }
@@ -96,7 +96,7 @@ export class ConfidenceWebProvider implements Provider {
     _context: EvaluationContext,
     logger: Logger,
   ): ResolutionDetails<T> {
-    if (!this.flagResolution) {
+    if (!this.currentFlagResolution) {
       logger.warn('Provider not ready');
       return {
         errorCode: ErrorCode.PROVIDER_NOT_READY,
@@ -108,7 +108,7 @@ export class ConfidenceWebProvider implements Provider {
     const [flagName, ...pathParts] = flagKey.split('.');
 
     try {
-      const flag = this.flagResolution.flags[flagName];
+      const flag = this.currentFlagResolution.flags[flagName];
 
       if (!flag) {
         logger.warn('Flag "%s" was not found', flagName);
@@ -121,7 +121,7 @@ export class ConfidenceWebProvider implements Provider {
 
       if (FlagResolution.ResolveReason.NoSegmentMatch === flag.reason) {
         if (this.confidence.environment === 'client') {
-          this.confidence.apply(this.flagResolution.resolveToken, flagName);
+          this.confidence.apply(this.currentFlagResolution.resolveToken, flagName);
         }
         return {
           value: defaultValue,
@@ -158,7 +158,7 @@ export class ConfidenceWebProvider implements Provider {
       }
 
       if (this.confidence.environment === 'client') {
-        this.confidence.apply(this.flagResolution.resolveToken, flagName);
+        this.confidence.apply(this.currentFlagResolution.resolveToken, flagName);
       }
       logger.info('Value for "%s" successfully evaluated', flagKey);
       const reason = this.pendingFlagResolution ? 'STALE' : mapConfidenceReason(flag.reason);
@@ -168,7 +168,7 @@ export class ConfidenceWebProvider implements Provider {
         reason: reason,
         variant: flag.variant,
         flagMetadata: {
-          resolveToken: this.flagResolution.resolveToken,
+          resolveToken: this.currentFlagResolution.resolveToken,
         },
       };
     } catch (e: unknown) {
