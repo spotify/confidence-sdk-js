@@ -7,7 +7,7 @@ import { Logger } from './logger';
 import { visitorIdentity } from './trackers';
 import { Trackable } from './Trackable';
 import { Closer } from './Closer';
-import { Subscribe, Observer, subject, debounceUnique } from './observing';
+import { Subscribe, Observer, subject } from './observing';
 
 export { FlagResolverClient, FlagResolution };
 
@@ -44,21 +44,19 @@ export class Confidence implements EventSender, Trackable {
   constructor(config: Configuration, parent?: Confidence) {
     this.config = config;
     this.parent = parent;
-    this.contextChanges = debounceUnique(
-      subject(observer => {
-        let parentSubscription: Closer | void;
-        if (parent) {
-          parentSubscription = parent.contextChanges(keys => {
-            observer(keys.filter(key => !this._context.has(key)));
-          });
-        }
-        this.contextChanged = observer;
-        return () => {
-          parentSubscription?.();
-          this.contextChanged = undefined;
-        };
-      }),
-    );
+    this.contextChanges = subject(observer => {
+      let parentSubscription: Closer | void;
+      if (parent) {
+        parentSubscription = parent.contextChanges(keys => {
+          observer(keys.filter(key => !this._context.has(key)));
+        });
+      }
+      this.contextChanged = observer;
+      return () => {
+        parentSubscription?.();
+        this.contextChanged = undefined;
+      };
+    });
   }
 
   get environment(): string {
@@ -137,12 +135,15 @@ export class Confidence implements EventSender, Trackable {
    * @internal
    */
   resolve(flagNames: string[]): Promise<FlagResolution> {
-    const context = this.getContext();
-    if (!this.flagResolution || !Value.equal(context, this.flagResolution.context)) {
-      this.flagResolution?.abort();
-      this.flagResolution = this.config.flagResolverClient.resolve(context, flagNames);
-    }
-    return this.flagResolution;
+    // we first resolve a promise so that if multiple context changes happen in the same tick, we still only make one resolve
+    return Promise.resolve().then(() => {
+      const context = this.getContext();
+      if (!this.flagResolution || !Value.equal(context, this.flagResolution.context)) {
+        this.flagResolution?.abort();
+        this.flagResolution = this.config.flagResolverClient.resolve(context, flagNames);
+      }
+      return this.flagResolution;
+    })
   }
 
   /**

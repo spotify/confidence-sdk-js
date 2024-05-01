@@ -57,20 +57,8 @@ export class ConfidenceWebProvider implements Provider {
       return;
     }
     this.confidence.setContext(convertContext(changes));
-    // following await makes sure that our subscription to context changes has fired (if the context changed)
-    await Promise.resolve();
     await this.pendingFlagResolution;
   }
-
-  // private awaitReady():Provider<void> {
-  //   return new Promise<void>(resolve => {
-  //     const handler = () => {
-  //       resolve();
-  //       this.events.removeHandler(ProviderEvents.Ready, handler);
-  //     }
-  //     this.events.addHandler(ProviderEvents.Ready, handler);
-  //   })
-  // }
 
   private async resolve(): Promise<void> {
     const pending = (this.pendingFlagResolution = this.confidence.resolve([]));

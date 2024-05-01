@@ -111,12 +111,10 @@ describe('Confidence', () => {
       const close = confidence.contextChanges(observerMock);
 
       confidence.setContext({ pantsOn: true, pantsColor: 'yellow' });
-      confidence.setContext({ pantsPattern: 'striped' });
+      expect(observerMock).toHaveBeenCalledWith(['pantsOn', 'pantsColor']);
 
-      await Promise.resolve();
-
-      expect(observerMock).toHaveBeenCalledOnce();
-      expect(observerMock).toHaveBeenCalledWith(['pantsOn', 'pantsColor', 'pantsPattern']);
+      confidence.setContext({ pantsOn: false, pantsColor: 'yellow', pantsPattern: 'striped' });
+      expect(observerMock).toHaveBeenCalledWith(['pantsOn', 'pantsPattern']);
 
       close();
     });
@@ -129,12 +127,13 @@ describe('Confidence', () => {
       const close = child.contextChanges(observerMock);
 
       parent.setContext({ pantsOn: true, pantsColor: 'yellow' });
+
+      // child has pantsColor that shadows the update from parent
+      expect(observerMock).toHaveBeenCalledWith(['pantsOn']);
+
       child.setContext({ pantsPattern: 'striped' });
 
-      await Promise.resolve();
-
-      expect(observerMock).toHaveBeenCalledOnce();
-      expect(observerMock).toHaveBeenCalledWith(['pantsPattern', 'pantsOn']);
+      expect(observerMock).toHaveBeenCalledWith(['pantsPattern']);
 
       close();
     });
