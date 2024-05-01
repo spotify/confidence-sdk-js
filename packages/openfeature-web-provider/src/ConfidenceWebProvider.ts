@@ -68,6 +68,7 @@ export class ConfidenceWebProvider implements Provider {
         this.currentFlagResolution = resolved;
         this.pendingFlagResolution = undefined;
         this.events.emit(ProviderEvents.Ready);
+        this.events.emit(ProviderEvents.ConfigurationChanged);
       }
     } catch (e) {
       if (pending === this.pendingFlagResolution) {
