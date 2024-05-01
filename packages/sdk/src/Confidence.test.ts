@@ -11,7 +11,7 @@ describe('Confidence', () => {
       }).toThrow('Cannot add property pants, object is not extensible');
     });
   });
-  describe('put', () => {
+  describe('setContext', () => {
     it('defensively copies values', () => {
       const confidence = new Confidence({} as any);
       const clothes = { pants: 'yellow' };
@@ -19,8 +19,7 @@ describe('Confidence', () => {
       clothes.pants = 'blue';
       expect(confidence.getContext()).toEqual({ clothes: { pants: 'yellow' } });
     });
-  });
-  describe('setContext', () => {
+
     it('sets context', () => {
       const confidence = new Confidence({} as any);
       const newContext = {
@@ -103,7 +102,7 @@ describe('Confidence', () => {
   });
 
   describe('contextChanges', () => {
-    it('should emit one change on multiple context changes', async () => {
+    it('should emit one context change for each setContext call', async () => {
       const confidence = new Confidence({} as any);
 
       const observerMock = jest.fn();
@@ -118,7 +117,7 @@ describe('Confidence', () => {
 
       close();
     });
-    it('should emit one change on multiple context changes from parent', async () => {
+    it('should emit context change for setContext calls in parent', async () => {
       const parent = new Confidence({} as any);
       const child = parent.withContext({ pantsColor: 'blue' });
 

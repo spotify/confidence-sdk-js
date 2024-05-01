@@ -47,8 +47,8 @@ export class ConfidenceWebProvider implements Provider {
 
   async onClose(): Promise<void> {
     this.unsubscribe?.();
-    // this.flagResolution?.cancel();
     this.currentFlagResolution = undefined;
+    this.pendingFlagResolution = undefined;
   }
 
   async onContextChange(oldContext: EvaluationContext, newContext: EvaluationContext): Promise<void> {

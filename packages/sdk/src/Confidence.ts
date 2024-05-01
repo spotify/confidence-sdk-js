@@ -183,7 +183,7 @@ export class Confidence implements EventSender, Trackable {
       clientSecret,
       maxBatchSize,
       flushTimeoutMilliseconds,
-      fetchImplementation: fetchImplementation,
+      fetchImplementation,
       region: nonGlobalRegion(region),
       // we set rate limit to support the flushTimeout
       // on backend, the rate limit would be ∞
