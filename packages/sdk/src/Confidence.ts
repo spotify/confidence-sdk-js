@@ -143,7 +143,7 @@ export class Confidence implements EventSender, Trackable {
         this.flagResolution = this.config.flagResolverClient.resolve(context, flagNames);
       }
       return this.flagResolution;
-    })
+    });
   }
 
   /**
