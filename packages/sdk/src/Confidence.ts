@@ -111,8 +111,9 @@ export class Confidence implements EventSender, Trackable {
     this._context.clear();
     if (this.contextChanged) {
       const newContext = this.getContext();
-      const uniqueKeys = Array.from(new Set([...Object.keys(oldContext), ...Object.keys(newContext)]));
-      this.contextChanged(uniqueKeys.filter(key => !Value.equal(oldContext[key], newContext[key])));
+      const unionKeys = Array.from(new Set([...Object.keys(oldContext), ...Object.keys(newContext)]));
+      const changedKeys = unionKeys.filter(key => !Value.equal(oldContext[key], newContext[key]))
+      if(changedKeys.length) this.contextChanged(changedKeys);
     }
   }
 
