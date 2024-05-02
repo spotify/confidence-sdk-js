@@ -1,7 +1,7 @@
 {
   "packages/client-http": "0.1.5",
-  "packages/integration-react": "0.2.2-rc.0",
-  "packages/openfeature-server-provider": "0.2.2-rc.0",
-  "packages/openfeature-web-provider": "0.2.2-rc.0",
+  "packages/integration-react": "0.2.3",
+  "packages/openfeature-server-provider": "0.2.3",
+  "packages/openfeature-web-provider": "0.2.3",
   "packages/sdk": "0.0.4"
 }

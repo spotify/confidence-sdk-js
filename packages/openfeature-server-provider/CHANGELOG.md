@@ -12,6 +12,13 @@
   * dependencies
     * @spotify-confidence/sdk bumped from 0.0.2 to 0.0.3
 
+## [0.2.3](https://github.com/spotify/confidence-openfeature-provider-js/compare/openfeature-server-provider-v0.2.2-rc.0...openfeature-server-provider-v0.2.3) (2024-05-02)
+
+
+### 🚦 CI
+
+* drop "rc" from version: server-provider ([4a533be](https://github.com/spotify/confidence-openfeature-provider-js/commit/4a533be8d2bb5e2b8b2f60c97531fe225b8929ff))
+
 ## [0.2.2-rc.0](https://github.com/spotify/confidence-openfeature-provider-js/compare/openfeature-server-provider-v0.2.1-rc.0...openfeature-server-provider-v0.2.2-rc.0) (2024-04-30)
 
 

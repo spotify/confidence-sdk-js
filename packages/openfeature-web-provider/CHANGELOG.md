@@ -6,6 +6,13 @@
   * dependencies
     * @spotify-confidence/client-http bumped from ^0.1.2 to ^0.1.3
 
+## [0.2.3](https://github.com/spotify/confidence-openfeature-provider-js/compare/openfeature-web-provider-v0.2.2-rc.0...openfeature-web-provider-v0.2.3) (2024-05-02)
+
+
+### 🚦 CI
+
+* drop "rc" from version: web-provider ([3fe9840](https://github.com/spotify/confidence-openfeature-provider-js/commit/3fe98403652ad08681ae127352c09ec5321b6a94))
+
 ## [0.2.2-rc.0](https://github.com/spotify/confidence-openfeature-provider-js/compare/openfeature-web-provider-v0.2.1-rc.0...openfeature-web-provider-v0.2.2-rc.0) (2024-04-30)
 
 

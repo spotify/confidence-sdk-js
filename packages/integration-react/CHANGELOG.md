@@ -24,6 +24,20 @@
   * devDependencies
     * @spotify-confidence/openfeature-web-provider bumped from ^0.2.0-rc.0 to ^0.2.1-rc.0
 
+## [0.2.3](https://github.com/spotify/confidence-openfeature-provider-js/compare/integration-react-v0.2.2-rc.0...integration-react-v0.2.3) (2024-05-02)
+
+
+### 🚦 CI
+
+* drop "rc" from version: react-integration ([099578a](https://github.com/spotify/confidence-openfeature-provider-js/commit/099578af808a9fb0aa06283851c94d6062349013))
+
+
+### Dependencies
+
+* The following workspace dependencies were updated
+  * devDependencies
+    * @spotify-confidence/openfeature-web-provider bumped from ^0.2.2-rc.0 to ^0.2.3
+
 ## [0.2.2-rc.0](https://github.com/spotify/confidence-openfeature-provider-js/compare/integration-react-v0.2.1-rc.0...integration-react-v0.2.2-rc.0) (2024-04-30)
 
 
