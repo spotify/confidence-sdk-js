@@ -14,7 +14,7 @@
   },
   "peerDependencies": {
     "@openfeature/web-sdk": "^1.0.3",
-    "@spotify-confidence/sdk": "0.0.4"
+    "@spotify-confidence/sdk": "^0.0.4"
   },
   "scripts": {
     "build:esm": "tsc -p tsconfig.esm.json",
