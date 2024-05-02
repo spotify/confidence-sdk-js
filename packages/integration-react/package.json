@@ -19,6 +19,7 @@
     "@openfeature/core": "^1.1.0",
     "@openfeature/web-sdk": "^1.0.3",
     "@spotify-confidence/openfeature-web-provider": "^0.2.2-rc.0",
+    "@spotify-confidence/sdk": "0.0.4",
     "@testing-library/jest-dom": "^5.16.5",
     "@testing-library/react": "^14.0.0",
     "@types/use-sync-external-store": "^0.0.4",
