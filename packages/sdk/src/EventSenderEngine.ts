@@ -109,10 +109,10 @@ export class EventSenderEngine {
     })
       .then(errors => {
         if (errors.length === 0) {
-          this.logger.trace?.('Confidence: successfully uploaded %i events', batchSize);
+          this.logger.info?.('Confidence: successfully uploaded %i events', batchSize);
           return true;
         }
-        const distinctErrorMessages = Array.from(new Set(errors.map(({ message }) => message)));
+        const distinctErrorMessages = Array.from(new Set(errors.map(({ reason, message }) => message || reason)));
         this.logger.warn?.(
           'Confidence: failed to upload %i out of %i event(s) with the following errors: %o',
           errors.length,

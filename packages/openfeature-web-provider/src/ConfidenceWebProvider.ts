@@ -86,7 +86,7 @@ export class ConfidenceWebProvider implements Provider {
     logger: Logger,
   ): ResolutionDetails<T> {
     if (!this.currentFlagResolution) {
-      logger.warn('Provider not ready');
+      logger.warn('Confidence: provider not ready');
       return {
         errorCode: ErrorCode.PROVIDER_NOT_READY,
         value: defaultValue,
@@ -100,7 +100,7 @@ export class ConfidenceWebProvider implements Provider {
       const flag = this.currentFlagResolution.flags[flagName];
 
       if (!flag) {
-        logger.warn('Flag "%s" was not found', flagName);
+        logger.warn('Confidence: flag "%s" was not found', flagName);
         return {
           errorCode: ErrorCode.FLAG_NOT_FOUND,
           value: defaultValue,
@@ -122,7 +122,7 @@ export class ConfidenceWebProvider implements Provider {
       try {
         flagValue = FlagResolution.FlagValue.traverse(flag, pathParts.join('.'));
       } catch (e) {
-        logger.warn('Value with path "%s" was not found in flag "%s"', pathParts.join('.'), flagName);
+        logger.warn('Confidence: value with path "%s" was not found in flag "%s"', pathParts.join('.'), flagName);
         return {
           errorCode: ErrorCode.PARSE_ERROR,
           value: defaultValue,
@@ -138,7 +138,7 @@ export class ConfidenceWebProvider implements Provider {
       }
 
       if (!FlagResolution.FlagValue.matches(flagValue, defaultValue)) {
-        logger.warn('Value for "%s" is of incorrect type', flagKey);
+        logger.warn('Confidence: value for "%s" is of incorrect type', flagKey);
         return {
           errorCode: ErrorCode.TYPE_MISMATCH,
           value: defaultValue,
@@ -149,7 +149,7 @@ export class ConfidenceWebProvider implements Provider {
       if (this.confidence.environment === 'client') {
         this.confidence.apply(this.currentFlagResolution.resolveToken, flagName);
       }
-      logger.info('Value for "%s" successfully evaluated', flagKey);
+      logger.info('Confidence: value for "%s" successfully evaluated', flagKey);
       const reason = this.pendingFlagResolution ? 'STALE' : mapConfidenceReason(flag.reason);
 
       return {
@@ -161,7 +161,7 @@ export class ConfidenceWebProvider implements Provider {
         },
       };
     } catch (e: unknown) {
-      logger.warn('Error %o occurred in flag evaluation', e);
+      logger.warn('Confidence: error %o occurred in flag evaluation', e);
       return {
         errorCode: ErrorCode.GENERAL,
         value: defaultValue,

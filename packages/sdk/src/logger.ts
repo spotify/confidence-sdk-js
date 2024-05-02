@@ -1,7 +1,7 @@
 export namespace Logger {
   type Mutable<T> = { -readonly [P in keyof T]: T[P] };
   const NOOP_LOGGER = Object.freeze({});
-  const LEVELS = ['trace', 'debug', 'warn', 'error'] as const;
+  const LEVELS = ['trace', 'debug', 'info', 'warn', 'error'] as const;
   export type Fn = (message: string, ...optionalParams: any[]) => void;
   export type Level = (typeof LEVELS)[number];
 
@@ -20,6 +20,7 @@ export namespace Logger {
 export interface Logger {
   readonly trace?: Logger.Fn;
   readonly debug?: Logger.Fn;
+  readonly info?: Logger.Fn;
   readonly warn?: Logger.Fn;
   readonly error?: Logger.Fn;
 }

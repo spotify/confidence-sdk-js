@@ -2,7 +2,7 @@ import { Confidence } from './Confidence';
 
 describe('Confidence E2E Tests', () => {
   const loggerMock = {
-    trace: jest.fn(),
+    info: jest.fn(),
     warn: jest.fn(),
     error: jest.fn(),
   };
@@ -18,7 +18,7 @@ describe('Confidence E2E Tests', () => {
     it('should log a trace message when all events succeed', async () => {
       confidence.track('js-sdk-e2e-tests', { pants: 'blue' });
       confidence.track('js-sdk-e2e-tests', { pants: 'yellow' });
-      expect(await nextMockArgs(loggerMock.trace)).toEqual(['Confidence: successfully uploaded %i events', 2]);
+      expect(await nextMockArgs(loggerMock.info)).toEqual(['Confidence: successfully uploaded %i events', 2]);
     });
     it('should log a warning message when some events fail', async () => {
       confidence.track('js-sdk-e2e-tests', { pants: 'red' });
