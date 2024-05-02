@@ -50,7 +50,7 @@ export class Confidence implements EventSender, Trackable {
       if (parent) {
         parentSubscription = parent.contextChanges(keys => {
           const visibleKeys = keys.filter(key => !this._context.has(key));
-          if(visibleKeys.length) observer(visibleKeys);
+          if (visibleKeys.length) observer(visibleKeys);
         });
       }
       this.contextChanged = observer;
@@ -113,8 +113,8 @@ export class Confidence implements EventSender, Trackable {
     if (this.contextChanged) {
       const newContext = this.getContext();
       const unionKeys = Array.from(new Set([...Object.keys(oldContext), ...Object.keys(newContext)]));
-      const changedKeys = unionKeys.filter(key => !Value.equal(oldContext[key], newContext[key]))
-      if(changedKeys.length) this.contextChanged(changedKeys);
+      const changedKeys = unionKeys.filter(key => !Value.equal(oldContext[key], newContext[key]));
+      if (changedKeys.length) this.contextChanged(changedKeys);
     }
   }
 
@@ -138,13 +138,13 @@ export class Confidence implements EventSender, Trackable {
    * @internal
    */
   resolve(flagNames: string[]): Promise<FlagResolution> {
-    const timeout:Promise<never> = new Promise((_resolve, reject) => {
+    const timeout: Promise<never> = new Promise((_resolve, reject) => {
       setTimeout(() => {
-        reject(new Error(`Resolve timed out after ${this.config.timeout}ms`))
+        reject(new Error(`Resolve timed out after ${this.config.timeout}ms`));
       }, this.config.timeout);
-    })
+    });
     // we first resolve a promise so that if multiple context changes happen in the same tick, we still only make one resolve
-    const resolve =  Promise.resolve().then(() => {
+    const resolve = Promise.resolve().then(() => {
       const context = this.getContext();
       if (!this.flagResolution || !Value.equal(context, this.flagResolution.context)) {
         this.flagResolution?.abort(new Error('Resolve aborted due to stale context'));
@@ -205,7 +205,7 @@ export class Confidence implements EventSender, Trackable {
       environment: environment,
       flagResolverClient,
       eventSenderEngine: eventSenderEngine,
-      timeout, 
+      timeout,
       logger,
     });
     if (environment === 'client') {
