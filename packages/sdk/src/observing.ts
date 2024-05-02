@@ -9,7 +9,7 @@ export function subject<T>(observable: Subscribe<T>): Subscribe<T> {
   let stop: Closer | undefined;
   const start = () => {
     if (stop) throw new Error('Observer already started');
-    const observer = (value: T) => {
+    const emit = (value: T) => {
       if (stop !== myStop) throw new Error('Observer called after close');
       for (const observer of observers) {
         observer(value);
@@ -19,7 +19,7 @@ export function subject<T>(observable: Subscribe<T>): Subscribe<T> {
       close();
       stop = undefined;
     });
-    const close = observable(observer);
+    const close = observable(emit);
   };
   return (observer: Observer<T>) => {
     if (observers.has(observer)) throw new Error('Observer already subscribed');
@@ -31,9 +31,11 @@ export function subject<T>(observable: Subscribe<T>): Subscribe<T> {
   };
 }
 
-export type Timeout = (callback: () => void) => Closer;
-export namespace Timeout {
-  export const microTask: Timeout = callback => {
+export type Scheduler = (callback: () => void) => Closer;
+
+// eslint-disable-next-line @typescript-eslint/no-redeclare
+export namespace Scheduler {
+  export const microTask: Scheduler = callback => {
     let isClosed = false;
     Promise.resolve().then(() => isClosed || callback());
     return () => {
@@ -41,7 +43,7 @@ export namespace Timeout {
     };
   };
 
-  export function millis(value: number): Timeout {
+  export function millis(value: number): Scheduler {
     return callback => {
       const id = setTimeout(callback, value);
       return () => {
@@ -51,7 +53,7 @@ export namespace Timeout {
   }
 }
 
-export function debounceUnique<T>(source: Subscribe<T[]>, timeout: Timeout = Timeout.microTask): Subscribe<T[]> {
+export function debounceUnique<T>(source: Subscribe<T[]>, timeout: Scheduler = Scheduler.microTask): Subscribe<T[]> {
   return observer => {
     const buffer: Set<T> = new Set();
     const emit = () => {

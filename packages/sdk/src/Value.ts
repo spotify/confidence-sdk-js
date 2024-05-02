@@ -69,8 +69,9 @@ export namespace Value {
         return jsType;
       case 'object':
         return Array.isArray(value) ? 'List' : 'Struct';
+      default:
+        throw new TypeError(`Invalid Value type "${jsType}"`);
     }
-    throw new TypeError(`Invalid Value type "${jsType}"`);
   }
 }
 // eslint-disable-next-line @typescript-eslint/no-redeclare
