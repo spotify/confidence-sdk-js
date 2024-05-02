@@ -40,12 +40,12 @@ OpenFeature.setContext({
 await OpenFeature.setProviderAndWait(provider);
 
 const client = OpenFeature.getClient();
-const result = client.getBooleanValue('flag.my-boolean', false);
+const result = client.getBooleanValue('flagName.my-boolean', false);
 ```
 
 Notes:
 
-- In the above example we first set the context and then set the provider and await for the provider to become ready before getting flags values. Other ways of arranging these calls might make more sense depending on what app framework you are using. See the example apps for more inspiration.
+- In the above example we first set the context and then set the provider and await for the provider to become ready before getting the flag value. Other ways of arranging these calls might make more sense depending on what app framework you are using. See the example apps for more inspiration.
 
 ## Region
 
