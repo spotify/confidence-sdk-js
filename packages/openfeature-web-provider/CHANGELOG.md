@@ -6,6 +6,66 @@
   * dependencies
     * @spotify-confidence/client-http bumped from ^0.1.2 to ^0.1.3
 
+## [0.2.0-rc.0](https://github.com/spotify/confidence-openfeature-provider-js/compare/openfeature-web-provider-v0.2.2...openfeature-web-provider-v0.2.0-rc.0) (2024-05-02)
+
+
+### ⚠ BREAKING CHANGES
+
+* Since our peer dependency to `@openfeature/js-sdk` changed into `@openfeature/server-sdk`, users need to install the new package which is concidered a breaking change.
+* **client-http,web,server,react,examples:** new required option: timeout
+
+### 🐛 Bug Fixes
+
+* allow the full flag to be resolved ([#56](https://github.com/spotify/confidence-openfeature-provider-js/issues/56)) ([fa4c7a8](https://github.com/spotify/confidence-openfeature-provider-js/commit/fa4c7a8641206b7212f50f7e42d953b3056e762c))
+* bump openfeature sdks ([0d01b77](https://github.com/spotify/confidence-openfeature-provider-js/commit/0d01b778031c9623b045b45656cc7cc21846b8ac)), closes [#5](https://github.com/spotify/confidence-openfeature-provider-js/issues/5)
+* ensure the target output is esm or cjs ([3990909](https://github.com/spotify/confidence-openfeature-provider-js/commit/3990909534d0e253df312543f0f756f8989aa294))
+* return the prev assigned value while provider is stale ([#103](https://github.com/spotify/confidence-openfeature-provider-js/issues/103)) ([2faf4c0](https://github.com/spotify/confidence-openfeature-provider-js/commit/2faf4c0f249f4e94d3cdd1d75d959d7c5db960a9))
+* set correct internal dependencies ([9db8544](https://github.com/spotify/confidence-openfeature-provider-js/commit/9db8544d35410715005f2db82750c87484387c40))
+* **web,server,client-http:** send apply for flags with NO_SEGMENT_MATCH ([30b0956](https://github.com/spotify/confidence-openfeature-provider-js/commit/30b0956ae9f505552fae3b6cf19f670cd0c650f9))
+* **web:** set max buffer size for apply ([f774150](https://github.com/spotify/confidence-openfeature-provider-js/commit/f774150d47b92ba6780af6e47a8705a32f7c35d6))
+
+
+### ✨ New Features
+
+* **client-http,web,server,react,examples:** add timeout for network request ([f460b97](https://github.com/spotify/confidence-openfeature-provider-js/commit/f460b97ec4e1c56375de52fd1eb664c7b9be1f35))
+* **client-http,web,server:** send sdk version ([23245ac](https://github.com/spotify/confidence-openfeature-provider-js/commit/23245acc3200eb9b0315e0d8374d226f442c6607))
+* **client-http:** improved request logic ([81aee93](https://github.com/spotify/confidence-openfeature-provider-js/commit/81aee937921d28851400d63284c0ab3a7a882ed1))
+* make provider fetchImplementation optional ([cd242a6](https://github.com/spotify/confidence-openfeature-provider-js/commit/cd242a60804d5565f69d12ec0d35acf8d980f11e))
+* managed contexts and events ([#102](https://github.com/spotify/confidence-openfeature-provider-js/issues/102)) ([a6dc75c](https://github.com/spotify/confidence-openfeature-provider-js/commit/a6dc75c147b50cda9ce27a1c0ca622cd191c7142))
+* send sdk info with apply events ([6b95d0e](https://github.com/spotify/confidence-openfeature-provider-js/commit/6b95d0ea90059cae6fd71882a13a65ee84eb0e2c))
+* **web:** default to global region ([2f09c27](https://github.com/spotify/confidence-openfeature-provider-js/commit/2f09c275062b916f4e924e87dcc8256e9c23a6fc))
+
+
+### 🧹 Chore
+
+* of bump core 1.1.0, web 1.0.3, server 1.13.5 ([#117](https://github.com/spotify/confidence-openfeature-provider-js/issues/117)) ([7934996](https://github.com/spotify/confidence-openfeature-provider-js/commit/793499690e5b18b1c26a6f8e317bce27252574d7))
+* prepare versions [skip ci] ([c377e3d](https://github.com/spotify/confidence-openfeature-provider-js/commit/c377e3d6611011820bd7799860f96aa1f5fcbe0b))
+* prepare versions [skip ci] ([99d0257](https://github.com/spotify/confidence-openfeature-provider-js/commit/99d02572459a332db6926bc10309f165e966431f))
+* release main ([86023f5](https://github.com/spotify/confidence-openfeature-provider-js/commit/86023f5a9cb5c641213ae7754be2395174754119))
+* release main ([f2461b2](https://github.com/spotify/confidence-openfeature-provider-js/commit/f2461b20ffca3c56183193856fe529542e880be7))
+* release main ([bf00676](https://github.com/spotify/confidence-openfeature-provider-js/commit/bf00676216a4c9ca3f59ac01d5bf444ab5c24f85))
+* release main ([46e0ddd](https://github.com/spotify/confidence-openfeature-provider-js/commit/46e0ddd79f7b5b3cdff630f773ff4c1f3009ec9c))
+* release main ([a50774b](https://github.com/spotify/confidence-openfeature-provider-js/commit/a50774bd7b6cf2e139da5ea79341d825872b5b69))
+* release main ([2bf37b7](https://github.com/spotify/confidence-openfeature-provider-js/commit/2bf37b7bab49dfe95fe753ad28689827d9885743))
+* release main ([6066377](https://github.com/spotify/confidence-openfeature-provider-js/commit/6066377a115fb694a7af12ee1a7dc60f73b2fee3))
+* release main ([#104](https://github.com/spotify/confidence-openfeature-provider-js/issues/104)) ([e434adc](https://github.com/spotify/confidence-openfeature-provider-js/commit/e434adc99a1668ffaf6ac95557a877b4af4c3cfb))
+* release main ([#121](https://github.com/spotify/confidence-openfeature-provider-js/issues/121)) ([bf3ab8d](https://github.com/spotify/confidence-openfeature-provider-js/commit/bf3ab8dd47e57a642759ac22ecfac8ecb9ae1d65))
+* release main ([#44](https://github.com/spotify/confidence-openfeature-provider-js/issues/44)) ([1e3bab4](https://github.com/spotify/confidence-openfeature-provider-js/commit/1e3bab432bdf07def4fa17995e9705af19eb5c64))
+* upgrade OpenFeature dependencies ([8f27a92](https://github.com/spotify/confidence-openfeature-provider-js/commit/8f27a924aa5eb7662fdf73be6564eb2e3580b2fc))
+
+
+### 📚 Documentation
+
+* add concept apply docs ([0274284](https://github.com/spotify/confidence-openfeature-provider-js/commit/02742845d029e994c0f83c4acc2bff9f796a3dad))
+* update readme with setProviderAndWait ([6dd6847](https://github.com/spotify/confidence-openfeature-provider-js/commit/6dd6847ce513f31491ed88f75cd13d7f598bc366))
+
+
+### 🔄 Refactoring
+
+* **client-http,web,server:** use a serializable and more simple configuration object ([fc2093f](https://github.com/spotify/confidence-openfeature-provider-js/commit/fc2093ff51d9525ca866854384751daa9148c6f6))
+* providers depend on total confidence ([ac4a56b](https://github.com/spotify/confidence-openfeature-provider-js/commit/ac4a56be0e858cdccacd7fef248ebfec3a2e5dc0))
+* **web:** set access apply to default, add docs ([91d9ebf](https://github.com/spotify/confidence-openfeature-provider-js/commit/91d9ebff2ee826d6549587406e0ab61584ce0263))
+
 ## [0.2.2-rc.0](https://github.com/spotify/confidence-openfeature-provider-js/compare/openfeature-web-provider-v0.2.1-rc.0...openfeature-web-provider-v0.2.2-rc.0) (2024-04-30)
 
 
