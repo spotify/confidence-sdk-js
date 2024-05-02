@@ -11,11 +11,16 @@ import { Context } from './context';
 
 const APPLY_TIMEOUT = 250;
 const MAX_APPLY_BUFFER_SIZE = 20;
-export interface FlagResolverOptions extends Omit<ConfidenceClientOptions, 'apply'> {
+export interface FlagResolverOptions extends Omit<ConfidenceClientOptions, 'apply' | 'timeout'> {
   environment: 'client' | 'backend';
 }
 
-class FlagResolverClient {
+export type FlagResolutionPromise = Promise<FlagResolution> & {
+  readonly context: Context;
+  readonly abort: (reason?: any) => void;
+};
+
+export class FlagResolverClient {
   private readonly legacyClient: ConfidenceClient;
   private readonly applyManager?: ApplyManager;
 
@@ -24,6 +29,7 @@ class FlagResolverClient {
       ...options,
       apply: environment === 'backend',
       fetchImplementation: environment === 'client' ? withRequestLogic(fetchImplementation) : fetchImplementation,
+      timeout: Number.POSITIVE_INFINITY,
     });
     if (environment === 'client') {
       this.applyManager = new ApplyManager({
@@ -34,8 +40,11 @@ class FlagResolverClient {
     }
   }
 
-  resolve({ openFeature, ...context }: Context, flags: string[]): Promise<FlagResolution> {
-    return this.legacyClient.resolve({ ...context, ...openFeature }, { flags });
+  resolve(context: Context, flags: string[]): FlagResolutionPromise {
+    const abortController = new AbortController();
+    const abort = abortController.abort.bind(abortController);
+    const promise = this.legacyClient.resolve(context, { flags, signal: abortController.signal });
+    return Object.assign(promise, { context, abort });
   }
 
   apply(resolveToken: string, flagName: string): void {
@@ -43,12 +52,10 @@ class FlagResolverClient {
   }
 }
 
-export { FlagResolverClient, FlagResolution, abortableSleep };
+export { FlagResolution, abortableSleep };
 
 export function withRequestLogic(fetchImplementation: (request: Request) => Promise<Response>): typeof fetch {
   const fetchResolve = new FetchBuilder()
-    // always cancel previous resolve
-    .abortPrevious()
     // infinite retries without delay until aborted by timeout
     .retry()
     .rejectNotOk()

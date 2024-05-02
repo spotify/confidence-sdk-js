@@ -15,13 +15,17 @@ import equal from 'fast-deep-equal';
 
 import { Confidence, FlagResolution, Value, Context } from '@spotify-confidence/sdk';
 
+type Mutable<T> = { -readonly [K in keyof T]: T[K] };
+
 export class ConfidenceWebProvider implements Provider {
   readonly metadata: ProviderMetadata = {
     name: 'ConfidenceWebProvider',
   };
-  flagResolution: FlagResolution | null = null;
   readonly events = new OpenFeatureEventEmitter();
 
+  private pendingFlagResolution?: Promise<FlagResolution>;
+  private currentFlagResolution?: FlagResolution;
+  private unsubscribe?: () => void;
   private readonly confidence: Confidence;
 
   constructor(confidence: Confidence) {
@@ -29,58 +33,59 @@ export class ConfidenceWebProvider implements Provider {
   }
 
   async initialize(context?: EvaluationContext): Promise<void> {
-    try {
-      if (context) this.confidence.setContext({ openFeature: this.convertContext(context || {}) });
-      this.flagResolution = await this.confidence.resolve([]);
-      return Promise.resolve();
-    } catch (e) {
-      throw e;
-    }
+    if (context) this.confidence.setContext(convertContext(context));
+    this.unsubscribe = this.confidence.contextChanges(() => {
+      this.events.emit(ProviderEvents.Stale);
+      try {
+        this.resolve();
+      } catch (e) {
+        // ignore
+      }
+    });
+    await this.resolve();
+  }
+
+  async onClose(): Promise<void> {
+    this.unsubscribe?.();
+    this.currentFlagResolution = undefined;
+    this.pendingFlagResolution = undefined;
   }
 
   async onContextChange(oldContext: EvaluationContext, newContext: EvaluationContext): Promise<void> {
-    if (equal(oldContext, newContext)) {
+    const changes = contextChanges(oldContext, newContext);
+    if (Object.keys(changes).length === 0) {
       return;
     }
-    this.events.emit(ProviderEvents.Stale);
-    try {
-      this.confidence.setContext({ openFeature: this.convertContext(newContext) });
-      this.flagResolution = await this.confidence.resolve([]);
-      this.events.emit(ProviderEvents.Ready);
-    } catch (e) {
-      this.events.emit(ProviderEvents.Error);
-    }
+    this.confidence.setContext(convertContext(changes));
+    await this.pendingFlagResolution;
   }
 
-  private convertContext({ targetingKey, ...rest }: EvaluationContext): Context['openFeature'] {
-    return { targeting_key: targetingKey, ...(convert(rest) as Value.Struct) };
-
-    function convert(value: EvaluationContextValue): Value {
-      if (value === null) return undefined;
-      if (typeof value === 'object') {
-        if (Array.isArray(value)) {
-          return value.map(convert);
-        }
-        if (value instanceof Date) {
-          return value.toISOString();
-        }
-        const struct: Record<string, Value> = {};
-        for (const key of Object.keys(value)) {
-          struct[key] = convert(value[key]);
-        }
-        return struct;
+  private async resolve(): Promise<void> {
+    const pending = (this.pendingFlagResolution = this.confidence.resolve([]));
+    try {
+      const resolved = await pending;
+      if (pending === this.pendingFlagResolution) {
+        this.currentFlagResolution = resolved;
+        this.pendingFlagResolution = undefined;
+        this.events.emit(ProviderEvents.Ready);
+        this.events.emit(ProviderEvents.ConfigurationChanged);
       }
-      return value;
+    } catch (e) {
+      if (pending === this.pendingFlagResolution) {
+        this.pendingFlagResolution = undefined;
+        this.events.emit(ProviderEvents.Error);
+        throw e;
+      }
     }
   }
 
   private getFlag<T>(
     flagKey: string,
     defaultValue: T,
-    context: EvaluationContext,
+    _context: EvaluationContext,
     logger: Logger,
   ): ResolutionDetails<T> {
-    if (!this.flagResolution) {
+    if (!this.currentFlagResolution) {
       logger.warn('Provider not ready');
       return {
         errorCode: ErrorCode.PROVIDER_NOT_READY,
@@ -92,7 +97,7 @@ export class ConfidenceWebProvider implements Provider {
     const [flagName, ...pathParts] = flagKey.split('.');
 
     try {
-      const flag = this.flagResolution.flags[flagName];
+      const flag = this.currentFlagResolution.flags[flagName];
 
       if (!flag) {
         logger.warn('Flag "%s" was not found', flagName);
@@ -105,7 +110,7 @@ export class ConfidenceWebProvider implements Provider {
 
       if (FlagResolution.ResolveReason.NoSegmentMatch === flag.reason) {
         if (this.confidence.environment === 'client') {
-          this.confidence.apply(this.flagResolution.resolveToken, flagName);
+          this.confidence.apply(this.currentFlagResolution.resolveToken, flagName);
         }
         return {
           value: defaultValue,
@@ -142,21 +147,17 @@ export class ConfidenceWebProvider implements Provider {
       }
 
       if (this.confidence.environment === 'client') {
-        this.confidence.apply(this.flagResolution.resolveToken, flagName);
+        this.confidence.apply(this.currentFlagResolution.resolveToken, flagName);
       }
       logger.info('Value for "%s" successfully evaluated', flagKey);
-      const currContext: any = this.convertContext(context);
-      const cachedContext: any = this.flagResolution.context;
-      const reason = Object.keys(currContext).some(key => !equal(currContext[key], cachedContext[key]))
-        ? 'STALE'
-        : mapConfidenceReason(flag.reason);
+      const reason = this.pendingFlagResolution ? 'STALE' : mapConfidenceReason(flag.reason);
 
       return {
         value: flagValue.value as T,
         reason: reason,
         variant: flag.variant,
         flagMetadata: {
-          resolveToken: this.flagResolution.resolveToken,
+          resolveToken: this.currentFlagResolution.resolveToken,
         },
       };
     } catch (e: unknown) {
@@ -204,6 +205,46 @@ export class ConfidenceWebProvider implements Provider {
   ): ResolutionDetails<string> {
     return this.getFlag(flagKey, defaultValue, context, logger);
   }
+}
+
+function contextChanges(oldContext: EvaluationContext, newContext: EvaluationContext): EvaluationContext {
+  const uniqueKeys = new Set([...Object.keys(newContext), ...Object.keys(oldContext)]);
+  const changes: EvaluationContext = {};
+  for (const key of uniqueKeys) {
+    if (!equal(newContext[key], oldContext[key])) {
+      if (key === 'targetingKey') {
+        // targetingKey is a special case, it should never set to null but rather undefined
+        changes[key] = newContext[key];
+      } else {
+        changes[key] = newContext[key] ?? null;
+      }
+    }
+  }
+  return changes;
+}
+
+function convertContext({ targetingKey, ...context }: EvaluationContext): Context {
+  const targetingContext = typeof targetingKey !== 'undefined' ? { targeting_key: targetingKey } : {};
+  return { ...targetingContext, ...convertStruct(context) };
+}
+
+function convertValue(value: EvaluationContextValue): Value {
+  if (typeof value === 'object') {
+    if (value === null) return undefined;
+    if (value instanceof Date) return value.toISOString();
+    if (Array.isArray(value)) return value.map(convertValue);
+    return convertStruct(value);
+  }
+  return value;
+}
+
+function convertStruct(value: { [key: string]: EvaluationContextValue }): Value.Struct {
+  const struct: Mutable<Value.Struct> = {};
+  for (const key of Object.keys(value)) {
+    if (typeof value[key] === 'undefined') continue;
+    struct[key] = convertValue(value[key]);
+  }
+  return struct;
 }
 
 function mapConfidenceReason(reason: FlagResolution.ResolveReason): ResolutionReason {

@@ -16,6 +16,9 @@
     "es/no-async-functions": "off",
     "es/no-trailing-function-commas": "off",
     "es/no-rest-spread-properties": "off",
-    "es/no-optional-chaining": "off"
+    "es/no-optional-chaining": "off",
+    "es/no-nullish-coalescing-operators": "off",
+    "no-inner-declarations": "off",
+    "@typescript-eslint/no-use-before-define": "off"
   }
 }

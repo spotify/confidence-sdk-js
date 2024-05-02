@@ -1,4 +1,4 @@
-import { FlagResolverClient, FlagResolution } from './FlagResolverClient';
+import { FlagResolverClient, FlagResolution, FlagResolutionPromise } from './FlagResolverClient';
 import { EventSenderEngine } from './EventSenderEngine';
 import { Value } from './Value';
 import { EventSender } from './events';
@@ -7,6 +7,7 @@ import { Logger } from './logger';
 import { visitorIdentity } from './trackers';
 import { Trackable } from './Trackable';
 import { Closer } from './Closer';
+import { Subscribe, Observer, subject } from './observing';
 
 export { FlagResolverClient, FlagResolution };
 
@@ -23,6 +24,7 @@ export interface ConfidenceOptions {
 interface Configuration {
   readonly environment: 'client' | 'backend';
   readonly logger: Logger;
+  readonly timeout: number;
   /** @internal */
   readonly eventSenderEngine: EventSenderEngine;
   /** @internal */
@@ -33,10 +35,30 @@ export class Confidence implements EventSender, Trackable {
   readonly config: Configuration;
   private readonly parent?: Confidence;
   private _context: Map<string, Value> = new Map();
+  private contextChanged?: Observer<string[]>;
+
+  /** @internal */
+  readonly contextChanges: Subscribe<string[]>;
+
+  private flagResolution?: FlagResolutionPromise;
 
   constructor(config: Configuration, parent?: Confidence) {
     this.config = config;
     this.parent = parent;
+    this.contextChanges = subject(observer => {
+      let parentSubscription: Closer | void;
+      if (parent) {
+        parentSubscription = parent.contextChanges(keys => {
+          const visibleKeys = keys.filter(key => !this._context.has(key));
+          if (visibleKeys.length) observer(visibleKeys);
+        });
+      }
+      this.contextChanged = observer;
+      return () => {
+        parentSubscription?.();
+        this.contextChanged = undefined;
+      };
+    });
   }
 
   get environment(): string {
@@ -73,17 +95,27 @@ export class Confidence implements EventSender, Trackable {
   }
 
   setContext(context: Context): void {
+    const current = this.getContext();
+    const changedKeys: string[] = [];
     for (const key of Object.keys(context)) {
-      this.updateContextEntry(key, context[key]);
+      if (Value.equal(current[key], context[key])) continue;
+      changedKeys.push(key);
+      this._context.set(key, Value.clone(context[key]));
+    }
+    if (this.contextChanged && changedKeys.length > 0) {
+      this.contextChanged(changedKeys);
     }
   }
 
-  private updateContextEntry<K extends string>(name: K, value: Context[K]) {
-    this._context.set(name, Value.clone(value));
-  }
-
   clearContext(): void {
+    const oldContext = this.getContext();
     this._context.clear();
+    if (this.contextChanged) {
+      const newContext = this.getContext();
+      const unionKeys = Array.from(new Set([...Object.keys(oldContext), ...Object.keys(newContext)]));
+      const changedKeys = unionKeys.filter(key => !Value.equal(oldContext[key], newContext[key]));
+      if (changedKeys.length) this.contextChanged(changedKeys);
+    }
   }
 
   withContext(context: Context): Confidence {
@@ -106,7 +138,21 @@ export class Confidence implements EventSender, Trackable {
    * @internal
    */
   resolve(flagNames: string[]): Promise<FlagResolution> {
-    return this.config.flagResolverClient.resolve(this.getContext(), flagNames);
+    const timeout: Promise<never> = new Promise((_resolve, reject) => {
+      setTimeout(() => {
+        reject(new Error(`Resolve timed out after ${this.config.timeout}ms`));
+      }, this.config.timeout);
+    });
+    // we first resolve a promise so that if multiple context changes happen in the same tick, we still only make one resolve
+    const resolve = Promise.resolve().then(() => {
+      const context = this.getContext();
+      if (!this.flagResolution || !Value.equal(context, this.flagResolution.context)) {
+        this.flagResolution?.abort(new Error('Resolve aborted due to stale context'));
+        this.flagResolution = this.config.flagResolverClient.resolve(context, flagNames);
+      }
+      return this.flagResolution;
+    });
+    return Promise.race([resolve, timeout]);
   }
 
   /**
@@ -133,7 +179,6 @@ export class Confidence implements EventSender, Trackable {
       clientSecret,
       region,
       baseUrl,
-      timeout,
       environment,
       fetchImplementation,
       sdk,
@@ -146,7 +191,7 @@ export class Confidence implements EventSender, Trackable {
       clientSecret,
       maxBatchSize,
       flushTimeoutMilliseconds,
-      fetchImplementation: fetchImplementation,
+      fetchImplementation,
       region: nonGlobalRegion(region),
       // we set rate limit to support the flushTimeout
       // on backend, the rate limit would be ∞
@@ -160,6 +205,7 @@ export class Confidence implements EventSender, Trackable {
       environment: environment,
       flagResolverClient,
       eventSenderEngine: eventSenderEngine,
+      timeout,
       logger,
     });
     if (environment === 'client') {
