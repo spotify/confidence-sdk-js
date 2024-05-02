@@ -18,7 +18,7 @@ describe('ConfidenceWebProvider E2E tests', () => {
   describe('initialize fail', () => {
     beforeEach(async () => {
       await expect(OpenFeature.setProviderAndWait(createProvider({ timeout: 0 }))).rejects.toThrow(
-        'This operation was aborted',
+        'Resolve timed out after 0ms',
       );
     });
     afterEach(() => OpenFeature.clearProviders());

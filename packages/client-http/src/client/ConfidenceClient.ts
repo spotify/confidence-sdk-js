@@ -88,7 +88,7 @@ export class ConfidenceClient {
         controller.abort(signal.reason);
       });
     }
-    const timeoutId = setTimeout(() => controller.abort(), this.timeout);
+    const timeoutId = Number.isFinite(this.timeout) ? setTimeout(() => controller.abort(), this.timeout) : 0;
 
     const response = await this.fetchImplementation(`${this.baseUrl}/v1/flags:resolve`, {
       method: 'POST',

@@ -24,6 +24,7 @@ export interface ConfidenceOptions {
 interface Configuration {
   readonly environment: 'client' | 'backend';
   readonly logger: Logger;
+  readonly timeout: number;
   /** @internal */
   readonly eventSenderEngine: EventSenderEngine;
   /** @internal */
@@ -137,15 +138,21 @@ export class Confidence implements EventSender, Trackable {
    * @internal
    */
   resolve(flagNames: string[]): Promise<FlagResolution> {
+    const timeout:Promise<never> = new Promise((_resolve, reject) => {
+      setTimeout(() => {
+        reject(new Error(`Resolve timed out after ${this.config.timeout}ms`))
+      }, this.config.timeout);
+    })
     // we first resolve a promise so that if multiple context changes happen in the same tick, we still only make one resolve
-    return Promise.resolve().then(() => {
+    const resolve =  Promise.resolve().then(() => {
       const context = this.getContext();
       if (!this.flagResolution || !Value.equal(context, this.flagResolution.context)) {
-        this.flagResolution?.abort(new Error('Context stale'));
+        this.flagResolution?.abort(new Error('Resolve aborted due to stale context'));
         this.flagResolution = this.config.flagResolverClient.resolve(context, flagNames);
       }
       return this.flagResolution;
     });
+    return Promise.race([resolve, timeout]);
   }
 
   /**
@@ -172,7 +179,6 @@ export class Confidence implements EventSender, Trackable {
       clientSecret,
       region,
       baseUrl,
-      timeout,
       environment,
       fetchImplementation,
       sdk,
@@ -199,6 +205,7 @@ export class Confidence implements EventSender, Trackable {
       environment: environment,
       flagResolverClient,
       eventSenderEngine: eventSenderEngine,
+      timeout, 
       logger,
     });
     if (environment === 'client') {

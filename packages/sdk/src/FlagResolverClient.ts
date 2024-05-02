@@ -11,7 +11,7 @@ import { Context } from './context';
 
 const APPLY_TIMEOUT = 250;
 const MAX_APPLY_BUFFER_SIZE = 20;
-export interface FlagResolverOptions extends Omit<ConfidenceClientOptions, 'apply'> {
+export interface FlagResolverOptions extends Omit<ConfidenceClientOptions, 'apply' | 'timeout'> {
   environment: 'client' | 'backend';
 }
 
@@ -29,6 +29,7 @@ export class FlagResolverClient {
       ...options,
       apply: environment === 'backend',
       fetchImplementation: environment === 'client' ? withRequestLogic(fetchImplementation) : fetchImplementation,
+      timeout: Number.POSITIVE_INFINITY,
     });
     if (environment === 'client') {
       this.applyManager = new ApplyManager({
