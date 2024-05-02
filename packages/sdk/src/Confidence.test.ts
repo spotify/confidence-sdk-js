@@ -102,7 +102,7 @@ describe('Confidence', () => {
   });
 
   describe('contextChanges', () => {
-    it('should emit one context change for each setContext call', async () => {
+    it('should emit one context change for each setContext call', () => {
       const confidence = new Confidence({} as any);
 
       const observerMock = jest.fn();
@@ -117,7 +117,7 @@ describe('Confidence', () => {
 
       close();
     });
-    it('should emit context change for setContext calls in parent', async () => {
+    it('should emit context change for setContext calls in parent', () => {
       const parent = new Confidence({} as any);
       const child = parent.withContext({ pantsColor: 'blue' });
 
@@ -133,6 +133,38 @@ describe('Confidence', () => {
       child.setContext({ pantsPattern: 'striped' });
 
       expect(observerMock).toHaveBeenCalledWith(['pantsPattern']);
+
+      close();
+    });
+
+    it('should not emit context change from parent if all keys are overridden', () => {
+      const parent = new Confidence({} as any);
+      parent.setContext({ pants: 'red' });
+      const child = parent.withContext({ pants: 'green' });
+
+      const observerMock = jest.fn();
+
+      const close = child.contextChanges(observerMock);
+
+      parent.setContext({ pants: 'blue' });
+
+      expect(observerMock).not.toHaveBeenCalled();
+
+      close();
+    });
+
+    it('should only emit context change if the value actually changed', () => {
+      const parent = new Confidence({} as any);
+      parent.setContext({ pants: 'red' });
+      const child = parent.withContext({});
+
+      const observerMock = jest.fn();
+
+      const close = child.contextChanges(observerMock);
+
+      child.setContext({ pants: 'red' });
+
+      expect(observerMock).not.toHaveBeenCalled();
 
       close();
     });

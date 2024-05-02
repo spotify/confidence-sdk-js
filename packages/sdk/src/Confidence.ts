@@ -48,7 +48,8 @@ export class Confidence implements EventSender, Trackable {
       let parentSubscription: Closer | void;
       if (parent) {
         parentSubscription = parent.contextChanges(keys => {
-          observer(keys.filter(key => !this._context.has(key)));
+          const visibleKeys = keys.filter(key => !this._context.has(key));
+          if(visibleKeys.length) observer(visibleKeys);
         });
       }
       this.contextChanged = observer;
