@@ -155,14 +155,14 @@ describe('Confidence', () => {
 
     it('should only emit context change if the value actually changed', () => {
       const parent = new Confidence({} as any);
-      parent.setContext({ pants: 'red' });
+      parent.setContext({ pants: { color: 'red' } });
       const child = parent.withContext({});
 
       const observerMock = jest.fn();
 
       const close = child.contextChanges(observerMock);
 
-      child.setContext({ pants: 'red' });
+      child.setContext({ pants: { color: 'red' } });
 
       expect(observerMock).not.toHaveBeenCalled();
 
