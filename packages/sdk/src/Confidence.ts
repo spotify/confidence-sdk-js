@@ -152,7 +152,15 @@ export class Confidence implements EventSender, Trackable {
       }
       return this.flagResolution;
     });
-    return Promise.race([resolve, timeout]);
+    return Promise.race([resolve, timeout])
+      .then(resolution => {
+        this.config.logger.info?.(`Confidence: successfully resolved ${Object.keys(resolution.flags).length} flags`);
+        return resolution;
+      })
+      .catch(error => {
+        this.config.logger.warn?.('Confidence: failed to resolve flags', error);
+        throw error;
+      });
   }
 
   /**
@@ -169,7 +177,7 @@ export class Confidence implements EventSender, Trackable {
     timeout,
     environment,
     fetchImplementation = defaultFetchImplementation(),
-    logger = Logger.noOp(),
+    logger = defaultLogger(),
   }: ConfidenceOptions): Confidence {
     const sdk = {
       id: 'SDK_ID_JS_CONFIDENCE',
@@ -226,4 +234,15 @@ function defaultFetchImplementation(): typeof fetch {
 
 function nonGlobalRegion(region: 'eu' | 'us' | 'global' = 'eu'): 'eu' | 'us' {
   return region === 'global' ? 'eu' : region;
+}
+
+function defaultLogger(): Logger {
+  try {
+    if (process.env.NODE_ENV === 'development') {
+      return Logger.withLevel(console, 'info');
+    }
+  } catch (e) {
+    // ignore
+  }
+  return Logger.noOp();
 }
