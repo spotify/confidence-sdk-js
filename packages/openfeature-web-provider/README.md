@@ -40,7 +40,7 @@ OpenFeature.setContext({
 await OpenFeature.setProviderAndWait(provider);
 
 const client = OpenFeature.getClient();
-const result = client.getBooleanValue('flag.my-boolean', false);
+const result = client.getBooleanValue('flagName.my-boolean', false);
 ```
 
 Notes:
