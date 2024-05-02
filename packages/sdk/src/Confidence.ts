@@ -141,7 +141,7 @@ export class Confidence implements EventSender, Trackable {
     return Promise.resolve().then(() => {
       const context = this.getContext();
       if (!this.flagResolution || !Value.equal(context, this.flagResolution.context)) {
-        this.flagResolution?.abort();
+        this.flagResolution?.abort(new Error('Context stale'));
         this.flagResolution = this.config.flagResolverClient.resolve(context, flagNames);
       }
       return this.flagResolution;
