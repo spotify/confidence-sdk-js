@@ -4,7 +4,7 @@
 
 ## Deprecation Notice
 
-As of 2024-04-30, the experimental `integration-react` library is officially deprecated. We encourage all users to transition to the official [OpenFeature React SDK](https://github.com/open-feature/js-sdk/blob/main/packages/react/README.md) to ensure better support and newer features.
+As of 2024-04-30, the experimental `integration-react` library is officially deprecated. We encourage any users to transition to the official [OpenFeature React SDK](https://github.com/open-feature/js-sdk/blob/main/packages/react/README.md) to ensure better support and newer features.
 
 ### Why is this deprecation happening?
 
