@@ -3665,20 +3665,20 @@ __metadata:
   languageName: node
   linkType: hard
 
-"@spotify-confidence/client-http@npm:0.1.5, @spotify-confidence/client-http@workspace:packages/client-http":
+"@spotify-confidence/client-http@npm:0.1.6, @spotify-confidence/client-http@workspace:packages/client-http":
   version: 0.0.0-use.local
   resolution: "@spotify-confidence/client-http@workspace:packages/client-http"
   languageName: unknown
   linkType: soft
 
-"@spotify-confidence/integration-react@npm:0.2.2-rc.0, @spotify-confidence/integration-react@workspace:packages/integration-react":
+"@spotify-confidence/integration-react@npm:0.2.3, @spotify-confidence/integration-react@workspace:packages/integration-react":
   version: 0.0.0-use.local
   resolution: "@spotify-confidence/integration-react@workspace:packages/integration-react"
   dependencies:
     "@openfeature/core": "npm:^1.1.0"
     "@openfeature/web-sdk": "npm:^1.0.3"
-    "@spotify-confidence/openfeature-web-provider": "npm:^0.2.2-rc.0"
-    "@spotify-confidence/sdk": "npm:^0.0.4"
+    "@spotify-confidence/openfeature-web-provider": "npm:^0.2.3"
+    "@spotify-confidence/sdk": "npm:^0.0.5"
     "@testing-library/jest-dom": "npm:^5.16.5"
     "@testing-library/react": "npm:^14.0.0"
     "@types/use-sync-external-store": "npm:^0.0.4"
@@ -3691,7 +3691,7 @@ __metadata:
   languageName: unknown
   linkType: soft
 
-"@spotify-confidence/openfeature-server-provider@npm:0.2.2-rc.0, @spotify-confidence/openfeature-server-provider@workspace:packages/openfeature-server-provider":
+"@spotify-confidence/openfeature-server-provider@npm:0.2.3, @spotify-confidence/openfeature-server-provider@workspace:packages/openfeature-server-provider":
   version: 0.0.0-use.local
   resolution: "@spotify-confidence/openfeature-server-provider@workspace:packages/openfeature-server-provider"
   dependencies:
@@ -3703,7 +3703,7 @@ __metadata:
   languageName: unknown
   linkType: soft
 
-"@spotify-confidence/openfeature-web-provider@npm:0.2.2-rc.0, @spotify-confidence/openfeature-web-provider@npm:^0.2.2-rc.0, @spotify-confidence/openfeature-web-provider@workspace:packages/openfeature-web-provider":
+"@spotify-confidence/openfeature-web-provider@npm:0.2.3, @spotify-confidence/openfeature-web-provider@npm:^0.2.3, @spotify-confidence/openfeature-web-provider@workspace:packages/openfeature-web-provider":
   version: 0.0.0-use.local
   resolution: "@spotify-confidence/openfeature-web-provider@workspace:packages/openfeature-web-provider"
   dependencies:
@@ -3716,11 +3716,11 @@ __metadata:
   languageName: unknown
   linkType: soft
 
-"@spotify-confidence/sdk@npm:0.0.4, @spotify-confidence/sdk@npm:^0.0.4, @spotify-confidence/sdk@workspace:packages/sdk":
+"@spotify-confidence/sdk@npm:0.0.5, @spotify-confidence/sdk@npm:^0.0.5, @spotify-confidence/sdk@workspace:packages/sdk":
   version: 0.0.0-use.local
   resolution: "@spotify-confidence/sdk@workspace:packages/sdk"
   dependencies:
-    "@spotify-confidence/client-http": "npm:0.1.5"
+    "@spotify-confidence/client-http": "npm:0.1.6"
     web-vitals: "npm:^3.5.2"
   languageName: unknown
   linkType: soft
@@ -13622,8 +13622,8 @@ __metadata:
   dependencies:
     "@openfeature/core": "npm:^1.1.0"
     "@openfeature/server-sdk": "npm:^1.13.5"
-    "@spotify-confidence/openfeature-server-provider": "npm:0.2.2-rc.0"
-    "@spotify-confidence/sdk": "npm:0.0.4"
+    "@spotify-confidence/openfeature-server-provider": "npm:0.2.3"
+    "@spotify-confidence/sdk": "npm:0.0.5"
   languageName: unknown
   linkType: soft
 
@@ -13633,8 +13633,8 @@ __metadata:
   dependencies:
     "@openfeature/core": "npm:^1.1.0"
     "@openfeature/server-sdk": "npm:^1.13.5"
-    "@spotify-confidence/openfeature-server-provider": "npm:0.2.2-rc.0"
-    "@spotify-confidence/sdk": "npm:0.0.4"
+    "@spotify-confidence/openfeature-server-provider": "npm:0.2.3"
+    "@spotify-confidence/sdk": "npm:0.0.5"
   languageName: unknown
   linkType: soft
 
@@ -16045,9 +16045,9 @@ __metadata:
     "@babel/plugin-transform-react-jsx": "npm:^7.22.15"
     "@openfeature/core": "npm:^1.1.0"
     "@openfeature/web-sdk": "npm:^1.0.3"
-    "@spotify-confidence/integration-react": "npm:0.2.2-rc.0"
-    "@spotify-confidence/openfeature-web-provider": "npm:0.2.2-rc.0"
-    "@spotify-confidence/sdk": "npm:0.0.4"
+    "@spotify-confidence/integration-react": "npm:0.2.3"
+    "@spotify-confidence/openfeature-web-provider": "npm:0.2.3"
+    "@spotify-confidence/sdk": "npm:0.0.5"
     "@testing-library/dom": "npm:^7.29.6"
     "@testing-library/jest-dom": "npm:^5.14.1"
     "@testing-library/react": "npm:^13.0.0"
