@@ -3554,8 +3554,8 @@ __metadata:
     "@microsoft/api-extractor": "npm:*"
     "@openfeature/core": "npm:^1.1.0"
     "@openfeature/web-sdk": "npm:^1.0.3"
-    "@spotify-confidence/openfeature-web-provider": "npm:^0.2.3"
-    "@spotify-confidence/sdk": "npm:^0.0.5"
+    "@spotify-confidence/openfeature-web-provider": "npm:0.2.3"
+    "@spotify-confidence/sdk": "npm:0.0.5"
     "@testing-library/jest-dom": "npm:^5.16.5"
     "@testing-library/react": "npm:^14.0.0"
     "@types/use-sync-external-store": "npm:^0.0.4"
@@ -3579,11 +3579,11 @@ __metadata:
     rollup: "npm:*"
   peerDependencies:
     "@openfeature/server-sdk": ^1.13.5
-    "@spotify-confidence/sdk": ^0.0.4
+    "@spotify-confidence/sdk": 0.0.5
   languageName: unknown
   linkType: soft
 
-"@spotify-confidence/openfeature-web-provider@npm:0.2.3, @spotify-confidence/openfeature-web-provider@npm:^0.2.3, @spotify-confidence/openfeature-web-provider@workspace:packages/openfeature-web-provider":
+"@spotify-confidence/openfeature-web-provider@npm:0.2.3, @spotify-confidence/openfeature-web-provider@workspace:packages/openfeature-web-provider":
   version: 0.0.0-use.local
   resolution: "@spotify-confidence/openfeature-web-provider@workspace:packages/openfeature-web-provider"
   dependencies:
@@ -3594,11 +3594,11 @@ __metadata:
     rollup: "npm:*"
   peerDependencies:
     "@openfeature/web-sdk": ^1.0.3
-    "@spotify-confidence/sdk": ^0.0.4
+    "@spotify-confidence/sdk": 0.0.5
   languageName: unknown
   linkType: soft
 
-"@spotify-confidence/sdk@npm:0.0.5, @spotify-confidence/sdk@npm:^0.0.5, @spotify-confidence/sdk@workspace:packages/sdk":
+"@spotify-confidence/sdk@npm:0.0.5, @spotify-confidence/sdk@workspace:packages/sdk":
   version: 0.0.0-use.local
   resolution: "@spotify-confidence/sdk@workspace:packages/sdk"
   dependencies:

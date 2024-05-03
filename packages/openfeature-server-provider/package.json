@@ -13,7 +13,7 @@
   },
   "peerDependencies": {
     "@openfeature/server-sdk": "^1.13.5",
-    "@spotify-confidence/sdk": "^0.0.4"
+    "@spotify-confidence/sdk": "0.0.5"
   },
   "publishConfig": {
     "access": "public",

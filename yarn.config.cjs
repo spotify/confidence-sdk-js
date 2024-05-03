@@ -4,7 +4,13 @@ const { defineConfig } = require('@yarnpkg/types');
 module.exports = defineConfig({
   async constraints({ Yarn }) {
     for (const workspace of Yarn.workspaces()) {
+      // make sure all deps to this workspace use the correct version
+      for (const dep of Yarn.dependencies({ ident: workspace.ident })) {
+        dep.update(workspace.manifest.version);
+      }
+
       if (!workspace.cwd.startsWith('packages/')) {
+        // all example apps should be private
         workspace.set('private', true);
         continue;
       }
@@ -21,11 +27,6 @@ module.exports = defineConfig({
       });
       workspace.set('devDependencies.@microsoft/api-extractor', '*');
       workspace.set('devDependencies.rollup', '*');
-
-      // make sure all deps to this workspace use the correct version
-      for (const dep of Yarn.dependencies({ ident: workspace.ident })) {
-        dep.update(workspace.pkg.version);
-      }
     }
   },
 });

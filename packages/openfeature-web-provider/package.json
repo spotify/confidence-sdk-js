@@ -16,7 +16,7 @@
   },
   "peerDependencies": {
     "@openfeature/web-sdk": "^1.0.3",
-    "@spotify-confidence/sdk": "^0.0.4"
+    "@spotify-confidence/sdk": "0.0.5"
   },
   "publishConfig": {
     "access": "public",

@@ -23,5 +23,6 @@
   "devDependencies": {
     "@microsoft/api-extractor": "*",
     "rollup": "*"
-  }
+  },
+  "type": "module"
 }
