@@ -1,10 +1,10 @@
-import { FlagResolverClient, FlagResolutionPromise } from './FlagResolverClient';
+import { FlagResolverClient } from './FlagResolverClient';
 import { EventSenderEngine } from './EventSenderEngine';
 import { Value } from './Value';
 import { EventSender } from './events';
 import { Context } from './context';
 import { Logger } from './logger';
-import { FlagEvaluation, FlagResolution, FlagResolver } from './flags';
+import { FlagEvaluation, FlagResolution, FlagResolver, PendingFlagResolution } from './flags';
 import { SdkId } from './generated/confidence/flags/resolver/v1/types';
 import { visitorIdentity } from './trackers';
 import { Trackable } from './Trackable';
@@ -42,7 +42,7 @@ export class Confidence implements EventSender, Trackable, FlagResolver {
   /** @internal */
   readonly contextChanges: Subscribe<string[]>;
 
-  private flagResolution?: FlagResolutionPromise;
+  private flagResolution?: PendingFlagResolution;
 
   constructor(config: Configuration, parent?: Confidence) {
     this.config = config;
@@ -136,10 +136,7 @@ export class Confidence implements EventSender, Trackable, FlagResolver {
     return undefined;
   }
 
-  /**
-   * @internal
-   */
-  resolve(flagNames: string[]): Promise<FlagResolution> {
+  resolveFlags(...flagNames: string[]): Promise<FlagResolution> {
     const timeout: Promise<never> = new Promise((_resolve, reject) => {
       setTimeout(() => {
         reject(new Error(`Resolve timed out after ${this.config.timeout}ms`));
@@ -156,18 +153,13 @@ export class Confidence implements EventSender, Trackable, FlagResolver {
     });
     return Promise.race([resolve, timeout])
       .then(resolution => {
-        this.config.logger.info?.(`Confidence: successfully resolved ${Object.keys(resolution.flags).length} flags`);
+        this.config.logger.info?.(`Confidence: successfully resolved flags`);
         return resolution;
       })
       .catch(error => {
         this.config.logger.warn?.('Confidence: failed to resolve flags', error);
         throw error;
       });
-  }
-
-  resolveFlags(...flagNames: string[]): Promise<FlagResolution> {
-    // TODO cache the resolution if context hasn't changed
-    return this.config.flagResolverClient.resolve(this.getContext(), flagNames);
   }
 
   evaluateFlag<T extends Value>(path: string, defaultValue: T): Promise<FlagEvaluation<T>> {
@@ -183,21 +175,19 @@ export class Confidence implements EventSender, Trackable, FlagResolver {
   static create({
     clientSecret,
     region,
-    baseUrl,
     timeout,
     environment,
     fetchImplementation = defaultFetchImplementation(),
     logger = defaultLogger(),
   }: ConfidenceOptions): Confidence {
+    const baseUrl = getConfidenceUrl(region);
     const sdk = {
       id: SdkId.SDK_ID_JS_CONFIDENCE,
       version: '0.0.4', // x-release-please-version
     } as const;
     const flagResolverClient = new FlagResolverClient({
       clientSecret,
-      region,
       baseUrl,
-      environment,
       fetchImplementation,
       sdk,
     });
@@ -255,4 +245,11 @@ function defaultLogger(): Logger {
     // ignore
   }
   return Logger.noOp();
+}
+
+function getConfidenceUrl(region?: 'eu' | 'us' | 'global'): string {
+  if (region === 'global' || !region) {
+    return 'https://resolver.confidence.dev/v1';
+  }
+  return `https://resolver.${region}.confidence.dev/v1`;
 }

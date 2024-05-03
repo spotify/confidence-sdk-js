@@ -9,7 +9,6 @@ import {
   ProviderEvents,
   ProviderMetadata,
   ResolutionDetails,
-  ResolutionReason,
 } from '@openfeature/web-sdk';
 import equal from 'fast-deep-equal';
 
@@ -61,7 +60,7 @@ export class ConfidenceWebProvider implements Provider {
   }
 
   private async resolve(): Promise<void> {
-    const pending = (this.pendingFlagResolution = this.confidence.resolve([]));
+    const pending = (this.pendingFlagResolution = this.confidence.resolveFlags());
     try {
       const resolved = await pending;
       if (pending === this.pendingFlagResolution) {
@@ -93,7 +92,7 @@ export class ConfidenceWebProvider implements Provider {
         reason: 'ERROR',
       };
     }
-    const evaluation = this.flagResolution.evaluate(flagKey, defaultValue);
+    const evaluation = this.currentFlagResolution.evaluate(flagKey, defaultValue);
     if (evaluation.reason === 'ERROR') {
       const { errorCode, ...rest } = evaluation;
       return {
@@ -168,6 +167,7 @@ function convertValue(value: EvaluationContextValue): Value {
   if (typeof value === 'object') {
     if (value === null) return undefined;
     if (value instanceof Date) return value.toISOString();
+    // @ts-expect-error TODO fix single type array conversion
     if (Array.isArray(value)) return value.map(convertValue);
     return convertStruct(value);
   }
@@ -181,17 +181,4 @@ function convertStruct(value: { [key: string]: EvaluationContextValue }): Value.
     struct[key] = convertValue(value[key]);
   }
   return struct;
-}
-
-function mapConfidenceReason(reason: FlagResolution.ResolveReason): ResolutionReason {
-  switch (reason) {
-    case FlagResolution.ResolveReason.Archived:
-      return 'DISABLED';
-    case FlagResolution.ResolveReason.Unspecified:
-      return 'UNKNOWN';
-    case FlagResolution.ResolveReason.Match:
-      return 'TARGETING_MATCH';
-    default:
-      return 'DEFAULT';
-  }
 }

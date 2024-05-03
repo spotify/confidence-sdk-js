@@ -13,7 +13,6 @@ export namespace Value {
   export type List = ReadonlyArray<number> | ReadonlyArray<string> | ReadonlyArray<boolean>;
 
   export function assertValue(value: unknown): asserts value is Value {
-    const jsType = typeof value;
     switch (typeof value) {
       case 'bigint':
       case 'symbol':

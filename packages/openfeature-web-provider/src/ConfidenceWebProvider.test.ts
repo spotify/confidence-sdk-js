@@ -3,12 +3,12 @@ import { ConfidenceWebProvider } from './ConfidenceWebProvider';
 import { Confidence, FlagResolution, Context } from '@spotify-confidence/sdk';
 
 const setContextMock = jest.fn();
-const resolveMock: jest.MockedFunction<Confidence['resolve']> = jest.fn();
+const resolveFlagsMock: jest.MockedFunction<Confidence['resolveFlags']> = jest.fn();
 const applyMock = jest.fn();
 const contextChangesMock = jest.fn();
 const confidenceMock = {
   environment: 'client',
-  resolve: resolveMock,
+  resolveFlags: resolveFlagsMock,
   apply: applyMock,
   setContext: setContextMock,
   contextChanges: contextChangesMock,
@@ -28,7 +28,7 @@ describe('ConfidenceProvider', () => {
 
   beforeEach(() => {
     instanceUnderTest = new ConfidenceWebProvider(confidenceMock);
-    resolveMock.mockResolvedValue(dummyFlagResolution);
+    resolveFlagsMock.mockResolvedValue(dummyFlagResolution);
   });
 
   describe('initialize', () => {
@@ -36,7 +36,7 @@ describe('ConfidenceProvider', () => {
       it('should resolve', async () => {
         await instanceUnderTest.initialize({ targetingKey: 'test' });
 
-        expect(resolveMock).toHaveBeenCalledWith([]);
+        expect(resolveFlagsMock).toHaveBeenCalledWith([]);
       });
 
       it('should setup a context change subscription', async () => {
@@ -48,7 +48,7 @@ describe('ConfidenceProvider', () => {
     describe('without context', () => {
       it('should resolve', async () => {
         await instanceUnderTest.initialize();
-        expect(resolveMock).toHaveBeenCalledOnce();
+        expect(resolveFlagsMock).toHaveBeenCalledOnce();
       });
 
       it('should not set confidence context', async () => {
@@ -141,11 +141,11 @@ describe('ConfidenceProvider', () => {
       beforeEach(() => {
         instanceUnderTest.initialize();
         contextChangeObserver = contextChangesMock.mock.lastCall[0];
-        resolveMock.mockClear();
+        resolveFlagsMock.mockClear();
       });
       it('should resolve', () => {
         contextChangeObserver(['key']);
-        expect(resolveMock).toHaveBeenCalledOnce();
+        expect(resolveFlagsMock).toHaveBeenCalledOnce();
       });
       it('should emit stale and then ready', async () => {
         const staleHandler = jest.fn();

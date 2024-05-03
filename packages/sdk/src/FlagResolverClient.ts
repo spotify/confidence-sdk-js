@@ -2,7 +2,7 @@ import { Schema } from './Schema';
 import { Value } from './Value';
 import { Context } from './context';
 import { TypeMismatchError } from './error';
-import { FlagEvaluation, FlagResolution } from './flags';
+import { FlagEvaluation, FlagResolution, PendingFlagResolution } from './flags';
 import {
   ResolveFlagsRequest,
   ResolveFlagsResponse,
@@ -31,6 +31,7 @@ type ResolvedFlag = {
 type Applier = (flagName: string) => void;
 class FlagResolutionImpl implements FlagResolution {
   private readonly flags: Map<string, ResolvedFlag> = new Map();
+  readonly resolveToken: string;
 
   constructor(
     readonly context: Value.Struct,
@@ -48,6 +49,7 @@ class FlagResolutionImpl implements FlagResolution {
         reason: toEvaluationReason(reason),
       });
     }
+    this.resolveToken = base64FromBytes(resolveResponse.resolveToken);
   }
 
   evaluate<T extends Value>(path: string, defaultValue: T): FlagEvaluation<T> {
@@ -103,21 +105,30 @@ export type FlagResolverClientOptions = {
   clientSecret: string;
   sdk: Sdk;
   applyTimeout?: number;
+  baseUrl?: string;
 };
 export class FlagResolverClient {
   private readonly fetchImplementation: SimpleFetch;
   private readonly clientSecret: string;
   private readonly sdk: Sdk;
   private readonly applyTimeout?: number;
+  private readonly baseUrl: string;
 
-  constructor({ fetchImplementation, clientSecret, sdk, applyTimeout }: FlagResolverClientOptions) {
+  constructor({
+    fetchImplementation,
+    clientSecret,
+    sdk,
+    applyTimeout,
+    baseUrl = 'https://resolver.confidence.dev/v1',
+  }: FlagResolverClientOptions) {
     this.fetchImplementation = fetchImplementation;
     this.clientSecret = clientSecret;
     this.sdk = sdk;
     this.applyTimeout = applyTimeout;
+    this.baseUrl = baseUrl;
   }
 
-  async resolve(context: Context, flags: string[]): Promise<FlagResolution> {
+  resolve(context: Context, flags: string[]): PendingFlagResolution {
     const useBackendApply = !this.applyTimeout;
     const request: ResolveFlagsRequest = {
       clientSecret: this.clientSecret,
@@ -126,14 +137,31 @@ export class FlagResolverClient {
       sdk: this.sdk,
       flags: flags.map(name => FLAG_PREFIX + name),
     };
+    const abortController = new AbortController();
+    const resolution = this.resolveFlagsJson(request, abortController.signal)
+      .then(
+        response =>
+          new FlagResolutionImpl(
+            context,
+            response,
+            useBackendApply ? undefined : this.createApplier(response.resolveToken),
+          ),
+      )
+      .then(resolved => {
+        pending.resolved = resolved;
+        return resolved;
+      });
 
-    const response = await this.resolveFlagsJson(request);
-
-    return new FlagResolutionImpl(
+    const pending = {
+      resolved: undefined as FlagResolution | undefined,
       context,
-      response,
-      useBackendApply ? undefined : this.createApplier(response.resolveToken),
-    );
+      then: resolution.then.bind(resolution),
+      abort: abortController.abort.bind(abortController),
+      evaluate: () => {
+        throw resolution;
+      },
+    };
+    return pending;
   }
 
   createApplier(resolveToken: Uint8Array): Applier {
@@ -166,7 +194,7 @@ export class FlagResolverClient {
 
   async apply(request: ApplyFlagsRequest): Promise<void> {
     const resp = await this.fetchImplementation(
-      new Request('https://resolver.confidence.dev/v1/flags:apply', {
+      new Request(this.baseUrl + '/flags:apply', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -179,14 +207,15 @@ export class FlagResolverClient {
     }
   }
 
-  async resolveFlagsJson(request: ResolveFlagsRequest): Promise<ResolveFlagsResponse> {
+  async resolveFlagsJson(request: ResolveFlagsRequest, signal: AbortSignal): Promise<ResolveFlagsResponse> {
     const resp = await this.fetchImplementation(
-      new Request('https://resolver.confidence.dev/v1/flags:resolve', {
+      new Request(this.baseUrl + '/flags:resolve', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
         },
         body: JSON.stringify(ResolveFlagsRequest.toJSON(request)),
+        signal,
       }),
     );
     if (!resp.ok) {
@@ -229,4 +258,16 @@ function toEvaluationReason(reason: ResolveReason): FlagEvaluation<unknown>['rea
       return 'ERROR';
   }
   return 'UNSPECIFIED';
+}
+
+function base64FromBytes(arr: Uint8Array): string {
+  if ((globalThis as any).Buffer) {
+    return globalThis.Buffer.from(arr).toString('base64');
+  } else {
+    const bin: string[] = [];
+    arr.forEach(byte => {
+      bin.push(globalThis.String.fromCharCode(byte));
+    });
+    return globalThis.btoa(bin.join(''));
+  }
 }
