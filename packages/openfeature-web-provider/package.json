@@ -10,7 +10,8 @@
   },
   "devDependencies": {
     "@openfeature/core": "^1.1.0",
-    "@openfeature/web-sdk": "^1.0.3"
+    "@openfeature/web-sdk": "^1.0.3",
+    "@spotify-confidence/sdk": "^0.0.4"
   },
   "peerDependencies": {
     "@openfeature/web-sdk": "^1.0.3",

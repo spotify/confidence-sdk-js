@@ -7,7 +7,8 @@
   "types": "build/types/index.d.ts",
   "devDependencies": {
     "@openfeature/core": "^1.1.0",
-    "@openfeature/server-sdk": "^1.13.5"
+    "@openfeature/server-sdk": "^1.13.5",
+    "@spotify-confidence/sdk": "^0.0.4"
   },
   "peerDependencies": {
     "@openfeature/server-sdk": "^1.13.5",
