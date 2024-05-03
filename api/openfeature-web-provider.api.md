@@ -6,13 +6,11 @@
 
 import { Confidence } from '@spotify-confidence/sdk';
 import { EvaluationContext } from '@openfeature/web-sdk';
-import { FlagResolution } from '@spotify-confidence/sdk';
 import { JsonValue } from '@openfeature/web-sdk';
 import { Logger } from '@openfeature/web-sdk';
 import { OpenFeatureEventEmitter } from '@openfeature/web-sdk';
 import { Provider } from '@openfeature/web-sdk';
 import { ProviderMetadata } from '@openfeature/web-sdk';
-import { ProviderStatus } from '@openfeature/web-sdk';
 import { ResolutionDetails } from '@openfeature/web-sdk';
 
 // @public (undocumented)
@@ -21,11 +19,11 @@ export class ConfidenceWebProvider implements Provider {
     // (undocumented)
     readonly events: OpenFeatureEventEmitter;
     // (undocumented)
-    flagResolution: FlagResolution | null;
-    // (undocumented)
     initialize(context?: EvaluationContext): Promise<void>;
     // (undocumented)
     readonly metadata: ProviderMetadata;
+    // (undocumented)
+    onClose(): Promise<void>;
     // (undocumented)
     onContextChange(oldContext: EvaluationContext, newContext: EvaluationContext): Promise<void>;
     // (undocumented)
@@ -36,14 +34,12 @@ export class ConfidenceWebProvider implements Provider {
     resolveObjectEvaluation<T extends JsonValue>(flagKey: string, defaultValue: T, context: EvaluationContext, logger: Logger): ResolutionDetails<T>;
     // (undocumented)
     resolveStringEvaluation(flagKey: string, defaultValue: string, context: EvaluationContext, logger: Logger): ResolutionDetails<string>;
-    // (undocumented)
-    status: ProviderStatus;
 }
 
-// Warning: (ae-forgotten-export) The symbol "ConfidenceWebProviderFactoryOptions" needs to be exported by the entry point index.d.ts
+// Warning: (ae-forgotten-export) The symbol "ConfidenceWebProviderOptions" needs to be exported by the entry point index.d.ts
 //
 // @public (undocumented)
-export function createConfidenceWebProvider(options: ConfidenceWebProviderFactoryOptions): Provider;
+export function createConfidenceWebProvider(options: ConfidenceWebProviderOptions): Provider;
 
 // @public (undocumented)
 export function createConfidenceWebProvider(confidence: Confidence): Provider;

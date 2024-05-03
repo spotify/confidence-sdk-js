@@ -7,30 +7,39 @@
 import { ConfidenceClientOptions } from '@spotify-confidence/client-http';
 import { Configuration as FlagResolution } from '@spotify-confidence/client-http';
 
+// Warning: (ae-forgotten-export) The symbol "Trackable" needs to be exported by the entry point index.d.ts
+//
 // @public (undocumented)
-export class Confidence implements EventSender {
-    // Warning: (ae-forgotten-export) The symbol "Configuration" needs to be exported by the entry point index.d.ts
+export class Confidence implements EventSender, Trackable {
     constructor(config: Configuration, parent?: Confidence);
     // @internal (undocumented)
     apply(resolveToken: string, flagName: string): void;
     // (undocumented)
     clearContext(): void;
+    // Warning: (ae-forgotten-export) The symbol "Configuration" needs to be exported by the entry point index.d.ts
+    //
+    // (undocumented)
+    readonly config: Configuration;
+    // Warning: (ae-forgotten-export) The symbol "Subscribe" needs to be exported by the entry point index.d.ts
+    //
+    // @internal (undocumented)
+    readonly contextChanges: Subscribe<string[]>;
     // (undocumented)
     static create({ clientSecret, region, baseUrl, timeout, environment, fetchImplementation, logger, }: ConfidenceOptions): Confidence;
     // (undocumented)
     get environment(): string;
     // (undocumented)
     getContext(): Context;
-    // (undocumented)
-    removeContextEntry(name: string): void;
     // @internal (undocumented)
     resolve(flagNames: string[]): Promise<FlagResolution>;
     // (undocumented)
-    sendEvent(name: string, message?: Value.Struct): void;
-    // (undocumented)
     setContext(context: Context): void;
     // (undocumented)
-    updateContextEntry<K extends string>(name: K, value: Context[K]): void;
+    track(name: string, message?: Value.Struct): void;
+    // Warning: (ae-forgotten-export) The symbol "Closer" needs to be exported by the entry point index.d.ts
+    //
+    // (undocumented)
+    track(manager: Trackable.Manager): Closer;
     // (undocumented)
     withContext(context: Context): Confidence;
 }
@@ -58,9 +67,17 @@ export interface ConfidenceOptions {
 // @public (undocumented)
 export interface Context extends Value.Struct {
     // (undocumented)
-    openFeature?: Value.Struct & {
-        targeting_key?: string;
+    page?: {
+        path: string;
+        referrer: string;
+        search: string;
+        title: string;
+        url: string;
     };
+    // (undocumented)
+    targeting_key?: string;
+    // (undocumented)
+    visitor_id?: string;
 }
 
 // @public (undocumented)
@@ -70,11 +87,7 @@ export interface Contextual<Self extends Contextual<Self>> {
     // (undocumented)
     getContext(): Context;
     // (undocumented)
-    removeContextEntry(name: string): void;
-    // (undocumented)
     setContext(context: Context): void;
-    // (undocumented)
-    updateContextEntry<K extends string>(name: K, value: Context[K]): void;
     // (undocumented)
     withContext(context: Context): Self;
 }
@@ -82,7 +95,7 @@ export interface Contextual<Self extends Contextual<Self>> {
 // @public (undocumented)
 export interface EventSender extends Contextual<EventSender> {
     // (undocumented)
-    sendEvent(name: string, message?: Value.Struct): void;
+    track(name: string, message?: Value.Struct): void;
 }
 
 export { FlagResolution }
@@ -93,14 +106,23 @@ export class FlagResolverClient {
     constructor({ fetchImplementation, environment, ...options }: FlagResolverOptions);
     // (undocumented)
     apply(resolveToken: string, flagName: string): void;
+    // Warning: (ae-forgotten-export) The symbol "FlagResolutionPromise" needs to be exported by the entry point index.d.ts
+    //
     // (undocumented)
-    resolve({ openFeature, ...context }: Context, flags: string[]): Promise<FlagResolution>;
+    resolve(context: Context, flags: string[]): FlagResolutionPromise;
 }
+
+// @public (undocumented)
+export function pageViews(): Trackable.Manager;
 
 // @public (undocumented)
 export namespace Value {
     // (undocumented)
     export function clone<T extends Value>(value: T): T;
+    // (undocumented)
+    export function equal(value1: Value, value2: Value): boolean;
+    // (undocumented)
+    export function getType(value: Value): TypeName;
     // (undocumented)
     export function isList(value: Value): value is List;
     // (undocumented)
@@ -113,10 +135,26 @@ export namespace Value {
     export type Struct = {
         readonly [key: string]: Value;
     };
+    // (undocumented)
+    export type TypeName = 'number' | 'string' | 'boolean' | 'Struct' | 'List' | 'undefined';
 }
 
 // @public (undocumented)
 export type Value = Value.Primitive | Value.Struct | Value.List;
+
+// @public (undocumented)
+export const visitorIdentity: () => Trackable.Manager;
+
+// @public
+export function webVitals({ lcp, inp, cls, ttfb, }?: WebVitalsOptions): Trackable.Manager;
+
+// @public
+export type WebVitalsOptions = {
+    lcp?: boolean;
+    inp?: boolean;
+    cls?: boolean;
+    ttfb?: boolean;
+};
 
 // (No @packageDocumentation comment for this package)
 

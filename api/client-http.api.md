@@ -38,9 +38,10 @@ export class ConfidenceClient {
     // (undocumented)
     apply(flags: AppliedFlag[], resolveToken: string): Promise<void>;
     // (undocumented)
-    resolve(context: ResolveContext, options?: {
+    resolve(context: ResolveContext, { signal, ...options }?: {
         apply?: boolean;
-        flags: string[];
+        flags?: string[];
+        signal?: AbortSignal;
     }): Promise<Configuration>;
 }
 
