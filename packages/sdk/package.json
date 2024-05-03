@@ -1,7 +1,7 @@
 {
   "name": "@spotify-confidence/sdk",
   "license": "Apache-2.0",
-  "version": "0.0.1",
+  "version": "0.0.4",
   "module": "build/esm/index.js",
   "main": "build/cjs/index.js",
   "types": "build/types/index.d.ts",
@@ -21,6 +21,7 @@
   },
   "devDependencies": {
     "prettier": "*",
-    "ts-proto": "^1.171.0"
+    "ts-proto": "^1.171.0",
+    "web-vitals": "^3.5.2"
   }
 }

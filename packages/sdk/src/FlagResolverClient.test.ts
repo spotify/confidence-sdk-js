@@ -1,4 +1,4 @@
-import { abortableSleep, withRequestLogic } from './FlagResolverClient';
+import { withRequestLogic } from './FlagResolverClient';
 import { setMaxListeners } from 'node:events';
 const RESOLVE_ENDPOINT = 'https://resolver.confidence.dev/v1/flags:resolve';
 const APPLY_ENDPOINT = 'https://resolver.confidence.dev/v1/flags:apply';
@@ -53,18 +53,6 @@ describe('withRequestLogic', () => {
       expect(Date.now()).toBe(3000);
       // the rate limiting allows three initial requests, then one per second
       expect(attempts).toEqual([0, 0, 0, 1000, 2000]);
-    });
-
-    it('should abort the previous request', async () => {
-      fetchMock.mockImplementation(async ({ signal }) => {
-        await abortableSleep(100, signal);
-        return new Response();
-      });
-
-      expect(makeResolveRequest(1000)).rejects.toThrow('Request superseded');
-      expect(makeResolveRequest(1000)).resolves.toMatchObject({ status: 200 });
-
-      await jest.runAllTimersAsync();
     });
   });
 

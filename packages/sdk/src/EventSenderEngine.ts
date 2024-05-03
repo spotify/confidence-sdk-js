@@ -80,9 +80,9 @@ export class EventSenderEngine {
 
   send(context: Value.Struct, name: string, message?: Value.Struct): void {
     this.writeQueue.push({
-      eventDefinition: `eventDefinitions/${name}`,
+      eventDefinition: name,
       eventTime: new Date().toISOString(),
-      payload: { ...message, ...context },
+      payload: { ...context, ...message },
     });
     this.clearPendingFlush();
     if (this.writeQueue.length >= this.maxBatchSize) {
@@ -109,10 +109,10 @@ export class EventSenderEngine {
     })
       .then(errors => {
         if (errors.length === 0) {
-          this.logger.trace?.('Confidence: successfully uploaded %i events', batchSize);
+          this.logger.info?.('Confidence: successfully uploaded %i events', batchSize);
           return true;
         }
-        const distinctErrorMessages = Array.from(new Set(errors.map(({ message }) => message)));
+        const distinctErrorMessages = Array.from(new Set(errors.map(({ reason, message }) => message || reason)));
         this.logger.warn?.(
           'Confidence: failed to upload %i out of %i event(s) with the following errors: %o',
           errors.length,
@@ -134,11 +134,15 @@ export class EventSenderEngine {
     }
   }
 
-  private upload(batch: EventBatch): Promise<PublishError[]> {
+  // Made public for unit testing
+  public upload(batch: EventBatch): Promise<PublishError[]> {
     return this.fetchImplementation(this.publishUrl, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify(batch),
+      body: JSON.stringify({
+        ...batch,
+        events: batch.events.map(e => ({ ...e, eventDefinition: `eventDefinitions/${e.eventDefinition}` })),
+      }),
     })
       .then(resp => resp.json())
       .then(({ errors }) => errors);

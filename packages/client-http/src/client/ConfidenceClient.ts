@@ -71,7 +71,10 @@ export class ConfidenceClient {
     }
   }
 
-  async resolve(context: ResolveContext, options?: { apply?: boolean; flags: string[] }): Promise<Configuration> {
+  async resolve(
+    context: ResolveContext,
+    { signal, ...options }: { apply?: boolean; flags?: string[]; signal?: AbortSignal } = {},
+  ): Promise<Configuration> {
     const payload: ResolveRequest = {
       clientSecret: this.clientSecret,
       evaluationContext: context,
@@ -80,7 +83,12 @@ export class ConfidenceClient {
       ...options,
     };
     const controller = new AbortController();
-    const timeoutId = setTimeout(() => controller.abort(), this.timeout);
+    if (signal) {
+      signal.addEventListener('abort', () => {
+        controller.abort(signal.reason);
+      });
+    }
+    const timeoutId = Number.isFinite(this.timeout) ? setTimeout(() => controller.abort(), this.timeout) : 0;
 
     const response = await this.fetchImplementation(`${this.baseUrl}/v1/flags:resolve`, {
       method: 'POST',

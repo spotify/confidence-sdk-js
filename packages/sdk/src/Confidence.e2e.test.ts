@@ -2,7 +2,7 @@ import { Confidence } from './Confidence';
 
 describe('Confidence E2E Tests', () => {
   const loggerMock = {
-    trace: jest.fn(),
+    info: jest.fn(),
     warn: jest.fn(),
     error: jest.fn(),
   };
@@ -14,17 +14,17 @@ describe('Confidence E2E Tests', () => {
     logger: loggerMock,
   });
 
-  describe('sendEvent', () => {
+  describe('track event sends an event', () => {
     it('should log a trace message when all events succeed', async () => {
-      confidence.sendEvent('js-sdk-e2e-test', { pants: 'blue' });
-      confidence.sendEvent('js-sdk-e2e-test', { pants: 'yellow' });
-      expect(await nextMockArgs(loggerMock.trace)).toEqual(['Confidence: successfully uploaded %i events', 2]);
+      confidence.track('js-sdk-e2e-tests', { pants: 'blue' });
+      confidence.track('js-sdk-e2e-tests', { pants: 'yellow' });
+      expect(await nextMockArgs(loggerMock.info)).toEqual(['Confidence: successfully uploaded %i events', 2]);
     });
     it('should log a warning message when some events fail', async () => {
-      confidence.sendEvent('js-sdk-e2e-test', { pants: 'red' });
-      confidence.sendEvent('js-sdk-e2e-test', { pants: 3 });
-      confidence.sendEvent('js-sdk-e2e-test', { pants: true });
-      confidence.sendEvent('js-sdk-e2e-test', { pants: 4 });
+      confidence.track('js-sdk-e2e-tests', { pants: 'red' });
+      confidence.track('js-sdk-e2e-tests', { pants: 3 });
+      confidence.track('js-sdk-e2e-tests', { pants: true });
+      confidence.track('js-sdk-e2e-tests', { pants: 4 });
 
       expect(await nextMockArgs(loggerMock.warn)).toEqual([
         'Confidence: failed to upload %i out of %i event(s) with the following errors: %o',

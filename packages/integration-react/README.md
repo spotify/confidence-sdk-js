@@ -1,19 +1,25 @@
 # OpenFeature Web SDK React Integration
 
-![](https://img.shields.io/badge/lifecycle-beta-a0c3d2.svg)
+![](https://img.shields.io/badge/lifecycle-deprecated-a0c3d2.svg)
+
+## Deprecation Notice
+
+As of 2024-04-30, the experimental `integration-react` library is officially deprecated. We encourage any users to transition to the official [OpenFeature React SDK](https://github.com/open-feature/js-sdk/blob/main/packages/react/README.md) to ensure better support and newer features.
+
+### Why is this deprecation happening?
+
+The `integration-react` project was developed as a React wrapper for OpenFeature to provide initial support for integrating feature flags into React applications. Since then, the OpenFeature team has released an official React SDK, which offers a more robust, efficient, and feature-rich solution.
+
+### What should you do?
+
+If you are currently using `integration-react`, we recommend migrating to the official OpenFeature React SDK as soon as possible. This new SDK is actively maintained and supports the latest features and optimizations for feature flagging in React applications.
+
+For detailed instructions on how to migrate and for more information about the benefits of the new SDK, please visit the official repository: 🔗 [OpenFeature React SDK](https://github.com/open-feature/js-sdk/blob/main/packages/react/README.md)
 
 This is a helper package to use `OpenFeature` in React and ReactNative. It is not official OpenFeature and relies on behaviour from
 the ConfidenceWebProvider specifically.
 
 # Usage
-
-## Adding the dependencies
-
-To add the packages to your dependencies run:
-
-```sh
-yarn add @openfeature/web-sdk @spotify-confidence/openfeature-web-provider @spotify-confidence/integration-react
-```
 
 ## Enabling the provider, setting the evaluation context and resolving flags in React
 

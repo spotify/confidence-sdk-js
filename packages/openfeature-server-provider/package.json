@@ -1,19 +1,19 @@
 {
   "name": "@spotify-confidence/openfeature-server-provider",
   "license": "Apache-2.0",
-  "version": "0.1.5",
+  "version": "0.2.2-rc.0",
   "module": "build/esm/index.js",
   "main": "build/cjs/index.js",
   "types": "build/types/index.d.ts",
   "dependencies": {
-    "@spotify-confidence/sdk": "0.0.1"
+    "@spotify-confidence/sdk": "0.0.4"
   },
   "devDependencies": {
-    "@openfeature/core": "^0.0.24",
-    "@openfeature/server-sdk": "^1.10.0"
+    "@openfeature/core": "^1.1.0",
+    "@openfeature/server-sdk": "^1.13.5"
   },
   "peerDependencies": {
-    "@openfeature/server-sdk": "^1.10.0"
+    "@openfeature/server-sdk": "^1.13.5"
   },
   "scripts": {
     "build:esm": "tsc -p tsconfig.esm.json",

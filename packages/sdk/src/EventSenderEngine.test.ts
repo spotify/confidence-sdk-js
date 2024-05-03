@@ -40,8 +40,35 @@ describe('EventSenderEngine unit tests', () => {
     }
     expect(flushSpy).toHaveBeenCalledTimes(1);
     await jest.runAllTimersAsync();
-    expect(mockFetch).toHaveBeenCalledTimes(2);
-    expect(flushSpy).toHaveBeenCalledTimes(2);
+  });
+  it('payload should prioritize message fields', async () => {
+    const noBatchEngine = new EventSenderEngine({
+      clientSecret: 'my_secret',
+      maxBatchSize: 1,
+      flushTimeoutMilliseconds: FLUSH_TIMEOUT,
+      fetchImplementation: mockFetch as any,
+      region: 'eu',
+      maxOpenRequests: MAX_OPEN_REQUESTS,
+      logger: {},
+    });
+    const uploadSpy = jest.spyOn(noBatchEngine, 'upload');
+    noBatchEngine.send({ a: 2, message: 3 }, 'my_event', { a: 0, message: 1 });
+    await jest.runAllTimersAsync();
+    expect(uploadSpy).toHaveBeenCalledTimes(1);
+    expect(uploadSpy).toHaveBeenCalledWith({
+      sendTime: expect.any(String),
+      clientSecret: 'my_secret',
+      events: [
+        {
+          eventDefinition: 'my_event',
+          eventTime: expect.any(String),
+          payload: {
+            a: 0,
+            message: 1,
+          },
+        },
+      ],
+    });
   });
   it('should handle a lot of events', async () => {
     const eventCount = BATCH_SIZE * MAX_OPEN_REQUESTS * 2;

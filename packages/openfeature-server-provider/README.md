@@ -32,7 +32,7 @@ OpenFeature.setProvider(provider);
 const client = OpenFeature.getClient();
 
 client
-  .getBooleanValue('flagname.bool', false, {
+  .getBooleanValue('flagName.bool', false, {
     targetingKey: `your targeting key`,
   })
   .then(result => {

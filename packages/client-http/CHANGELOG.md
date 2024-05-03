@@ -1,5 +1,19 @@
 # Changelog
 
+## [0.1.5](https://github.com/spotify/confidence-openfeature-provider-js/compare/client-http-v0.1.4...client-http-v0.1.5) (2024-04-04)
+
+
+### 🐛 Bug Fixes
+
+* **client-http:** do not retry aborted requests ([22c2e0d](https://github.com/spotify/confidence-openfeature-provider-js/commit/22c2e0d01a09acc512a334a70d386eb6cdb8e8e5))
+
+
+### ✨ New Features
+
+* **client-http:** improved request logic ([81aee93](https://github.com/spotify/confidence-openfeature-provider-js/commit/81aee937921d28851400d63284c0ab3a7a882ed1))
+* send sdk info with apply events ([6b95d0e](https://github.com/spotify/confidence-openfeature-provider-js/commit/6b95d0ea90059cae6fd71882a13a65ee84eb0e2c))
+* total confidence sdk ([fe6ae99](https://github.com/spotify/confidence-openfeature-provider-js/commit/fe6ae9979fba51886005542ab5f3cc06a392bcc3))
+
 ## [0.1.4](https://github.com/spotify/confidence-openfeature-provider-js/compare/client-http-v0.1.3...client-http-v0.1.4) (2024-02-01)
 
 
