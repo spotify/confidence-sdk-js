@@ -3565,7 +3565,7 @@ __metadata:
     use-sync-external-store: "npm:^1.2.0"
   peerDependencies:
     "@openfeature/web-sdk": ^1.0.3
-    react-dom: ">=16 <19"
+    react: ^18.2.0
   languageName: unknown
   linkType: soft
 

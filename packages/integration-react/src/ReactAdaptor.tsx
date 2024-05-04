@@ -1,5 +1,3 @@
-'use client';
-
 import React, { createContext, useContext, useMemo } from 'react';
 import { useSyncExternalStore } from 'use-sync-external-store/shim';
 import {
