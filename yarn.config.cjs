@@ -19,7 +19,7 @@ module.exports = defineConfig({
       workspace.set('types', 'build/types/index.d.ts');
       workspace.set('files', ['dist/index.*']);
       workspace.set('scripts.build', 'tsc');
-      workspace.set('scripts.bundle', 'api-extractor run ${CI:---local} && rollup -c');
+      workspace.set('scripts.bundle', 'api-extractor run $( [ ${CI:-0} != 0 ] || echo --local ) && rollup -c');
       workspace.set('publishConfig', {
         access: 'public',
         types: 'dist/index.d.ts',

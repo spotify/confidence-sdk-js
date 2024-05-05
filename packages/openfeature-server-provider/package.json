@@ -22,7 +22,7 @@
   },
   "scripts": {
     "build": "tsc",
-    "bundle": "api-extractor run ${CI:---local} && rollup -c"
+    "bundle": "api-extractor run $( [ ${CI:-0} != 0 ] || echo --local ) && rollup -c"
   },
   "files": [
     "dist/index.*"
