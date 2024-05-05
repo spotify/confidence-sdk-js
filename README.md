@@ -46,6 +46,15 @@ Tests are based on jest and can be run with
 yarn test
 ```
 
+## Bundling and API reports
+
+Before release the sources (and types) are bundled. This process also includes generating an API report to keep track of changes to the public API.
+If you intend to change the public API you need to run the bundle command locally and commit the changed API report files, otherwise the commit will fail in CI. To update the API report run:
+
+```sh
+yarn bundle
+```
+
 ## Code of Conduct
 
 This project adheres to the [Open Source Code of

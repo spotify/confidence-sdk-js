@@ -7,7 +7,7 @@
   ],
   "scripts": {
     "build": "tsc -b tsconfig.json",
-    "bundle": "yarn workspaces foreach -Ap run bundle",
+    "bundle": "yarn constraints && yarn build && yarn workspaces foreach -Ap run bundle",
     "clean": "rm -rf packages/*/{build,dist}",
     "format": "prettier --config prettier.config.js -w .",
     "format:check": "prettier --config prettier.config.js -c .",
