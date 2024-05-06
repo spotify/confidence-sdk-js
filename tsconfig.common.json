@@ -20,7 +20,6 @@
   "references": [
     { "path": "packages/client-http" },
     { "path": "packages/openfeature-web-provider" },
-    { "path": "packages/openfeature-server-provider" },
-    { "path": "packages/integration-react" }
+    { "path": "packages/openfeature-server-provider" }
   ]
 }
