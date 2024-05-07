@@ -1,5 +1,20 @@
 # Changelog
 
+## [0.0.5](https://github.com/spotify/confidence-openfeature-provider-js/compare/sdk-v0.0.4...sdk-v0.0.5) (2024-05-03)
+
+
+### ✨ New Features
+
+* default info logging to console in development ([#133](https://github.com/spotify/confidence-openfeature-provider-js/issues/133)) ([cd1420c](https://github.com/spotify/confidence-openfeature-provider-js/commit/cd1420cefa6b1e2c48a688aee3c15019598412d0))
+* resolve flags on context change ([#128](https://github.com/spotify/confidence-openfeature-provider-js/issues/128)) ([184d5c5](https://github.com/spotify/confidence-openfeature-provider-js/commit/184d5c56f3ee4e428c72a1fa500197b9e7aca8d7))
+
+
+### Dependencies
+
+* The following workspace dependencies were updated
+  * dependencies
+    * @spotify-confidence/client-http bumped from 0.1.5 to 0.1.6
+
 ## [0.0.4](https://github.com/spotify/confidence-openfeature-provider-js/compare/sdk-v0.0.3...sdk-v0.0.4) (2024-04-30)
 
 

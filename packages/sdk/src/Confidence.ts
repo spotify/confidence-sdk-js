@@ -11,8 +11,6 @@ import { Trackable } from './Trackable';
 import { Closer } from './Closer';
 import { Subscribe, Observer, subject } from './observing';
 
-export { FlagResolverClient, FlagResolution };
-
 export interface ConfidenceOptions {
   clientSecret: string;
   region?: 'global' | 'eu' | 'us';
@@ -183,7 +181,7 @@ export class Confidence implements EventSender, Trackable, FlagResolver {
     const baseUrl = getConfidenceUrl(region);
     const sdk = {
       id: SdkId.SDK_ID_JS_CONFIDENCE,
-      version: '0.0.4', // x-release-please-version
+      version: '0.0.5', // x-release-please-version
     } as const;
     const flagResolverClient = new FlagResolverClient({
       clientSecret,

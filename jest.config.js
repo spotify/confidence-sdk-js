@@ -22,13 +22,6 @@ module.exports = {
   coverageProvider: 'v8',
   projects: [
     {
-      displayName: 'integration-react',
-      testMatch: ['<rootDir>/packages/integration-react/src/**/*.test.ts*'],
-      testEnvironment: './customJestBrowserEnv.ts',
-      ...projectCommonConfig,
-      setupFilesAfterEnv: ['jest-extended/all', '<rootDir>/packages/integration-react/jest.setup.ts'],
-    },
-    {
       displayName: 'client-http',
       testMatch: ['<rootDir>/packages/client-http/src/**/*.test.ts*'],
       ...projectCommonConfig,

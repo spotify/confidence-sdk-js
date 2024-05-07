@@ -1,8 +1,8 @@
-# JavaScript Confidence Provider
+# JavaScript Confidence SDK Monorepo
 
 ![](https://img.shields.io/badge/lifecycle-beta-a0c3d2.svg)
 
-JavaScript implementation of the [Confidence](https://confidence.spotify.com/) feature provider, to be used in conjunction wth the [OpenFeature SDK](https://github.com/open-feature/js-sdk).
+JavaScript implementation of the [Confidence](https://confidence.spotify.com/) SDK and the Confidence OpenFeature provider, to be used in conjunction wth the [OpenFeature SDK](https://github.com/open-feature/js-sdk).
 
 # Usage
 
@@ -10,7 +10,7 @@ This monorepo exports multiple packages, with their own docs:
 
 - [openfeature-web-provider](packages/openfeature-web-provider/README.md)
 - [openfeature-server-provider](packages/openfeature-server-provider/README.md)
-- [integration-react](packages/integration-react/README.md)
+- [sdk](packages/sdk/README.md)
 
 # Development
 
@@ -44,6 +44,15 @@ Tests are based on jest and can be run with
 
 ```sh
 yarn test
+```
+
+## Bundling and API reports
+
+Before release the sources (and types) are bundled. This process also includes generating an API report to keep track of changes to the public API.
+If you intend to change the public API you need to run the bundle command locally and commit the changed API report files, otherwise the commit will fail in CI. To update the API report run:
+
+```sh
+yarn bundle
 ```
 
 ## Code of Conduct

@@ -1,21 +1,28 @@
 {
   "name": "@spotify-confidence/client-http",
   "license": "Apache-2.0",
-  "version": "0.1.5",
+  "version": "0.1.6",
   "module": "build/esm/index.js",
-  "main": "build/cjs/index.js",
   "types": "build/types/index.d.ts",
+  "files": [
+    "dist/index.*"
+  ],
+  "scripts": {
+    "bundle": "rollup -c && api-extractor run",
+    "build": "tsc"
+  },
   "engineStrict": true,
   "engines": {
     "node": ">=18.17.0"
   },
-  "scripts": {
-    "build:esm": "tsc -p tsconfig.esm.json",
-    "build:cjs": "tsc -p tsconfig.cjs.json",
-    "build:types": "tsc -p tsconfig.types.json",
-    "clean": "rm -rf build"
-  },
   "publishConfig": {
-    "access": "public"
-  }
+    "access": "public",
+    "types": "dist/index.d.ts",
+    "module": "dist/index.js"
+  },
+  "devDependencies": {
+    "@microsoft/api-extractor": "*",
+    "rollup": "*"
+  },
+  "type": "module"
 }

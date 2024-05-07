@@ -1,27 +1,34 @@
 {
   "name": "@spotify-confidence/sdk",
   "license": "Apache-2.0",
-  "version": "0.0.4",
+  "version": "0.0.5",
   "module": "build/esm/index.js",
-  "main": "build/cjs/index.js",
   "types": "build/types/index.d.ts",
   "engineStrict": true,
   "engines": {
     "node": ">=18.17.0"
   },
   "scripts": {
-    "build:esm": "tsc -p tsconfig.esm.json",
-    "build:cjs": "tsc -p tsconfig.cjs.json",
-    "build:types": "tsc -p tsconfig.types.json",
     "gen:proto": "protoc --plugin=$(yarn bin protoc-gen-ts_proto) --ts_proto_out=src/generated -I proto proto/confidence/flags/resolver/v1/api.proto --ts_proto_opt=outputEncodeMethods=false --ts_proto_opt=outputPartialMethods=false && prettier --config ../../prettier.config.js -w src/generated",
-    "clean": "rm -rf build"
+    "build": "tsc",
+    "bundle": "rollup -c && api-extractor run"
   },
   "publishConfig": {
-    "access": "public"
+    "access": "public",
+    "types": "dist/index.d.ts",
+    "module": "dist/index.js"
   },
-  "devDependencies": {
-    "prettier": "*",
-    "ts-proto": "^1.171.0",
+  "dependencies": {
     "web-vitals": "^3.5.2"
+  },
+  "type": "module",
+  "files": [
+    "dist/index.*"
+  ],
+  "devDependencies": {
+    "@microsoft/api-extractor": "*",
+    "prettier": "*",
+    "rollup": "*",
+    "ts-proto": "^1.171.0"
   }
 }
