@@ -3652,6 +3652,18 @@ __metadata:
   languageName: unknown
   linkType: soft
 
+"@spotify-confidence/react-helpers@workspace:packages/react-helpers":
+  version: 0.0.0-use.local
+  resolution: "@spotify-confidence/react-helpers@workspace:packages/react-helpers"
+  dependencies:
+    "@microsoft/api-extractor": "npm:*"
+    react: "npm:^18.2.0"
+    rollup: "npm:*"
+  peerDependencies:
+    react: ^18.2.0
+  languageName: unknown
+  linkType: soft
+
 "@spotify-confidence/sdk@npm:0.0.5, @spotify-confidence/sdk@workspace:packages/sdk":
   version: 0.0.0-use.local
   resolution: "@spotify-confidence/sdk@workspace:packages/sdk"

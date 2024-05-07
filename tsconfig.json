@@ -2,6 +2,7 @@
   "files": [],
   "compilerOptions": { "composite": true },
   "references": [
+    { "path": "./packages/react-helpers" },
     { "path": "./packages/sdk" },
     { "path": "./packages/openfeature-server-provider" },
     { "path": "./packages/openfeature-web-provider" }
