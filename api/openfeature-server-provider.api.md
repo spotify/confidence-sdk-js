@@ -13,6 +13,8 @@ import { ProviderMetadata } from '@openfeature/server-sdk';
 import { ProviderStatus } from '@openfeature/server-sdk';
 import { ResolutionDetails } from '@openfeature/server-sdk';
 
+// Warning: (ae-missing-release-tag) "ConfidenceServerProvider" is part of the package's API, but it is missing a release tag (@alpha, @beta, @public, or @internal)
+//
 // @public (undocumented)
 export class ConfidenceServerProvider implements Provider {
     constructor(client: Confidence);
@@ -31,6 +33,8 @@ export class ConfidenceServerProvider implements Provider {
 }
 
 // Warning: (ae-forgotten-export) The symbol "ConfidenceProviderFactoryOptions" needs to be exported by the entry point index.d.ts
+// Warning: (ae-missing-release-tag) "createConfidenceServerProvider" is part of the package's API, but it is missing a release tag (@alpha, @beta, @public, or @internal)
+// Warning: (ae-missing-release-tag) "createConfidenceServerProvider" is part of the package's API, but it is missing a release tag (@alpha, @beta, @public, or @internal)
 //
 // @public (undocumented)
 export function createConfidenceServerProvider(options: ConfidenceProviderFactoryOptions): Provider;

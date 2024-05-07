@@ -4,15 +4,21 @@
 
 ```ts
 
+// Warning: (ae-missing-release-tag) "abortableSleep" is part of the package's API, but it is missing a release tag (@alpha, @beta, @public, or @internal)
+//
 // @public (undocumented)
 export function abortableSleep(milliseconds: number, signal?: AbortSignal): Promise<void>;
 
+// Warning: (ae-missing-release-tag) "AppliedFlag" is part of the package's API, but it is missing a release tag (@alpha, @beta, @public, or @internal)
+//
 // @public (undocumented)
 export type AppliedFlag = {
     flag: string;
     applyTime: string;
 };
 
+// Warning: (ae-missing-release-tag) "ApplyManager" is part of the package's API, but it is missing a release tag (@alpha, @beta, @public, or @internal)
+//
 // @public (undocumented)
 export class ApplyManager {
     constructor(options: ApplyManagerOptions);
@@ -22,6 +28,8 @@ export class ApplyManager {
     flush(): Promise<void>;
 }
 
+// Warning: (ae-missing-release-tag) "ApplyManagerOptions" is part of the package's API, but it is missing a release tag (@alpha, @beta, @public, or @internal)
+//
 // @public (undocumented)
 export interface ApplyManagerOptions {
     // (undocumented)
@@ -32,6 +40,8 @@ export interface ApplyManagerOptions {
     timeout: number;
 }
 
+// Warning: (ae-missing-release-tag) "ConfidenceClient" is part of the package's API, but it is missing a release tag (@alpha, @beta, @public, or @internal)
+//
 // @public (undocumented)
 export class ConfidenceClient {
     constructor(options: ConfidenceClientOptions);
@@ -45,6 +55,8 @@ export class ConfidenceClient {
     }): Promise<Configuration>;
 }
 
+// Warning: (ae-missing-release-tag) "ConfidenceClientOptions" is part of the package's API, but it is missing a release tag (@alpha, @beta, @public, or @internal)
+//
 // @public (undocumented)
 export type ConfidenceClientOptions = {
     fetchImplementation: typeof fetch;
@@ -56,6 +68,9 @@ export type ConfidenceClientOptions = {
     timeout: number;
 };
 
+// Warning: (ae-missing-release-tag) "Configuration" is part of the package's API, but it is missing a release tag (@alpha, @beta, @public, or @internal)
+// Warning: (ae-missing-release-tag) "Configuration" is part of the package's API, but it is missing a release tag (@alpha, @beta, @public, or @internal)
+//
 // @public (undocumented)
 export namespace Configuration {
     // (undocumented)
@@ -118,6 +133,8 @@ export interface Configuration {
     resolveToken: string;
 }
 
+// Warning: (ae-missing-release-tag) "FetchBuilder" is part of the package's API, but it is missing a release tag (@alpha, @beta, @public, or @internal)
+//
 // @public
 export class FetchBuilder {
     abortPrevious(): this;
@@ -147,15 +164,21 @@ export class FetchBuilder {
     timeout(duration: number): this;
 }
 
+// Warning: (ae-missing-release-tag) "RequestError" is part of the package's API, but it is missing a release tag (@alpha, @beta, @public, or @internal)
+//
 // @public (undocumented)
 export class RequestError extends Error {
 }
 
+// Warning: (ae-missing-release-tag) "ResolveContext" is part of the package's API, but it is missing a release tag (@alpha, @beta, @public, or @internal)
+//
 // @public (undocumented)
 export type ResolveContext = {
     targeting_key?: string;
 };
 
+// Warning: (ae-missing-release-tag) "ResolvedFlag" is part of the package's API, but it is missing a release tag (@alpha, @beta, @public, or @internal)
+//
 // @public (undocumented)
 export type ResolvedFlag<T = any> = {
     flag: string;
@@ -165,11 +188,15 @@ export type ResolvedFlag<T = any> = {
     reason: Configuration.ResolveReason;
 };
 
+// Warning: (ae-missing-release-tag) "TimeoutError" is part of the package's API, but it is missing a release tag (@alpha, @beta, @public, or @internal)
+//
 // @public (undocumented)
 export class TimeoutError extends RequestError {
     constructor();
 }
 
+// Warning: (ae-missing-release-tag) "TimeUnit" is part of the package's API, but it is missing a release tag (@alpha, @beta, @public, or @internal)
+//
 // @public (undocumented)
 export const enum TimeUnit {
     // (undocumented)

@@ -135,7 +135,7 @@ export class FetchBuilder {
   /**
    * Reject responses based on a callback examining the response.
    * Will reject the response with {@link RequestError} if the callback returns true.
-   * @param callback
+   * @param callback - the callback to determine if the response should be rejected
    * @returns the builder itself
    */
   rejectOn(callback: (code: Response) => boolean) {

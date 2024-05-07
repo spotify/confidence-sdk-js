@@ -13,6 +13,8 @@ import { Provider } from '@openfeature/web-sdk';
 import { ProviderMetadata } from '@openfeature/web-sdk';
 import { ResolutionDetails } from '@openfeature/web-sdk';
 
+// Warning: (ae-missing-release-tag) "ConfidenceWebProvider" is part of the package's API, but it is missing a release tag (@alpha, @beta, @public, or @internal)
+//
 // @public (undocumented)
 export class ConfidenceWebProvider implements Provider {
     constructor(confidence: Confidence);
@@ -37,6 +39,8 @@ export class ConfidenceWebProvider implements Provider {
 }
 
 // Warning: (ae-forgotten-export) The symbol "ConfidenceWebProviderOptions" needs to be exported by the entry point index.d.ts
+// Warning: (ae-missing-release-tag) "createConfidenceWebProvider" is part of the package's API, but it is missing a release tag (@alpha, @beta, @public, or @internal)
+// Warning: (ae-missing-release-tag) "createConfidenceWebProvider" is part of the package's API, but it is missing a release tag (@alpha, @beta, @public, or @internal)
 //
 // @public (undocumented)
 export function createConfidenceWebProvider(options: ConfidenceWebProviderOptions): Provider;

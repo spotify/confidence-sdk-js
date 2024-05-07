@@ -8,6 +8,7 @@ import { ConfidenceClientOptions } from '@spotify-confidence/client-http';
 import { Configuration as FlagResolution } from '@spotify-confidence/client-http';
 
 // Warning: (ae-forgotten-export) The symbol "Trackable" needs to be exported by the entry point index.d.ts
+// Warning: (ae-missing-release-tag) "Confidence" is part of the package's API, but it is missing a release tag (@alpha, @beta, @public, or @internal)
 //
 // @public (undocumented)
 export class Confidence implements EventSender, Trackable {
@@ -44,6 +45,8 @@ export class Confidence implements EventSender, Trackable {
     withContext(context: Context): Confidence;
 }
 
+// Warning: (ae-missing-release-tag) "ConfidenceOptions" is part of the package's API, but it is missing a release tag (@alpha, @beta, @public, or @internal)
+//
 // @public (undocumented)
 export interface ConfidenceOptions {
     // (undocumented)
@@ -64,6 +67,8 @@ export interface ConfidenceOptions {
     timeout: number;
 }
 
+// Warning: (ae-missing-release-tag) "Context" is part of the package's API, but it is missing a release tag (@alpha, @beta, @public, or @internal)
+//
 // @public (undocumented)
 export interface Context extends Value.Struct {
     // (undocumented)
@@ -80,6 +85,8 @@ export interface Context extends Value.Struct {
     visitor_id?: string;
 }
 
+// Warning: (ae-missing-release-tag) "Contextual" is part of the package's API, but it is missing a release tag (@alpha, @beta, @public, or @internal)
+//
 // @public (undocumented)
 export interface Contextual<Self extends Contextual<Self>> {
     // (undocumented)
@@ -92,6 +99,8 @@ export interface Contextual<Self extends Contextual<Self>> {
     withContext(context: Context): Self;
 }
 
+// Warning: (ae-missing-release-tag) "EventSender" is part of the package's API, but it is missing a release tag (@alpha, @beta, @public, or @internal)
+//
 // @public (undocumented)
 export interface EventSender extends Contextual<EventSender> {
     // (undocumented)
@@ -100,6 +109,8 @@ export interface EventSender extends Contextual<EventSender> {
 
 export { FlagResolution }
 
+// Warning: (ae-missing-release-tag) "FlagResolverClient" is part of the package's API, but it is missing a release tag (@alpha, @beta, @public, or @internal)
+//
 // @public (undocumented)
 export class FlagResolverClient {
     // Warning: (ae-forgotten-export) The symbol "FlagResolverOptions" needs to be exported by the entry point index.d.ts
@@ -112,9 +123,14 @@ export class FlagResolverClient {
     resolve(context: Context, flags: string[]): FlagResolutionPromise;
 }
 
+// Warning: (ae-missing-release-tag) "pageViews" is part of the package's API, but it is missing a release tag (@alpha, @beta, @public, or @internal)
+//
 // @public (undocumented)
 export function pageViews(): Trackable.Manager;
 
+// Warning: (ae-missing-release-tag) "Value" is part of the package's API, but it is missing a release tag (@alpha, @beta, @public, or @internal)
+// Warning: (ae-missing-release-tag) "Value" is part of the package's API, but it is missing a release tag (@alpha, @beta, @public, or @internal)
+//
 // @public (undocumented)
 export namespace Value {
     // (undocumented)
@@ -142,9 +158,14 @@ export namespace Value {
 // @public (undocumented)
 export type Value = Value.Primitive | Value.Struct | Value.List;
 
+// Warning: (ae-missing-release-tag) "visitorIdentity" is part of the package's API, but it is missing a release tag (@alpha, @beta, @public, or @internal)
+//
 // @public (undocumented)
 export const visitorIdentity: () => Trackable.Manager;
 
+// Warning: (ae-unresolved-link) The @link reference could not be resolved: The package "@spotify-confidence/sdk" does not have an export "Topic"
+// Warning: (ae-unresolved-link) The @link reference could not be resolved: The reference is ambiguous because "track" has more than one declaration; you need to add a TSDoc member reference selector
+//
 // @public
 export function webVitals({ lcp, inp, cls, ttfb, }?: WebVitalsOptions): Trackable.Manager;
 
