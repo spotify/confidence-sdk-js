@@ -667,7 +667,7 @@ function createFlagResolution(context: Context): FlagResolution {
             dub: 3.5,
           },
         },
-        reason: FlagResolution.ResolveReason.Match,
+        reason: 'MATCH',
         schema: {
           bool: 'boolean',
           str: 'string',
@@ -687,7 +687,7 @@ function createFlagResolution(context: Context): FlagResolution {
         value: {
           bool: true,
         },
-        reason: FlagResolution.ResolveReason.Match,
+        reason: 'MATCH',
         schema: {
           bool: 'boolean',
         },
@@ -695,7 +695,7 @@ function createFlagResolution(context: Context): FlagResolution {
       ['no-seg-flag']: {
         name: 'no-seg-flag',
         variant: '',
-        reason: FlagResolution.ResolveReason.NoSegmentMatch,
+        reason: 'NO_SEGMENT_MATCH',
         value: undefined,
         schema: 'undefined',
       },

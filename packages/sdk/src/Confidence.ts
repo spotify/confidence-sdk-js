@@ -188,6 +188,7 @@ export class Confidence implements EventSender, Trackable, FlagResolver {
       baseUrl,
       fetchImplementation,
       sdk,
+      environment,
     });
     const estEventSizeKb = 1;
     const flushTimeoutMilliseconds = 500;

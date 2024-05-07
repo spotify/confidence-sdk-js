@@ -39,7 +39,7 @@ const dummyConfiguration: FlagResolution = {
           dub: 3.5,
         },
       },
-      reason: FlagResolution.ResolveReason.Match,
+      reason: 'MATCH',
       schema: {
         bool: 'boolean',
         str: 'string',
@@ -59,13 +59,13 @@ const dummyConfiguration: FlagResolution = {
       value: {
         bool: true,
       },
-      reason: FlagResolution.ResolveReason.Match,
+      reason: 'MATCH',
       schema: { bool: 'boolean' },
     },
     ['no-seg-flag']: {
       name: 'no-seg-flag',
       variant: '',
-      reason: FlagResolution.ResolveReason.NoSegmentMatch,
+      reason: 'NO_SEGMENT_MATCH',
       value: undefined,
       schema: 'undefined',
     },

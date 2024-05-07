@@ -1,4 +1,5 @@
-import { Schema, Value } from './Value';
+import { Schema } from './Schema';
+import { Value } from './Value';
 
 describe('Value', () => {
   describe('get', () => {
@@ -11,20 +12,21 @@ describe('Value', () => {
     it('throws if it encounters a non Struct', () => {
       expect(() => {
         Value.get(value, 'a.a.b');
-      }).toThrow('Expected Struct, but found string at path a.a');
+      }).toThrow(`Expected Struct, but found string, at path 'a.a'`);
     });
   });
 });
 
 describe('Schema', () => {
-  const schema = Schema.struct({ a: Schema.struct({ a: Schema.STRING, b: Schema.list(Schema.NUMBER) }) });
+  const schema = Schema.struct({ a: Schema.struct({ a: Schema.STRING, b: Schema.list(Schema.DOUBLE) }) });
 
   it('can assert a value is assignable from the Schema type', () => {
     expect(() => schema.assertAssignsTo({})).not.toThrow();
-    expect(() => schema.assertAssignsTo({ a: 3 })).toThrow('Expected Struct, but found number at path a');
-    expect(() => schema.assertAssignsTo({ x: true })).toThrow('Unexpected Struct at path x');
+    expect(() => schema.assertAssignsTo({ a: 3 })).toThrow(`Expected Struct, but found number, at path 'a'`);
+    expect(() => schema.assertAssignsTo({ x: true })).toThrow(`Expected undefined, but found Struct, at path 'x'`);
+    // @ts-expect-error
     expect(() => schema.assertAssignsTo({ a: { a: '', b: [0, 1, '2'] } })).toThrow(
-      'Expected number, but found string at path a.b[2]',
+      `Expected number, but found string, at path 'a.b[2]'`,
     );
   });
 

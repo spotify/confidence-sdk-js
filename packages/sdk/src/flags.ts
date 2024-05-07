@@ -45,6 +45,7 @@ export interface PendingFlagResolution extends PromiseLike<FlagResolution> {
 }
 
 export interface FlagResolver {
+  /** @internal */
   resolveFlags(...names: string[]): Promise<FlagResolution>;
   evaluateFlag<T extends Value>(path: string, defaultValue: T): Promise<FlagEvaluation<T>>;
   getFlag<T extends Value>(path: string, defaultValue: T): Promise<T>;
