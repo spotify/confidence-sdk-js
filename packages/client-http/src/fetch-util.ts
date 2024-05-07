@@ -3,6 +3,11 @@
  */
 type Fetch = typeof fetch;
 
+export const enum TimeUnit {
+  SECOND = 1000,
+  MINUTE = 60 * TimeUnit.SECOND,
+}
+
 /**
  * The full fetch API has overloaded variants which makes it very cumbersome
  * to compose, therefore we define SimpleFetch, as just the simplest of the fetch
@@ -25,11 +30,6 @@ type SimpleFetch = (request: Request) => Promise<Response>;
  * with some desired behavior applied.
  */
 type FetchPrimitive = (next: SimpleFetch) => SimpleFetch;
-
-export const enum TimeUnit {
-  SECOND = 1000,
-  MINUTE = 60 * TimeUnit.SECOND,
-}
 
 export class RequestError extends Error {}
 export class TimeoutError extends RequestError {
@@ -135,7 +135,7 @@ export class FetchBuilder {
   /**
    * Reject responses based on a callback examining the response.
    * Will reject the response with {@link RequestError} if the callback returns true.
-   * @param callback
+   * @param callback - the callback to determine if the response should be rejected
    * @returns the builder itself
    */
   rejectOn(callback: (code: Response) => boolean) {

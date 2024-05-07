@@ -5,7 +5,8 @@
 .yarn/*
 
 # packages
-packages/**/build
+packages/*/build
+packages/*/dist
 coverage/*
 
 # examples

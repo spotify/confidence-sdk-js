@@ -1,6 +1,8 @@
 node_modules/
-packages/**/build
+packages/*/build
+packages/*/dist
 .idea
 coverage/*
 *.log
 packages/*/CHANGELOG.md
+api/*
