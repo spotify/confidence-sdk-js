@@ -3611,15 +3611,6 @@ __metadata:
   languageName: node
   linkType: hard
 
-"@spotify-confidence/client-http@workspace:packages/client-http":
-  version: 0.0.0-use.local
-  resolution: "@spotify-confidence/client-http@workspace:packages/client-http"
-  dependencies:
-    "@microsoft/api-extractor": "npm:*"
-    rollup: "npm:*"
-  languageName: unknown
-  linkType: soft
-
 "@spotify-confidence/integration-react@npm:0.2.3":
   version: 0.2.3
   resolution: "@spotify-confidence/integration-react@npm:0.2.3"
