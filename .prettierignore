@@ -1,6 +1,6 @@
 node_modules/
-packages/**/build
-packages/**/dist
+packages/*/build
+packages/*/dist
 .idea
 coverage/*
 *.log

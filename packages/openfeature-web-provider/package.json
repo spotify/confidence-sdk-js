@@ -25,7 +25,7 @@
   },
   "scripts": {
     "build": "tsc",
-    "bundle": "[ ${CI:-0} != 0 ] && api-extractor run --local || api-extractor run && rollup -c"
+    "bundle": "rollup -c && api-extractor run"
   },
   "files": [
     "dist/index.*"

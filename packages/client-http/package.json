@@ -8,7 +8,7 @@
     "dist/index.*"
   ],
   "scripts": {
-    "bundle": "[ ${CI:-0} != 0 ] && api-extractor run --local || api-extractor run && rollup -c",
+    "bundle": "rollup -c && api-extractor run",
     "build": "tsc"
   },
   "engineStrict": true,
