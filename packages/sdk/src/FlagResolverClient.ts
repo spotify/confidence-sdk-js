@@ -42,7 +42,7 @@ class FlagResolutionImpl implements FlagResolution {
     for (const { flag, variant, value, reason, flagSchema } of resolveResponse.resolvedFlags) {
       const name = flag.slice(FLAG_PREFIX.length);
 
-      const schema = flagSchema ? Schema.parse({ structSchema: flagSchema }) : Schema.UNDEFINED;
+      const schema = flagSchema ? Schema.parse({ structSchema: flagSchema }) : Schema.ANY;
       this.flags.set(name, {
         schema,
         value: value! as Value.Struct,
@@ -76,6 +76,9 @@ class FlagResolutionImpl implements FlagResolution {
       });
 
       if (reason !== 'MATCH') {
+        if (reason === 'NO_SEGMENT_MATCH' && this.applier) {
+          this.applier?.(name);
+        }
         return {
           reason,
           value: defaultValue,
@@ -122,6 +125,7 @@ export class FlagResolverClient {
     sdk,
     applyTimeout,
     baseUrl = 'https://resolver.confidence.dev/v1',
+    // todo refactor to move out environment
     environment,
   }: FlagResolverClientOptions) {
     this.fetchImplementation = environment === 'client' ? withRequestLogic(fetchImplementation) : fetchImplementation;

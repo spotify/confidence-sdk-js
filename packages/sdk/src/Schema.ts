@@ -50,7 +50,7 @@ export namespace Schema {
       const [step, ...rest] = steps;
       const fieldSchema = this.fields[step];
       return TypeMismatchError.hoist(step, () => {
-        if (!fieldSchema) UNDEFINED;
+        if (!fieldSchema) return UNDEFINED;
         return fieldSchema.get(...rest);
       });
     }
@@ -106,6 +106,23 @@ export namespace Schema {
     }
   }
 
+  class Any extends Schema {
+    constructor() {
+      super('undefined');
+    }
+
+    get(path: string): Schema<Value>;
+    get(...steps: string[]): Schema<Value>;
+    get(): Schema<Value> {
+      return ANY;
+    }
+
+    assertAssignsTo(_value: Value): void {
+      //no-op
+    }
+  }
+
+  export const ANY: Schema<any> = new Any();
   export const UNDEFINED: Schema<boolean> = new Primitive('undefined');
   export const BOOLEAN: Schema<boolean> = new Primitive('boolean');
   export const STRING: Schema<string> = new Primitive('string');
