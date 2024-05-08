@@ -150,7 +150,7 @@ describe('Backend environment Evaluation', () => {
   `(`resolve $type Evaluation`, ({ path, incorrectPath, incorrectPathType, defaultValue, expectedValue }) => {
     it('should resolve a match', async () => {
       const flagResolution = await instanceUnderTest.resolve({}, ['testflag']);
-      expect(flagResolution.evaluate('testflag' + path, defaultValue)).toEqual({
+      expect(flagResolution.evaluate(`testflag${path}`, defaultValue)).toEqual({
         variant: 'flags/testflag/variants/control',
         reason: 'MATCH',
         value: expectedValue,
@@ -159,7 +159,7 @@ describe('Backend environment Evaluation', () => {
 
     it('should resolve NO_SEGMENT_MATCH when accessing a flag with no segment match', async () => {
       const flagResolution = await instanceUnderTest.resolve({}, ['no-seg-flag']);
-      expect(flagResolution.evaluate('no-seg-flag' + path, defaultValue)).toEqual({
+      expect(flagResolution.evaluate(`no-seg-flag${path}`, defaultValue)).toEqual({
         reason: 'NO_SEGMENT_MATCH',
         value: defaultValue,
       });
@@ -168,7 +168,7 @@ describe('Backend environment Evaluation', () => {
     it('should resolve from a nested struct', async () => {
       // path, defaultValue, value
       const flagResolution = await instanceUnderTest.resolve({}, ['testflag']);
-      expect(flagResolution.evaluate('testflag.obj' + path, defaultValue)).toEqual({
+      expect(flagResolution.evaluate(`testflag.obj${path}`, defaultValue)).toEqual({
         variant: 'flags/testflag/variants/control',
         reason: 'MATCH',
         value: expectedValue,
@@ -178,7 +178,7 @@ describe('Backend environment Evaluation', () => {
     it('should return default if the flag is not found', async () => {
       // path, defaultValue, value
       const flagResolution = await instanceUnderTest.resolve({}, ['notARealFlag']);
-      const actual = flagResolution.evaluate('notARealFlag' + path, defaultValue);
+      const actual = flagResolution.evaluate(`notARealFlag${path}`, defaultValue);
 
       expect(actual).toEqual({
         value: defaultValue,
@@ -191,7 +191,7 @@ describe('Backend environment Evaluation', () => {
     it('should return default if the flag requested is the wrong type', async () => {
       // path, defaultValue, value, incorrectTypePath
       const flagResolution = await instanceUnderTest.resolve({}, ['testflag']);
-      const actual = flagResolution.evaluate('testflag' + incorrectPath, defaultValue);
+      const actual = flagResolution.evaluate(`testflag${incorrectPath}`, defaultValue);
 
       expect(actual).toEqual({
         value: defaultValue,
@@ -217,7 +217,7 @@ describe('Backend environment Evaluation', () => {
     it('should return default if the nested flag requested is the wrong type', async () => {
       // path, defaultValue, value, incorrectTypePath
       const flagResolution = await instanceUnderTest.resolve({}, ['testflag']);
-      const actual = flagResolution.evaluate('testflag.obj' + incorrectPath, defaultValue);
+      const actual = flagResolution.evaluate(`testflag.obj${incorrectPath}`, defaultValue);
 
       expect(actual).toEqual({
         value: defaultValue,
