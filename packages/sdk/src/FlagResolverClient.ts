@@ -201,7 +201,7 @@ export class FlagResolverClient {
 
   async apply(request: ApplyFlagsRequest): Promise<void> {
     const resp = await this.fetchImplementation(
-      new Request(this.baseUrl + '/flags:apply', {
+      new Request(`${this.baseUrl} /flags:apply`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -216,7 +216,7 @@ export class FlagResolverClient {
 
   async resolveFlagsJson(request: ResolveFlagsRequest, signal: AbortSignal): Promise<ResolveFlagsResponse> {
     const resp = await this.fetchImplementation(
-      new Request(this.baseUrl + '/flags:resolve', {
+      new Request(`${this.baseUrl}/flags:resolve`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -263,20 +263,20 @@ function toEvaluationReason(reason: ResolveReason): FlagEvaluation<unknown>['rea
       return 'TARGETING_KEY_ERROR';
     case ResolveReason.RESOLVE_REASON_ERROR:
       return 'ERROR';
+    default:
+      return 'UNSPECIFIED';
   }
-  return 'UNSPECIFIED';
 }
 
 function base64FromBytes(arr: Uint8Array): string {
   if ((globalThis as any).Buffer) {
     return globalThis.Buffer.from(arr).toString('base64');
-  } else {
-    const bin: string[] = [];
-    arr.forEach(byte => {
-      bin.push(globalThis.String.fromCharCode(byte));
-    });
-    return globalThis.btoa(bin.join(''));
   }
+  const bin: string[] = [];
+  arr.forEach(byte => {
+    bin.push(globalThis.String.fromCharCode(byte));
+  });
+  return globalThis.btoa(bin.join(''));
 }
 
 export function withRequestLogic(fetchImplementation: (request: Request) => Promise<Response>): typeof fetch {

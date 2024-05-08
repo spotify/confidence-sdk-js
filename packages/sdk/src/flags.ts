@@ -24,6 +24,7 @@ export namespace FlagEvaluation {
     readonly errorMessage: string;
   }
 }
+// eslint-disable-next-line @typescript-eslint/no-redeclare
 export type FlagEvaluation<T> = FlagEvaluation.Matched<T> | FlagEvaluation.Unmatched<T> | FlagEvaluation.Failed<T>;
 export interface PendingEvaluation<T> extends PromiseLike<FlagEvaluation<T>> {
   readonly reason: 'PENDING';

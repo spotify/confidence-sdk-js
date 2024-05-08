@@ -35,8 +35,12 @@ export namespace Value {
           }
         }
         for (const key in value) {
-          TypeMismatchError.hoist(key, () => assertValue(value[key as keyof typeof value] as unknown));
+          if (Object.prototype.hasOwnProperty.call(value, key)) {
+            TypeMismatchError.hoist(key, () => assertValue(value[key as keyof typeof value] as unknown));
+          }
         }
+        return;
+      default: // no-op
     }
   }
 
@@ -95,6 +99,7 @@ export namespace Value {
         return jsType;
       case 'object':
         return Array.isArray(value) ? 'List' : 'Struct';
+      default: // no-op
     }
     throw new TypeError(`Invalid Value type "${jsType}"`);
   }
@@ -125,6 +130,7 @@ export namespace Value {
   export function get(struct: Struct | undefined, ...parts: string[]): Value {
     let value: Value = struct;
     const errorPath: string[] = [];
+    /* eslint-disable no-loop-func */
     for (const step of parts.flatMap(part => part.split('.'))) {
       TypeMismatchError.hoist(errorPath, () => {
         assertType('Struct', value);
@@ -132,6 +138,7 @@ export namespace Value {
         errorPath.push(step);
       });
     }
+    /* eslint-enable no-loop-func */
     return value;
   }
 }

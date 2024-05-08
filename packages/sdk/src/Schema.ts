@@ -85,10 +85,6 @@ export namespace Schema {
     // }
   }
   class Primitive<T extends Value.Primitive> extends Schema<T> {
-    constructor(typeName: 'string' | 'boolean' | 'number' | 'undefined') {
-      super(typeName);
-    }
-
     assertAssignsTo(value: Value): void {
       Value.assertType(this.typeName as any, value);
     }
@@ -118,7 +114,7 @@ export namespace Schema {
     }
 
     assertAssignsTo(_value: Value): void {
-      //no-op
+      // no-op
     }
   }
 
