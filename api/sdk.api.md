@@ -163,7 +163,7 @@ export interface FlagResolver {
     evaluateFlag<T extends Value>(path: string, defaultValue: T): Promise<FlagEvaluation<T>>;
     // (undocumented)
     getFlag<T extends Value>(path: string, defaultValue: T): Promise<T>;
-    // (undocumented)
+    // @internal (undocumented)
     resolveFlags(...names: string[]): Promise<FlagResolution>;
 }
 
