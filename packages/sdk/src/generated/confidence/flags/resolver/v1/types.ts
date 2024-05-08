@@ -12,8 +12,6 @@ export enum ResolveReason {
   /**
    * RESOLVE_REASON_NO_TREATMENT_MATCH - The flag could not be resolved because the matching rule had no variant
    * that could be assigned.
-   *
-   * @deprecated
    */
   RESOLVE_REASON_NO_TREATMENT_MATCH = 3,
   /** RESOLVE_REASON_FLAG_ARCHIVED - The flag could not be resolved because it was archived. */
