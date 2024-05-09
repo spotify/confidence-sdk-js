@@ -1,5 +1,5 @@
-import { Confidence, Context } from '@spotify-confidence/sdk';
-import React, { createContext, FC, PropsWithChildren, useContext, useMemo } from 'react';
+import { Confidence, Context, Value, FlagEvaluation } from '@spotify-confidence/sdk';
+import React, { createContext, FC, PropsWithChildren, useContext, useMemo, useSyncExternalStore } from 'react';
 
 const ConfidenceContext = createContext<Confidence | null>(null);
 
@@ -7,7 +7,7 @@ export const ConfidenceProvider: FC<PropsWithChildren<{ confidence: Confidence }
   <ConfidenceContext.Provider value={confidence} children={children} />
 );
 
-export const WithConfidenceContext: FC<PropsWithChildren<{ context: Context }>> = ({ context, children }) => {
+export const WithContext: FC<PropsWithChildren<{ context: Context }>> = ({ context, children }) => {
   return <ConfidenceProvider confidence={useConfidence(context)}>{children}</ConfidenceProvider>;
 };
 
@@ -16,7 +16,39 @@ export const useConfidence = (withContext?: Context): Confidence => {
   if (!parent)
     throw new Error('No Confidence instance found, did you forget to wrap your component in ConfidenceProvider?');
 
-  return useMemo(() => {
-    return withContext ? parent.withContext(withContext) : parent;
-  }, [parent, JSON.stringify(withContext)]);
+  return useMemo(() => (withContext ? parent.withContext(withContext) : parent), [parent, JSON.stringify(withContext)]);
 };
+
+export function useFlagValue<T extends Value>(path: string, defaultValue: T): T {
+  return useFlagEvaluation(path, defaultValue).value;
+}
+
+export function useFlagEvaluation<T extends Value>(path: string, defaultValue: T): FlagEvaluation<T> {
+  const confidence = useConfidence();
+  const [subscribe, getSnapshot] = useMemo(
+    () => createFlagEvaluationStore(confidence, path, defaultValue),
+    [confidence, path, defaultValue],
+  );
+  return useSyncExternalStore(subscribe, getSnapshot);
+}
+
+type SyncExternalStore<T> = [subscribe: (onStoreChange: () => void) => () => void, getSnapshot: () => T];
+
+function createFlagEvaluationStore<T extends Value>(
+  confidence: Confidence,
+  path: string,
+  defaultValue: T,
+): SyncExternalStore<FlagEvaluation<T>> {
+  const getSnapshot = (): FlagEvaluation<T> => {
+    const evaluation = confidence.evaluateFlag(path, defaultValue);
+    if (evaluation.stale) throw evaluation;
+    return evaluation;
+  };
+  const subscribe = (onStoreChange: () => void) => {
+    const close = confidence.subscribe(state => {
+      if (state === 'READY') onStoreChange();
+    });
+    return close;
+  };
+  return [subscribe, getSnapshot];
+}

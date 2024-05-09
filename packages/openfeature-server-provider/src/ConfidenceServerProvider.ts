@@ -31,11 +31,9 @@ export class ConfidenceServerProvider implements Provider {
     context: EvaluationContext,
     _logger: Logger,
   ): Promise<ResolutionDetails<T>> {
-    const [flagName] = flagKey.split('.');
+    const evaluation = await this.confidence.withContext(convertContext(context)).evaluateFlag(flagKey, defaultValue);
 
-    const flagResolution = await this.confidence.withContext(convertContext(context)).resolveFlags(flagName);
-
-    const evaluation = flagResolution.evaluate(flagKey, defaultValue);
+    // const evaluation = flagResolution.evaluate(flagKey, defaultValue);
     if (evaluation.reason === 'ERROR') {
       const { errorCode, ...rest } = evaluation;
       return {

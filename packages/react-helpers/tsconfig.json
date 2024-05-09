@@ -6,5 +6,6 @@
     "declarationDir": "build/types",
     "tsBuildInfoFile": "build/tsconfig.tsbuildinfo"
   },
+  "references": [{ "path": "../sdk" }],
   "include": ["src"]
 }

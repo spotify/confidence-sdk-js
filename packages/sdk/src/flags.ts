@@ -20,34 +20,22 @@ export namespace FlagEvaluation {
   export interface Failed<T> {
     readonly reason: 'ERROR';
     readonly value: T;
-    readonly errorCode: 'FLAG_NOT_FOUND' | 'TYPE_MISMATCH' | 'GENERAL';
+    // TODO Change PROVIDER_NOT_READY to NOT_READY
+    readonly errorCode: 'FLAG_NOT_FOUND' | 'TYPE_MISMATCH' | 'PROVIDER_NOT_READY' | 'GENERAL';
     readonly errorMessage: string;
   }
-}
-// eslint-disable-next-line @typescript-eslint/no-redeclare
-export type FlagEvaluation<T> = FlagEvaluation.Matched<T> | FlagEvaluation.Unmatched<T> | FlagEvaluation.Failed<T>;
-export interface PendingEvaluation<T> extends PromiseLike<FlagEvaluation<T>> {
-  readonly reason: 'PENDING';
-  readonly value: never;
-  readonly errorCode: never;
-  readonly errorMessage: never;
-}
 
-export interface FlagResolution {
-  readonly context: Value.Struct;
-  readonly resolveToken: string;
-  evaluate<T extends Value>(path: string, defaultValue: T): FlagEvaluation<T>;
+  export type Resolved<T> = (Matched<T> | Unmatched<T> | Failed<T>) & { stale?: false };
+  export type Stale<T> = (Matched<T> | Unmatched<T> | Failed<T>) & { stale: true } & PromiseLike<Resolved<T>>;
 }
-export interface PendingFlagResolution extends PromiseLike<FlagResolution> {
-  readonly resolved?: FlagResolution;
-  readonly context: Value.Struct;
-  abort(reason?: any): void;
-  evaluate<T extends Value>(path: string, defaultValue: T): never;
-}
+export type FlagEvaluation<T> = FlagEvaluation.Resolved<T> | FlagEvaluation.Stale<T>;
 
+export type FlagState = 'NOT_READY' | 'READY' | 'STALE';
+export type FlagStateObserver = (state: FlagState) => void;
 export interface FlagResolver {
-  /** @internal */
-  resolveFlags(...names: string[]): Promise<FlagResolution>;
-  evaluateFlag<T extends Value>(path: string, defaultValue: T): Promise<FlagEvaluation<T>>;
+  subscribe(...flagNames: string[]): () => void;
+  subscribe(...args: [...flagNames: string[], onStateChange: FlagStateObserver]): () => void;
+
+  evaluateFlag<T extends Value>(path: string, defaultValue: T): FlagEvaluation<T>;
   getFlag<T extends Value>(path: string, defaultValue: T): Promise<T>;
 }

@@ -6,13 +6,12 @@ import {
   Logger,
   OpenFeatureEventEmitter,
   Provider,
-  ProviderEvents,
   ProviderMetadata,
   ResolutionDetails,
 } from '@openfeature/web-sdk';
 import equal from 'fast-deep-equal';
 
-import { Confidence, FlagResolution, Value, Context } from '@spotify-confidence/sdk';
+import { Confidence, Value, Context } from '@spotify-confidence/sdk';
 
 type Mutable<T> = { -readonly [K in keyof T]: T[K] };
 
@@ -22,8 +21,6 @@ export class ConfidenceWebProvider implements Provider {
   };
   readonly events = new OpenFeatureEventEmitter();
 
-  private pendingFlagResolution?: Promise<FlagResolution>;
-  private currentFlagResolution?: FlagResolution;
   private unsubscribe?: () => void;
   private readonly confidence: Confidence;
 
@@ -33,21 +30,15 @@ export class ConfidenceWebProvider implements Provider {
 
   async initialize(context?: EvaluationContext): Promise<void> {
     if (context) this.confidence.setContext(convertContext(context));
-    this.unsubscribe = this.confidence.contextChanges(() => {
-      this.events.emit(ProviderEvents.Stale);
-      try {
-        this.resolve();
-      } catch (e) {
-        // ignore
-      }
+    return new Promise(resolve => {
+      this.unsubscribe = this.confidence.subscribe(state => {
+        if (state === 'READY') resolve();
+      });
     });
-    await this.resolve();
   }
 
   async onClose(): Promise<void> {
     this.unsubscribe?.();
-    this.currentFlagResolution = undefined;
-    this.pendingFlagResolution = undefined;
   }
 
   async onContextChange(oldContext: EvaluationContext, newContext: EvaluationContext): Promise<void> {
@@ -56,43 +47,23 @@ export class ConfidenceWebProvider implements Provider {
       return;
     }
     this.confidence.setContext(convertContext(changes));
-    await this.pendingFlagResolution;
-  }
-
-  private async resolve(): Promise<void> {
-    const pending = (this.pendingFlagResolution = this.confidence.resolveFlags());
-    try {
-      const resolved = await pending;
-      if (pending === this.pendingFlagResolution) {
-        this.currentFlagResolution = resolved;
-        this.pendingFlagResolution = undefined;
-        this.events.emit(ProviderEvents.Ready);
-        this.events.emit(ProviderEvents.ConfigurationChanged);
-      }
-    } catch (e) {
-      if (pending === this.pendingFlagResolution) {
-        this.pendingFlagResolution = undefined;
-        this.events.emit(ProviderEvents.Error);
-        throw e;
-      }
-    }
+    return new Promise(resolve => {
+      const close = this.confidence.subscribe(state => {
+        if (state === 'READY') {
+          close();
+          resolve();
+        }
+      });
+    });
   }
 
   private evaluateFlag<T extends Value>(
     flagKey: string,
     defaultValue: T,
     _context: EvaluationContext,
-    logger: Logger,
+    _logger: Logger,
   ): ResolutionDetails<T> {
-    if (!this.currentFlagResolution) {
-      logger.warn('Confidence: provider not ready');
-      return {
-        errorCode: ErrorCode.PROVIDER_NOT_READY,
-        value: defaultValue,
-        reason: 'ERROR',
-      };
-    }
-    const evaluation = this.currentFlagResolution.evaluate(flagKey, defaultValue);
+    const evaluation = this.confidence.evaluateFlag(flagKey, defaultValue);
     if (evaluation.reason === 'ERROR') {
       const { errorCode, ...rest } = evaluation;
       return {

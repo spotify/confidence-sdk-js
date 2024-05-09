@@ -1,16 +1,18 @@
-import { FlagResolverClient } from './FlagResolverClient';
+import { AbortablePromise, FlagResolution, FlagResolverClient } from './FlagResolverClient';
 import { EventSenderEngine } from './EventSenderEngine';
 import { Value } from './Value';
 import { EventSender } from './events';
 import { Context } from './context';
 import { Logger } from './logger';
-import { FlagEvaluation, FlagResolution, FlagResolver, PendingFlagResolution } from './flags';
+import { FlagEvaluation, FlagResolver, FlagState, FlagStateObserver } from './flags';
 import { SdkId } from './generated/confidence/flags/resolver/v1/types';
 import { visitorIdentity } from './trackers';
 import { Trackable } from './Trackable';
 import { Closer } from './Closer';
 import { Subscribe, Observer, subject } from './observing';
+import { MultiSet } from './utils';
 
+const NO_OP_FN = () => {};
 export interface ConfidenceOptions {
   clientSecret: string;
   region?: 'global' | 'eu' | 'us';
@@ -40,7 +42,12 @@ export class Confidence implements EventSender, Trackable, FlagResolver {
   /** @internal */
   readonly contextChanges: Subscribe<string[]>;
 
-  private flagResolution?: PendingFlagResolution;
+  private currentFlags?: FlagResolution;
+  private pendingFlags?: AbortablePromise<FlagResolution>;
+
+  private allFlagsSubscriptions = 0;
+  private readonly flagNameSubscriptions = new MultiSet<string>();
+  private readonly flagStateSubject: Subscribe<FlagState>;
 
   constructor(config: Configuration, parent?: Confidence) {
     this.config = config;
@@ -57,6 +64,37 @@ export class Confidence implements EventSender, Trackable, FlagResolver {
       return () => {
         parentSubscription?.();
         this.contextChanged = undefined;
+      };
+    });
+
+    const resolve = (): Promise<void> => {
+      return new Promise(resolve => {
+        this.pendingFlags?.abort();
+        const flagNames = this.allFlagsSubscriptions ? [] : Array.from(this.flagNameSubscriptions);
+        this.pendingFlags = this.config.flagResolverClient.resolve(this.getContext(), flagNames);
+        this.pendingFlags
+          .then(flagResolution => {
+            this.currentFlags = flagResolution;
+            this.pendingFlags = undefined;
+            resolve();
+          })
+          .catch(e => {
+            config.logger.debug?.('error in resolve', e);
+          });
+      });
+    };
+
+    this.flagStateSubject = subject(observer => {
+      resolve().then(() => observer('READY'));
+      const close = this.contextChanges(() => {
+        if (this.flagState === 'READY') observer('STALE');
+        resolve().then(() => observer('READY'));
+      });
+
+      return () => {
+        close();
+        this.pendingFlags?.abort();
+        this.pendingFlags = this.currentFlags = undefined;
       };
     });
   }
@@ -134,40 +172,110 @@ export class Confidence implements EventSender, Trackable, FlagResolver {
     return undefined;
   }
 
-  resolveFlags(...flagNames: string[]): Promise<FlagResolution> {
-    const timeout: Promise<never> = new Promise((_resolve, reject) => {
-      setTimeout(() => {
-        reject(new Error(`Resolve timed out after ${this.config.timeout}ms`));
-      }, this.config.timeout);
-    });
-    // we first resolve a promise so that if multiple context changes happen in the same tick, we still only make one resolve
-    const resolve = Promise.resolve().then(() => {
-      const context = this.getContext();
-      if (!this.flagResolution || !Value.equal(context, this.flagResolution.context)) {
-        this.flagResolution?.abort(new Error('Resolve aborted due to stale context'));
-        this.flagResolution = this.config.flagResolverClient.resolve(context, flagNames);
+  // resolveFlags(...flagNames: string[]): PendingFlagResolution {
+  //   let context = this.getContext();
+  //   let syncResolution: FlagResolution | undefined;
+  //   let abort: (reason?: any) => void;
+  //   let state: FlagState = 'ERROR';
+  //   const asyncResolution = new Promise<FlagResolution>((resolve, reject) => {
+  //     const close = this.subscribe(...flagNames, state => {
+  //       syncResolution = this.currentFlags;
+  //       if (state === 'READY') {
+  //         resolve(this.currentFlags!);
+  //         close();
+  //       }
+  //     });
+  //     abort = (reason?) => {
+  //       close();
+  //       reject(reason);
+  //     };
+  //   });
+  //   return {
+  //     get state() {
+  //       return state;
+  //     },
+  //     get context() {
+  //       return context;
+  //     },
+  //     abort: abort!,
+  //     evaluate: <T extends Value>(path: string, defaultValue: T) => {
+  //       if (syncResolution) {
+  //         return syncResolution.evaluate(path, defaultValue);
+  //       }
+  //       const asyncEval: Promise<any> = asyncResolution.then(flagResolution =>
+  //         flagResolution.evaluate(path, defaultValue),
+  //       );
+  //       return {
+  //         reason: 'PENDING',
+  //         value: defaultValue,
+  //         then: asyncEval.then.bind(asyncEval),
+  //       };
+  //     },
+  //   } as PendingFlagResolution;
+  // }
+
+  get flagState(): FlagState {
+    if (this.currentFlags) {
+      if (this.pendingFlags) return 'STALE';
+      return 'READY';
+    }
+    return 'NOT_READY';
+  }
+
+  subscribe(...flagNames: string[]): () => void;
+  subscribe(...args: [...flagNames: string[], onStateChange: FlagStateObserver]): () => void;
+  subscribe(...args: any[]): () => void {
+    const flagNames: string[] = [];
+    let onStateChange: FlagStateObserver | undefined;
+    for (const arg of args) {
+      if (typeof arg === 'string') {
+        flagNames.push(arg);
+      } else if (typeof arg === 'function') {
+        if (onStateChange) throw new Error('Only one onStateChange observer can be provided');
+        onStateChange = arg;
+      } else {
+        throw new Error('Unknown argument type');
       }
-      return this.flagResolution;
-    });
-    return Promise.race([resolve, timeout])
-      .then(resolution => {
-        this.config.logger.info?.(`Confidence: successfully resolved flags`);
-        return resolution;
-      })
-      .catch(error => {
-        this.config.logger.warn?.('Confidence: failed to resolve flags', error);
-        throw error;
-      });
+    }
+    if (flagNames.length === 0) {
+      this.allFlagsSubscriptions++;
+    } else {
+      flagNames.forEach(flagName => this.flagNameSubscriptions.add(flagName));
+    }
+    const close = this.flagStateSubject(onStateChange || NO_OP_FN);
+    onStateChange?.(this.flagState);
+    return () => {
+      close();
+      if (flagNames.length === 0) {
+        this.allFlagsSubscriptions--;
+      } else {
+        flagNames.forEach(flagName => this.flagNameSubscriptions.delete(flagName));
+      }
+    };
   }
 
-  evaluateFlag<T extends Value>(path: string, defaultValue: T): Promise<FlagEvaluation<T>> {
+  evaluateFlag<T extends Value>(path: string, defaultValue: T): FlagEvaluation<T> {
     const [name] = path.split('.');
-    return this.resolveFlags(name).then(resolution => resolution.evaluate(path, defaultValue));
+    // if (this.flagResolution) {
+    //   return this.flagResolution.evaluate(path, defaultValue);
+    // }
+    const close = this.subscribe(name);
+    let evaluation: FlagEvaluation<T> = this.currentFlags?.evaluate(path, defaultValue) ?? {
+      reason: 'ERROR',
+      value: defaultValue,
+      errorCode: 'PROVIDER_NOT_READY',
+      errorMessage: 'Flags are still pending resolution, try awaiting the evaluation',
+    };
+    const pendingEvaluation = this.pendingFlags?.then(flagResolution => flagResolution.evaluate(path, defaultValue));
+    if (pendingEvaluation) {
+      evaluation = Object.assign(evaluation, { stale: true, then: pendingEvaluation.then.bind(pendingEvaluation) });
+    }
+    Promise.resolve(pendingEvaluation).finally(close);
+    return evaluation;
   }
 
-  getFlag<T extends Value>(path: string, defaultValue: T): Promise<T> {
-    const [name] = path.split('.');
-    return this.resolveFlags(name).then(resolution => resolution.evaluate(path, defaultValue).value);
+  async getFlag<T extends Value>(path: string, defaultValue: T): Promise<T> {
+    return (await this.evaluateFlag(path, defaultValue)).value;
   }
 
   static create({
@@ -252,3 +360,21 @@ function getConfidenceUrl(region?: 'eu' | 'us' | 'global'): string {
   }
   return `https://resolver.${region}.confidence.dev/v1`;
 }
+
+// class FailedResolution implements FlagResolution {
+//   readonly resolveToken = '';
+
+//   constructor(
+//     readonly context: Value.Struct,
+//     private readonly errorCode: FlagEvaluation.Failed<unknown>['errorCode'],
+//     private readonly errorMessage: string,
+//   ) {}
+//   evaluate<T extends Value>(path: string, defaultValue: T): FlagEvaluation<T> {
+//     return {
+//       reason: 'ERROR',
+//       value: defaultValue,
+//       errorCode: this.errorCode,
+//       errorMessage: this.errorMessage,
+//     };
+//   }
+// }

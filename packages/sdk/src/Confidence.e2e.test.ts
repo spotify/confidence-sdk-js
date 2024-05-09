@@ -8,10 +8,22 @@ describe('Confidence E2E Tests', () => {
   };
   const confidence = Confidence.create({
     clientSecret: 'RxDVTrXvc6op1XxiQ4OaR31dKbJ39aYV',
-    environment: 'backend',
+    environment: 'client',
     region: 'eu',
     timeout: 100,
     logger: loggerMock,
+  });
+
+  describe('resolving flags', () => {
+    it('should', async () => {
+      const close = confidence.subscribe(state => {
+        console.log(state);
+      });
+      // confidence.setContext({ targeting_key: 'test-a' });
+      const fe = await confidence.evaluateFlag('web-sdk-e2e-flag.int', 0);
+      console.log(fe);
+      close();
+    });
   });
 
   describe('track event sends an event', () => {

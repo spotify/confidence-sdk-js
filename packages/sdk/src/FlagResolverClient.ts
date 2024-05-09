@@ -3,7 +3,7 @@ import { Value } from './Value';
 import { Context } from './context';
 import { TypeMismatchError } from './error';
 import { FetchBuilder, TimeUnit } from './fetch-util';
-import { FlagEvaluation, FlagResolution, PendingFlagResolution } from './flags';
+import { FlagEvaluation } from './flags';
 import {
   ResolveFlagsRequest,
   ResolveFlagsResponse,
@@ -30,6 +30,12 @@ type ResolvedFlag = {
 };
 
 type Applier = (flagName: string) => void;
+
+export interface FlagResolution {
+  readonly context: Value.Struct;
+  evaluate<T extends Value>(path: string, defaultValue: T): FlagEvaluation.Resolved<T>;
+}
+
 class FlagResolutionImpl implements FlagResolution {
   private readonly flags: Map<string, ResolvedFlag> = new Map();
   readonly resolveToken: string;
@@ -53,7 +59,7 @@ class FlagResolutionImpl implements FlagResolution {
     this.resolveToken = base64FromBytes(resolveResponse.resolveToken);
   }
 
-  evaluate<T extends Value>(path: string, defaultValue: T): FlagEvaluation<T> {
+  evaluate<T extends Value>(path: string, defaultValue: T): FlagEvaluation.Resolved<T> {
     try {
       const [name, ...steps] = path.split('.');
       const flag = this.flags.get(name);
@@ -67,14 +73,6 @@ class FlagResolutionImpl implements FlagResolution {
       }
       const reason = flag.reason;
       if (reason === 'ERROR') throw new Error('Unknown resolve error');
-
-      const value = TypeMismatchError.hoist(name, () => Value.get(flag.value, ...steps) as T);
-
-      const schema = flag.schema.get(...steps);
-      TypeMismatchError.hoist(['defaultValue', ...steps], () => {
-        schema.assertAssignsTo(defaultValue);
-      });
-
       if (reason !== 'MATCH') {
         if (reason === 'NO_SEGMENT_MATCH' && this.applier) {
           this.applier?.(name);
@@ -84,6 +82,14 @@ class FlagResolutionImpl implements FlagResolution {
           value: defaultValue,
         };
       }
+
+      const value = TypeMismatchError.hoist(name, () => Value.get(flag.value, ...steps) as T);
+
+      const schema = flag.schema.get(...steps);
+      TypeMismatchError.hoist(['defaultValue', ...steps], () => {
+        schema.assertAssignsTo(defaultValue);
+      });
+
       this.applier?.(name);
       return {
         reason,
@@ -102,6 +108,10 @@ class FlagResolutionImpl implements FlagResolution {
   getValue<T extends Value>(path: string, defaultValue: T): T {
     return this.evaluate(path, defaultValue).value;
   }
+}
+
+export interface AbortablePromise<T> extends Promise<T> {
+  abort(reason?: any): void;
 }
 
 export type FlagResolverClientOptions = {
@@ -135,7 +145,7 @@ export class FlagResolverClient {
     this.baseUrl = baseUrl;
   }
 
-  resolve(context: Context, flags: string[]): PendingFlagResolution {
+  resolve(context: Context, flags: string[]): AbortablePromise<FlagResolution> {
     const useBackendApply = !this.applyTimeout;
     const request: ResolveFlagsRequest = {
       clientSecret: this.clientSecret,
@@ -145,30 +155,16 @@ export class FlagResolverClient {
       flags: flags.map(name => FLAG_PREFIX + name),
     };
     const abortController = new AbortController();
-    const resolution = this.resolveFlagsJson(request, abortController.signal)
-      .then(
-        response =>
-          new FlagResolutionImpl(
-            context,
-            response,
-            useBackendApply ? undefined : this.createApplier(response.resolveToken),
-          ),
-      )
-      .then(resolved => {
-        pending.resolved = resolved;
-        return resolved;
-      });
+    const resolution = this.resolveFlagsJson(request, abortController.signal).then(
+      response =>
+        new FlagResolutionImpl(
+          context,
+          response,
+          useBackendApply ? undefined : this.createApplier(response.resolveToken),
+        ),
+    );
 
-    const pending = {
-      resolved: undefined as FlagResolution | undefined,
-      context,
-      then: resolution.then.bind(resolution),
-      abort: abortController.abort.bind(abortController),
-      evaluate: () => {
-        throw resolution;
-      },
-    };
-    return pending;
+    return Object.assign(resolution, { abort: (reason?: any) => abortController.abort(reason) });
   }
 
   createApplier(resolveToken: Uint8Array): Applier {
@@ -247,7 +243,7 @@ export class FlagResolverClient {
   // }
 }
 
-function toEvaluationReason(reason: ResolveReason): FlagEvaluation<unknown>['reason'] {
+function toEvaluationReason(reason: ResolveReason): Exclude<FlagEvaluation<unknown>['reason'], 'PENDING'> {
   switch (reason) {
     case ResolveReason.RESOLVE_REASON_UNSPECIFIED:
       return 'UNSPECIFIED';
