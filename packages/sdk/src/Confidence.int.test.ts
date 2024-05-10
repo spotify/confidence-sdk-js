@@ -29,9 +29,9 @@ describe('Confidence integration tests', () => {
 
   it('should not resolve multiple times in the same tick', async () => {
     confidence.setContext({ pants: 'yellow' });
-    confidence.resolve([]);
+    confidence.resolveFlags();
     confidence.setContext({ pants: 'blue' });
-    await confidence.resolve([]);
+    await confidence.resolveFlags();
 
     expect(fetchMock).toHaveBeenCalledTimes(1);
   });

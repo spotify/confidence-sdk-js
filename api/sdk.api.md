@@ -4,17 +4,12 @@
 
 ```ts
 
-import { ConfidenceClientOptions } from '@spotify-confidence/client-http';
-import { Configuration as FlagResolution } from '@spotify-confidence/client-http';
-
 // Warning: (ae-forgotten-export) The symbol "Trackable" needs to be exported by the entry point index.d.ts
 // Warning: (ae-missing-release-tag) "Confidence" is part of the package's API, but it is missing a release tag (@alpha, @beta, @public, or @internal)
 //
 // @public (undocumented)
-export class Confidence implements EventSender, Trackable {
+export class Confidence implements EventSender, Trackable, FlagResolver {
     constructor(config: Configuration, parent?: Confidence);
-    // @internal (undocumented)
-    apply(resolveToken: string, flagName: string): void;
     // (undocumented)
     clearContext(): void;
     // Warning: (ae-forgotten-export) The symbol "Configuration" needs to be exported by the entry point index.d.ts
@@ -26,13 +21,17 @@ export class Confidence implements EventSender, Trackable {
     // @internal (undocumented)
     readonly contextChanges: Subscribe<string[]>;
     // (undocumented)
-    static create({ clientSecret, region, baseUrl, timeout, environment, fetchImplementation, logger, }: ConfidenceOptions): Confidence;
+    static create({ clientSecret, region, timeout, environment, fetchImplementation, logger, }: ConfidenceOptions): Confidence;
     // (undocumented)
     get environment(): string;
     // (undocumented)
+    evaluateFlag<T extends Value>(path: string, defaultValue: T): Promise<FlagEvaluation<T>>;
+    // (undocumented)
     getContext(): Context;
-    // @internal (undocumented)
-    resolve(flagNames: string[]): Promise<FlagResolution>;
+    // (undocumented)
+    getFlag<T extends Value>(path: string, defaultValue: T): Promise<T>;
+    // (undocumented)
+    resolveFlags(...flagNames: string[]): Promise<FlagResolution>;
     // (undocumented)
     setContext(context: Context): void;
     // (undocumented)
@@ -107,20 +106,65 @@ export interface EventSender extends Contextual<EventSender> {
     track(name: string, message?: Value.Struct): void;
 }
 
-export { FlagResolution }
-
-// Warning: (ae-missing-release-tag) "FlagResolverClient" is part of the package's API, but it is missing a release tag (@alpha, @beta, @public, or @internal)
+// Warning: (ae-missing-release-tag) "FlagEvaluation" is part of the package's API, but it is missing a release tag (@alpha, @beta, @public, or @internal)
+// Warning: (ae-missing-release-tag) "FlagEvaluation" is part of the package's API, but it is missing a release tag (@alpha, @beta, @public, or @internal)
 //
 // @public (undocumented)
-export class FlagResolverClient {
-    // Warning: (ae-forgotten-export) The symbol "FlagResolverOptions" needs to be exported by the entry point index.d.ts
-    constructor({ fetchImplementation, environment, ...options }: FlagResolverOptions);
+export namespace FlagEvaluation {
     // (undocumented)
-    apply(resolveToken: string, flagName: string): void;
-    // Warning: (ae-forgotten-export) The symbol "FlagResolutionPromise" needs to be exported by the entry point index.d.ts
-    //
+    export interface Failed<T> {
+        // (undocumented)
+        readonly errorCode: 'FLAG_NOT_FOUND' | 'TYPE_MISMATCH' | 'GENERAL';
+        // (undocumented)
+        readonly errorMessage: string;
+        // (undocumented)
+        readonly reason: 'ERROR';
+        // (undocumented)
+        readonly value: T;
+    }
     // (undocumented)
-    resolve(context: Context, flags: string[]): FlagResolutionPromise;
+    export interface Matched<T> {
+        // (undocumented)
+        readonly reason: 'MATCH';
+        // (undocumented)
+        readonly value: T;
+        // (undocumented)
+        readonly variant: string;
+    }
+    // (undocumented)
+    export interface Unmatched<T> {
+        // (undocumented)
+        readonly reason: 'UNSPECIFIED' | 'NO_SEGMENT_MATCH' | 'NO_TREATMENT_MATCH' | 'FLAG_ARCHIVED' | 'TARGETING_KEY_ERROR';
+        // (undocumented)
+        readonly value: T;
+    }
+}
+
+// @public (undocumented)
+export type FlagEvaluation<T> = FlagEvaluation.Matched<T> | FlagEvaluation.Unmatched<T> | FlagEvaluation.Failed<T>;
+
+// Warning: (ae-missing-release-tag) "FlagResolution" is part of the package's API, but it is missing a release tag (@alpha, @beta, @public, or @internal)
+//
+// @public (undocumented)
+export interface FlagResolution {
+    // (undocumented)
+    readonly context: Value.Struct;
+    // (undocumented)
+    evaluate<T extends Value>(path: string, defaultValue: T): FlagEvaluation<T>;
+    // (undocumented)
+    readonly resolveToken: string;
+}
+
+// Warning: (ae-missing-release-tag) "FlagResolver" is part of the package's API, but it is missing a release tag (@alpha, @beta, @public, or @internal)
+//
+// @public (undocumented)
+export interface FlagResolver {
+    // (undocumented)
+    evaluateFlag<T extends Value>(path: string, defaultValue: T): Promise<FlagEvaluation<T>>;
+    // (undocumented)
+    getFlag<T extends Value>(path: string, defaultValue: T): Promise<T>;
+    // @internal (undocumented)
+    resolveFlags(...names: string[]): Promise<FlagResolution>;
 }
 
 // Warning: (ae-missing-release-tag) "pageViews" is part of the package's API, but it is missing a release tag (@alpha, @beta, @public, or @internal)
@@ -128,15 +172,61 @@ export class FlagResolverClient {
 // @public (undocumented)
 export function pageViews(): Trackable.Manager;
 
+// Warning: (ae-missing-release-tag) "PendingEvaluation" is part of the package's API, but it is missing a release tag (@alpha, @beta, @public, or @internal)
+//
+// @public (undocumented)
+export interface PendingEvaluation<T> extends PromiseLike<FlagEvaluation<T>> {
+    // (undocumented)
+    readonly errorCode: never;
+    // (undocumented)
+    readonly errorMessage: never;
+    // (undocumented)
+    readonly reason: 'PENDING';
+    // (undocumented)
+    readonly value: never;
+}
+
+// Warning: (ae-missing-release-tag) "PendingFlagResolution" is part of the package's API, but it is missing a release tag (@alpha, @beta, @public, or @internal)
+//
+// @public (undocumented)
+export interface PendingFlagResolution extends PromiseLike<FlagResolution> {
+    // (undocumented)
+    abort(reason?: any): void;
+    // (undocumented)
+    readonly context: Value.Struct;
+    // (undocumented)
+    evaluate<T extends Value>(path: string, defaultValue: T): never;
+    // (undocumented)
+    readonly resolved?: FlagResolution;
+}
+
 // Warning: (ae-missing-release-tag) "Value" is part of the package's API, but it is missing a release tag (@alpha, @beta, @public, or @internal)
 // Warning: (ae-missing-release-tag) "Value" is part of the package's API, but it is missing a release tag (@alpha, @beta, @public, or @internal)
 //
 // @public (undocumented)
 export namespace Value {
     // (undocumented)
+    export function assertType(expected: 'undefined', found: Value): asserts found is undefined;
+    // (undocumented)
+    export function assertType(expected: 'string', found: Value): asserts found is string;
+    // (undocumented)
+    export function assertType(expected: 'number', found: Value): asserts found is number;
+    // (undocumented)
+    export function assertType(expected: 'boolean', found: Value): asserts found is boolean;
+    // (undocumented)
+    export function assertType(expected: 'List', found: Value): asserts found is List;
+    // (undocumented)
+    export function assertType(expected: 'Struct', found: Value): asserts found is Struct;
+    // (undocumented)
+    export function assertValue(value: unknown): asserts value is Value;
+    // (undocumented)
     export function clone<T extends Value>(value: T): T;
     // (undocumented)
     export function equal(value1: Value, value2: Value): boolean;
+    // (undocumented)
+    export function get(struct: Struct | undefined, path: string): Value;
+    // (undocumented)
+    export function get(struct: Struct | undefined, ...steps: string[]): Value;
     // (undocumented)
     export function getType(value: Value): TypeName;
     // (undocumented)
@@ -144,9 +234,9 @@ export namespace Value {
     // (undocumented)
     export function isStruct(value: Value): value is Struct;
     // (undocumented)
-    export type List = ReadonlyArray<Value>;
+    export type List = ReadonlyArray<number> | ReadonlyArray<string> | ReadonlyArray<boolean>;
     // (undocumented)
-    export type Primitive = number | string | boolean | undefined;
+    export type Primitive = number | string | boolean;
     // (undocumented)
     export type Struct = {
         readonly [key: string]: Value;
@@ -156,7 +246,7 @@ export namespace Value {
 }
 
 // @public (undocumented)
-export type Value = Value.Primitive | Value.Struct | Value.List;
+export type Value = Value.Primitive | Value.Struct | Value.List | undefined;
 
 // Warning: (ae-missing-release-tag) "visitorIdentity" is part of the package's API, but it is missing a release tag (@alpha, @beta, @public, or @internal)
 //

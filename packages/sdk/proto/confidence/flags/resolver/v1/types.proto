@@ -1,0 +1,69 @@
+syntax = "proto3";
+
+package confidence.flags.resolver.v1;
+
+message Sdk {
+  // Identifier of the SDK used to interact with the API.
+  oneof sdk {
+    // Name of a Confidence SDKs.
+    SdkId id = 1;
+    // Custom name for non-Confidence SDKs.
+    string custom_id = 2;
+  }
+
+  // Version of the SDK.
+  string version = 3;
+}
+
+enum ResolveReason {
+  // Unspecified enum.
+  RESOLVE_REASON_UNSPECIFIED = 0;
+  // The flag was successfully resolved because one rule matched.
+  RESOLVE_REASON_MATCH = 1;
+  // The flag could not be resolved because no rule matched.
+  RESOLVE_REASON_NO_SEGMENT_MATCH = 2;
+  // The flag could not be resolved because the matching rule had no variant
+  // that could be assigned.
+  RESOLVE_REASON_NO_TREATMENT_MATCH = 3 [deprecated = true];
+  // The flag could not be resolved because it was archived.
+  RESOLVE_REASON_FLAG_ARCHIVED = 4;
+  // The flag could not be resolved because the targeting key field was invalid
+  RESOLVE_REASON_TARGETING_KEY_ERROR = 5;
+  // Unknown error occurred during the resolve
+  RESOLVE_REASON_ERROR = 6;
+}
+
+enum SdkId {
+  // Unspecified enum.
+  SDK_ID_UNSPECIFIED = 0;
+  // Confidence OpenFeature Java Provider.
+  SDK_ID_JAVA_PROVIDER = 1;
+  // Confidence OpenFeature Kotlin Provider.
+  SDK_ID_KOTLIN_PROVIDER = 2;
+  // Confidence OpenFeature Swift Provider.
+  SDK_ID_SWIFT_PROVIDER = 3;
+  // Confidence OpenFeature JavaScript Provider for Web (client).
+  SDK_ID_JS_WEB_PROVIDER = 4;
+  // Confidence OpenFeature JavaScript Provider for server.
+  SDK_ID_JS_SERVER_PROVIDER = 5;
+  // Confidence OpenFeature Python Provider.
+  SDK_ID_PYTHON_PROVIDER = 6;
+  // Confidence OpenFeature GO Provider.
+  SDK_ID_GO_PROVIDER = 7;
+  // Confidence OpenFeature Ruby Provider.
+  SDK_ID_RUBY_PROVIDER = 8;
+  // Confidence OpenFeature Rust Provider.
+  SDK_ID_RUST_PROVIDER = 9;
+  // Confidence Java SDK.
+  SDK_ID_JAVA_CONFIDENCE = 10;
+  // Confidence Kotlin SDK.
+  SDK_ID_KOTLIN_CONFIDENCE = 11;
+  // Confidence Swift SDK.
+  SDK_ID_SWIFT_CONFIDENCE = 12;
+  // Confidence JavaScript SDK.
+  SDK_ID_JS_CONFIDENCE = 13;
+  // Confidence Python SDK.
+  SDK_ID_PYTHON_CONFIDENCE = 14;
+  // Confidence GO SDK.
+  SDK_ID_GO_CONFIDENCE = 15;
+}

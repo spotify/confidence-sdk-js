@@ -100,11 +100,9 @@ describe('ConfidenceWebProvider E2E tests', () => {
       const client = OpenFeature.getClient();
       const expectedObject = {
         flagKey: 'web-sdk-e2e-flag.obj.double',
-        reason: 'TARGETING_MATCH',
+        flagMetadata: {},
+        reason: 'MATCH',
         variant: 'flags/web-sdk-e2e-flag/variants/control',
-        flagMetadata: {
-          resolveToken: expect.any(String),
-        },
         value: 3.6,
       };
 

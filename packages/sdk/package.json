@@ -9,6 +9,7 @@
     "node": ">=18.17.0"
   },
   "scripts": {
+    "gen:proto": "protoc --plugin=$(yarn bin protoc-gen-ts_proto) --ts_proto_out=src/generated -I proto proto/confidence/flags/resolver/v1/api.proto --ts_proto_opt=outputEncodeMethods=false --ts_proto_opt=outputPartialMethods=false && prettier --config ../../prettier.config.js -w src/generated",
     "build": "tsc",
     "bundle": "rollup -c && api-extractor run"
   },
@@ -18,7 +19,6 @@
     "module": "dist/index.js"
   },
   "dependencies": {
-    "@spotify-confidence/client-http": "0.1.6",
     "web-vitals": "^3.5.2"
   },
   "type": "module",
@@ -27,6 +27,8 @@
   ],
   "devDependencies": {
     "@microsoft/api-extractor": "*",
-    "rollup": "*"
+    "prettier": "*",
+    "rollup": "*",
+    "ts-proto": "^1.171.0"
   }
 }

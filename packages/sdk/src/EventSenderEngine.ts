@@ -1,6 +1,6 @@
 import { Value } from './Value';
-import { FetchBuilder, TimeUnit } from '@spotify-confidence/client-http';
 import { Logger } from './logger';
+import { FetchBuilder, TimeUnit } from './fetch-util';
 interface Event {
   eventDefinition: string;
   eventTime: string;

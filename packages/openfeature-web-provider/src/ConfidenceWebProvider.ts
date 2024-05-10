@@ -9,7 +9,6 @@ import {
   ProviderEvents,
   ProviderMetadata,
   ResolutionDetails,
-  ResolutionReason,
 } from '@openfeature/web-sdk';
 import equal from 'fast-deep-equal';
 
@@ -61,7 +60,7 @@ export class ConfidenceWebProvider implements Provider {
   }
 
   private async resolve(): Promise<void> {
-    const pending = (this.pendingFlagResolution = this.confidence.resolve([]));
+    const pending = (this.pendingFlagResolution = this.confidence.resolveFlags());
     try {
       const resolved = await pending;
       if (pending === this.pendingFlagResolution) {
@@ -79,7 +78,7 @@ export class ConfidenceWebProvider implements Provider {
     }
   }
 
-  private getFlag<T>(
+  private evaluateFlag<T extends Value>(
     flagKey: string,
     defaultValue: T,
     _context: EvaluationContext,
@@ -93,81 +92,15 @@ export class ConfidenceWebProvider implements Provider {
         reason: 'ERROR',
       };
     }
-
-    const [flagName, ...pathParts] = flagKey.split('.');
-
-    try {
-      const flag = this.currentFlagResolution.flags[flagName];
-
-      if (!flag) {
-        logger.warn('Confidence: flag "%s" was not found', flagName);
-        return {
-          errorCode: ErrorCode.FLAG_NOT_FOUND,
-          value: defaultValue,
-          reason: 'ERROR',
-        };
-      }
-
-      if (FlagResolution.ResolveReason.NoSegmentMatch === flag.reason) {
-        if (this.confidence.environment === 'client') {
-          this.confidence.apply(this.currentFlagResolution.resolveToken, flagName);
-        }
-        return {
-          value: defaultValue,
-          reason: 'DEFAULT',
-        };
-      }
-
-      let flagValue: FlagResolution.FlagValue;
-      try {
-        flagValue = FlagResolution.FlagValue.traverse(flag, pathParts.join('.'));
-      } catch (e) {
-        logger.warn('Confidence: value with path "%s" was not found in flag "%s"', pathParts.join('.'), flagName);
-        return {
-          errorCode: ErrorCode.PARSE_ERROR,
-          value: defaultValue,
-          reason: 'ERROR',
-        };
-      }
-
-      if (flagValue.value === null) {
-        return {
-          value: defaultValue,
-          reason: mapConfidenceReason(flag.reason),
-        };
-      }
-
-      if (!FlagResolution.FlagValue.matches(flagValue, defaultValue)) {
-        logger.warn('Confidence: value for "%s" is of incorrect type', flagKey);
-        return {
-          errorCode: ErrorCode.TYPE_MISMATCH,
-          value: defaultValue,
-          reason: 'ERROR',
-        };
-      }
-
-      if (this.confidence.environment === 'client') {
-        this.confidence.apply(this.currentFlagResolution.resolveToken, flagName);
-      }
-      logger.info('Confidence: value for "%s" successfully evaluated', flagKey);
-      const reason = this.pendingFlagResolution ? 'STALE' : mapConfidenceReason(flag.reason);
-
+    const evaluation = this.currentFlagResolution.evaluate(flagKey, defaultValue);
+    if (evaluation.reason === 'ERROR') {
+      const { errorCode, ...rest } = evaluation;
       return {
-        value: flagValue.value as T,
-        reason: reason,
-        variant: flag.variant,
-        flagMetadata: {
-          resolveToken: this.currentFlagResolution.resolveToken,
-        },
-      };
-    } catch (e: unknown) {
-      logger.warn('Confidence: error %o occurred in flag evaluation', e);
-      return {
-        errorCode: ErrorCode.GENERAL,
-        value: defaultValue,
-        reason: 'ERROR',
+        ...rest,
+        errorCode: ErrorCode[errorCode],
       };
     }
+    return evaluation;
   }
 
   resolveBooleanEvaluation(
@@ -176,7 +109,7 @@ export class ConfidenceWebProvider implements Provider {
     context: EvaluationContext,
     logger: Logger,
   ): ResolutionDetails<boolean> {
-    return this.getFlag(flagKey, defaultValue, context, logger);
+    return this.evaluateFlag(flagKey, defaultValue, context, logger);
   }
 
   resolveNumberEvaluation(
@@ -185,7 +118,7 @@ export class ConfidenceWebProvider implements Provider {
     context: EvaluationContext,
     logger: Logger,
   ): ResolutionDetails<number> {
-    return this.getFlag(flagKey, defaultValue, context, logger);
+    return this.evaluateFlag(flagKey, defaultValue, context, logger);
   }
 
   resolveObjectEvaluation<T extends JsonValue>(
@@ -194,7 +127,9 @@ export class ConfidenceWebProvider implements Provider {
     context: EvaluationContext,
     logger: Logger,
   ): ResolutionDetails<T> {
-    return this.getFlag(flagKey, defaultValue, context, logger);
+    // this might throw but will be caught by OpenFeature
+    Value.assertValue(defaultValue);
+    return this.evaluateFlag(flagKey, defaultValue, context, logger);
   }
 
   resolveStringEvaluation(
@@ -203,7 +138,7 @@ export class ConfidenceWebProvider implements Provider {
     context: EvaluationContext,
     logger: Logger,
   ): ResolutionDetails<string> {
-    return this.getFlag(flagKey, defaultValue, context, logger);
+    return this.evaluateFlag(flagKey, defaultValue, context, logger);
   }
 }
 
@@ -232,6 +167,7 @@ function convertValue(value: EvaluationContextValue): Value {
   if (typeof value === 'object') {
     if (value === null) return undefined;
     if (value instanceof Date) return value.toISOString();
+    // @ts-expect-error TODO fix single type array conversion
     if (Array.isArray(value)) return value.map(convertValue);
     return convertStruct(value);
   }
@@ -245,17 +181,4 @@ function convertStruct(value: { [key: string]: EvaluationContextValue }): Value.
     struct[key] = convertValue(value[key]);
   }
   return struct;
-}
-
-function mapConfidenceReason(reason: FlagResolution.ResolveReason): ResolutionReason {
-  switch (reason) {
-    case FlagResolution.ResolveReason.Archived:
-      return 'DISABLED';
-    case FlagResolution.ResolveReason.Unspecified:
-      return 'UNKNOWN';
-    case FlagResolution.ResolveReason.Match:
-      return 'TARGETING_MATCH';
-    default:
-      return 'DEFAULT';
-  }
 }
