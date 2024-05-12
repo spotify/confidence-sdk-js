@@ -25,15 +25,19 @@ export class Confidence implements EventSender, Trackable, FlagResolver {
     // (undocumented)
     get environment(): string;
     // (undocumented)
-    evaluateFlag<T extends Value>(path: string, defaultValue: T): Promise<FlagEvaluation<T>>;
+    evaluateFlag<T extends Value>(path: string, defaultValue: T): FlagEvaluation<T>;
+    // (undocumented)
+    get flagState(): FlagState;
     // (undocumented)
     getContext(): Context;
     // (undocumented)
     getFlag<T extends Value>(path: string, defaultValue: T): Promise<T>;
     // (undocumented)
-    resolveFlags(...flagNames: string[]): Promise<FlagResolution>;
-    // (undocumented)
     setContext(context: Context): void;
+    // (undocumented)
+    subscribe(...flagNames: string[]): () => void;
+    // (undocumented)
+    subscribe(...args: [...flagNames: string[], onStateChange: FlagStateObserver]): () => void;
     // (undocumented)
     track(name: string, message?: Value.Struct): void;
     // Warning: (ae-forgotten-export) The symbol "Closer" needs to be exported by the entry point index.d.ts
@@ -114,7 +118,7 @@ export namespace FlagEvaluation {
     // (undocumented)
     export interface Failed<T> {
         // (undocumented)
-        readonly errorCode: 'FLAG_NOT_FOUND' | 'TYPE_MISMATCH' | 'GENERAL';
+        readonly errorCode: 'FLAG_NOT_FOUND' | 'TYPE_MISMATCH' | 'PROVIDER_NOT_READY' | 'GENERAL';
         // (undocumented)
         readonly errorMessage: string;
         // (undocumented)
@@ -132,6 +136,14 @@ export namespace FlagEvaluation {
         readonly variant: string;
     }
     // (undocumented)
+    export type Resolved<T> = (Matched<T> | Unmatched<T> | Failed<T>) & {
+        stale?: false;
+    };
+    // (undocumented)
+    export type Stale<T> = (Matched<T> | Unmatched<T> | Failed<T>) & {
+        stale: true;
+    } & PromiseLike<Resolved<T>>;
+    // (undocumented)
     export interface Unmatched<T> {
         // (undocumented)
         readonly reason: 'UNSPECIFIED' | 'NO_SEGMENT_MATCH' | 'NO_TREATMENT_MATCH' | 'FLAG_ARCHIVED' | 'TARGETING_KEY_ERROR';
@@ -141,64 +153,36 @@ export namespace FlagEvaluation {
 }
 
 // @public (undocumented)
-export type FlagEvaluation<T> = FlagEvaluation.Matched<T> | FlagEvaluation.Unmatched<T> | FlagEvaluation.Failed<T>;
-
-// Warning: (ae-missing-release-tag) "FlagResolution" is part of the package's API, but it is missing a release tag (@alpha, @beta, @public, or @internal)
-//
-// @public (undocumented)
-export interface FlagResolution {
-    // (undocumented)
-    readonly context: Value.Struct;
-    // (undocumented)
-    evaluate<T extends Value>(path: string, defaultValue: T): FlagEvaluation<T>;
-    // (undocumented)
-    readonly resolveToken: string;
-}
+export type FlagEvaluation<T> = FlagEvaluation.Resolved<T> | FlagEvaluation.Stale<T>;
 
 // Warning: (ae-missing-release-tag) "FlagResolver" is part of the package's API, but it is missing a release tag (@alpha, @beta, @public, or @internal)
 //
 // @public (undocumented)
 export interface FlagResolver {
     // (undocumented)
-    evaluateFlag<T extends Value>(path: string, defaultValue: T): Promise<FlagEvaluation<T>>;
+    evaluateFlag<T extends Value>(path: string, defaultValue: T): FlagEvaluation<T>;
     // (undocumented)
     getFlag<T extends Value>(path: string, defaultValue: T): Promise<T>;
-    // @internal (undocumented)
-    resolveFlags(...names: string[]): Promise<FlagResolution>;
+    // (undocumented)
+    subscribe(...flagNames: string[]): () => void;
+    // (undocumented)
+    subscribe(...args: [...flagNames: string[], onStateChange: FlagStateObserver]): () => void;
 }
+
+// Warning: (ae-missing-release-tag) "FlagState" is part of the package's API, but it is missing a release tag (@alpha, @beta, @public, or @internal)
+//
+// @public (undocumented)
+export type FlagState = 'NOT_READY' | 'READY' | 'STALE';
+
+// Warning: (ae-missing-release-tag) "FlagStateObserver" is part of the package's API, but it is missing a release tag (@alpha, @beta, @public, or @internal)
+//
+// @public (undocumented)
+export type FlagStateObserver = (state: FlagState) => void;
 
 // Warning: (ae-missing-release-tag) "pageViews" is part of the package's API, but it is missing a release tag (@alpha, @beta, @public, or @internal)
 //
 // @public (undocumented)
 export function pageViews(): Trackable.Manager;
-
-// Warning: (ae-missing-release-tag) "PendingEvaluation" is part of the package's API, but it is missing a release tag (@alpha, @beta, @public, or @internal)
-//
-// @public (undocumented)
-export interface PendingEvaluation<T> extends PromiseLike<FlagEvaluation<T>> {
-    // (undocumented)
-    readonly errorCode: never;
-    // (undocumented)
-    readonly errorMessage: never;
-    // (undocumented)
-    readonly reason: 'PENDING';
-    // (undocumented)
-    readonly value: never;
-}
-
-// Warning: (ae-missing-release-tag) "PendingFlagResolution" is part of the package's API, but it is missing a release tag (@alpha, @beta, @public, or @internal)
-//
-// @public (undocumented)
-export interface PendingFlagResolution extends PromiseLike<FlagResolution> {
-    // (undocumented)
-    abort(reason?: any): void;
-    // (undocumented)
-    readonly context: Value.Struct;
-    // (undocumented)
-    evaluate<T extends Value>(path: string, defaultValue: T): never;
-    // (undocumented)
-    readonly resolved?: FlagResolution;
-}
 
 // Warning: (ae-missing-release-tag) "Value" is part of the package's API, but it is missing a release tag (@alpha, @beta, @public, or @internal)
 // Warning: (ae-missing-release-tag) "Value" is part of the package's API, but it is missing a release tag (@alpha, @beta, @public, or @internal)

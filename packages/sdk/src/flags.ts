@@ -36,6 +36,13 @@ export interface FlagResolver {
   subscribe(...flagNames: string[]): () => void;
   subscribe(...args: [...flagNames: string[], onStateChange: FlagStateObserver]): () => void;
 
+  //private flagResolution:FlagResolution
+  // internal?
+  // resolveFlags(flagNames:[]):Promise<void>
+
   evaluateFlag<T extends Value>(path: string, defaultValue: T): FlagEvaluation<T>;
+  /*
+
+  */
   getFlag<T extends Value>(path: string, defaultValue: T): Promise<T>;
 }

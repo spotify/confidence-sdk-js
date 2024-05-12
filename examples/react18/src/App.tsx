@@ -1,9 +1,7 @@
 import React from 'react';
-import { OpenFeature } from '@openfeature/web-sdk';
 import TestComponent from './TestComponent';
-import { createConfidenceWebProvider } from '@spotify-confidence/openfeature-web-provider';
 import { Confidence, pageViews } from '@spotify-confidence/sdk';
-import { ConfidenceProvider } from './ConfidenceContext';
+import { ConfidenceProvider, WithContext } from '@spotify-confidence/react-helpers';
 
 const confidence = Confidence.create({
   clientSecret: 'RxDVTrXvc6op1XxiQ4OaR31dKbJ39aYV',
@@ -14,8 +12,6 @@ const confidence = Confidence.create({
 
 confidence.track(pageViews());
 
-const webProvider = createConfidenceWebProvider(confidence);
-await OpenFeature.setProviderAndWait(webProvider);
 function App() {
   return (
     <ConfidenceProvider confidence={confidence}>

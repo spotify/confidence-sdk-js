@@ -14,7 +14,8 @@ module.exports = defineConfig({
         workspace.set('private', true);
         continue;
       }
-      workspace.set('type', 'module');
+      workspace.unset('type');
+      // workspace.set('type', 'module');
       workspace.set('module', 'build/esm/index.js');
       workspace.set('types', 'build/types/index.d.ts');
       workspace.set('files', ['dist/index.*']);

@@ -21,7 +21,6 @@
   "dependencies": {
     "web-vitals": "^3.5.2"
   },
-  "type": "module",
   "files": [
     "dist/index.*"
   ],

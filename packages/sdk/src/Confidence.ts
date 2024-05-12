@@ -85,7 +85,9 @@ export class Confidence implements EventSender, Trackable, FlagResolver {
     };
 
     this.flagStateSubject = subject(observer => {
-      resolve().then(() => observer('READY'));
+      if (!this.currentFlags || !Value.equal(this.currentFlags.context, this.getContext())) {
+        resolve().then(() => observer('READY'));
+      }
       const close = this.contextChanges(() => {
         if (this.flagState === 'READY') observer('STALE');
         resolve().then(() => observer('READY'));
@@ -93,8 +95,8 @@ export class Confidence implements EventSender, Trackable, FlagResolver {
 
       return () => {
         close();
-        this.pendingFlags?.abort();
-        this.pendingFlags = this.currentFlags = undefined;
+        // this.pendingFlags?.abort();
+        // this.pendingFlags = this.currentFlags = undefined;
       };
     });
   }

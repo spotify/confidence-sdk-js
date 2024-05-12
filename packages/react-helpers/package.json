@@ -27,6 +27,5 @@
     "@microsoft/api-extractor": "*",
     "react": "^18.2.0",
     "rollup": "*"
-  },
-  "type": "module"
+  }
 }

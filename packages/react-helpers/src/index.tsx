@@ -29,20 +29,17 @@ export function useFlagEvaluation<T extends Value>(path: string, defaultValue: T
     () => createFlagEvaluationStore(confidence, path, defaultValue),
     [confidence, path, defaultValue],
   );
-  return useSyncExternalStore(subscribe, getSnapshot);
+  const json = useSyncExternalStore(subscribe, getSnapshot);
+  return JSON.parse(json);
 }
 
 type SyncExternalStore<T> = [subscribe: (onStoreChange: () => void) => () => void, getSnapshot: () => T];
 
-function createFlagEvaluationStore<T extends Value>(
-  confidence: Confidence,
-  path: string,
-  defaultValue: T,
-): SyncExternalStore<FlagEvaluation<T>> {
-  const getSnapshot = (): FlagEvaluation<T> => {
+function createFlagEvaluationStore(confidence: Confidence, path: string, defaultValue: any): SyncExternalStore<string> {
+  const getSnapshot = () => {
     const evaluation = confidence.evaluateFlag(path, defaultValue);
     if (evaluation.stale) throw evaluation;
-    return evaluation;
+    return JSON.stringify(evaluation);
   };
   const subscribe = (onStoreChange: () => void) => {
     const close = confidence.subscribe(state => {
