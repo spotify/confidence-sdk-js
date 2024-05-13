@@ -2,7 +2,6 @@
   "name": "@spotify-confidence/sdk",
   "license": "Apache-2.0",
   "version": "0.0.5",
-  "module": "build/esm/index.js",
   "types": "build/types/index.d.ts",
   "engineStrict": true,
   "engines": {
@@ -15,7 +14,7 @@
   "publishConfig": {
     "access": "public",
     "types": "dist/index.d.ts",
-    "module": "dist/index.js"
+    "main": "dist/index.js"
   },
   "dependencies": {
     "@spotify-confidence/client-http": "0.1.6",
@@ -28,5 +27,6 @@
   "devDependencies": {
     "@microsoft/api-extractor": "*",
     "rollup": "*"
-  }
+  },
+  "main": "dist/index.js"
 }
