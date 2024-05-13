@@ -3147,6 +3147,16 @@ __metadata:
   languageName: node
   linkType: hard
 
+"@openfeature/react-sdk@npm:^0.3.3":
+  version: 0.3.3
+  resolution: "@openfeature/react-sdk@npm:0.3.3"
+  peerDependencies:
+    "@openfeature/web-sdk": ^1.0.2
+    react: ">=16.8.0"
+  checksum: 10c0/c8ee7b241db6087253e08ab98eb0a36872b31ce75c4c3b48f7398c8856fd01b7223dcd7e1bae14a9f9b9647c9d9f519243514739be08d93187979b691d9775cd
+  languageName: node
+  linkType: hard
+
 "@openfeature/server-sdk@npm:^1.13.5":
   version: 1.13.5
   resolution: "@openfeature/server-sdk@npm:1.13.5"
@@ -3546,18 +3556,6 @@ __metadata:
     rollup: "npm:*"
   languageName: unknown
   linkType: soft
-
-"@spotify-confidence/integration-react@npm:0.2.3":
-  version: 0.2.3
-  resolution: "@spotify-confidence/integration-react@npm:0.2.3"
-  dependencies:
-    use-sync-external-store: "npm:^1.2.0"
-  peerDependencies:
-    "@openfeature/web-sdk": ^1.0.3
-    react-dom: ">=16 <19"
-  checksum: 10c0/a3f0a2934cf4d967994a522321002bfa1418d1c946fca9be0394e2bb08b318400a342a42574bd91e0504d1451a3a062f6154da823809c02f267519ef46f01295
-  languageName: node
-  linkType: hard
 
 "@spotify-confidence/openfeature-server-provider@npm:0.2.3, @spotify-confidence/openfeature-server-provider@workspace:packages/openfeature-server-provider":
   version: 0.0.0-use.local
@@ -14597,8 +14595,8 @@ __metadata:
     "@babel/plugin-transform-private-property-in-object": "npm:^7.22.11"
     "@babel/plugin-transform-react-jsx": "npm:^7.22.15"
     "@openfeature/core": "npm:^1.1.0"
+    "@openfeature/react-sdk": "npm:^0.3.3"
     "@openfeature/web-sdk": "npm:^1.0.3"
-    "@spotify-confidence/integration-react": "npm:0.2.3"
     "@spotify-confidence/openfeature-web-provider": "npm:0.2.3"
     "@spotify-confidence/sdk": "npm:0.0.5"
     "@testing-library/dom": "npm:^7.29.6"
@@ -17093,15 +17091,6 @@ __metadata:
     querystringify: "npm:^2.1.1"
     requires-port: "npm:^1.0.0"
   checksum: 10c0/bd5aa9389f896974beb851c112f63b466505a04b4807cea2e5a3b7092f6fbb75316f0491ea84e44f66fed55f1b440df5195d7e3a8203f64fcefa19d182f5be87
-  languageName: node
-  linkType: hard
-
-"use-sync-external-store@npm:^1.2.0":
-  version: 1.2.0
-  resolution: "use-sync-external-store@npm:1.2.0"
-  peerDependencies:
-    react: ^16.8.0 || ^17.0.0 || ^18.0.0
-  checksum: 10c0/ac4814e5592524f242921157e791b022efe36e451fe0d4fd4d204322d5433a4fc300d63b0ade5185f8e0735ded044c70bcf6d2352db0f74d097a238cebd2da02
   languageName: node
   linkType: hard
 
