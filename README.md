@@ -55,6 +55,10 @@ If you intend to change the public API you need to run the bundle command locall
 yarn bundle
 ```
 
+## Example apps
+
+This repo contains a few example apps (under examples/) to display and test the functionality. These apps depend on the bundled output of the main packages, so you will need to run `yarn bundle` before starting any of the apps.
+
 ## Code of Conduct
 
 This project adheres to the [Open Source Code of
