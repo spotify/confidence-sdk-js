@@ -14,9 +14,9 @@ module.exports = defineConfig({
         workspace.set('private', true);
         continue;
       }
-      workspace.unset('type');
-      // workspace.set('type', 'module');
-      workspace.set('module', 'build/esm/index.js');
+      workspace.set('type', 'module');
+      workspace.set('main', 'dist/index.js');
+      workspace.unset('module');
       workspace.set('types', 'build/types/index.d.ts');
       workspace.set('files', ['dist/index.*']);
       workspace.set('scripts.build', 'tsc');
@@ -24,7 +24,7 @@ module.exports = defineConfig({
       workspace.set('publishConfig', {
         access: 'public',
         types: 'dist/index.d.ts',
-        module: 'dist/index.js',
+        main: 'dist/index.js',
       });
       workspace.set('devDependencies.@microsoft/api-extractor', '*');
       workspace.set('devDependencies.rollup', '*');

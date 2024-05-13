@@ -16,12 +16,14 @@ function App() {
   return (
     <ConfidenceProvider confidence={confidence}>
       <h1>React 18 Example</h1>
-      <div style={{ height: 2000 }}>
-        <React.Suspense fallback={<p>Loading... </p>}>
-          <TestComponent />
-        </React.Suspense>
-      </div>
-      <p>bottom</p>
+      <OpenFeatureProvider>
+        <div style={{ height: 2000 }}>
+          <React.Suspense fallback={<p>Loading... </p>}>
+            <TestComponent />
+          </React.Suspense>
+        </div>
+        <p>bottom</p>
+      </OpenFeatureProvider>
     </ConfidenceProvider>
   );
 }
