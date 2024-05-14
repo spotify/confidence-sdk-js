@@ -33,6 +33,8 @@ export class Confidence implements EventSender, Trackable, FlagResolver {
     // (undocumented)
     getFlag<T extends Value>(path: string, defaultValue: T): Promise<T>;
     // (undocumented)
+    resolveFlags(...flagNames: string[]): Promise<void>;
+    // (undocumented)
     setContext(context: Context): void;
     // (undocumented)
     subscribe(...flagNames: string[]): () => void;
@@ -137,7 +139,7 @@ export namespace FlagEvaluation {
     }
     // (undocumented)
     export type Resolved<T> = (Matched<T> | Unmatched<T> | Failed<T>) & {
-        stale?: false;
+        stale: false;
     };
     // (undocumented)
     export type Stale<T> = (Matched<T> | Unmatched<T> | Failed<T>) & {
@@ -160,9 +162,13 @@ export type FlagEvaluation<T> = FlagEvaluation.Resolved<T> | FlagEvaluation.Stal
 // @public (undocumented)
 export interface FlagResolver {
     // (undocumented)
+    evaluateFlag(path: string, defaultValue: number): FlagEvaluation<number>;
+    // (undocumented)
     evaluateFlag<T extends Value>(path: string, defaultValue: T): FlagEvaluation<T>;
     // (undocumented)
     getFlag<T extends Value>(path: string, defaultValue: T): Promise<T>;
+    // (undocumented)
+    resolveFlags(...flagNames: string[]): Promise<void>;
     // (undocumented)
     subscribe(...flagNames: string[]): () => void;
     // (undocumented)

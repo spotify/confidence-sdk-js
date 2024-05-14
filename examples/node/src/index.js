@@ -1,20 +1,23 @@
-import { createConfidenceServerProvider } from '@spotify-confidence/openfeature-server-provider';
-import { OpenFeature } from '@openfeature/server-sdk';
+import { Confidence } from '@spotify-confidence/sdk';
 
-const provider = createConfidenceServerProvider({
+const confidence = Confidence.create({
   clientSecret: 'RxDVTrXvc6op1XxiQ4OaR31dKbJ39aYV',
   fetchImplementation: fetch,
   timeout: 1000,
 });
+// confidence.setContext()
+main();
 
-OpenFeature.setProvider(provider);
+async function main() {
+  const fe = confidence.withContext({ targeting_key: 'user-a' }).getFlag('web-sdk-e2e-flag.int', 0);
+  console.log(fe);
+  console.log(await fe);
+}
 
-const client = OpenFeature.getClient();
-
-client
-  .getBooleanValue('web-sdk-e2e-flag.bool', false, {
-    targetingKey: `user-${Math.random()}`,
-  })
-  .then(result => {
-    console.log('result:', result);
-  });
+// client
+//   .getBooleanValue('web-sdk-e2e-flag.bool', false, {
+//     targetingKey: `user-${Math.random()}`,
+//   })
+//   .then(result => {
+//     console.log('result:', result);
+//   });
