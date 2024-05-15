@@ -34,3 +34,13 @@ export function subject<T>(observable: Subscribe<T>): Subscribe<T> {
     };
   };
 }
+
+export function changeObserver<T>(observer: Observer<T>, initialValue?: T): Observer<T> {
+  let prevValue: T | undefined = initialValue;
+  return (value: T) => {
+    if (!Object.is(value, prevValue)) {
+      prevValue = value;
+      observer(value);
+    }
+  };
+}

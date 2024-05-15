@@ -33,7 +33,7 @@ export class Confidence implements EventSender, Trackable, FlagResolver {
     // (undocumented)
     getFlag<T extends Value>(path: string, defaultValue: T): Promise<T>;
     // (undocumented)
-    resolveFlags(...flagNames: string[]): Promise<void>;
+    resolveFlags(...flagNames: string[]): Promise<FlagState>;
     // (undocumented)
     setContext(context: Context): void;
     // (undocumented)
@@ -168,8 +168,6 @@ export interface FlagResolver {
     // (undocumented)
     getFlag<T extends Value>(path: string, defaultValue: T): Promise<T>;
     // (undocumented)
-    resolveFlags(...flagNames: string[]): Promise<void>;
-    // (undocumented)
     subscribe(...flagNames: string[]): () => void;
     // (undocumented)
     subscribe(...args: [...flagNames: string[], onStateChange: FlagStateObserver]): () => void;
@@ -178,7 +176,7 @@ export interface FlagResolver {
 // Warning: (ae-missing-release-tag) "FlagState" is part of the package's API, but it is missing a release tag (@alpha, @beta, @public, or @internal)
 //
 // @public (undocumented)
-export type FlagState = 'NOT_READY' | 'READY' | 'STALE';
+export type FlagState = 'NOT_READY' | 'READY' | 'STALE' | 'ERROR';
 
 // Warning: (ae-missing-release-tag) "FlagStateObserver" is part of the package's API, but it is missing a release tag (@alpha, @beta, @public, or @internal)
 //

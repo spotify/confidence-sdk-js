@@ -16,13 +16,13 @@ describe('Confidence E2E Tests', () => {
 
   describe('resolving flags', () => {
     it('should', async () => {
-      const close = confidence.subscribe(state => {
-        console.log(state);
-      });
+      // const close = confidence.subscribe(state => {
+      //   console.log(state);
+      // });
       // confidence.setContext({ targeting_key: 'test-a' });
       const fe = await confidence.evaluateFlag('web-sdk-e2e-flag.int', 0);
       console.log(fe);
-      close();
+      // close();
     });
   });
 

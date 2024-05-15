@@ -114,7 +114,8 @@ class FlagResolutionImpl implements FlagResolution {
   }
 }
 
-export interface AbortablePromise<T> extends Promise<T> {
+export interface PendingResolution extends Promise<FlagResolution> {
+  readonly context: Value.Struct;
   abort(reason?: any): void;
 }
 
@@ -149,7 +150,7 @@ export class FlagResolverClient {
     this.baseUrl = baseUrl;
   }
 
-  resolve(context: Context, flags: string[]): AbortablePromise<FlagResolution> {
+  resolve(context: Context, flags: string[]): PendingResolution {
     const useBackendApply = !this.applyTimeout;
     const request: ResolveFlagsRequest = {
       clientSecret: this.clientSecret,
@@ -168,7 +169,7 @@ export class FlagResolverClient {
         ),
     );
 
-    return Object.assign(resolution, { abort: (reason?: any) => abortController.abort(reason) });
+    return Object.assign(resolution, { context, abort: (reason?: any) => abortController.abort(reason) });
   }
 
   createApplier(resolveToken: Uint8Array): Applier {

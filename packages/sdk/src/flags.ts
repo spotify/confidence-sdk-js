@@ -30,7 +30,7 @@ export namespace FlagEvaluation {
 }
 export type FlagEvaluation<T> = FlagEvaluation.Resolved<T> | FlagEvaluation.Stale<T>;
 
-export type FlagState = 'NOT_READY' | 'READY' | 'STALE';
+export type FlagState = 'NOT_READY' | 'READY' | 'STALE' | 'ERROR';
 export type FlagStateObserver = (state: FlagState) => void;
 export interface FlagResolver {
   subscribe(...flagNames: string[]): () => void;
@@ -39,7 +39,7 @@ export interface FlagResolver {
   //private currentResolution?:FlagResolution
   //private pendingResolution?:Promise<FlagResolution>
   // internal?
-  resolveFlags(...flagNames: string[]): Promise<void>;
+  // resolveFlags(...flagNames: string[]): Promise<void>;
   /*
     pendingResolution?.abort();
     pendingResolution = client.resolve()
