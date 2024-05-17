@@ -62,6 +62,7 @@ describe('ConfidenceServerProvider E2E tests', () => {
     const expectedObject = {
       flagKey: 'web-sdk-e2e-flag.obj.double',
       reason: 'MATCH',
+      stale: false,
       variant: 'flags/web-sdk-e2e-flag/variants/control',
       flagMetadata: {},
       value: 3.6,

@@ -228,8 +228,7 @@ export class Confidence implements EventSender, Trackable, FlagResolver {
       evaluation = {
         reason: 'ERROR',
         errorCode: 'PROVIDER_NOT_READY',
-        // TODO message
-        errorMessage: '',
+        errorMessage: 'Provider is not yet ready',
         value: defaultValue,
         stale: false,
       };

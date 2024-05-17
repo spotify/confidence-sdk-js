@@ -30,9 +30,16 @@ export class ConfidenceWebProvider implements Provider {
 
   async initialize(context?: EvaluationContext): Promise<void> {
     if (context) this.confidence.setContext(convertContext(context));
-    return new Promise(resolve => {
+    return new Promise((resolve, reject) => {
+      const timeoutId = setTimeout(
+        () => reject(new Error(`Initialize timed out after ${this.confidence.config.timeout}ms`)),
+        this.confidence.config.timeout,
+      );
       this.unsubscribe = this.confidence.subscribe(state => {
-        if (state === 'READY') resolve();
+        if (state === 'READY') {
+          clearTimeout(timeoutId);
+          resolve();
+        }
       });
     });
   }
