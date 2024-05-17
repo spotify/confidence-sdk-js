@@ -90,6 +90,7 @@ describe('Backend environment Evaluation', () => {
     expect(flagResolution.evaluate('testflag', {})).toEqual({
       variant: 'flags/testflag/variants/control',
       reason: 'MATCH',
+      stale: false,
       value: {
         bool: true,
         str: 'string',
@@ -115,6 +116,7 @@ describe('Backend environment Evaluation', () => {
     ).toEqual({
       variant: 'flags/testflag/variants/control',
       reason: 'MATCH',
+      stale: false,
       value: {
         str: 'string',
         bool: true,
@@ -135,6 +137,7 @@ describe('Backend environment Evaluation', () => {
       errorCode: 'TYPE_MISMATCH',
       errorMessage: "Expected undefined, but found Struct, at path 'defaultValue.obj.testBool'",
       reason: 'ERROR',
+      stale: false,
       value: {
         testBool: false,
       },
@@ -153,6 +156,7 @@ describe('Backend environment Evaluation', () => {
       expect(flagResolution.evaluate(`testflag${path}`, defaultValue)).toEqual({
         variant: 'flags/testflag/variants/control',
         reason: 'MATCH',
+        stale: false,
         value: expectedValue,
       });
     });
@@ -162,6 +166,7 @@ describe('Backend environment Evaluation', () => {
       expect(flagResolution.evaluate(`no-seg-flag${path}`, defaultValue)).toEqual({
         reason: 'NO_SEGMENT_MATCH',
         value: defaultValue,
+        stale: false,
       });
     });
 
@@ -171,6 +176,7 @@ describe('Backend environment Evaluation', () => {
       expect(flagResolution.evaluate(`testflag.obj${path}`, defaultValue)).toEqual({
         variant: 'flags/testflag/variants/control',
         reason: 'MATCH',
+        stale: false,
         value: expectedValue,
       });
     });
@@ -185,6 +191,7 @@ describe('Backend environment Evaluation', () => {
         errorCode: 'FLAG_NOT_FOUND',
         errorMessage: 'Flag "notARealFlag" not found',
         reason: 'ERROR',
+        stale: false,
       });
     });
 
@@ -198,6 +205,7 @@ describe('Backend environment Evaluation', () => {
         errorCode: 'TYPE_MISMATCH',
         errorMessage: `Expected ${incorrectPathType}, but found ${typeof defaultValue}, at path 'defaultValue${incorrectPath}'`,
         reason: 'ERROR',
+        stale: false,
       });
     });
 
@@ -211,6 +219,7 @@ describe('Backend environment Evaluation', () => {
         errorCode: 'TYPE_MISMATCH',
         errorMessage: `Expected undefined, but found ${typeof defaultValue}, at path 'defaultValue.404'`,
         reason: 'ERROR',
+        stale: false,
       });
     });
 
@@ -224,6 +233,7 @@ describe('Backend environment Evaluation', () => {
         errorCode: 'TYPE_MISMATCH',
         errorMessage: `Expected ${incorrectPathType}, but found ${typeof defaultValue}, at path 'defaultValue.obj${incorrectPath}'`,
         reason: 'ERROR',
+        stale: false,
       });
     });
 
@@ -237,6 +247,7 @@ describe('Backend environment Evaluation', () => {
         errorCode: 'TYPE_MISMATCH',
         errorMessage: `Expected undefined, but found ${typeof defaultValue}, at path 'defaultValue.obj.404'`,
         reason: 'ERROR',
+        stale: false,
       });
     });
   });

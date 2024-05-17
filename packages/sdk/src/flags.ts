@@ -28,6 +28,7 @@ export namespace FlagEvaluation {
   export type Resolved<T> = (Matched<T> | Unmatched<T> | Failed<T>) & { stale: false };
   export type Stale<T> = (Matched<T> | Unmatched<T> | Failed<T>) & { stale: true } & PromiseLike<Resolved<T>>;
 }
+// eslint-disable-next-line @typescript-eslint/no-redeclare
 export type FlagEvaluation<T> = FlagEvaluation.Resolved<T> | FlagEvaluation.Stale<T>;
 
 export type FlagState = 'NOT_READY' | 'READY' | 'STALE' | 'ERROR';
@@ -36,8 +37,8 @@ export interface FlagResolver {
   subscribe(...flagNames: string[]): () => void;
   subscribe(...args: [...flagNames: string[], onStateChange: FlagStateObserver]): () => void;
 
-  //private currentResolution?:FlagResolution
-  //private pendingResolution?:Promise<FlagResolution>
+  // private currentResolution?:FlagResolution
+  // private pendingResolution?:Promise<FlagResolution>
   // internal?
   // resolveFlags(...flagNames: string[]): Promise<void>;
   /*
@@ -52,7 +53,6 @@ export interface FlagResolver {
   // internal
   // evaluateFlagSync<T extends Value>(path: string, defaultValue: T): FlagEvaluation<T>;
 
-  evaluateFlag(path: string, defaultValue: number): FlagEvaluation<number>;
   evaluateFlag<T extends Value>(path: string, defaultValue: T): FlagEvaluation<T>;
   /*
     // here we also need to trigger a first resolve if there are no current or pending

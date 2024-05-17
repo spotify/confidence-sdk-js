@@ -20,10 +20,12 @@ const flagResolutionMock = {
 const withContextMock = jest.fn(function withContext() {
   return this;
 });
+const evaluateFlagMock = jest.fn();
 const mockConfidence = {
   resolveFlags: resolveFlagsMock,
   apply: jest.fn(),
   withContext: withContextMock,
+  evaluateFlag: evaluateFlagMock,
 } as unknown as Confidence;
 
 const dummyConsole: Logger = {
@@ -44,16 +46,24 @@ describe('ConfidenceServerProvider', () => {
       errorCode: 'GENERAL',
       errorMessage: 'Test error',
     });
+    evaluateFlagMock.mockReturnValue({
+      reason: 'MATCH',
+      value: 'Test',
+    });
   });
 
   it('should change the provider status to READY', async () => {
     expect(instanceUnderTest.status).toEqual(ProviderStatus.READY);
   });
 
-  it('should make a network request on each flag resolve', async () => {
-    await instanceUnderTest.resolveBooleanEvaluation('testFlag.bool', false, {}, dummyConsole);
-    await instanceUnderTest.resolveBooleanEvaluation('testFlag.bool', false, {}, dummyConsole);
+  it('should spin off a new Confidence instance with the context on each flag resolve', async () => {
+    await instanceUnderTest.resolveBooleanEvaluation('testFlag.bool', false, { some_context: 'value' }, dummyConsole);
+    await instanceUnderTest.resolveBooleanEvaluation('testFlag.bool', false, { another_context: 5 }, dummyConsole);
 
-    expect(resolveFlagsMock).toHaveBeenCalledTimes(2);
+    expect(withContextMock).toHaveBeenCalledTimes(2);
+    expect(withContextMock).toHaveBeenNthCalledWith(1, { some_context: 'value' });
+    expect(withContextMock).toHaveBeenNthCalledWith(2, { another_context: 5 });
+
+    expect(evaluateFlagMock).toHaveBeenCalledTimes(2);
   });
 });
