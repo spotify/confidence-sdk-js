@@ -6,12 +6,13 @@ import {
   Logger,
   OpenFeatureEventEmitter,
   Provider,
+  ProviderEvents,
   ProviderMetadata,
   ResolutionDetails,
 } from '@openfeature/web-sdk';
 import equal from 'fast-deep-equal';
 
-import { Confidence, Value, Context } from '@spotify-confidence/sdk';
+import { Value, Context, FlagResolver } from '@spotify-confidence/sdk';
 
 type Mutable<T> = { -readonly [K in keyof T]: T[K] };
 
@@ -22,30 +23,33 @@ export class ConfidenceWebProvider implements Provider {
   readonly events = new OpenFeatureEventEmitter();
 
   private unsubscribe?: () => void;
-  private readonly confidence: Confidence;
+  private readonly confidence: FlagResolver;
 
-  constructor(confidence: Confidence) {
+  constructor(confidence: FlagResolver) {
     this.confidence = confidence;
   }
 
   async initialize(context?: EvaluationContext): Promise<void> {
     if (context) this.confidence.setContext(convertContext(context));
-    return new Promise((resolve, reject) => {
-      const timeoutId = setTimeout(
-        () => reject(new Error(`Initialize timed out after ${this.confidence.config.timeout}ms`)),
-        this.confidence.config.timeout,
-      );
-      this.unsubscribe = this.confidence.subscribe(state => {
-        if (state === 'READY') {
-          clearTimeout(timeoutId);
-          resolve();
+    let isStale = false;
+    this.unsubscribe = this.confidence.subscribe(state => {
+      if (state === 'READY') {
+        if (isStale) {
+          this.events.emit(ProviderEvents.Ready);
+          this.events.emit(ProviderEvents.ConfigurationChanged);
+          isStale = false;
         }
-      });
+      } else if (state === 'STALE') {
+        this.events.emit(ProviderEvents.Stale);
+        isStale = true;
+      }
     });
+    return this.expectReadyOrTimeout();
   }
 
   async onClose(): Promise<void> {
     this.unsubscribe?.();
+    this.unsubscribe = undefined;
   }
 
   async onContextChange(oldContext: EvaluationContext, newContext: EvaluationContext): Promise<void> {
@@ -54,14 +58,24 @@ export class ConfidenceWebProvider implements Provider {
       return;
     }
     this.confidence.setContext(convertContext(changes));
-    return new Promise(resolve => {
-      const close = this.confidence.subscribe(state => {
+    return this.expectReadyOrTimeout();
+  }
+
+  private expectReadyOrTimeout(): Promise<void> {
+    const timeout = this.confidence.config.timeout;
+    let close: () => void;
+    return new Promise<void>((resolve, reject) => {
+      let timeoutId = setTimeout(() => {
+        reject(new Error(`Resolve timed out after ${timeout}ms`));
+        close?.();
+      }, timeout);
+      close = this.confidence.subscribe(state => {
         if (state === 'READY') {
-          close();
           resolve();
+          clearTimeout(timeoutId);
         }
       });
-    });
+    }).finally(close!);
   }
 
   private evaluateFlag<T extends Value>(

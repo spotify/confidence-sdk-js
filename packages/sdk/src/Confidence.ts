@@ -157,9 +157,10 @@ export class Confidence implements EventSender, Trackable, FlagResolver {
     return undefined;
   }
 
-  resolveFlags(...flagNames: string[]): Promise<FlagState> {
+  async resolveFlags(...flagNames: string[]): Promise<FlagState> {
     // TODO abort reason
     // TODO how to resolve previous calls?
+    await Promise.resolve();
     const context = this.getContext();
     if (this.pendingFlags && !Value.equal(this.pendingFlags.context, context)) {
       this.pendingFlags.abort(new Error('Context changed'));

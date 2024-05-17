@@ -1,18 +1,19 @@
 import { EvaluationContext, ProviderEvents } from '@openfeature/web-sdk';
 import { ConfidenceWebProvider } from './ConfidenceWebProvider';
-import { Confidence } from '@spotify-confidence/sdk';
+import { FlagResolver, FlagStateObserver } from '@spotify-confidence/sdk';
 
-const setContextMock = jest.fn();
-const resolveFlagsMock: jest.MockedFunction<Confidence['resolveFlags']> = jest.fn();
-const applyMock = jest.fn();
-const contextChangesMock = jest.fn();
-const confidenceMock = {
-  environment: 'client',
-  resolveFlags: resolveFlagsMock,
-  apply: applyMock,
-  setContext: setContextMock,
-  contextChanges: contextChangesMock,
-} as unknown as Confidence;
+const confidenceMock: jest.Mocked<FlagResolver> = {
+  config: {
+    timeout: 10,
+  },
+  getContext: jest.fn(),
+  setContext: jest.fn(),
+  withContext: jest.fn(),
+  clearContext: jest.fn(),
+  subscribe: jest.fn(),
+  evaluateFlag: jest.fn(),
+  getFlag: jest.fn(),
+};
 
 const dummyContext: EvaluationContext = { targetingKey: 'test' };
 
@@ -20,117 +21,130 @@ describe('ConfidenceProvider', () => {
   let instanceUnderTest: ConfidenceWebProvider;
 
   beforeEach(() => {
+    jest.resetAllMocks();
     instanceUnderTest = new ConfidenceWebProvider(confidenceMock);
+
+    // subscribe will by default immediately emit READY
+    confidenceMock.subscribe.mockImplementation((...args) => {
+      const observer = args.pop();
+      if (typeof observer !== 'function') throw new Error('expected flagStateObserver in test');
+      observer('READY');
+      return jest.fn();
+    });
   });
 
   describe('initialize', () => {
-    describe('with context', () => {
-      it('should resolve', async () => {
-        await instanceUnderTest.initialize({ targetingKey: 'test' });
+    it('should resolve if the state is ready', async () => {
+      await expect(instanceUnderTest.initialize({ targetingKey: 'test' })).toResolve();
+    });
+    it('should reject with timeout if state does not become ready', async () => {
+      // subscribe that never emits ready
+      confidenceMock.subscribe.mockImplementation(() => jest.fn());
+      await expect(instanceUnderTest.initialize({ targetingKey: 'test' })).rejects.toThrow(
+        'Resolve timed out after 10ms',
+      );
+    });
 
-        expect(resolveFlagsMock).toHaveBeenCalledOnce();
+    it('should not set confidence context id no initial context', async () => {
+      await instanceUnderTest.initialize();
+      expect(confidenceMock.setContext).not.toHaveBeenCalled();
+    });
+    it('should setup a subscription', async () => {
+      await instanceUnderTest.initialize();
+      // one subscription is for the lifecycle of the provider, the other is short lived to wait for ready
+      expect(confidenceMock.subscribe).toHaveBeenCalledTimes(2);
+      // the first subscription should be open
+      expect(confidenceMock.subscribe.mock.results[0].value).not.toHaveBeenCalled();
+      // the second second subscription should be closed
+      expect(confidenceMock.subscribe.mock.results[1].value).toHaveBeenCalled();
+    });
+  });
+
+  describe('onClose', () => {
+    it('should close all subscriptions', async () => {
+      await instanceUnderTest.initialize();
+      await instanceUnderTest.onContextChange({}, { targetingKey: 'x' });
+      await instanceUnderTest.onClose();
+      // the first subscription should be closed
+      for (const { value } of confidenceMock.subscribe.mock.results) {
+        // value is the close function returned from the subscription
+        expect(value).toHaveBeenCalledOnce();
+      }
+    });
+  });
+  describe('onContextChange', () => {
+    describe('from OpenFeature', () => {
+      it('should diff context and set only the changes to confidence', async () => {
+        await instanceUnderTest.onContextChange(
+          { targetingKey: 'test1', pantsPattern: 'Checkered' },
+          { targetingKey: 'test2', pantsColor: 'Yellow' },
+        );
+
+        expect(confidenceMock.setContext).toHaveBeenCalledTimes(1);
+        expect(confidenceMock.setContext).toHaveBeenCalledWith(
+          expect.objectContaining({
+            targeting_key: 'test2',
+            pantsColor: 'Yellow',
+            pantsPattern: undefined,
+          }),
+        );
       });
 
-      it('should setup a context change subscription', async () => {
-        await instanceUnderTest.initialize({ targetingKey: 'test' });
-        expect(contextChangesMock).toHaveBeenCalledOnce(expect.any(Function));
+      it('should diff context but only shallow', async () => {
+        await instanceUnderTest.onContextChange(
+          { targetingKey: 'test1', pants: { color: 'Green', pattern: 'Checkered' } },
+          { targetingKey: 'test1', pants: { color: 'Green' } },
+        );
+
+        expect(confidenceMock.setContext).toHaveBeenCalledTimes(1);
+        expect(confidenceMock.setContext).toHaveBeenCalledWith({
+          pants: { color: 'Green' },
+        });
+      });
+
+      it('removal of targeting key should send undefined in setContext', async () => {
+        await instanceUnderTest.onContextChange(
+          { targetingKey: 'test1', pants: { color: 'Green' } },
+          { pants: { color: 'Yellow' } },
+        );
+
+        expect(confidenceMock.setContext).toHaveBeenCalledTimes(1);
+        expect(confidenceMock.setContext).toHaveBeenCalledWith({
+          targeting_key: undefined,
+          pants: { color: 'Yellow' },
+        });
+      });
+
+      it('should not set confidence context with equal contexts', async () => {
+        await instanceUnderTest.onContextChange(dummyContext, dummyContext);
+
+        expect(confidenceMock.setContext).not.toHaveBeenCalled();
       });
     });
 
-    describe('without context', () => {
-      it('should resolve', async () => {
-        await instanceUnderTest.initialize();
-        expect(resolveFlagsMock).toHaveBeenCalledOnce();
+    describe('from Confidence', () => {
+      let flagStateObserver: FlagStateObserver;
+
+      beforeEach(() => {
+        instanceUnderTest.initialize();
+        const observer = confidenceMock.subscribe.mock.calls[0][0];
+        if (typeof observer !== 'function') throw new Error('Expected flagStateObserver in test');
+        flagStateObserver = observer;
       });
+      it('should emit stale and then ready', async () => {
+        const staleHandler = jest.fn();
+        const readyHandler = jest.fn();
+        instanceUnderTest.events.addHandler(ProviderEvents.Stale, staleHandler);
+        instanceUnderTest.events.addHandler(ProviderEvents.Ready, readyHandler);
 
-      it('should not set confidence context', async () => {
-        await instanceUnderTest.initialize();
-        expect(setContextMock).not.toHaveBeenCalled();
-      });
+        flagStateObserver('STALE');
 
-      it('should setup a context change subscription', async () => {
-        await instanceUnderTest.initialize({ targetingKey: 'test' });
-        expect(contextChangesMock).toHaveBeenCalledOnce(expect.any(Function));
-      });
-    });
+        expect(staleHandler).toHaveBeenCalledTimes(1);
+        expect(readyHandler).toHaveBeenCalledTimes(0);
 
-    describe('onContextChange', () => {
-      describe('from OpenFeature', () => {
-        it('should diff context and set only the changes to confidence', async () => {
-          await instanceUnderTest.onContextChange(
-            { targetingKey: 'test1', pantsPattern: 'Checkered' },
-            { targetingKey: 'test2', pantsColor: 'Yellow' },
-          );
+        flagStateObserver('READY');
 
-          expect(setContextMock).toHaveBeenCalledTimes(1);
-          expect(setContextMock).toHaveBeenCalledWith(
-            expect.objectContaining({
-              targeting_key: 'test2',
-              pantsColor: 'Yellow',
-              pantsPattern: undefined,
-            }),
-          );
-        });
-
-        it('should diff context but only shallow', async () => {
-          await instanceUnderTest.onContextChange(
-            { targetingKey: 'test1', pants: { color: 'Green', pattern: 'Checkered' } },
-            { targetingKey: 'test1', pants: { color: 'Green' } },
-          );
-
-          expect(setContextMock).toHaveBeenCalledTimes(1);
-          expect(setContextMock).toHaveBeenCalledWith({
-            pants: { color: 'Green' },
-          });
-        });
-
-        it('removal of targeting key should send undefined in setContext', async () => {
-          await instanceUnderTest.onContextChange(
-            { targetingKey: 'test1', pants: { color: 'Green' } },
-            { pants: { color: 'Yellow' } },
-          );
-
-          expect(setContextMock).toHaveBeenCalledTimes(1);
-          expect(setContextMock).toHaveBeenCalledWith({
-            targeting_key: undefined,
-            pants: { color: 'Yellow' },
-          });
-        });
-
-        it('should not set confidence context with equal contexts', async () => {
-          await instanceUnderTest.onContextChange(dummyContext, dummyContext);
-
-          expect(setContextMock).not.toHaveBeenCalled();
-        });
-      });
-
-      describe('from Confidence', () => {
-        let contextChangeObserver: (keys: string[]) => void;
-
-        beforeEach(() => {
-          instanceUnderTest.initialize();
-          contextChangeObserver = contextChangesMock.mock.lastCall[0];
-          resolveFlagsMock.mockClear();
-        });
-        it('should resolve', () => {
-          contextChangeObserver(['key']);
-          expect(resolveFlagsMock).toHaveBeenCalledOnce();
-        });
-        it('should emit stale and then ready', async () => {
-          const staleHandler = jest.fn();
-          const readyHandler = jest.fn();
-          instanceUnderTest.events.addHandler(ProviderEvents.Stale, staleHandler);
-          instanceUnderTest.events.addHandler(ProviderEvents.Ready, readyHandler);
-
-          contextChangeObserver(['key']);
-
-          expect(staleHandler).toHaveBeenCalledTimes(1);
-          expect(readyHandler).toHaveBeenCalledTimes(0);
-          // await so that pending resolve is resolved
-          await Promise.resolve();
-
-          expect(readyHandler).toHaveBeenCalledTimes(1);
-        });
+        expect(readyHandler).toHaveBeenCalledTimes(1);
       });
     });
   });

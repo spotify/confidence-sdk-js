@@ -1,3 +1,4 @@
+import { Contextual } from '.';
 import { Value } from './Value';
 
 export namespace FlagEvaluation {
@@ -33,7 +34,11 @@ export type FlagEvaluation<T> = FlagEvaluation.Resolved<T> | FlagEvaluation.Stal
 
 export type FlagState = 'NOT_READY' | 'READY' | 'STALE' | 'ERROR';
 export type FlagStateObserver = (state: FlagState) => void;
-export interface FlagResolver {
+export interface FlagResolver extends Contextual<FlagResolver> {
+  readonly config: {
+    timeout: number;
+  };
+
   subscribe(...flagNames: string[]): () => void;
   subscribe(...args: [...flagNames: string[], onStateChange: FlagStateObserver]): () => void;
 
