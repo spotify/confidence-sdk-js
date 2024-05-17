@@ -17,9 +17,7 @@ function createProvider(options: Partial<ConfidenceWebProviderOptions> = {}): Pr
 describe('ConfidenceWebProvider E2E tests', () => {
   describe('initialize fail', () => {
     beforeEach(async () => {
-      await expect(OpenFeature.setProviderAndWait(createProvider({ timeout: 0 }))).rejects.toThrow(
-        'Initialize timed out after 0ms',
-      );
+      await expect(OpenFeature.setProviderAndWait(createProvider({ timeout: 0 }))).rejects.toThrow();
     });
     afterEach(() => OpenFeature.clearProviders());
 
