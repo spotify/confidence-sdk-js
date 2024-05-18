@@ -38,7 +38,7 @@ type SyncExternalStore<T> = [subscribe: (onStoreChange: () => void) => () => voi
 function createFlagEvaluationStore(confidence: Confidence, path: string, defaultValue: any): SyncExternalStore<string> {
   const getSnapshot = () => {
     const evaluation = confidence.evaluateFlag(path, defaultValue);
-    if (evaluation.stale) throw evaluation;
+    if ('then' in evaluation) throw evaluation;
     return JSON.stringify(evaluation);
   };
   const subscribe = (onStoreChange: () => void) => {
