@@ -33,6 +33,7 @@ type Applier = (flagName: string) => void;
 
 export interface FlagResolution {
   readonly context: Value.Struct;
+  // readonly flagNames:string[]
   evaluate<T extends Value>(path: string, defaultValue: T): FlagEvaluation.Resolved<T>;
 }
 
@@ -69,7 +70,6 @@ class FlagResolutionImpl implements FlagResolution {
           value: defaultValue,
           errorCode: 'FLAG_NOT_FOUND',
           errorMessage: `Flag "${name}" not found`,
-          stale: false,
         };
       }
       const reason = flag.reason;
@@ -81,7 +81,6 @@ class FlagResolutionImpl implements FlagResolution {
         return {
           reason,
           value: defaultValue,
-          stale: false,
         };
       }
 
@@ -97,7 +96,6 @@ class FlagResolutionImpl implements FlagResolution {
         reason,
         value,
         variant: flag.variant,
-        stale: false,
       };
     } catch (e: any) {
       return {
@@ -105,7 +103,6 @@ class FlagResolutionImpl implements FlagResolution {
         value: defaultValue,
         errorCode: e instanceof TypeMismatchError ? 'TYPE_MISMATCH' : 'GENERAL',
         errorMessage: e.message ?? 'Unknown error',
-        stale: false,
       };
     }
   }

@@ -26,8 +26,8 @@ export namespace FlagEvaluation {
     readonly errorMessage: string;
   }
 
-  export type Resolved<T> = (Matched<T> | Unmatched<T> | Failed<T>) & { stale: false };
-  export type Stale<T> = (Matched<T> | Unmatched<T> | Failed<T>) & { stale: true } & PromiseLike<Resolved<T>>;
+  export type Resolved<T> = Matched<T> | Unmatched<T> | Failed<T>;
+  export type Stale<T> = Resolved<T> & PromiseLike<Resolved<T>>;
 }
 // eslint-disable-next-line @typescript-eslint/no-redeclare
 export type FlagEvaluation<T> = FlagEvaluation.Resolved<T> | FlagEvaluation.Stale<T>;

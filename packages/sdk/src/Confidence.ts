@@ -231,7 +231,6 @@ export class Confidence implements EventSender, Trackable, FlagResolver {
         errorCode: 'PROVIDER_NOT_READY',
         errorMessage: 'Provider is not yet ready',
         value: defaultValue,
-        stale: false,
       };
       if (!this.pendingFlags) this.resolveFlags(flagName);
     } else {
@@ -251,7 +250,7 @@ export class Confidence implements EventSender, Trackable, FlagResolver {
 
         return p.then(onfulfilled, onrejected);
       };
-      return Object.assign(evaluation, { stale: true, then });
+      return Object.assign(evaluation, { then });
     }
     return evaluation;
   }
