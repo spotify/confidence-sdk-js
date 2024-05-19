@@ -33,7 +33,6 @@ describe('ConfidenceWebProvider E2E tests', () => {
         errorCode: 'PROVIDER_NOT_READY',
         flagKey: 'web-sdk-e2e-flag.str',
         flagMetadata: {},
-        stale: true,
         errorMessage: 'Provider is not yet ready',
         then: expect.any(Function),
         reason: 'ERROR',
@@ -103,7 +102,6 @@ describe('ConfidenceWebProvider E2E tests', () => {
         flagKey: 'web-sdk-e2e-flag.obj.double',
         flagMetadata: {},
         reason: 'MATCH',
-        stale: false,
         variant: 'flags/web-sdk-e2e-flag/variants/control',
         value: 3.6,
       };
