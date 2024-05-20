@@ -67,7 +67,6 @@ export class ConfidenceWebProvider implements Provider {
     return new Promise<void>((resolve, reject) => {
       let timeoutId = setTimeout(() => {
         reject(new Error(`Resolve timed out after ${timeout}ms`));
-        close?.();
       }, timeout);
       close = this.confidence.subscribe(state => {
         if (state === 'READY') {

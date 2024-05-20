@@ -6,6 +6,7 @@
 
 import { Confidence } from '@spotify-confidence/sdk';
 import { EvaluationContext } from '@openfeature/web-sdk';
+import { FlagResolver } from '@spotify-confidence/sdk';
 import { JsonValue } from '@openfeature/web-sdk';
 import { Logger } from '@openfeature/web-sdk';
 import { OpenFeatureEventEmitter } from '@openfeature/web-sdk';
@@ -17,7 +18,7 @@ import { ResolutionDetails } from '@openfeature/web-sdk';
 //
 // @public (undocumented)
 export class ConfidenceWebProvider implements Provider {
-    constructor(confidence: Confidence);
+    constructor(confidence: FlagResolver);
     // (undocumented)
     readonly events: OpenFeatureEventEmitter;
     // (undocumented)

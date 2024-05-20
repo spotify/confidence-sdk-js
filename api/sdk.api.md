@@ -33,13 +33,9 @@ export class Confidence implements EventSender, Trackable, FlagResolver {
     // (undocumented)
     getFlag<T extends Value>(path: string, defaultValue: T): Promise<T>;
     // (undocumented)
-    resolveFlags(...flagNames: string[]): Promise<FlagState>;
-    // (undocumented)
     setContext(context: Context): void;
     // (undocumented)
-    subscribe(...flagNames: string[]): () => void;
-    // (undocumented)
-    subscribe(...args: [...flagNames: string[], onStateChange: FlagStateObserver]): () => void;
+    subscribe(onStateChange?: FlagStateObserver): () => void;
     // (undocumented)
     track(name: string, message?: Value.Struct): void;
     // Warning: (ae-forgotten-export) The symbol "Closer" needs to be exported by the entry point index.d.ts
@@ -138,13 +134,9 @@ export namespace FlagEvaluation {
         readonly variant: string;
     }
     // (undocumented)
-    export type Resolved<T> = (Matched<T> | Unmatched<T> | Failed<T>) & {
-        stale: false;
-    };
+    export type Resolved<T> = Matched<T> | Unmatched<T> | Failed<T>;
     // (undocumented)
-    export type Stale<T> = (Matched<T> | Unmatched<T> | Failed<T>) & {
-        stale: true;
-    } & PromiseLike<Resolved<T>>;
+    export type Stale<T> = Resolved<T> & PromiseLike<Resolved<T>>;
     // (undocumented)
     export interface Unmatched<T> {
         // (undocumented)
@@ -160,17 +152,17 @@ export type FlagEvaluation<T> = FlagEvaluation.Resolved<T> | FlagEvaluation.Stal
 // Warning: (ae-missing-release-tag) "FlagResolver" is part of the package's API, but it is missing a release tag (@alpha, @beta, @public, or @internal)
 //
 // @public (undocumented)
-export interface FlagResolver {
+export interface FlagResolver extends Contextual<FlagResolver> {
     // (undocumented)
-    evaluateFlag(path: string, defaultValue: number): FlagEvaluation<number>;
+    readonly config: {
+        timeout: number;
+    };
     // (undocumented)
     evaluateFlag<T extends Value>(path: string, defaultValue: T): FlagEvaluation<T>;
     // (undocumented)
     getFlag<T extends Value>(path: string, defaultValue: T): Promise<T>;
     // (undocumented)
-    subscribe(...flagNames: string[]): () => void;
-    // (undocumented)
-    subscribe(...args: [...flagNames: string[], onStateChange: FlagStateObserver]): () => void;
+    subscribe(onStateChange?: FlagStateObserver): () => void;
 }
 
 // Warning: (ae-missing-release-tag) "FlagState" is part of the package's API, but it is missing a release tag (@alpha, @beta, @public, or @internal)

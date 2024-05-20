@@ -39,43 +39,8 @@ export interface FlagResolver extends Contextual<FlagResolver> {
     timeout: number;
   };
 
-  subscribe(...flagNames: string[]): () => void;
-  subscribe(...args: [...flagNames: string[], onStateChange: FlagStateObserver]): () => void;
-
-  // private currentResolution?:FlagResolution
-  // private pendingResolution?:Promise<FlagResolution>
-  // internal?
-  // resolveFlags(...flagNames: string[]): Promise<void>;
-  /*
-    pendingResolution?.abort();
-    pendingResolution = client.resolve()
-    pendingResolution.then(resolution => {
-      currrentResolution = resolution;
-      pendingResolution = undefined;
-    })
-  */
-
-  // internal
-  // evaluateFlagSync<T extends Value>(path: string, defaultValue: T): FlagEvaluation<T>;
+  subscribe(onStateChange?: FlagStateObserver): () => void;
 
   evaluateFlag<T extends Value>(path: string, defaultValue: T): FlagEvaluation<T>;
-  /*
-    // here we also need to trigger a first resolve if there are no current or pending
-    const evaluation = currentResolution ? currentResolution.evaluate(...) : {
-      reason: 'ERROR',
-      errorCode: 'NOT_READY'
-    }
-    if(!currentResolution || currentResolution.context !== getContext) { 
-      evaluation.stale = true;
-      evaluation.then = (onFulfilled, onRejected) => {
-        if(!pendingResolution) {
-          resolveFlags()
-        }
-        return pendingResolution.then(onFulfilled, onRejected);
-      }
-    }
-    return evaluation
-
-  */
   getFlag<T extends Value>(path: string, defaultValue: T): Promise<T>;
 }

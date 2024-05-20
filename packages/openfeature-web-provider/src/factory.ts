@@ -7,7 +7,6 @@ export type ConfidenceWebProviderOptions = {
   fetchImplementation?: typeof fetch;
   clientSecret: string;
   baseUrl?: string;
-  apply?: 'access' | 'backend';
   timeout: number;
 };
 

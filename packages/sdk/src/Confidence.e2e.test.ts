@@ -10,7 +10,7 @@ describe('Confidence E2E Tests', () => {
     clientSecret: 'RxDVTrXvc6op1XxiQ4OaR31dKbJ39aYV',
     environment: 'client',
     region: 'eu',
-    timeout: 100,
+    timeout: 1000,
     logger: loggerMock,
   });
 

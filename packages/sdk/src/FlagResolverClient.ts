@@ -140,6 +140,7 @@ export class FlagResolverClient {
     // todo refactor to move out environment
     environment,
   }: FlagResolverClientOptions) {
+    // TODO think about both resolve and apply request logic for backends
     this.fetchImplementation = environment === 'client' ? withRequestLogic(fetchImplementation) : fetchImplementation;
     this.clientSecret = clientSecret;
     this.sdk = sdk;
@@ -148,22 +149,16 @@ export class FlagResolverClient {
   }
 
   resolve(context: Context, flags: string[]): PendingResolution {
-    const useBackendApply = !this.applyTimeout;
     const request: ResolveFlagsRequest = {
       clientSecret: this.clientSecret,
       evaluationContext: context,
-      apply: useBackendApply,
+      apply: false,
       sdk: this.sdk,
       flags: flags.map(name => FLAG_PREFIX + name),
     };
     const abortController = new AbortController();
     const resolution = this.resolveFlagsJson(request, abortController.signal).then(
-      response =>
-        new FlagResolutionImpl(
-          context,
-          response,
-          useBackendApply ? undefined : this.createApplier(response.resolveToken),
-        ),
+      response => new FlagResolutionImpl(context, response, this.createApplier(response.resolveToken)),
     );
 
     return Object.assign(resolution, { context, abort: (reason?: any) => abortController.abort(reason) });
@@ -199,7 +194,7 @@ export class FlagResolverClient {
 
   async apply(request: ApplyFlagsRequest): Promise<void> {
     const resp = await this.fetchImplementation(
-      new Request(`${this.baseUrl} /flags:apply`, {
+      new Request(`${this.baseUrl}/flags:apply`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
