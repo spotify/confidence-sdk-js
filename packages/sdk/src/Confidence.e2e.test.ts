@@ -15,14 +15,15 @@ describe('Confidence E2E Tests', () => {
   });
 
   describe('resolving flags', () => {
-    it('should', async () => {
-      // const close = confidence.subscribe(state => {
-      //   console.log(state);
-      // });
-      // confidence.setContext({ targeting_key: 'test-a' });
-      const fe = await confidence.evaluateFlag('web-sdk-e2e-flag.int', 0);
-      console.log(fe);
-      // close();
+    it('should evaluate a flag', async () => {
+      const evaluation = await confidence
+        .withContext({ targeting_key: 'test-a' })
+        .evaluateFlag('web-sdk-e2e-flag.int', 0);
+      expect(evaluation).toEqual({
+        reason: 'MATCH',
+        value: 3,
+        variant: 'flags/web-sdk-e2e-flag/variants/control',
+      });
     });
   });
 

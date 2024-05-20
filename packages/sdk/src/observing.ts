@@ -23,11 +23,10 @@ export function subject<T>(observable: Subscribe<T>): Subscribe<T> {
   const observers: Set<Observer<T>> = new Set();
   const toggle = multicast(observers, observable);
   return (observer: Observer<T>) => {
-    if (!observers.has(observer)) {
-      observers.add(observer);
-      if (observers.size === 1) {
-        toggle();
-      }
+    if (observers.has(observer)) throw new Error('Observer already subscribed.');
+    observers.add(observer);
+    if (observers.size === 1) {
+      toggle();
     }
     return () => {
       if (observers.delete(observer) && observers.size === 0) toggle();

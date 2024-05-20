@@ -11,6 +11,7 @@ import { Trackable } from './Trackable';
 import { Closer } from './Closer';
 import { Subscribe, Observer, subject, changeObserver } from './observing';
 
+const NOOP = () => {};
 export interface ConfidenceOptions {
   clientSecret: string;
   region?: 'global' | 'eu' | 'us';
@@ -64,19 +65,14 @@ export class Confidence implements EventSender, Trackable, FlagResolver {
     });
 
     this.flagStateSubject = subject(observer => {
+      const reportState = () => observer(this.flagState);
       if (!this.currentFlags || !Value.equal(this.currentFlags.context, this.getContext())) {
-        this.resolveFlags().then(() =>
-          // TODO there is no guarantee that we are ready.
-          observer('READY'),
-        );
+        this.resolveFlags().then(reportState);
       }
       const close = this.contextChanges(() => {
-        if (this.flagState === 'READY') observer('STALE');
-
-        this.resolveFlags().then(() =>
-          // TODO there is no guarantee that we are ready.
-          observer('READY'),
-        );
+        this.resolveFlags().then(reportState);
+        //
+        reportState();
       });
 
       return () => {
@@ -161,8 +157,6 @@ export class Confidence implements EventSender, Trackable, FlagResolver {
   }
 
   private async resolveFlags(): Promise<void> {
-    // wait one micro tick so that context changes within the same tick only results in one resolve
-    await Promise.resolve();
     const context = this.getContext();
 
     if (!this.pendingFlags || !Value.equal(this.pendingFlags.context, context)) {
@@ -171,18 +165,21 @@ export class Confidence implements EventSender, Trackable, FlagResolver {
       this.pendingFlags
         .then(resolution => {
           this.currentFlags = resolution;
-          this.pendingFlags = undefined;
         })
         .catch(e => {
+          // TODO fix sloppy handling of error
           if (e.message !== 'Context changed') {
             this.config.logger.info?.('Resolve failed.', e);
           }
+        })
+        .finally(() => {
+          this.pendingFlags = undefined;
         });
     }
-    return this.pendingFlags.then(() => {});
+    return this.pendingFlags.then(NOOP, NOOP);
   }
 
-  get flagState(): FlagState {
+  private get flagState(): FlagState {
     if (this.currentFlags) {
       if (this.pendingFlags) return 'STALE';
       return 'READY';

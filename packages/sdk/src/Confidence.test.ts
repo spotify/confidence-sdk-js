@@ -1,7 +1,8 @@
+import { Closer } from './Closer';
 import { Confidence } from './Confidence';
 import { EventSenderEngine } from './EventSenderEngine';
 import { FlagResolution, FlagResolverClient } from './FlagResolverClient';
-import { FlagEvaluation } from './flags';
+import { FlagEvaluation, FlagState, FlagStateObserver } from './flags';
 
 const flagResolverClientMock: jest.Mocked<FlagResolverClient> = {
   resolve: jest.fn(),
@@ -42,11 +43,6 @@ describe('Confidence', () => {
         abort: abortMock,
       });
     });
-  });
-
-  afterEach(() => {
-    jest.resetAllMocks();
-    jest.clearAllMocks();
   });
 
   describe('context', () => {
@@ -212,24 +208,108 @@ describe('Confidence', () => {
     });
   });
 
-  // TODO should we remove these tests?
-  describe('flagState', () => {
-    it('should initialize with NOT_READY', async () => {
-      expect(confidence.flagState).toBe('NOT_READY');
+  describe('subscribe', () => {
+    const observer: jest.MockedFunction<FlagStateObserver> = jest.fn();
+    let close: Closer;
+    beforeEach(() => {
+      close = confidence.subscribe(observer);
     });
 
-    it('should be READY after first evaluation', async () => {
-      await confidence.evaluateFlag('flag1', 'default');
-      expect(confidence.flagState).toBe('READY');
+    afterEach(() => {
+      close();
     });
 
-    it('should be STALE after context change', async () => {
-      await confidence.evaluateFlag('flag1', 'default');
-      confidence.setContext({ pants: 'blue' });
-      await Promise.resolve();
-      expect(confidence.flagState).toBe('STALE');
+    const expectState = (expectedState: FlagState) =>
+      new Promise<void>((resolve, reject) => {
+        observer.mockImplementationOnce(state => {
+          if (state === expectedState) {
+            resolve();
+          } else {
+            reject(new Error(`Expected state ${expectState} but received ${state}`));
+          }
+        });
+      });
+
+    it('should start in state NOT_READY', () => {
+      expect(observer).toHaveBeenCalledTimes(1);
+      expect(observer).toHaveBeenCalledWith('NOT_READY');
+    });
+
+    it('should eventually become ready', async () => {
+      await expectState('READY');
+    });
+
+    describe('NOT_READY state', () => {
+      beforeEach(() => {
+        expect(observer).toHaveBeenLastCalledWith('NOT_READY');
+        observer.mockClear();
+      });
+
+      it('should remain NOT_READY when context is changed', () => {
+        confidence.setContext({ pants: 'green' });
+        expect(observer).not.toHaveBeenCalled();
+      });
+
+      it('should become READY', () => {
+        return expectState('READY');
+      });
+    });
+
+    describe('READY state', () => {
+      beforeEach(async () => {
+        await expectState('READY');
+        observer.mockClear();
+      });
+
+      it('should immediately be STALE after context change', () => {
+        confidence.setContext({ pants: 'orange' });
+        expect(observer).toHaveBeenCalledWith('STALE');
+      });
+
+      it('should remain in READY if closed and reopened', () => {
+        close();
+        close = confidence.subscribe(observer);
+        expect(observer).toHaveBeenCalledWith('READY');
+      });
+    });
+    describe('STALE state', () => {
+      beforeEach(async () => {
+        await expectState('READY');
+        confidence.setContext({ pants: 'blue' });
+        expect(observer).toHaveBeenLastCalledWith('STALE');
+        observer.mockClear();
+      });
+
+      it('should remain STALE after context change', () => {
+        confidence.setContext({ pants: 'orange' });
+        expect(observer).not.toHaveBeenCalled();
+      });
+
+      it('should remain STALE if closed and reopened', () => {
+        close();
+        close = confidence.subscribe(observer);
+        expect(observer).toHaveBeenCalledTimes(1);
+        expect(observer).toHaveBeenCalledWith('STALE');
+      });
     });
   });
+  // TODO should we remove these tests?
+  // describe('flagState', () => {
+  //   it('should initialize with NOT_READY', async () => {
+  //     expect(confidence.flagState).toBe('NOT_READY');
+  //   });
+
+  //   it('should be READY after first evaluation', async () => {
+  //     await confidence.evaluateFlag('flag1', 'default');
+  //     expect(confidence.flagState).toBe('READY');
+  //   });
+
+  //   it('should be STALE after context change', async () => {
+  //     await confidence.evaluateFlag('flag1', 'default');
+  //     confidence.setContext({ pants: 'blue' });
+  //     expect(confidence.flagState).toBe('STALE');
+  //   });
+  // });
 
   describe('evaluateFlag', () => {
     it('should return an evaluation for a flag when awaiting', async () => {
@@ -252,7 +332,6 @@ describe('Confidence', () => {
         errorMessage: 'Provider is not yet ready',
         then: expect.any(Function),
       });
-      expect(flagResolverClientMock.resolve).not.toHaveBeenCalled(); // will not call resolve in the same tick
       await Promise.resolve();
       expect(flagResolverClientMock.resolve).toHaveBeenCalledWith({}, []);
     });
@@ -266,7 +345,6 @@ describe('Confidence', () => {
         errorMessage: 'Provider is not yet ready',
         then: expect.any(Function),
       });
-      expect(flagResolverClientMock.resolve).not.toHaveBeenCalled(); // will not call resolve in the same tick
       const awaited = await result;
       expect(flagResolverClientMock.resolve).toHaveBeenCalledWith({}, []);
       expect(awaited).toEqual({
