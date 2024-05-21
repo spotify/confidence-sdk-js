@@ -9,7 +9,6 @@ describe('Confidence E2E Tests', () => {
   const confidence = Confidence.create({
     clientSecret: 'RxDVTrXvc6op1XxiQ4OaR31dKbJ39aYV',
     environment: 'client',
-    region: 'eu',
     timeout: 1000,
     logger: loggerMock,
   });

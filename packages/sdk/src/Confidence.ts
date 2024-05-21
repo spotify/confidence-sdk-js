@@ -10,6 +10,7 @@ import { visitorIdentity } from './trackers';
 import { Trackable } from './Trackable';
 import { Closer } from './Closer';
 import { Subscribe, Observer, subject, changeObserver } from './observing';
+import { SimpleFetch } from './types';
 
 const NOOP = () => {};
 export interface ConfidenceOptions {
@@ -17,7 +18,7 @@ export interface ConfidenceOptions {
   region?: 'eu' | 'us';
   resolveUrl?: string;
   environment: 'client' | 'backend';
-  fetchImplementation?: typeof fetch;
+  fetchImplementation?: SimpleFetch;
   timeout: number;
   logger?: Logger;
 }
