@@ -49,8 +49,6 @@ export class Confidence implements EventSender, Trackable, FlagResolver {
 // @public (undocumented)
 export interface ConfidenceOptions {
     // (undocumented)
-    baseUrl?: string;
-    // (undocumented)
     clientSecret: string;
     // (undocumented)
     environment: 'client' | 'backend';
@@ -61,7 +59,9 @@ export interface ConfidenceOptions {
     // (undocumented)
     logger?: Logger;
     // (undocumented)
-    region?: 'global' | 'eu' | 'us';
+    region?: 'eu' | 'us';
+    // (undocumented)
+    resolveUrl?: string;
     // (undocumented)
     timeout: number;
 }
