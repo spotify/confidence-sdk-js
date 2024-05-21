@@ -4,6 +4,7 @@
   "references": [
     { "path": "./packages/sdk" },
     { "path": "./packages/openfeature-server-provider" },
-    { "path": "./packages/openfeature-web-provider" }
+    { "path": "./packages/openfeature-web-provider" },
+    { "path": "./packages/react-helpers" }
   ]
 }

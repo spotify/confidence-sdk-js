@@ -39,6 +39,8 @@ export interface FlagResolution {
 
 class FlagResolutionImpl implements FlagResolution {
   private readonly flags: Map<string, ResolvedFlag> = new Map();
+  private readonly cachedEvaluations: Map<string, [defaultValue: any, evaluation: FlagEvaluation.Resolved<any>]> =
+    new Map();
   readonly resolveToken: string;
 
   constructor(
@@ -60,7 +62,7 @@ class FlagResolutionImpl implements FlagResolution {
     this.resolveToken = base64FromBytes(resolveResponse.resolveToken);
   }
 
-  evaluate<T extends Value>(path: string, defaultValue: T): FlagEvaluation.Resolved<T> {
+  doEvaluate<T extends Value>(path: string, defaultValue: T): FlagEvaluation.Resolved<T> {
     try {
       const [name, ...steps] = path.split('.');
       const flag = this.flags.get(name);
@@ -106,6 +108,16 @@ class FlagResolutionImpl implements FlagResolution {
       };
     }
   }
+  evaluate<T extends Value>(path: string, defaultValue: T): FlagEvaluation.Resolved<T> {
+    let entry = this.cachedEvaluations.get(path);
+    if (!entry || !Value.equal(entry[0], defaultValue)) {
+      entry = [defaultValue, this.doEvaluate(path, defaultValue)];
+      // entry[1].id = Date.now();
+      this.cachedEvaluations.set(path, entry);
+    }
+    return entry[1];
+  }
+
   getValue<T extends Value>(path: string, defaultValue: T): T {
     return this.evaluate(path, defaultValue).value;
   }

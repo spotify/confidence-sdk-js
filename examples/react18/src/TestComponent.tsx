@@ -1,24 +1,30 @@
+import { useConfidence, useFlagEvaluation } from '@spotify-confidence/react-helpers';
 import { useState } from 'react';
-import { useStringFlagValue } from '@openfeature/react-sdk';
-import { useConfidence } from './ConfidenceContext';
-import { OpenFeature } from '@openfeature/web-sdk';
 
 const TestComponent = () => {
-  const str = useStringFlagValue('web-sdk-e2e-flag.str', 'default');
   const [clickCount, setClickCount] = useState(0);
-  const confidence = useConfidence({ component: 'Test' });
+  const confidence = useConfidence();
+  const details = useFlagEvaluation('web-sdk-e2e-flag.str', 'default');
+  // const details = confidence.getFlag('web-sdk-e2e-flag.str', 'default').orSuspend();
   return (
     <>
-      <p>The string flag value is: {str}</p>
+      <p>The flag is: </p>
+      <pre>{JSON.stringify(details, null, '  ')}</pre>
       <p>Click count is: {clickCount}</p>
       <button
         onClick={() => {
-          OpenFeature.setContext({ targetingKey: `user-${Math.random()}` });
-          confidence.track('click');
+          // confidence.track('click');
           setClickCount(value => value + 1);
         }}
       >
-        Randomise OpenFeature Context
+        Click
+      </button>
+      <button
+        onClick={() => {
+          confidence.setContext({ targeting_key: `user-${Math.random()}` });
+        }}
+      >
+        Randomise Context
       </button>
     </>
   );
