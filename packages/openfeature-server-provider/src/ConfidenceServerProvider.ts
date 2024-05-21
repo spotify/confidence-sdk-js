@@ -10,7 +10,7 @@ import {
   ResolutionDetails,
 } from '@openfeature/server-sdk';
 
-import { Confidence, Context, Value } from '@spotify-confidence/sdk';
+import { Context, FlagResolver, Value } from '@spotify-confidence/sdk';
 
 type Mutable<T> = { -readonly [K in keyof T]: T[K] };
 
@@ -19,9 +19,9 @@ export class ConfidenceServerProvider implements Provider {
     name: 'ConfidenceServerProvider',
   };
   status: ProviderStatus = ProviderStatus.READY;
-  private readonly confidence: Confidence;
+  private readonly confidence: FlagResolver;
 
-  constructor(client: Confidence) {
+  constructor(client: FlagResolver) {
     this.confidence = client;
   }
 

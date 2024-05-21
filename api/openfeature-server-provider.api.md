@@ -6,6 +6,7 @@
 
 import { Confidence } from '@spotify-confidence/sdk';
 import { EvaluationContext } from '@openfeature/server-sdk';
+import { FlagResolver } from '@spotify-confidence/sdk';
 import { JsonValue } from '@openfeature/server-sdk';
 import { Logger } from '@openfeature/server-sdk';
 import { Provider } from '@openfeature/server-sdk';
@@ -17,7 +18,7 @@ import { ResolutionDetails } from '@openfeature/server-sdk';
 //
 // @public (undocumented)
 export class ConfidenceServerProvider implements Provider {
-    constructor(client: Confidence);
+    constructor(client: FlagResolver);
     // (undocumented)
     readonly metadata: ProviderMetadata;
     // (undocumented)
