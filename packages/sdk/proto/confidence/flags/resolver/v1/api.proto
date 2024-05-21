@@ -1,0 +1,104 @@
+syntax = "proto3";
+
+package confidence.flags.resolver.v1;
+
+import "google/protobuf/struct.proto";
+import "google/protobuf/timestamp.proto";
+
+import "confidence/flags/types/v1/types.proto";
+import "confidence/flags/resolver/v1/types.proto";
+
+
+message ResolveFlagsRequest {
+  // If non-empty, the specific flags are resolved, otherwise all flags
+  // available to the client will be resolved.
+  repeated string flags = 1;
+
+  // An object that contains data used in the flag resolve. For example,
+  // the targeting key e.g. the id of the randomization unit, other attributes
+  // like country or version that are used for targeting.
+  google.protobuf.Struct evaluation_context = 2 ;
+
+  // Credentials for the client. It is used to identify the client and find
+  // the flags that are available to it.
+  string client_secret = 3;
+
+  // Determines whether the flags should be applied directly as part of the
+  // resolve, or delayed until `ApplyFlag` is called. A flag is typically
+  // applied when it is used, if this occurs much later than the resolve, then
+  // `apply` should likely be set to false.
+  bool apply = 4;
+
+  // Information about the SDK used to initiate the request.
+  Sdk sdk = 5;
+}
+
+message ResolveFlagsResponse {
+  // The list of all flags that could be resolved. Note: if any flag was
+  // archived it will not be included in this list.
+  repeated ResolvedFlag resolved_flags = 1;
+
+  // An opaque token that is used when `apply` is set to false in `ResolveFlags`.
+  // When `apply` is set to false, the token must be passed to `ApplyFlags`.
+  bytes resolve_token = 2;
+
+  // Unique identifier for this particular resolve request.
+  string resolve_id = 3;
+}
+
+message ApplyFlagsRequest {
+  // The flags to apply and information about when they were applied.
+  repeated AppliedFlag flags = 1;
+
+  // Credentials for the client.
+  string client_secret = 2;
+
+  // An opaque token that was returned from `ResolveFlags`; it must be set.
+  bytes resolve_token = 3;
+
+
+  // The client time when the this request was sent, used for correcting
+  // clock skew from the client.
+  google.protobuf.Timestamp send_time = 4;
+
+  // Information about the SDK used to initiate the request.
+  Sdk sdk = 5;
+}
+
+message ApplyFlagsResponse {
+
+}
+
+message AppliedFlag {
+  // The id of the flag that should be applied, has the format `flags/*`.
+  string flag = 1;
+
+  // The client time when the flag was applied.
+  google.protobuf.Timestamp apply_time = 2;
+}
+
+message ResolvedFlag {
+  // The id of the flag that as resolved.
+  string flag = 1;
+
+  // The id of the resolved variant has the format `flags/abc/variants/xyz`.
+  string variant = 2;
+
+  // The value corresponding to the variant. It will always be a json object,
+  // for example `{ "color": "red", "size": 12 }`.
+  google.protobuf.Struct value = 3;
+
+  // The schema of the value that was returned. For example:
+  // ```
+  // {
+  //    "schema": {
+  //      "color": { "stringSchema": {} },
+  //      "size": { "intSchema": {} }
+  //    }
+  // }
+  // ```
+  types.v1.FlagSchema.StructFlagSchema flag_schema = 4;
+
+  // The reason to why the flag could be resolved or not.
+  ResolveReason reason = 5;
+}

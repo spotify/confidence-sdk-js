@@ -8,10 +8,23 @@ describe('Confidence E2E Tests', () => {
   };
   const confidence = Confidence.create({
     clientSecret: 'RxDVTrXvc6op1XxiQ4OaR31dKbJ39aYV',
-    environment: 'backend',
+    environment: 'client',
     region: 'eu',
-    timeout: 100,
+    timeout: 1000,
     logger: loggerMock,
+  });
+
+  describe('resolving flags', () => {
+    it('should evaluate a flag', async () => {
+      const evaluation = await confidence
+        .withContext({ targeting_key: 'test-a' })
+        .evaluateFlag('web-sdk-e2e-flag.int', 0);
+      expect(evaluation).toEqual({
+        reason: 'MATCH',
+        value: 3,
+        variant: 'flags/web-sdk-e2e-flag/variants/control',
+      });
+    });
   });
 
   describe('track event sends an event', () => {

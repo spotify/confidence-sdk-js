@@ -22,11 +22,6 @@ module.exports = {
   coverageProvider: 'v8',
   projects: [
     {
-      displayName: 'client-http',
-      testMatch: ['<rootDir>/packages/client-http/src/**/*.test.ts*'],
-      ...projectCommonConfig,
-    },
-    {
       displayName: 'sdk',
       testMatch: ['<rootDir>/packages/sdk/src/**/*.test.ts*'],
       ...projectCommonConfig,
