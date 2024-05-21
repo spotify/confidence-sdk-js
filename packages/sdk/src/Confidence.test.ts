@@ -2,7 +2,7 @@ import { Closer } from './Closer';
 import { Confidence } from './Confidence';
 import { EventSenderEngine } from './EventSenderEngine';
 import { FlagResolution, FlagResolverClient } from './FlagResolverClient';
-import { FlagEvaluation, FlagState, FlagStateObserver } from './flags';
+import { FlagEvaluation, State, StateObserver } from './flags';
 
 const flagResolverClientMock: jest.Mocked<FlagResolverClient> = {
   resolve: jest.fn(),
@@ -208,7 +208,7 @@ describe('Confidence', () => {
   });
 
   describe('subscribe', () => {
-    const observer: jest.MockedFunction<FlagStateObserver> = jest.fn();
+    const observer: jest.MockedFunction<StateObserver> = jest.fn();
     let close: Closer;
     beforeEach(() => {
       close = confidence.subscribe(observer);
@@ -218,7 +218,7 @@ describe('Confidence', () => {
       close();
     });
 
-    const expectState = (expectedState: FlagState) =>
+    const expectState = (expectedState: State) =>
       new Promise<void>((resolve, reject) => {
         observer.mockImplementationOnce(state => {
           if (state === expectedState) {

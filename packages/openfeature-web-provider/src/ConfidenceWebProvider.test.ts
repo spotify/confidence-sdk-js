@@ -1,6 +1,6 @@
 import { EvaluationContext, ProviderEvents } from '@openfeature/web-sdk';
 import { ConfidenceWebProvider } from './ConfidenceWebProvider';
-import { FlagResolver, FlagStateObserver } from '@spotify-confidence/sdk';
+import { FlagResolver, StateObserver } from '@spotify-confidence/sdk';
 
 const confidenceMock: jest.Mocked<FlagResolver> = {
   config: {
@@ -27,7 +27,7 @@ describe('ConfidenceProvider', () => {
     // subscribe will by default immediately emit READY
     confidenceMock.subscribe.mockImplementation((...args) => {
       const observer = args.pop();
-      if (typeof observer !== 'function') throw new Error('expected flagStateObserver in test');
+      if (typeof observer !== 'function') throw new Error('expected StateObserver in test');
       observer('READY');
       return jest.fn();
     });
@@ -123,13 +123,13 @@ describe('ConfidenceProvider', () => {
     });
 
     describe('from Confidence', () => {
-      let flagStateObserver: FlagStateObserver;
+      let stateObserver: StateObserver;
 
       beforeEach(() => {
         instanceUnderTest.initialize();
         const observer = confidenceMock.subscribe.mock.calls[0][0];
-        if (typeof observer !== 'function') throw new Error('Expected flagStateObserver in test');
-        flagStateObserver = observer;
+        if (typeof observer !== 'function') throw new Error('Expected StateObserver in test');
+        stateObserver = observer;
       });
       it('should emit stale and then ready', async () => {
         const staleHandler = jest.fn();
@@ -137,12 +137,12 @@ describe('ConfidenceProvider', () => {
         instanceUnderTest.events.addHandler(ProviderEvents.Stale, staleHandler);
         instanceUnderTest.events.addHandler(ProviderEvents.Ready, readyHandler);
 
-        flagStateObserver('STALE');
+        stateObserver('STALE');
 
         expect(staleHandler).toHaveBeenCalledTimes(1);
         expect(readyHandler).toHaveBeenCalledTimes(0);
 
-        flagStateObserver('READY');
+        stateObserver('READY');
 
         expect(readyHandler).toHaveBeenCalledTimes(1);
       });

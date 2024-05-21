@@ -33,7 +33,7 @@ export class Confidence implements EventSender, Trackable, FlagResolver {
     // (undocumented)
     setContext(context: Context): void;
     // (undocumented)
-    subscribe(onStateChange?: FlagStateObserver): () => void;
+    subscribe(onStateChange?: StateObserver): () => void;
     // (undocumented)
     track(name: string, message?: Value.Struct): void;
     // Warning: (ae-forgotten-export) The symbol "Closer" needs to be exported by the entry point index.d.ts
@@ -160,23 +160,23 @@ export interface FlagResolver extends Contextual<FlagResolver> {
     // (undocumented)
     getFlag<T extends Value>(path: string, defaultValue: T): Promise<T>;
     // (undocumented)
-    subscribe(onStateChange?: FlagStateObserver): () => void;
+    subscribe(onStateChange?: StateObserver): () => void;
 }
-
-// Warning: (ae-missing-release-tag) "FlagState" is part of the package's API, but it is missing a release tag (@alpha, @beta, @public, or @internal)
-//
-// @public (undocumented)
-export type FlagState = 'NOT_READY' | 'READY' | 'STALE' | 'ERROR';
-
-// Warning: (ae-missing-release-tag) "FlagStateObserver" is part of the package's API, but it is missing a release tag (@alpha, @beta, @public, or @internal)
-//
-// @public (undocumented)
-export type FlagStateObserver = (state: FlagState) => void;
 
 // Warning: (ae-missing-release-tag) "pageViews" is part of the package's API, but it is missing a release tag (@alpha, @beta, @public, or @internal)
 //
 // @public (undocumented)
 export function pageViews(): Trackable.Manager;
+
+// Warning: (ae-missing-release-tag) "State" is part of the package's API, but it is missing a release tag (@alpha, @beta, @public, or @internal)
+//
+// @public (undocumented)
+export type State = 'NOT_READY' | 'READY' | 'STALE' | 'ERROR';
+
+// Warning: (ae-missing-release-tag) "StateObserver" is part of the package's API, but it is missing a release tag (@alpha, @beta, @public, or @internal)
+//
+// @public (undocumented)
+export type StateObserver = (state: State) => void;
 
 // Warning: (ae-missing-release-tag) "Value" is part of the package's API, but it is missing a release tag (@alpha, @beta, @public, or @internal)
 // Warning: (ae-missing-release-tag) "Value" is part of the package's API, but it is missing a release tag (@alpha, @beta, @public, or @internal)

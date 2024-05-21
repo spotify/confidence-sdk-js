@@ -31,14 +31,14 @@ export namespace FlagEvaluation {
 // eslint-disable-next-line @typescript-eslint/no-redeclare
 export type FlagEvaluation<T> = FlagEvaluation.Resolved<T> | FlagEvaluation.Stale<T>;
 
-export type FlagState = 'NOT_READY' | 'READY' | 'STALE' | 'ERROR';
-export type FlagStateObserver = (state: FlagState) => void;
+export type State = 'NOT_READY' | 'READY' | 'STALE' | 'ERROR';
+export type StateObserver = (state: State) => void;
 export interface FlagResolver extends Contextual<FlagResolver> {
   readonly config: {
     timeout: number;
   };
 
-  subscribe(onStateChange?: FlagStateObserver): () => void;
+  subscribe(onStateChange?: StateObserver): () => void;
 
   evaluateFlag<T extends Value>(path: string, defaultValue: T): FlagEvaluation<T>;
   getFlag<T extends Value>(path: string, defaultValue: T): Promise<T>;

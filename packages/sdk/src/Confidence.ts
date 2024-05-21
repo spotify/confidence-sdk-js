@@ -4,7 +4,7 @@ import { Value } from './Value';
 import { EventSender } from './events';
 import { Context } from './context';
 import { Logger } from './logger';
-import { FlagEvaluation, FlagResolver, FlagState, FlagStateObserver } from './flags';
+import { FlagEvaluation, FlagResolver, State, StateObserver } from './flags';
 import { SdkId } from './generated/confidence/flags/resolver/v1/types';
 import { visitorIdentity } from './trackers';
 import { Trackable } from './Trackable';
@@ -44,7 +44,7 @@ export class Confidence implements EventSender, Trackable, FlagResolver {
   private currentFlags?: FlagResolution;
   private pendingFlags?: PendingResolution;
 
-  private readonly flagStateSubject: Subscribe<FlagState>;
+  private readonly flagStateSubject: Subscribe<State>;
 
   constructor(config: Configuration, parent?: Confidence) {
     this.config = config;
@@ -179,7 +179,7 @@ export class Confidence implements EventSender, Trackable, FlagResolver {
     return this.pendingFlags.then(NOOP, NOOP);
   }
 
-  private get flagState(): FlagState {
+  private get flagState(): State {
     if (this.currentFlags) {
       if (this.pendingFlags) return 'STALE';
       return 'READY';
@@ -187,7 +187,7 @@ export class Confidence implements EventSender, Trackable, FlagResolver {
     return 'NOT_READY';
   }
 
-  subscribe(onStateChange: FlagStateObserver = () => {}): () => void {
+  subscribe(onStateChange: StateObserver = () => {}): () => void {
     const observer = changeObserver(onStateChange);
     const close = this.flagStateSubject(observer);
     observer(this.flagState);
