@@ -55,7 +55,7 @@ export class ConfidenceWebProvider implements Provider {
   async onContextChange(oldContext: EvaluationContext, newContext: EvaluationContext): Promise<void> {
     const changes = contextChanges(oldContext, newContext);
     if (Object.keys(changes).length === 0) {
-      return;
+      return Promise.resolve();
     }
     this.confidence.setContext(convertContext(changes));
     return this.expectReadyOrTimeout();
@@ -65,7 +65,7 @@ export class ConfidenceWebProvider implements Provider {
     const timeout = this.confidence.config.timeout;
     let close: () => void;
     return new Promise<void>((resolve, reject) => {
-      let timeoutId = setTimeout(() => {
+      const timeoutId = setTimeout(() => {
         reject(new Error(`Resolve timed out after ${timeout}ms`));
       }, timeout);
       close = this.confidence.subscribe(state => {

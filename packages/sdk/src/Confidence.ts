@@ -197,7 +197,7 @@ export class Confidence implements EventSender, Trackable, FlagResolver {
   private evaluateFlagAsync<T extends Value>(path: string, defaultValue: T): Promise<FlagEvaluation.Resolved<T>> {
     let close: () => void;
     return new Promise<FlagEvaluation.Resolved<T>>((resolve, reject) => {
-      let timeoutId = setTimeout(() => {
+      const timeoutId = setTimeout(() => {
         reject(new Error(`Timeout evaluating flag "${path}"`));
       }, this.config.timeout);
       close = this.subscribe(state => {

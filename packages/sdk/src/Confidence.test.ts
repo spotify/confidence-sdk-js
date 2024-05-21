@@ -112,7 +112,7 @@ describe('Confidence', () => {
   });
   describe('create', () => {
     it('creates a new confidence object', () => {
-      const confidence = Confidence.create({
+      const c = Confidence.create({
         clientSecret: 'secret',
         region: 'us',
         baseUrl: 'https://www.spotify.com',
@@ -120,7 +120,7 @@ describe('Confidence', () => {
         fetchImplementation: {} as any,
         timeout: 10,
       });
-      expect(confidence.getContext()).toEqual({});
+      expect(c.getContext()).toEqual({});
     });
   });
 
@@ -293,23 +293,6 @@ describe('Confidence', () => {
       });
     });
   });
-  // TODO should we remove these tests?
-  // describe('flagState', () => {
-  //   it('should initialize with NOT_READY', async () => {
-  //     expect(confidence.flagState).toBe('NOT_READY');
-  //   });
-
-  //   it('should be READY after first evaluation', async () => {
-  //     await confidence.evaluateFlag('flag1', 'default');
-  //     expect(confidence.flagState).toBe('READY');
-  //   });
-
-  //   it('should be STALE after context change', async () => {
-  //     await confidence.evaluateFlag('flag1', 'default');
-  //     confidence.setContext({ pants: 'blue' });
-  //     expect(confidence.flagState).toBe('STALE');
-  //   });
-  // });
 
   describe('evaluateFlag', () => {
     it('should return an evaluation for a flag when awaiting', async () => {

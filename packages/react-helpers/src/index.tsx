@@ -16,6 +16,7 @@ export const useConfidence = (withContext?: Context): Confidence => {
   if (!parent)
     throw new Error('No Confidence instance found, did you forget to wrap your component in ConfidenceProvider?');
 
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   return useMemo(() => (withContext ? parent.withContext(withContext) : parent), [parent, JSON.stringify(withContext)]);
 };
 
