@@ -38,12 +38,23 @@ export class ConfidenceServerProvider implements Provider {
       const { errorCode, ...rest } = evaluation;
       return {
         ...rest,
-        errorCode: ErrorCode[errorCode],
+        errorCode: this.mapErrorCode(errorCode),
       };
     }
     return evaluation;
   }
-
+  private mapErrorCode(errorCode: 'FLAG_NOT_FOUND' | 'TYPE_MISMATCH' | 'NOT_READY' | 'GENERAL'): ErrorCode {
+    switch (errorCode) {
+      case 'FLAG_NOT_FOUND':
+        return ErrorCode.FLAG_NOT_FOUND;
+      case 'TYPE_MISMATCH':
+        return ErrorCode.TYPE_MISMATCH;
+      case 'NOT_READY':
+        return ErrorCode.PROVIDER_NOT_READY;
+      default:
+        return ErrorCode.GENERAL;
+    }
+  }
   resolveBooleanEvaluation(
     flagKey: string,
     defaultValue: boolean,

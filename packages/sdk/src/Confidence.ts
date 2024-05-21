@@ -215,8 +215,8 @@ export class Confidence implements EventSender, Trackable, FlagResolver {
     if (!this.currentFlags) {
       evaluation = {
         reason: 'ERROR',
-        errorCode: 'PROVIDER_NOT_READY',
-        errorMessage: 'Provider is not yet ready',
+        errorCode: 'NOT_READY',
+        errorMessage: 'Flags are not yet ready',
         value: defaultValue,
       };
       if (!this.pendingFlags) this.resolveFlags();

@@ -114,7 +114,7 @@ export namespace FlagEvaluation {
     // (undocumented)
     export interface Failed<T> {
         // (undocumented)
-        readonly errorCode: 'FLAG_NOT_FOUND' | 'TYPE_MISMATCH' | 'PROVIDER_NOT_READY' | 'GENERAL';
+        readonly errorCode: 'FLAG_NOT_FOUND' | 'TYPE_MISMATCH' | 'NOT_READY' | 'GENERAL';
         // (undocumented)
         readonly errorMessage: string;
         // (undocumented)

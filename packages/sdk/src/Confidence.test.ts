@@ -310,8 +310,8 @@ describe('Confidence', () => {
       expect(result).toEqual({
         reason: 'ERROR',
         value: 'default',
-        errorCode: 'PROVIDER_NOT_READY',
-        errorMessage: 'Provider is not yet ready',
+        errorCode: 'NOT_READY',
+        errorMessage: 'Flags are not yet ready',
         then: expect.any(Function),
       });
       await Promise.resolve();
@@ -323,8 +323,8 @@ describe('Confidence', () => {
       expect(result).toEqual({
         reason: 'ERROR',
         value: 'default',
-        errorCode: 'PROVIDER_NOT_READY',
-        errorMessage: 'Provider is not yet ready',
+        errorCode: 'NOT_READY',
+        errorMessage: 'Flags are not yet ready',
         then: expect.any(Function),
       });
       const awaited = await result;

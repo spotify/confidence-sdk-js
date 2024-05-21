@@ -33,7 +33,7 @@ describe('ConfidenceWebProvider E2E tests', () => {
         errorCode: 'PROVIDER_NOT_READY',
         flagKey: 'web-sdk-e2e-flag.str',
         flagMetadata: {},
-        errorMessage: 'Provider is not yet ready',
+        errorMessage: 'Flags are not yet ready',
         then: expect.any(Function),
         reason: 'ERROR',
         value: 'default',

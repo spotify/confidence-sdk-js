@@ -21,8 +21,7 @@ export namespace FlagEvaluation {
   export interface Failed<T> {
     readonly reason: 'ERROR';
     readonly value: T;
-    // TODO Change PROVIDER_NOT_READY to NOT_READY
-    readonly errorCode: 'FLAG_NOT_FOUND' | 'TYPE_MISMATCH' | 'PROVIDER_NOT_READY' | 'GENERAL';
+    readonly errorCode: 'FLAG_NOT_FOUND' | 'TYPE_MISMATCH' | 'NOT_READY' | 'GENERAL';
     readonly errorMessage: string;
   }
 
