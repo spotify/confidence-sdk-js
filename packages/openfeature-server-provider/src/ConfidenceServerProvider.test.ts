@@ -2,52 +2,36 @@ import { ProviderStatus } from '@openfeature/web-sdk';
 import { Confidence } from '@spotify-confidence/sdk';
 import { ConfidenceServerProvider } from './ConfidenceServerProvider';
 
-const mockApply = jest.fn();
-jest.mock('@spotify-confidence/client-http', () => {
-  return {
-    ...jest.requireActual('@spotify-confidence/client-http'),
-    ApplyManager: jest.fn().mockImplementation(() => ({
-      apply: mockApply,
-    })),
-  };
-});
-
-const resolveFlagsMock = jest.fn();
-const evaluateMock = jest.fn();
-const flagResolutionMock = {
-  evaluate: evaluateMock,
-};
 const withContextMock = jest.fn(function withContext() {
   return this;
 });
 const evaluateFlagMock = jest.fn();
 const mockConfidence = {
-  resolveFlags: resolveFlagsMock,
-  apply: jest.fn(),
   withContext: withContextMock,
   evaluateFlag: evaluateFlagMock,
 } as unknown as Confidence;
+
+const evaluation = {
+  reason: 'MATCH',
+  value: 'Test',
+  variant: 'flags/web-sdk-e2e-flag/variants/control',
+};
 
 describe('ConfidenceServerProvider', () => {
   let instanceUnderTest: ConfidenceServerProvider;
 
   beforeEach(() => {
     instanceUnderTest = new ConfidenceServerProvider(mockConfidence);
-    resolveFlagsMock.mockResolvedValue(flagResolutionMock);
-    evaluateMock.mockReturnValue({
-      reason: 'ERROR',
-      value: 'Test',
-      errorCode: 'GENERAL',
-      errorMessage: 'Test error',
-    });
-    evaluateFlagMock.mockReturnValue({
-      reason: 'MATCH',
-      value: 'Test',
-    });
+    evaluateFlagMock.mockReturnValue(evaluation);
   });
 
   it('should change the provider status to READY', async () => {
     expect(instanceUnderTest.status).toEqual(ProviderStatus.READY);
+  });
+
+  it('should evaluate a flag', async () => {
+    const first = await instanceUnderTest.resolveBooleanEvaluation('testFlag.bool', false, { some_context: 'value' });
+    expect(first).toEqual(evaluation);
   });
 
   it('should spin off a new Confidence instance with the context on each flag resolve', async () => {
