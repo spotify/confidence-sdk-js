@@ -71,7 +71,6 @@ export class Confidence implements EventSender, Trackable, FlagResolver {
       }
       const close = this.contextChanges(() => {
         this.resolveFlags().then(reportState);
-        //
         reportState();
       });
 
@@ -305,21 +304,3 @@ function defaultLogger(): Logger {
   }
   return Logger.noOp();
 }
-
-// class FailedResolution implements FlagResolution {
-//   readonly resolveToken = '';
-
-//   constructor(
-//     readonly context: Value.Struct,
-//     private readonly errorCode: FlagEvaluation.Failed<unknown>['errorCode'],
-//     private readonly errorMessage: string,
-//   ) {}
-//   evaluate<T extends Value>(path: string, defaultValue: T): FlagEvaluation<T> {
-//     return {
-//       reason: 'ERROR',
-//       value: defaultValue,
-//       errorCode: this.errorCode,
-//       errorMessage: this.errorMessage,
-//     };
-//   }
-// }

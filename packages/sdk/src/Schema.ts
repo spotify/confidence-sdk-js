@@ -20,12 +20,6 @@ export abstract class Schema<T extends Value = Value> {
   }
 }
 export namespace Schema {
-  // export interface Mismatch {
-  //   readonly path: string;
-  //   readonly expected?: Value.TypeName;
-  //   readonly actual?: Value.TypeName;
-  // }
-
   class Struct extends Schema {
     constructor(private readonly fields: Record<string, Schema>) {
       super('Struct');
@@ -54,16 +48,6 @@ export namespace Schema {
         return fieldSchema.get(...rest);
       });
     }
-
-    // static infer<T extends Value.Struct>(value:T):Schema<T> {
-    //   const fields:Record<string, Schema> = {};
-    //   for(const key of Object.keys(value)) {
-    //     if(typeof value[key] !== 'undefined') {
-    //       fields[key] = infer(value[key])
-    //     }
-    //   }
-    //   return struct(fields);
-    // }
   }
 
   class List extends Schema {
@@ -79,10 +63,6 @@ export namespace Schema {
         });
       }
     }
-
-    // static infer<T extends List>(value:T):Schema<T> {
-
-    // }
   }
   class Primitive<T extends Value.Primitive> extends Schema<T> {
     assertAssignsTo(value: Value): void {
@@ -157,15 +137,6 @@ export namespace Schema {
     }
     throw new TypeError(`Unknown schema type ${schema}`);
   }
-
-  // export function infer<T extends Value>(value:T):Schema<T> {
-  //   return Value.match(value, {
-  //     'string': () => STRING,
-  //     'boolean': () => BOOLEAN,
-  //     'Struct': Struct.infer,
-  //     'List': List.infer
-  //   })
-  // }
 }
 
 function mapValues<T, U>(record: Record<string, T>, callb: (value: T, key: string) => U): Record<string, U> {
