@@ -1,0 +1,70 @@
+syntax = "proto3";
+
+package confidence.flags.types.v1;
+
+
+// Schema for the value of a flag.
+//
+// The value of a flag is always a struct with one or more nested fields.
+// Example of a struct schema with two fields, `color` (a string) and `len` (an int):
+//
+// ```
+// {
+//   "schema": {
+//     "color": {
+//       "stringSchema": {}
+//     },
+//     "len": {
+//       "intSchema": {}
+//     }
+//   }
+// }
+// ```
+message FlagSchema {
+  oneof schema_type {
+    // Schema if this is a struct
+    StructFlagSchema struct_schema = 1;
+    // Schema if this is a list
+    ListFlagSchema list_schema = 2;
+    // Schema if this is an int
+    IntFlagSchema int_schema = 3;
+    // Schema if this is a double
+    DoubleFlagSchema double_schema = 4;
+    //Schema if this is a string
+    StringFlagSchema string_schema = 5;
+    //Schema if this is a bool
+    BoolFlagSchema bool_schema = 6;
+  }
+
+  // A schema of nested fields. The length of the field name is limited to
+  // 32 characters and can only contain alphanumeric characters, hyphens and
+  // underscores. The number of fields in a struct is limited to 64.
+  // Structs can not be nested more than four (4) levels.
+  message StructFlagSchema {
+    // Map of field name to the schema for the field
+    map<string, FlagSchema> schema = 1;
+  }
+
+  // A number that has a decimal place.
+  message DoubleFlagSchema {
+  }
+
+  // A whole number without a decimal point.
+  message IntFlagSchema {
+  }
+
+  // A string. The length is limited to 250 characters.
+  message StringFlagSchema {
+  }
+
+  // A boolean: true or false.
+  message BoolFlagSchema {
+  }
+
+  // A list of values. The values have the same data types which
+  // is defined by  `element_schema`.
+  message ListFlagSchema {
+    // The schema for the elements in the list
+    FlagSchema element_schema = 1;
+  }
+}

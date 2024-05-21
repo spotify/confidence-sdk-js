@@ -6,8 +6,8 @@
 
 import { Confidence } from '@spotify-confidence/sdk';
 import { EvaluationContext } from '@openfeature/server-sdk';
+import { FlagResolver } from '@spotify-confidence/sdk';
 import { JsonValue } from '@openfeature/server-sdk';
-import { Logger } from '@openfeature/server-sdk';
 import { Provider } from '@openfeature/server-sdk';
 import { ProviderMetadata } from '@openfeature/server-sdk';
 import { ProviderStatus } from '@openfeature/server-sdk';
@@ -17,17 +17,17 @@ import { ResolutionDetails } from '@openfeature/server-sdk';
 //
 // @public (undocumented)
 export class ConfidenceServerProvider implements Provider {
-    constructor(client: Confidence);
+    constructor(client: FlagResolver);
     // (undocumented)
     readonly metadata: ProviderMetadata;
     // (undocumented)
-    resolveBooleanEvaluation(flagKey: string, defaultValue: boolean, context: EvaluationContext, logger: Logger): Promise<ResolutionDetails<boolean>>;
+    resolveBooleanEvaluation(flagKey: string, defaultValue: boolean, context: EvaluationContext): Promise<ResolutionDetails<boolean>>;
     // (undocumented)
-    resolveNumberEvaluation(flagKey: string, defaultValue: number, context: EvaluationContext, logger: Logger): Promise<ResolutionDetails<number>>;
+    resolveNumberEvaluation(flagKey: string, defaultValue: number, context: EvaluationContext): Promise<ResolutionDetails<number>>;
     // (undocumented)
-    resolveObjectEvaluation<T extends JsonValue>(flagKey: string, defaultValue: T, context: EvaluationContext, logger: Logger): Promise<ResolutionDetails<T>>;
+    resolveObjectEvaluation<T extends JsonValue>(flagKey: string, defaultValue: T, context: EvaluationContext): Promise<ResolutionDetails<T>>;
     // (undocumented)
-    resolveStringEvaluation(flagKey: string, defaultValue: string, context: EvaluationContext, logger: Logger): Promise<ResolutionDetails<string>>;
+    resolveStringEvaluation(flagKey: string, defaultValue: string, context: EvaluationContext): Promise<ResolutionDetails<string>>;
     // (undocumented)
     status: ProviderStatus;
 }

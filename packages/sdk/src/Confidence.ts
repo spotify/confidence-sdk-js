@@ -1,22 +1,24 @@
-import { FlagResolverClient, FlagResolution, FlagResolutionPromise } from './FlagResolverClient';
+import { FlagResolution, FlagResolverClient, PendingResolution } from './FlagResolverClient';
 import { EventSenderEngine } from './EventSenderEngine';
 import { Value } from './Value';
 import { EventSender } from './events';
 import { Context } from './context';
 import { Logger } from './logger';
+import { FlagEvaluation, FlagResolver, State, StateObserver } from './flags';
+import { SdkId } from './generated/confidence/flags/resolver/v1/types';
 import { visitorIdentity } from './trackers';
 import { Trackable } from './Trackable';
 import { Closer } from './Closer';
-import { Subscribe, Observer, subject } from './observing';
+import { Subscribe, Observer, subject, changeObserver } from './observing';
+import { SimpleFetch } from './types';
 
-export { FlagResolverClient, FlagResolution };
-
+const NOOP = () => {};
 export interface ConfidenceOptions {
   clientSecret: string;
-  region?: 'global' | 'eu' | 'us';
-  baseUrl?: string;
+  region?: 'eu' | 'us';
+  resolveUrl?: string;
   environment: 'client' | 'backend';
-  fetchImplementation?: typeof fetch;
+  fetchImplementation?: SimpleFetch;
   timeout: number;
   logger?: Logger;
 }
@@ -31,7 +33,7 @@ interface Configuration {
   readonly flagResolverClient: FlagResolverClient;
 }
 
-export class Confidence implements EventSender, Trackable {
+export class Confidence implements EventSender, Trackable, FlagResolver {
   readonly config: Configuration;
   private readonly parent?: Confidence;
   private _context: Map<string, Value> = new Map();
@@ -40,7 +42,10 @@ export class Confidence implements EventSender, Trackable {
   /** @internal */
   readonly contextChanges: Subscribe<string[]>;
 
-  private flagResolution?: FlagResolutionPromise;
+  private currentFlags?: FlagResolution;
+  private pendingFlags?: PendingResolution;
+
+  private readonly flagStateSubject: Subscribe<State>;
 
   constructor(config: Configuration, parent?: Confidence) {
     this.config = config;
@@ -57,6 +62,23 @@ export class Confidence implements EventSender, Trackable {
       return () => {
         parentSubscription?.();
         this.contextChanged = undefined;
+      };
+    });
+
+    this.flagStateSubject = subject(observer => {
+      const reportState = () => observer(this.flagState);
+      if (!this.currentFlags || !Value.equal(this.currentFlags.context, this.getContext())) {
+        this.resolveFlags().then(reportState);
+      }
+      const close = this.contextChanges(() => {
+        this.resolveFlags().then(reportState);
+        reportState();
+      });
+
+      return () => {
+        close();
+        this.pendingFlags?.abort();
+        this.pendingFlags = undefined;
       };
     });
   }
@@ -134,62 +156,103 @@ export class Confidence implements EventSender, Trackable {
     return undefined;
   }
 
-  /**
-   * @internal
-   */
-  resolve(flagNames: string[]): Promise<FlagResolution> {
-    const timeout: Promise<never> = new Promise((_resolve, reject) => {
-      setTimeout(() => {
-        reject(new Error(`Resolve timed out after ${this.config.timeout}ms`));
-      }, this.config.timeout);
-    });
-    // we first resolve a promise so that if multiple context changes happen in the same tick, we still only make one resolve
-    const resolve = Promise.resolve().then(() => {
-      const context = this.getContext();
-      if (!this.flagResolution || !Value.equal(context, this.flagResolution.context)) {
-        this.flagResolution?.abort(new Error('Resolve aborted due to stale context'));
-        this.flagResolution = this.config.flagResolverClient.resolve(context, flagNames);
-      }
-      return this.flagResolution;
-    });
-    return Promise.race([resolve, timeout])
-      .then(resolution => {
-        this.config.logger.info?.(`Confidence: successfully resolved ${Object.keys(resolution.flags).length} flags`);
-        return resolution;
-      })
-      .catch(error => {
-        this.config.logger.warn?.('Confidence: failed to resolve flags', error);
-        throw error;
-      });
+  private async resolveFlags(): Promise<void> {
+    const context = this.getContext();
+
+    if (!this.pendingFlags || !Value.equal(this.pendingFlags.context, context)) {
+      this.pendingFlags?.abort(new Error('Context changed'));
+      this.pendingFlags = this.config.flagResolverClient.resolve(context, []);
+      this.pendingFlags
+        .then(resolution => {
+          this.currentFlags = resolution;
+        })
+        .catch(e => {
+          // TODO fix sloppy handling of error
+          if (e.message !== 'Context changed') {
+            this.config.logger.info?.('Resolve failed.', e);
+          }
+        })
+        .finally(() => {
+          this.pendingFlags = undefined;
+        });
+    }
+    return this.pendingFlags.then(NOOP, NOOP);
   }
 
-  /**
-   * @internal
-   */
-  apply(resolveToken: string, flagName: string): void {
-    this.config.flagResolverClient.apply(resolveToken, flagName);
+  private get flagState(): State {
+    if (this.currentFlags) {
+      if (this.pendingFlags) return 'STALE';
+      return 'READY';
+    }
+    return 'NOT_READY';
+  }
+
+  subscribe(onStateChange: StateObserver = () => {}): () => void {
+    const observer = changeObserver(onStateChange);
+    const close = this.flagStateSubject(observer);
+    observer(this.flagState);
+    return close;
+  }
+
+  private evaluateFlagAsync<T extends Value>(path: string, defaultValue: T): Promise<FlagEvaluation.Resolved<T>> {
+    let close: () => void;
+    return new Promise<FlagEvaluation.Resolved<T>>((resolve, reject) => {
+      const timeoutId = setTimeout(() => {
+        reject(new Error(`Timeout evaluating flag "${path}"`));
+      }, this.config.timeout);
+      close = this.subscribe(state => {
+        // when state is ready we can be sure currentFlags exist
+        if (state === 'READY') {
+          clearTimeout(timeoutId);
+          resolve(this.currentFlags!.evaluate(path, defaultValue));
+        }
+      });
+    }).finally(close!);
+  }
+
+  evaluateFlag<T extends Value>(path: string, defaultValue: T): FlagEvaluation<T> {
+    let evaluation: FlagEvaluation<T>;
+    if (!this.currentFlags) {
+      evaluation = {
+        reason: 'ERROR',
+        errorCode: 'NOT_READY',
+        errorMessage: 'Flags are not yet ready',
+        value: defaultValue,
+      };
+      if (!this.pendingFlags) this.resolveFlags();
+    } else {
+      evaluation = this.currentFlags.evaluate(path, defaultValue);
+    }
+    if (!this.currentFlags || !Value.equal(this.currentFlags.context, this.getContext())) {
+      const then: PromiseLike<FlagEvaluation.Resolved<T>>['then'] = (onfulfilled?, onrejected?) =>
+        this.evaluateFlagAsync(path, defaultValue).then(onfulfilled, onrejected);
+      return Object.assign(evaluation, { then });
+    }
+    return evaluation;
+  }
+
+  async getFlag<T extends Value>(path: string, defaultValue: T): Promise<T> {
+    return (await this.evaluateFlag(path, defaultValue)).value;
   }
 
   static create({
     clientSecret,
     region,
-    baseUrl,
     timeout,
     environment,
     fetchImplementation = defaultFetchImplementation(),
     logger = defaultLogger(),
   }: ConfidenceOptions): Confidence {
     const sdk = {
-      id: 'SDK_ID_JS_CONFIDENCE',
+      id: SdkId.SDK_ID_JS_CONFIDENCE,
       version: '0.0.5', // x-release-please-version
     } as const;
     const flagResolverClient = new FlagResolverClient({
       clientSecret,
-      region,
-      baseUrl,
-      environment,
       fetchImplementation,
       sdk,
+      environment,
+      region,
     });
     const estEventSizeKb = 1;
     const flushTimeoutMilliseconds = 500;
@@ -200,7 +263,7 @@ export class Confidence implements EventSender, Trackable {
       maxBatchSize,
       flushTimeoutMilliseconds,
       fetchImplementation,
-      region: nonGlobalRegion(region),
+      region,
       // we set rate limit to support the flushTimeout
       // on backend, the rate limit would be ∞
       rateLimitRps: environment === 'client' ? 1000 / flushTimeoutMilliseconds : Number.POSITIVE_INFINITY,
@@ -212,7 +275,7 @@ export class Confidence implements EventSender, Trackable {
     const root = new Confidence({
       environment: environment,
       flagResolverClient,
-      eventSenderEngine: eventSenderEngine,
+      eventSenderEngine,
       timeout,
       logger,
     });
@@ -230,10 +293,6 @@ function defaultFetchImplementation(): typeof fetch {
     );
   }
   return globalThis.fetch.bind(globalThis);
-}
-
-function nonGlobalRegion(region: 'eu' | 'us' | 'global' = 'eu'): 'eu' | 'us' {
-  return region === 'global' ? 'eu' : region;
 }
 
 function defaultLogger(): Logger {

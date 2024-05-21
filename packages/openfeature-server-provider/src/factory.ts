@@ -3,10 +3,9 @@ import { ConfidenceServerProvider } from './ConfidenceServerProvider';
 import { Confidence } from '@spotify-confidence/sdk';
 
 type ConfidenceProviderFactoryOptions = {
-  region?: 'global' | 'eu' | 'us';
+  region?: 'eu' | 'us';
   fetchImplementation?: typeof fetch;
   clientSecret: string;
-  baseUrl?: string;
   timeout: number;
 };
 

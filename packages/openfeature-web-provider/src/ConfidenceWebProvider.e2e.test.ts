@@ -17,9 +17,7 @@ function createProvider(options: Partial<ConfidenceWebProviderOptions> = {}): Pr
 describe('ConfidenceWebProvider E2E tests', () => {
   describe('initialize fail', () => {
     beforeEach(async () => {
-      await expect(OpenFeature.setProviderAndWait(createProvider({ timeout: 0 }))).rejects.toThrow(
-        'Resolve timed out after 0ms',
-      );
+      await expect(OpenFeature.setProviderAndWait(createProvider({ timeout: 0 }))).rejects.toThrow();
     });
     afterEach(() => OpenFeature.clearProviders());
 
@@ -35,6 +33,8 @@ describe('ConfidenceWebProvider E2E tests', () => {
         errorCode: 'PROVIDER_NOT_READY',
         flagKey: 'web-sdk-e2e-flag.str',
         flagMetadata: {},
+        errorMessage: 'Flags are not yet ready',
+        then: expect.any(Function),
         reason: 'ERROR',
         value: 'default',
       });
@@ -100,11 +100,9 @@ describe('ConfidenceWebProvider E2E tests', () => {
       const client = OpenFeature.getClient();
       const expectedObject = {
         flagKey: 'web-sdk-e2e-flag.obj.double',
-        reason: 'TARGETING_MATCH',
+        flagMetadata: {},
+        reason: 'MATCH',
         variant: 'flags/web-sdk-e2e-flag/variants/control',
-        flagMetadata: {
-          resolveToken: expect.any(String),
-        },
         value: 3.6,
       };
 

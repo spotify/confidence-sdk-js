@@ -1,20 +1,6 @@
 {
   "plugins": ["node-workspace"],
   "packages": {
-    "packages/client-http": {
-      "component": "client-http",
-      "changelog-path": "CHANGELOG.md",
-      "bump-minor-pre-major": true,
-      "bump-patch-for-minor-pre-major": true,
-      "extra-files": [
-        {
-          "type": "json",
-          "glob": true,
-          "path": "/examples/*/package.json",
-          "jsonpath": "$['dependencies']['@spotify-confidence/client-http']"
-        }
-      ]
-    },
     "packages/openfeature-server-provider": {
       "component": "openfeature-server-provider",
       "changelog-path": "CHANGELOG.md",
