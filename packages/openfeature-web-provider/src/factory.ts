@@ -3,10 +3,9 @@ import { ConfidenceWebProvider } from './ConfidenceWebProvider';
 import { Confidence } from '@spotify-confidence/sdk';
 
 export type ConfidenceWebProviderOptions = {
-  region?: 'global' | 'eu' | 'us';
+  region?: 'eu' | 'us';
   fetchImplementation?: typeof fetch;
   clientSecret: string;
-  baseUrl?: string;
   timeout: number;
 };
 

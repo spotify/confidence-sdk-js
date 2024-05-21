@@ -14,8 +14,8 @@ import { Subscribe, Observer, subject, changeObserver } from './observing';
 const NOOP = () => {};
 export interface ConfidenceOptions {
   clientSecret: string;
-  region?: 'global' | 'eu' | 'us';
-  baseUrl?: string;
+  region?: 'eu' | 'us';
+  resolveUrl?: string;
   environment: 'client' | 'backend';
   fetchImplementation?: typeof fetch;
   timeout: number;
@@ -243,17 +243,16 @@ export class Confidence implements EventSender, Trackable, FlagResolver {
     fetchImplementation = defaultFetchImplementation(),
     logger = defaultLogger(),
   }: ConfidenceOptions): Confidence {
-    const baseUrl = getConfidenceUrl(region);
     const sdk = {
       id: SdkId.SDK_ID_JS_CONFIDENCE,
       version: '0.0.5', // x-release-please-version
     } as const;
     const flagResolverClient = new FlagResolverClient({
       clientSecret,
-      baseUrl,
       fetchImplementation,
       sdk,
       environment,
+      region,
     });
     const estEventSizeKb = 1;
     const flushTimeoutMilliseconds = 500;
@@ -264,7 +263,7 @@ export class Confidence implements EventSender, Trackable, FlagResolver {
       maxBatchSize,
       flushTimeoutMilliseconds,
       fetchImplementation,
-      region: nonGlobalRegion(region),
+      region,
       // we set rate limit to support the flushTimeout
       // on backend, the rate limit would be ∞
       rateLimitRps: environment === 'client' ? 1000 / flushTimeoutMilliseconds : Number.POSITIVE_INFINITY,
@@ -296,10 +295,6 @@ function defaultFetchImplementation(): typeof fetch {
   return globalThis.fetch.bind(globalThis);
 }
 
-function nonGlobalRegion(region: 'eu' | 'us' | 'global' = 'eu'): 'eu' | 'us' {
-  return region === 'global' ? 'eu' : region;
-}
-
 function defaultLogger(): Logger {
   try {
     if (process.env.NODE_ENV === 'development') {
@@ -309,13 +304,6 @@ function defaultLogger(): Logger {
     // ignore
   }
   return Logger.noOp();
-}
-
-function getConfidenceUrl(region?: 'eu' | 'us' | 'global'): string {
-  if (region === 'global' || !region) {
-    return 'https://resolver.confidence.dev/v1';
-  }
-  return `https://resolver.${region}.confidence.dev/v1`;
 }
 
 // class FailedResolution implements FlagResolution {

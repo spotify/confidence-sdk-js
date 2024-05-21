@@ -121,8 +121,8 @@ export type FlagResolverClientOptions = {
   clientSecret: string;
   sdk: Sdk;
   applyTimeout?: number;
-  baseUrl?: string;
   environment: 'client' | 'backend';
+  region?: 'eu' | 'us';
 };
 export class FlagResolverClient {
   private readonly fetchImplementation: SimpleFetch;
@@ -136,16 +136,16 @@ export class FlagResolverClient {
     clientSecret,
     sdk,
     applyTimeout,
-    baseUrl = 'https://resolver.confidence.dev/v1',
     // todo refactor to move out environment
     environment,
+    region,
   }: FlagResolverClientOptions) {
     // TODO think about both resolve and apply request logic for backends
     this.fetchImplementation = environment === 'client' ? withRequestLogic(fetchImplementation) : fetchImplementation;
     this.clientSecret = clientSecret;
     this.sdk = sdk;
     this.applyTimeout = applyTimeout;
-    this.baseUrl = baseUrl;
+    this.baseUrl = region ? `https://resolver.${region}.confidence.dev/v1` : 'https://resolver.confidence.dev/v1';
   }
 
   resolve(context: Context, flags: string[]): PendingResolution {

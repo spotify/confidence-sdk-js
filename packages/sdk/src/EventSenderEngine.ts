@@ -1,6 +1,7 @@
 import { Value } from './Value';
 import { Logger } from './logger';
 import { FetchBuilder, TimeUnit } from './fetch-util';
+import { SimpleFetch } from './types';
 interface Event {
   eventDefinition: string;
   eventTime: string;
@@ -23,20 +24,18 @@ export interface EventSenderEngineOptions {
   maxBatchSize: number;
   flushTimeoutMilliseconds: number;
   rateLimitRps?: number;
-  fetchImplementation: FetchImplementation;
-  region: 'eu' | 'us';
+  fetchImplementation: SimpleFetch;
+  region?: 'eu' | 'us';
   maxOpenRequests: number;
   logger: Logger;
 }
-
-type FetchImplementation = typeof fetch;
 
 export class EventSenderEngine {
   private readonly writeQueue: Event[] = [];
   private readonly flushTimeoutMilliseconds: number;
   private readonly clientSecret: string;
   private readonly maxBatchSize: number;
-  private readonly fetchImplementation: FetchImplementation;
+  private readonly fetchImplementation: SimpleFetch;
   private readonly publishUrl: string;
   private readonly logger: Logger;
   private pendingFlush: undefined | ReturnType<typeof setTimeout>;
@@ -51,7 +50,9 @@ export class EventSenderEngine {
     maxOpenRequests,
     logger,
   }: EventSenderEngineOptions) {
-    this.publishUrl = `https://events.${region}.confidence.dev/v1/events:publish`;
+    this.publishUrl = region
+      ? `https://events.${region}.confidence.dev/v1/events:publish`
+      : 'https://events.confidence.dev/v1/events:publish';
     this.clientSecret = clientSecret;
     this.maxBatchSize = maxBatchSize;
     this.flushTimeoutMilliseconds = flushTimeoutMilliseconds;
@@ -136,14 +137,15 @@ export class EventSenderEngine {
 
   // Made public for unit testing
   public upload(batch: EventBatch): Promise<PublishError[]> {
-    return this.fetchImplementation(this.publishUrl, {
+    const request = new Request(this.publishUrl, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({
         ...batch,
         events: batch.events.map(e => ({ ...e, eventDefinition: `eventDefinitions/${e.eventDefinition}` })),
       }),
-    })
+    });
+    return this.fetchImplementation(request)
       .then(resp => resp.json())
       .then(({ errors }) => errors);
   }

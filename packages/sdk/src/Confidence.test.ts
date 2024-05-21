@@ -115,7 +115,6 @@ describe('Confidence', () => {
       const c = Confidence.create({
         clientSecret: 'secret',
         region: 'us',
-        baseUrl: 'https://www.spotify.com',
         environment: 'client',
         fetchImplementation: {} as any,
         timeout: 10,
