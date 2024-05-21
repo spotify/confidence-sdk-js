@@ -52,8 +52,10 @@ export interface ConfidenceOptions {
     clientSecret: string;
     // (undocumented)
     environment: 'client' | 'backend';
+    // Warning: (ae-forgotten-export) The symbol "SimpleFetch" needs to be exported by the entry point index.d.ts
+    //
     // (undocumented)
-    fetchImplementation?: typeof fetch;
+    fetchImplementation?: SimpleFetch;
     // Warning: (ae-forgotten-export) The symbol "Logger" needs to be exported by the entry point index.d.ts
     //
     // (undocumented)
