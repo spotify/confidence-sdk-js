@@ -3,7 +3,6 @@ import {
   EvaluationContext,
   EvaluationContextValue,
   JsonValue,
-  Logger,
   Provider,
   ProviderMetadata,
   ProviderStatus,
@@ -29,11 +28,9 @@ export class ConfidenceServerProvider implements Provider {
     flagKey: string,
     defaultValue: T,
     context: EvaluationContext,
-    _logger: Logger,
   ): Promise<ResolutionDetails<T>> {
     const evaluation = await this.confidence.withContext(convertContext(context)).evaluateFlag(flagKey, defaultValue);
 
-    // const evaluation = flagResolution.evaluate(flagKey, defaultValue);
     if (evaluation.reason === 'ERROR') {
       const { errorCode, ...rest } = evaluation;
       return {
@@ -59,37 +56,33 @@ export class ConfidenceServerProvider implements Provider {
     flagKey: string,
     defaultValue: boolean,
     context: EvaluationContext,
-    logger: Logger,
   ): Promise<ResolutionDetails<boolean>> {
-    return this.fetchFlag(flagKey, defaultValue, context, logger);
+    return this.fetchFlag(flagKey, defaultValue, context);
   }
 
   resolveNumberEvaluation(
     flagKey: string,
     defaultValue: number,
     context: EvaluationContext,
-    logger: Logger,
   ): Promise<ResolutionDetails<number>> {
-    return this.fetchFlag(flagKey, defaultValue, context, logger);
+    return this.fetchFlag(flagKey, defaultValue, context);
   }
 
   resolveObjectEvaluation<T extends JsonValue>(
     flagKey: string,
     defaultValue: T,
     context: EvaluationContext,
-    logger: Logger,
   ): Promise<ResolutionDetails<T>> {
     Value.assertValue(defaultValue);
-    return this.fetchFlag(flagKey, defaultValue, context, logger);
+    return this.fetchFlag(flagKey, defaultValue, context);
   }
 
   resolveStringEvaluation(
     flagKey: string,
     defaultValue: string,
     context: EvaluationContext,
-    logger: Logger,
   ): Promise<ResolutionDetails<string>> {
-    return this.fetchFlag(flagKey, defaultValue, context, logger);
+    return this.fetchFlag(flagKey, defaultValue, context);
   }
 }
 

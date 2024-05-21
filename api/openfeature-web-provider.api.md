@@ -8,7 +8,6 @@ import { Confidence } from '@spotify-confidence/sdk';
 import { EvaluationContext } from '@openfeature/web-sdk';
 import { FlagResolver } from '@spotify-confidence/sdk';
 import { JsonValue } from '@openfeature/web-sdk';
-import { Logger } from '@openfeature/web-sdk';
 import { OpenFeatureEventEmitter } from '@openfeature/web-sdk';
 import { Provider } from '@openfeature/web-sdk';
 import { ProviderMetadata } from '@openfeature/web-sdk';
@@ -30,13 +29,13 @@ export class ConfidenceWebProvider implements Provider {
     // (undocumented)
     onContextChange(oldContext: EvaluationContext, newContext: EvaluationContext): Promise<void>;
     // (undocumented)
-    resolveBooleanEvaluation(flagKey: string, defaultValue: boolean, context: EvaluationContext, logger: Logger): ResolutionDetails<boolean>;
+    resolveBooleanEvaluation(flagKey: string, defaultValue: boolean): ResolutionDetails<boolean>;
     // (undocumented)
-    resolveNumberEvaluation(flagKey: string, defaultValue: number, context: EvaluationContext, logger: Logger): ResolutionDetails<number>;
+    resolveNumberEvaluation(flagKey: string, defaultValue: number): ResolutionDetails<number>;
     // (undocumented)
-    resolveObjectEvaluation<T extends JsonValue>(flagKey: string, defaultValue: T, context: EvaluationContext, logger: Logger): ResolutionDetails<T>;
+    resolveObjectEvaluation<T extends JsonValue>(flagKey: string, defaultValue: T): ResolutionDetails<T>;
     // (undocumented)
-    resolveStringEvaluation(flagKey: string, defaultValue: string, context: EvaluationContext, logger: Logger): ResolutionDetails<string>;
+    resolveStringEvaluation(flagKey: string, defaultValue: string): ResolutionDetails<string>;
 }
 
 // Warning: (ae-forgotten-export) The symbol "ConfidenceWebProviderOptions" needs to be exported by the entry point index.d.ts

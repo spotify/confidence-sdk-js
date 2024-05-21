@@ -1,4 +1,4 @@
-import { Logger, ProviderStatus } from '@openfeature/web-sdk';
+import { ProviderStatus } from '@openfeature/web-sdk';
 import { Confidence } from '@spotify-confidence/sdk';
 import { ConfidenceServerProvider } from './ConfidenceServerProvider';
 
@@ -28,12 +28,6 @@ const mockConfidence = {
   evaluateFlag: evaluateFlagMock,
 } as unknown as Confidence;
 
-const dummyConsole: Logger = {
-  warn: jest.fn(),
-  info: jest.fn(),
-  debug: jest.fn(),
-  error: jest.fn(),
-};
 describe('ConfidenceServerProvider', () => {
   let instanceUnderTest: ConfidenceServerProvider;
 
@@ -57,8 +51,8 @@ describe('ConfidenceServerProvider', () => {
   });
 
   it('should spin off a new Confidence instance with the context on each flag resolve', async () => {
-    await instanceUnderTest.resolveBooleanEvaluation('testFlag.bool', false, { some_context: 'value' }, dummyConsole);
-    await instanceUnderTest.resolveBooleanEvaluation('testFlag.bool', false, { another_context: 5 }, dummyConsole);
+    await instanceUnderTest.resolveBooleanEvaluation('testFlag.bool', false, { some_context: 'value' });
+    await instanceUnderTest.resolveBooleanEvaluation('testFlag.bool', false, { another_context: 5 });
 
     expect(withContextMock).toHaveBeenCalledTimes(2);
     expect(withContextMock).toHaveBeenNthCalledWith(1, { some_context: 'value' });

@@ -3,7 +3,6 @@ import {
   EvaluationContext,
   EvaluationContextValue,
   JsonValue,
-  Logger,
   OpenFeatureEventEmitter,
   Provider,
   ProviderEvents,
@@ -77,12 +76,7 @@ export class ConfidenceWebProvider implements Provider {
     }).finally(close!);
   }
 
-  private evaluateFlag<T extends Value>(
-    flagKey: string,
-    defaultValue: T,
-    _context: EvaluationContext,
-    _logger: Logger,
-  ): ResolutionDetails<T> {
+  private evaluateFlag<T extends Value>(flagKey: string, defaultValue: T): ResolutionDetails<T> {
     const evaluation = this.confidence.evaluateFlag(flagKey, defaultValue);
     if (evaluation.reason === 'ERROR') {
       const { errorCode, ...rest } = evaluation;
@@ -107,42 +101,22 @@ export class ConfidenceWebProvider implements Provider {
     }
   }
 
-  resolveBooleanEvaluation(
-    flagKey: string,
-    defaultValue: boolean,
-    context: EvaluationContext,
-    logger: Logger,
-  ): ResolutionDetails<boolean> {
-    return this.evaluateFlag(flagKey, defaultValue, context, logger);
+  resolveBooleanEvaluation(flagKey: string, defaultValue: boolean): ResolutionDetails<boolean> {
+    return this.evaluateFlag(flagKey, defaultValue);
   }
 
-  resolveNumberEvaluation(
-    flagKey: string,
-    defaultValue: number,
-    context: EvaluationContext,
-    logger: Logger,
-  ): ResolutionDetails<number> {
-    return this.evaluateFlag(flagKey, defaultValue, context, logger);
+  resolveNumberEvaluation(flagKey: string, defaultValue: number): ResolutionDetails<number> {
+    return this.evaluateFlag(flagKey, defaultValue);
   }
 
-  resolveObjectEvaluation<T extends JsonValue>(
-    flagKey: string,
-    defaultValue: T,
-    context: EvaluationContext,
-    logger: Logger,
-  ): ResolutionDetails<T> {
+  resolveObjectEvaluation<T extends JsonValue>(flagKey: string, defaultValue: T): ResolutionDetails<T> {
     // this might throw but will be caught by OpenFeature
     Value.assertValue(defaultValue);
-    return this.evaluateFlag(flagKey, defaultValue, context, logger);
+    return this.evaluateFlag(flagKey, defaultValue);
   }
 
-  resolveStringEvaluation(
-    flagKey: string,
-    defaultValue: string,
-    context: EvaluationContext,
-    logger: Logger,
-  ): ResolutionDetails<string> {
-    return this.evaluateFlag(flagKey, defaultValue, context, logger);
+  resolveStringEvaluation(flagKey: string, defaultValue: string): ResolutionDetails<string> {
+    return this.evaluateFlag(flagKey, defaultValue);
   }
 }
 
