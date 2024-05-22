@@ -25,11 +25,11 @@ export class Confidence implements EventSender, Trackable, FlagResolver {
     // (undocumented)
     get environment(): string;
     // (undocumented)
-    evaluateFlag<T extends Value>(path: string, defaultValue: T): FlagEvaluation<T>;
+    evaluateFlag<T extends Value>(path: string, defaultValue: T): FlagEvaluation<Value.Widen<T>>;
     // (undocumented)
     getContext(): Context;
     // (undocumented)
-    getFlag<T extends Value>(path: string, defaultValue: T): Promise<T>;
+    getFlag<T extends Value>(path: string, defaultValue: T): Promise<Value.Widen<T>>;
     // (undocumented)
     setContext(context: Context): void;
     // (undocumented)
@@ -158,9 +158,9 @@ export interface FlagResolver extends Contextual<FlagResolver> {
         timeout: number;
     };
     // (undocumented)
-    evaluateFlag<T extends Value>(path: string, defaultValue: T): FlagEvaluation<T>;
+    evaluateFlag<T extends Value>(path: string, defaultValue: T): FlagEvaluation<Value.Widen<T>>;
     // (undocumented)
-    getFlag<T extends Value>(path: string, defaultValue: T): Promise<T>;
+    getFlag<T extends Value>(path: string, defaultValue: T): Promise<Value.Widen<T>>;
     // (undocumented)
     subscribe(onStateChange?: StateObserver): () => void;
 }
@@ -223,6 +223,8 @@ export namespace Value {
     };
     // (undocumented)
     export type TypeName = 'number' | 'string' | 'boolean' | 'Struct' | 'List' | 'undefined';
+    // (undocumented)
+    export type Widen<T extends Value> = T extends number ? number : T extends string ? string : T extends boolean ? boolean : T;
 }
 
 // @public (undocumented)
