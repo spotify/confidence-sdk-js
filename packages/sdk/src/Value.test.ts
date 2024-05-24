@@ -14,6 +14,32 @@ describe('Value', () => {
         Value.get(value, 'a.a.b');
       }).toThrow(`Expected Struct, but found string, at path 'a.a'`);
     });
+
+    it('can handle undefined', () => {
+      expect(Value.serialize(undefined)).toBe('');
+      expect(Value.deserialize('')).toBeUndefined();
+    });
+  });
+
+  describe('serialization', () => {
+    it('it produces a canonical string', () => {
+      const s0 = Value.serialize({ a: 1, b: 2 });
+      const s1 = Value.serialize({ b: 2, a: 1 });
+      expect(s0).toBe(s1);
+    });
+
+    it('can read back an equal copy', () => {
+      const value: Value = {
+        a: 'hello',
+        b: 1234.56789,
+        c: true,
+        d: false,
+        e: [0.1, 0.2, 0.345345],
+      };
+      const data = Value.serialize(value);
+      const copy = Value.deserialize(data);
+      expect(copy).toEqual(value);
+    });
   });
 });
 

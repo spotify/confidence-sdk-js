@@ -1,4 +1,4 @@
-import { FlagResolverClient, withRequestLogic } from './FlagResolverClient';
+import { FetchingFlagResolverClient, withRequestLogic } from './FlagResolverClient';
 import { setMaxListeners } from 'node:events';
 import { SdkId } from './generated/confidence/flags/resolver/v1/types';
 const RESOLVE_ENDPOINT = 'https://resolver.confidence.dev/v1/flags:resolve';
@@ -11,7 +11,7 @@ describe('Client environment Evaluation', () => {
   const mockFetch = jest.fn<Promise<Response>, [Request]>();
   const flagResolutionResponseJson = JSON.stringify(createFlagResolutionResponse());
   mockFetch.mockImplementation(async _ => new Response(flagResolutionResponseJson, { status: 200 }));
-  const instanceUnderTest = new FlagResolverClient({
+  const instanceUnderTest = new FetchingFlagResolverClient({
     fetchImplementation: mockFetch,
     clientSecret: 'secret',
     applyTimeout: 10,
@@ -75,7 +75,7 @@ describe('Backend environment Evaluation', () => {
   mockFetch.mockImplementation(
     async _ => new Response(JSON.stringify(createFlagResolutionResponse()), { status: 200 }),
   );
-  const instanceUnderTest = new FlagResolverClient({
+  const instanceUnderTest = new FetchingFlagResolverClient({
     fetchImplementation: mockFetch,
     clientSecret: 'secret',
     sdk: {

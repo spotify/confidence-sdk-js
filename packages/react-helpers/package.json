@@ -20,10 +20,12 @@
     "main": "dist/index.js"
   },
   "peerDependencies": {
+    "@spotify-confidence/sdk": "0.0.5",
     "react": "^18.2.0"
   },
   "devDependencies": {
     "@microsoft/api-extractor": "*",
+    "@spotify-confidence/sdk": "0.0.5",
     "react": "^18.2.0",
     "rollup": "*"
   },

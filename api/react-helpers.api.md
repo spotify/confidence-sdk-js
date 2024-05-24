@@ -5,6 +5,7 @@
 ```ts
 
 import { Confidence } from '@spotify-confidence/sdk';
+import { Context } from '@spotify-confidence/sdk';
 import { FC } from 'react';
 import { FlagEvaluation } from '@spotify-confidence/sdk';
 import { PropsWithChildren } from 'react';
@@ -20,7 +21,7 @@ export const ConfidenceProvider: FC<PropsWithChildren<{
 // Warning: (ae-missing-release-tag) "useConfidence" is part of the package's API, but it is missing a release tag (@alpha, @beta, @public, or @internal)
 //
 // @public (undocumented)
-export const useConfidence: () => Confidence;
+export const useConfidence: (withContext?: Context) => Confidence;
 
 // Warning: (ae-missing-release-tag) "useFlagEvaluation" is part of the package's API, but it is missing a release tag (@alpha, @beta, @public, or @internal)
 //
@@ -31,6 +32,13 @@ export function useFlagEvaluation<T extends Value>(path: string, defaultValue: T
 //
 // @public (undocumented)
 export function useFlagValue<T extends Value>(path: string, defaultValue: T): T;
+
+// Warning: (ae-missing-release-tag) "WithContext" is part of the package's API, but it is missing a release tag (@alpha, @beta, @public, or @internal)
+//
+// @public (undocumented)
+export const WithContext: FC<PropsWithChildren<{
+    context: Context;
+}>>;
 
 // (No @packageDocumentation comment for this package)
 

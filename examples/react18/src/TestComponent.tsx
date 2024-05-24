@@ -1,11 +1,13 @@
-import { useConfidence, useFlagEvaluation } from '@spotify-confidence/react-helpers';
+import { useConfidence, useFlagEvaluation, useFlagValue } from '@spotify-confidence/react-helpers';
 import { useState } from 'react';
 
 const TestComponent = () => {
   const [clickCount, setClickCount] = useState(0);
-  const confidence = useConfidence();
-  const details = useFlagEvaluation('web-sdk-e2e-flag.str', 'default');
-  // const details = confidence.getFlag('web-sdk-e2e-flag.str', 'default').orSuspend();
+  const confidence = useConfidence({ targeting_key: 'user-a' });
+  // const details = useFlagEvaluation('web-sdk-e2e-flag.str', 'default');
+  // const details = confidence.evaluateFlag('web-sdk-e2e-flag.str', 'default');
+  const details = confidence.getFlag('web-sdk-e2e-flag.str', 'default').orSuspend();
+  // const details = useFlagValue('web-sdk-e2e-flag.str', 'default');
   return (
     <>
       <p>The flag is: </p>
@@ -13,7 +15,7 @@ const TestComponent = () => {
       <p>Click count is: {clickCount}</p>
       <button
         onClick={() => {
-          // confidence.track('click');
+          confidence.track('click');
           setClickCount(value => value + 1);
         }}
       >

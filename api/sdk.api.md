@@ -28,8 +28,10 @@ export class Confidence implements EventSender, Trackable, FlagResolver {
     evaluateFlag<T extends Value>(path: string, defaultValue: T): FlagEvaluation<T>;
     // (undocumented)
     getContext(): Context;
+    // Warning: (ae-forgotten-export) The symbol "AccessiblePromise" needs to be exported by the entry point index.d.ts
+    //
     // (undocumented)
-    getFlag<T extends Value>(path: string, defaultValue: T): Promise<T>;
+    getFlag<T extends Value>(path: string, defaultValue: T): AccessiblePromise<T>;
     // (undocumented)
     setContext(context: Context): void;
     // (undocumented)
@@ -160,7 +162,7 @@ export interface FlagResolver extends Contextual<FlagResolver> {
     // (undocumented)
     evaluateFlag<T extends Value>(path: string, defaultValue: T): FlagEvaluation<T>;
     // (undocumented)
-    getFlag<T extends Value>(path: string, defaultValue: T): Promise<T>;
+    getFlag<T extends Value>(path: string, defaultValue: T): AccessiblePromise<T>;
     // (undocumented)
     subscribe(onStateChange?: StateObserver): () => void;
 }
@@ -202,6 +204,8 @@ export namespace Value {
     // (undocumented)
     export function clone<T extends Value>(value: T): T;
     // (undocumented)
+    export function deserialize(data: string): Value;
+    // (undocumented)
     export function equal(value1: Value, value2: Value): boolean;
     // (undocumented)
     export function get(struct: Struct | undefined, path: string): Value;
@@ -217,6 +221,8 @@ export namespace Value {
     export type List = ReadonlyArray<number> | ReadonlyArray<string> | ReadonlyArray<boolean>;
     // (undocumented)
     export type Primitive = number | string | boolean;
+    // (undocumented)
+    export function serialize(value: Value): string;
     // (undocumented)
     export type Struct = {
         readonly [key: string]: Value;

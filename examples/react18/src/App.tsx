@@ -1,13 +1,14 @@
 import React from 'react';
 import TestComponent from './TestComponent';
 import { Confidence, pageViews } from '@spotify-confidence/sdk';
-import { ConfidenceProvider } from '@spotify-confidence/react-helpers';
+import { ConfidenceProvider, WithContext } from '@spotify-confidence/react-helpers';
 
 const confidence = Confidence.create({
   clientSecret: 'RxDVTrXvc6op1XxiQ4OaR31dKbJ39aYV',
   region: 'eu',
   environment: 'client',
   timeout: 1000,
+  logger: console,
 });
 
 confidence.track(pageViews());
