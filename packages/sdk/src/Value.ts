@@ -15,10 +15,10 @@ export namespace Value {
   export type Widen<T extends Value> = T extends number
     ? number
     : T extends string
-      ? string
-      : T extends boolean
-        ? boolean
-        : T;
+    ? string
+    : T extends boolean
+    ? boolean
+    : T;
 
   export function assertValue(value: unknown): asserts value is Value {
     switch (typeof value) {
