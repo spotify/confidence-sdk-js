@@ -79,11 +79,11 @@ export class EventSenderEngine {
       .build(fetchImplementation);
   }
 
-  send(context: Value.Struct, name: string, message?: Value.Struct): void {
+  send(context: Value.Struct, name: string, data?: Value.Struct): void {
     this.writeQueue.push({
       eventDefinition: name,
       eventTime: new Date().toISOString(),
-      payload: { ...context, ...message },
+      payload: { context, ...data },
     });
     this.clearPendingFlush();
     if (this.writeQueue.length >= this.maxBatchSize) {
