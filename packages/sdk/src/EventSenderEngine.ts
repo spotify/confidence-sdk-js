@@ -2,6 +2,7 @@ import { Value } from './Value';
 import { Logger } from './logger';
 import { FetchBuilder, TimeUnit } from './fetch-util';
 import { SimpleFetch } from './types';
+import { EventData } from './events';
 interface Event {
   eventDefinition: string;
   eventTime: string;
@@ -79,7 +80,10 @@ export class EventSenderEngine {
       .build(fetchImplementation);
   }
 
-  send(context: Value.Struct, name: string, data?: Value.Struct): void {
+  send(context: Value.Struct, name: string, data?: EventData): void {
+    if (data && 'context' in data) {
+      throw new Error('Event data must not contain a context field');
+    }
     this.writeQueue.push({
       eventDefinition: name,
       eventTime: new Date().toISOString(),

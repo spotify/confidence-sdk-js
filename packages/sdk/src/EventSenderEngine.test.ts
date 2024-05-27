@@ -70,7 +70,7 @@ describe('EventSenderEngine unit tests', () => {
       ],
     });
   });
-  it('payload should prioritize message context field', async () => {
+  it('should throw if data contains a context field', async () => {
     const noBatchEngine = new EventSenderEngine({
       clientSecret: 'my_secret',
       maxBatchSize: 1,
@@ -81,23 +81,12 @@ describe('EventSenderEngine unit tests', () => {
       logger: {},
     });
     const uploadSpy = jest.spyOn(noBatchEngine, 'upload');
-    noBatchEngine.send({ value: 2 }, 'my_event', { context: 0, message: 1 });
+    expect(() => {
+      // @ts-expect-error
+      noBatchEngine.send({ value: 2 }, 'my_event', { context: 0, message: 1 });
+    }).toThrow('Event data must not contain a context field');
     await jest.runAllTimersAsync();
-    expect(uploadSpy).toHaveBeenCalledTimes(1);
-    expect(uploadSpy).toHaveBeenCalledWith({
-      sendTime: expect.any(String),
-      clientSecret: 'my_secret',
-      events: [
-        {
-          eventDefinition: 'my_event',
-          eventTime: expect.any(String),
-          payload: {
-            context: 0,
-            message: 1,
-          },
-        },
-      ],
-    });
+    expect(uploadSpy).toHaveBeenCalledTimes(0);
   });
   it('should handle a lot of events', async () => {
     const eventCount = BATCH_SIZE * MAX_OPEN_REQUESTS * 2;
