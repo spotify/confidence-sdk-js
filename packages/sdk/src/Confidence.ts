@@ -210,7 +210,7 @@ export class Confidence implements EventSender, Trackable, FlagResolver {
     }).finally(close!);
   }
 
-  evaluateFlag<T extends Value>(path: string, defaultValue: T): FlagEvaluation<T> {
+  evaluateFlag<T extends Value>(path: string, defaultValue: T): FlagEvaluation<Value.Widen<T>> {
     let evaluation: FlagEvaluation<T>;
     if (!this.currentFlags) {
       evaluation = {
@@ -226,12 +226,12 @@ export class Confidence implements EventSender, Trackable, FlagResolver {
     if (!this.currentFlags || !Value.equal(this.currentFlags.context, this.getContext())) {
       const then: PromiseLike<FlagEvaluation.Resolved<T>>['then'] = (onfulfilled?, onrejected?) =>
         this.evaluateFlagAsync(path, defaultValue).then(onfulfilled, onrejected);
-      return Object.assign(evaluation, { then });
+      return Object.assign(evaluation, { then }) as FlagEvaluation<Value.Widen<T>>;
     }
-    return evaluation;
+    return evaluation as FlagEvaluation<Value.Widen<T>>;
   }
 
-  async getFlag<T extends Value>(path: string, defaultValue: T): Promise<T> {
+  async getFlag<T extends Value>(path: string, defaultValue: T): Promise<Value.Widen<T>> {
     return (await this.evaluateFlag(path, defaultValue)).value;
   }
 

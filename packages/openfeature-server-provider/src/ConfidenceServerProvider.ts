@@ -9,7 +9,7 @@ import {
   ResolutionDetails,
 } from '@openfeature/server-sdk';
 
-import { Context, FlagResolver, Value } from '@spotify-confidence/sdk';
+import { Context, FlagEvaluation, FlagResolver, Value } from '@spotify-confidence/sdk';
 
 type Mutable<T> = { -readonly [K in keyof T]: T[K] };
 
@@ -29,7 +29,9 @@ export class ConfidenceServerProvider implements Provider {
     defaultValue: T,
     context: EvaluationContext,
   ): Promise<ResolutionDetails<T>> {
-    const evaluation = await this.confidence.withContext(convertContext(context)).evaluateFlag(flagKey, defaultValue);
+    const evaluation = (await this.confidence
+      .withContext(convertContext(context))
+      .evaluateFlag(flagKey, defaultValue)) as FlagEvaluation.Resolved<T>;
 
     if (evaluation.reason === 'ERROR') {
       const { errorCode, ...rest } = evaluation;
