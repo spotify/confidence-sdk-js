@@ -1,7 +1,7 @@
 import { FlagResolution, FlagResolverClient, PendingResolution } from './FlagResolverClient';
 import { EventSenderEngine } from './EventSenderEngine';
 import { Value } from './Value';
-import { EventSender } from './events';
+import { EventData, EventSender } from './events';
 import { Context } from './context';
 import { Logger } from './logger';
 import { FlagEvaluation, FlagResolver, State, StateObserver } from './flags';
@@ -87,8 +87,8 @@ export class Confidence implements EventSender, Trackable, FlagResolver {
     return this.config.environment;
   }
 
-  private sendEvent(name: string, message?: Value.Struct): void {
-    this.config.eventSenderEngine.send(this.getContext(), name, message);
+  private sendEvent(name: string, data?: EventData): void {
+    this.config.eventSenderEngine.send(this.getContext(), name, data);
   }
 
   private *contextEntries(): Iterable<[key: string, value: Value]> {
@@ -146,13 +146,13 @@ export class Confidence implements EventSender, Trackable, FlagResolver {
     return child;
   }
 
-  track(name: string, message?: Value.Struct): void;
+  track(name: string, data?: EventData): void;
   track(manager: Trackable.Manager): Closer;
-  track(nameOrManager: string | Trackable.Manager, message?: Value.Struct): Closer | undefined {
+  track(nameOrManager: string | Trackable.Manager, data?: EventData): Closer | undefined {
     if (typeof nameOrManager === 'function') {
       return Trackable.setup(this, nameOrManager);
     }
-    this.sendEvent(nameOrManager, message);
+    this.sendEvent(nameOrManager, data);
     return undefined;
   }
 

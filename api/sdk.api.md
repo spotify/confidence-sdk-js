@@ -35,7 +35,7 @@ export class Confidence implements EventSender, Trackable, FlagResolver {
     // (undocumented)
     subscribe(onStateChange?: StateObserver): () => void;
     // (undocumented)
-    track(name: string, message?: Value.Struct): void;
+    track(name: string, data?: EventData): void;
     // Warning: (ae-forgotten-export) The symbol "Closer" needs to be exported by the entry point index.d.ts
     //
     // (undocumented)
@@ -100,12 +100,19 @@ export interface Contextual<Self extends Contextual<Self>> {
     withContext(context: Context): Self;
 }
 
+// Warning: (ae-missing-release-tag) "EventData" is part of the package's API, but it is missing a release tag (@alpha, @beta, @public, or @internal)
+//
+// @public (undocumented)
+export type EventData = Value.Struct & {
+    context?: never;
+};
+
 // Warning: (ae-missing-release-tag) "EventSender" is part of the package's API, but it is missing a release tag (@alpha, @beta, @public, or @internal)
 //
 // @public (undocumented)
 export interface EventSender extends Contextual<EventSender> {
     // (undocumented)
-    track(name: string, message?: Value.Struct): void;
+    track(name: string, data?: EventData): void;
 }
 
 // Warning: (ae-missing-release-tag) "FlagEvaluation" is part of the package's API, but it is missing a release tag (@alpha, @beta, @public, or @internal)
