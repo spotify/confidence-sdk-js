@@ -41,7 +41,7 @@ describe('EventSenderEngine unit tests', () => {
     expect(flushSpy).toHaveBeenCalledTimes(1);
     await jest.runAllTimersAsync();
   });
-  it('store context in context field ', async () => {
+  it('should store context under a context field ', async () => {
     const noBatchEngine = new EventSenderEngine({
       clientSecret: 'my_secret',
       maxBatchSize: 1,
