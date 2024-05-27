@@ -12,6 +12,18 @@
   * dependencies
     * @spotify-confidence/sdk bumped from 0.0.2 to 0.0.3
 
+## [0.2.4](https://github.com/spotify/confidence-sdk-js/compare/openfeature-server-provider-v0.2.3...openfeature-server-provider-v0.2.4) (2024-05-27)
+
+
+### 🐛 Bug Fixes
+
+* widen flag return types ([#142](https://github.com/spotify/confidence-sdk-js/issues/142)) ([6554e8c](https://github.com/spotify/confidence-sdk-js/commit/6554e8c83c6c49103f11fbdcf3f53c5576870788))
+
+
+### ✨ New Features
+
+* confidence flag api ([#141](https://github.com/spotify/confidence-sdk-js/issues/141)) ([3583415](https://github.com/spotify/confidence-sdk-js/commit/3583415957915a4d181316b66e5549071836799f))
+
 ## [0.2.3](https://github.com/spotify/confidence-openfeature-provider-js/compare/openfeature-server-provider-v0.2.2-rc.0...openfeature-server-provider-v0.2.3) (2024-05-03)
 
 
