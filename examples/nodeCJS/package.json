@@ -8,8 +8,8 @@
   "dependencies": {
     "@openfeature/core": "^1.1.0",
     "@openfeature/server-sdk": "^1.13.5",
-    "@spotify-confidence/openfeature-server-provider": "0.2.4",
-    "@spotify-confidence/sdk": "0.0.6"
+    "@spotify-confidence/openfeature-server-provider": "0.2.5",
+    "@spotify-confidence/sdk": "0.0.7"
   },
   "scripts": {
     "dev": "node src/index.js"
