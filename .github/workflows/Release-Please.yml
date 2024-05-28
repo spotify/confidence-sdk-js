@@ -40,7 +40,6 @@ jobs:
         uses: actions/setup-node@v4
         with:
           node-version: ${{ matrix.node-version }}
-          scope: '@spotify-confidence'
           registry-url: 'https://registry.npmjs.org'
       - name: Install dependencies
         shell: bash
@@ -50,6 +49,8 @@ jobs:
         run: yarn bundle
       - name: Publish to NPM
         shell: bash
-        run: yarn publish-if-missing
         env:
-          NODE_AUTH_TOKEN: ${{secrets.NPM_TOKEN}}
+          NPM_TOKEN: ${{secrets.NPM_TOKEN}}
+        run: |
+          echo "npmRegistries:\n  \"https://registry.npmjs.org\":\n    npmAuthToken: $NPM_TOKEN" >> .yarnrc.yml
+          yarn publish-if-missing
