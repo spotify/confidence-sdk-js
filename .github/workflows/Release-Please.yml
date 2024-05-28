@@ -37,10 +37,10 @@ jobs:
         with:
           ref: ${{ needs.release-please.outputs.release_tag_name }}
       - name: Setup Node
-        uses: actions/setup-node@v3
+        uses: actions/setup-node@v4
         with:
           node-version: ${{ matrix.node-version }}
-          scope: '@spotify-confidence'
+          registry-url: 'https://registry.npmjs.org'
       - name: Install dependencies
         shell: bash
         run: corepack enable && yarn install
@@ -52,7 +52,5 @@ jobs:
         env:
           NPM_TOKEN: ${{secrets.NPM_TOKEN}}
         run: |
-          echo "@spotify-confidence:registry=https://registry.npmjs.org/" > .npmrc
-          echo "registry=https://registry.npmjs.org/" >> .npmrc
-          echo "//registry.npmjs.org/:_authToken=\${NPM_TOKEN}" >> .npmrc
+          echo "npmRegistries:\n  \"https://registry.npmjs.org\":\n    npmAuthToken: $NPM_TOKEN" >> .yarnrc.yml
           yarn publish-if-missing
