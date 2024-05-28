@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.0.7](https://github.com/spotify/confidence-sdk-js/compare/sdk-v0.0.6...sdk-v0.0.7) (2024-05-28)
+
+
+### 🐛 Bug Fixes
+
+* npm deployment ([#146](https://github.com/spotify/confidence-sdk-js/issues/146)) ([0c93173](https://github.com/spotify/confidence-sdk-js/commit/0c931732a8c8df4b73d5e7a5b3bcda21684cb441))
+
 ## [0.0.6](https://github.com/spotify/confidence-sdk-js/compare/sdk-v0.0.5...sdk-v0.0.6) (2024-05-27)
 
 

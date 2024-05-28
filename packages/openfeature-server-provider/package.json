@@ -1,7 +1,7 @@
 {
   "name": "@spotify-confidence/openfeature-server-provider",
   "license": "Apache-2.0",
-  "version": "0.2.4",
+  "version": "0.2.5",
   "type": "module",
   "types": "build/types/index.d.ts",
   "devDependencies": {

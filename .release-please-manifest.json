@@ -1,5 +1,5 @@
 {
-  "packages/openfeature-server-provider": "0.2.4",
-  "packages/openfeature-web-provider": "0.2.4",
-  "packages/sdk": "0.0.6"
+  "packages/openfeature-server-provider": "0.2.5",
+  "packages/openfeature-web-provider": "0.2.5",
+  "packages/sdk": "0.0.7"
 }
