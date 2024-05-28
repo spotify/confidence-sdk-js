@@ -22,6 +22,7 @@ module.exports = defineConfig({
       workspace.set('scripts.build', 'tsc');
       workspace.set('scripts.bundle', 'rollup -c && api-extractor run');
       workspace.set('publishConfig', {
+        registry: 'https://registry.npmjs.org/',
         access: 'public',
         types: 'dist/index.d.ts',
         main: 'dist/index.js',
