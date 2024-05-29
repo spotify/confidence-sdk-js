@@ -16,7 +16,7 @@ export function pageViews(): Trackable.Manager {
       },
     });
 
-    return Closer.combine(
+    const listeners = [
       spyOn(history, 'pushState', () => {
         pageChanged({ type: 'pushstate' });
       }),
@@ -28,9 +28,16 @@ export function pageViews(): Trackable.Manager {
       listenOn(window, 'popstate', pageChanged),
 
       listenOn(window, 'hashchange', pageChanged),
+    ];
 
-      listenOn(window, 'load', pageChanged),
-    );
+    // if document is already loaded, call pageChanged otherwise listen for load event
+    if (document.readyState === 'complete') {
+      pageChanged({ type: 'load' });
+    } else {
+      listeners.push(listenOn(window, 'load', pageChanged));
+    }
+
+    return Closer.combine(...listeners);
 
     function pageChanged({ type }: { type: string }) {
       controller.setContext({
