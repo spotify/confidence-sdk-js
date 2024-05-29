@@ -29,7 +29,7 @@ export class ConfidenceServerProvider implements Provider {
     defaultValue: T,
     context: EvaluationContext,
   ): Promise<ResolutionDetails<T>> {
-    const evaluation = await this.confidence.withContext(convertContext(context)).evaluateFlag(flagKey, defaultValue);
+    const evaluation = await this.confidence.withContext(convertContext(context)).getFlag(flagKey, defaultValue);
 
     if (evaluation.reason === 'ERROR') {
       const { errorCode, ...rest } = evaluation;

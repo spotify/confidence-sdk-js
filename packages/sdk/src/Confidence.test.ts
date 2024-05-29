@@ -3,7 +3,7 @@ import { Closer } from './Closer';
 import { Confidence } from './Confidence';
 import { EventSenderEngine } from './EventSenderEngine';
 import { FlagResolution } from './FlagResolution';
-import { FlagResolverClient } from './FlagResolverClient';
+import { FlagResolverClient, PendingResolution } from './FlagResolverClient';
 import { FlagEvaluation, State, StateObserver } from './flags';
 
 const flagResolverClientMock: jest.Mocked<FlagResolverClient> = {
@@ -31,7 +31,7 @@ describe('Confidence', () => {
       flagResolverClient: flagResolverClientMock,
     });
     flagResolverClientMock.resolve.mockImplementation((context, _flags) => {
-      const flagResolution = new Promise<FlagResolution>((resolve, _reject) => {
+      const flagResolution = new Promise<FlagResolution>(resolve => {
         setTimeout(() => {
           resolve({
             context: context,
@@ -295,8 +295,7 @@ describe('Confidence', () => {
     });
   });
 
-  // TODO this currently goes OOM :\
-  describe.skip('evaluateFlag', () => {
+  describe('evaluateFlag', () => {
     it('should return an evaluation for a flag when awaiting', async () => {
       const result = await confidence.evaluateFlag('flag1', 'default');
       expect(flagResolverClientMock.resolve).toHaveBeenCalledWith({}, []);
@@ -358,6 +357,24 @@ describe('Confidence', () => {
         variant: 'mockVariant',
       });
       expect(flagResolverClientMock.resolve).toHaveBeenCalledTimes(1);
+    });
+
+    it('should handle a synchronously resolved promise', async () => {
+      const mockFlagResolution: FlagResolution = {
+        context: {},
+        evaluate: jest.fn().mockImplementation(() => matchedEvaluation),
+      };
+      const mockPendingResolution: PendingResolution = Object.assign(AccessiblePromise.resolve(mockFlagResolution), {
+        context: {},
+        abort: abortMock,
+      });
+      flagResolverClientMock.resolve.mockReturnValueOnce(mockPendingResolution);
+      const result = confidence.evaluateFlag('flag1', 'default');
+      expect(await result).toEqual({
+        reason: 'MATCH',
+        value: 'mockValue',
+        variant: 'mockVariant',
+      });
     });
   });
 });

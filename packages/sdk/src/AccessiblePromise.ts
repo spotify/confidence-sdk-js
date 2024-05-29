@@ -106,7 +106,7 @@ export class AccessiblePromise<T> implements AccessiblePromise<T> {
     return this.orSupply(() => value);
   }
 
-  static resolve<T>(value: T | PromiseLike<T>): AccessiblePromise<T> {
+  static resolve<T = void>(value?: T | PromiseLike<T>): AccessiblePromise<T> {
     return new AccessiblePromise(value);
   }
 

@@ -37,8 +37,8 @@ export type Applier = (flagName: string) => void;
 
 export class FlagResolutionImpl implements FlagResolution {
   private readonly flags: Map<string, ResolvedFlag> = new Map();
-  private readonly cachedEvaluations: Map<string, [defaultValue: any, evaluation: FlagEvaluation.Resolved<any>]> =
-    new Map();
+  // private readonly cachedEvaluations: Map<string, [defaultValue: any, evaluation: FlagEvaluation.Resolved<any>]> =
+  //   new Map();
   readonly resolveToken: string;
 
   constructor(
@@ -107,13 +107,14 @@ export class FlagResolutionImpl implements FlagResolution {
     }
   }
   evaluate<T extends Value>(path: string, defaultValue: T): FlagEvaluation.Resolved<T> {
-    let entry = this.cachedEvaluations.get(path);
-    if (!entry || !Value.equal(entry[0], defaultValue)) {
-      entry = [defaultValue, this.doEvaluate(path, defaultValue)];
-      // entry[1].id = Date.now();
-      this.cachedEvaluations.set(path, entry);
-    }
-    return entry[1];
+    return this.doEvaluate(path, defaultValue);
+    // let entry = this.cachedEvaluations.get(path);
+    // if (!entry || !Value.equal(entry[0], defaultValue)) {
+    //   entry = [defaultValue, this.doEvaluate(path, defaultValue)];
+    //   // entry[1].id = Date.now();
+    //   this.cachedEvaluations.set(path, entry);
+    // }
+    // return entry[1];
   }
 
   getValue<T extends Value>(path: string, defaultValue: T): T {

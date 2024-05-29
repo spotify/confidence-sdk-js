@@ -6,7 +6,7 @@ const TestComponent = () => {
   const confidence = useConfidence({ targeting_key: 'user-a' });
   // const details = useFlagEvaluation('web-sdk-e2e-flag.str', 'default');
   // const details = confidence.evaluateFlag('web-sdk-e2e-flag.str', 'default');
-  const details = confidence.getFlag('web-sdk-e2e-flag.str', 'default').orSuspend();
+  const details = confidence.getFlag('web-sdk-e2e-flag.str', 'default');
   // const details = useFlagValue('web-sdk-e2e-flag.str', 'default');
   return (
     <>
@@ -23,7 +23,13 @@ const TestComponent = () => {
       </button>
       <button
         onClick={() => {
-          confidence.setContext({ targeting_key: `user-${Math.random()}` });
+          let { targeting_key } = confidence.getContext();
+          if (targeting_key === 'user_a') {
+            targeting_key = 'user_b';
+          } else {
+            targeting_key = 'user_a';
+          }
+          confidence.setContext({ targeting_key });
         }}
       >
         Randomise Context

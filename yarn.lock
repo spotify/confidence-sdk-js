@@ -3645,9 +3645,11 @@ __metadata:
   resolution: "@spotify-confidence/react-helpers@workspace:packages/react-helpers"
   dependencies:
     "@microsoft/api-extractor": "npm:*"
+    "@spotify-confidence/sdk": "npm:0.0.5"
     react: "npm:^18.2.0"
     rollup: "npm:*"
   peerDependencies:
+    "@spotify-confidence/sdk": 0.0.5
     react: ^18.2.0
   languageName: unknown
   linkType: soft

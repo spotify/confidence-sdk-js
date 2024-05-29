@@ -77,7 +77,7 @@ export class ConfidenceWebProvider implements Provider {
   }
 
   private evaluateFlag<T extends Value>(flagKey: string, defaultValue: T): ResolutionDetails<T> {
-    const evaluation = this.confidence.evaluateFlag(flagKey, defaultValue);
+    const evaluation = this.confidence.getFlag(flagKey, defaultValue);
     if (evaluation.reason === 'ERROR') {
       const { errorCode, ...rest } = evaluation;
       return {

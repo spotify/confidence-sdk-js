@@ -25,13 +25,9 @@ export class Confidence implements EventSender, Trackable, FlagResolver {
     // (undocumented)
     get environment(): string;
     // (undocumented)
-    evaluateFlag<T extends Value>(path: string, defaultValue: T): FlagEvaluation<T>;
-    // (undocumented)
     getContext(): Context;
-    // Warning: (ae-forgotten-export) The symbol "AccessiblePromise" needs to be exported by the entry point index.d.ts
-    //
     // (undocumented)
-    getFlag<T extends Value>(path: string, defaultValue: T): AccessiblePromise<T>;
+    getFlag<T extends Value>(path: string, defaultValue: T): FlagEvaluation<T>;
     // (undocumented)
     setContext(context: Context): void;
     // (undocumented)
@@ -53,7 +49,7 @@ export interface ConfidenceOptions {
     // (undocumented)
     clientSecret: string;
     // (undocumented)
-    environment: 'client' | 'backend';
+    environment: 'client' | 'backend' | 'react';
     // Warning: (ae-forgotten-export) The symbol "SimpleFetch" needs to be exported by the entry point index.d.ts
     //
     // (undocumented)
@@ -160,9 +156,7 @@ export interface FlagResolver extends Contextual<FlagResolver> {
         timeout: number;
     };
     // (undocumented)
-    evaluateFlag<T extends Value>(path: string, defaultValue: T): FlagEvaluation<T>;
-    // (undocumented)
-    getFlag<T extends Value>(path: string, defaultValue: T): AccessiblePromise<T>;
+    getFlag<T extends Value>(path: string, defaultValue: T): FlagEvaluation<T>;
     // (undocumented)
     subscribe(onStateChange?: StateObserver): () => void;
 }

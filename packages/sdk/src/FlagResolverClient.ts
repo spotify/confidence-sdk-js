@@ -49,7 +49,7 @@ export class FetchingFlagResolverClient implements FlagResolverClient {
     region,
   }: FlagResolverClientOptions) {
     // TODO think about both resolve and apply request logic for backends
-    this.fetchImplementation = environment === 'client' ? withRequestLogic(fetchImplementation) : fetchImplementation;
+    this.fetchImplementation = environment === 'backend' ? fetchImplementation : withRequestLogic(fetchImplementation);
     this.clientSecret = clientSecret;
     this.sdk = sdk;
     this.applyTimeout = applyTimeout;
@@ -152,7 +152,7 @@ export class FetchingFlagResolverClient implements FlagResolverClient {
 }
 
 export class CachingFlagResolverClient implements FlagResolverClient {
-  readonly #cache: Map<string, { timestamp: number; value: PendingResolution }> = new Map();
+  readonly #cache: Map<string, { timestamp: number; value: PendingResolution; refCount: number }> = new Map();
   readonly #source: FlagResolverClient;
   readonly #ttl: number;
 
@@ -163,22 +163,24 @@ export class CachingFlagResolverClient implements FlagResolverClient {
 
   resolve(context: Context, flags: string[]): PendingResolution {
     this.evict();
-    const key = this.makeKey(context);
+    const key = Value.serialize(context);
     let entry = this.#cache.get(key);
     if (!entry) {
-      entry = {
-        timestamp: Date.now(),
-        value: this.#source.resolve(context, flags),
-      };
+      const value = this.#source.resolve(context, flags);
+      entry = { refCount: 1, timestamp: Date.now(), value };
+      // TODO This patching is too hacky
+      patch(value, 'abort', abort => () => {
+        entry!.refCount--;
+        if (entry!.refCount === 0) {
+          abort();
+          this.#cache.delete(key);
+        }
+      });
       this.#cache.set(key, entry);
+    } else {
+      entry.refCount++;
     }
     return entry.value;
-  }
-
-  makeKey(value: Value): string {
-    const buffer: string[] = [];
-    serializeValue(value, s => buffer.push(s));
-    return buffer.join('');
   }
 
   evict() {
@@ -224,37 +226,9 @@ export function withRequestLogic(fetchImplementation: (request: Request) => Prom
   );
 }
 
-// 8 byte buffer for encoding one float64
-const numberBuffer = new Uint16Array(4);
-function serializeValue(value: Value, sink: (value: string) => void) {
-  switch (typeof value) {
-    case 'string':
-      sink(String.fromCharCode(0, value.length));
-      sink(value);
-      break;
-    case 'number':
-      new DataView(numberBuffer.buffer).setFloat64(0, value);
-      sink(String.fromCharCode(1, ...numberBuffer));
-      break;
-    case 'boolean':
-      sink(String.fromCharCode(value ? 2 : 3));
-      break;
-    case 'object':
-      if (Value.isList(value)) {
-        sink(String.fromCharCode(4, value.length));
-        value.forEach(item => serializeValue(item, sink));
-      } else if (Value.isStruct(value)) {
-        const keys = Object.keys(value).filter(key => typeof value[key] !== 'undefined');
-        keys.sort();
-        sink(String.fromCharCode(5, keys.length));
-        for (const key of keys) {
-          sink(String.fromCharCode(key.length));
-          sink(key);
-          serializeValue(value[key], sink);
-        }
-      }
-      break;
-    default:
-      throw new Error(`Unknown value: ${value}`);
-  }
+function patch<T, K extends keyof T>(obj: T, key: K, fn: (original: T[K]) => T[K]): T {
+  // @ts-ignore
+  const original = obj[key].bind(obj);
+  obj[key] = fn(original);
+  return obj;
 }

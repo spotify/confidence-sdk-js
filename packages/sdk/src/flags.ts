@@ -1,5 +1,5 @@
 import { Contextual } from '.';
-import { AccessiblePromise } from './AccessiblePromise';
+// import { AccessiblePromise } from './AccessiblePromise';
 import { Value } from './Value';
 
 export namespace FlagEvaluation {
@@ -41,6 +41,5 @@ export interface FlagResolver extends Contextual<FlagResolver> {
 
   subscribe(onStateChange?: StateObserver): () => void;
 
-  evaluateFlag<T extends Value>(path: string, defaultValue: T): FlagEvaluation<T>;
-  getFlag<T extends Value>(path: string, defaultValue: T): AccessiblePromise<T>;
+  getFlag<T extends Value>(path: string, defaultValue: T): FlagEvaluation<T>;
 }

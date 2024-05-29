@@ -31,8 +31,9 @@ export const useConfidence = (withContext?: Context): Confidence => {
   );
   useEffect(
     () =>
-      child.subscribe(state => {
-        if (state === 'READY') rerender(value => value + 1);
+      child.subscribe(_state => {
+        if (_state === 'READY') rerender(value => value + 1);
+        // rerender(value => value + 1);
       }),
     [child],
   );
@@ -45,12 +46,12 @@ export function useFlagValue<T extends Value>(path: string, defaultValue: T): T 
 
 export function useFlagEvaluation<T extends Value>(path: string, defaultValue: T): FlagEvaluation<T> {
   const confidence = useConfidence();
-  const [evaluation, setEvaluation] = useState(() => confidence.evaluateFlag(path, defaultValue));
+  const [evaluation, setEvaluation] = useState(() => confidence.getFlag(path, defaultValue));
   useEffect(
     () =>
       confidence.subscribe(state => {
         console.log(state);
-        setEvaluation(confidence.evaluateFlag(path, defaultValue));
+        setEvaluation(confidence.getFlag(path, defaultValue));
       }),
     [confidence, path, defaultValue],
   );

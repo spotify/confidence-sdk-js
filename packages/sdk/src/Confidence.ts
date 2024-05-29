@@ -1,8 +1,8 @@
 import {
-  FlagResolverClient,
-  FetchingFlagResolverClient,
-  PendingResolution,
   CachingFlagResolverClient,
+  FetchingFlagResolverClient,
+  FlagResolverClient,
+  PendingResolution,
 } from './FlagResolverClient';
 import { EventSenderEngine } from './EventSenderEngine';
 import { Value } from './Value';
@@ -24,14 +24,14 @@ export interface ConfidenceOptions {
   clientSecret: string;
   region?: 'eu' | 'us';
   resolveUrl?: string;
-  environment: 'client' | 'backend';
+  environment: 'client' | 'backend' | 'react';
   fetchImplementation?: SimpleFetch;
   timeout: number;
   logger?: Logger;
 }
 
 interface Configuration {
-  readonly environment: 'client' | 'backend';
+  readonly environment: 'client' | 'backend' | 'react';
   readonly logger: Logger;
   readonly timeout: number;
   /** @internal */
@@ -40,17 +40,6 @@ interface Configuration {
   readonly flagResolverClient: FlagResolverClient;
 }
 
-const notReadyResolution: FlagResolution = {
-  context: {},
-  evaluate: function <T extends Value>(_path: string, defaultValue: T): FlagEvaluation.Resolved<T> {
-    return {
-      reason: 'ERROR',
-      errorCode: 'NOT_READY',
-      errorMessage: 'Flags are not yet ready',
-      value: defaultValue,
-    };
-  },
-};
 export class Confidence implements EventSender, Trackable, FlagResolver {
   readonly config: Configuration;
   private readonly parent?: Confidence;
@@ -85,11 +74,12 @@ export class Confidence implements EventSender, Trackable, FlagResolver {
 
     this.flagStateSubject = subject(observer => {
       const reportState = () => observer(this.flagState);
-      this.resolveFlags().then(reportState);
-
-      const close = this.contextChanges(() => {
+      if (!this.currentFlags || !Value.equal(this.currentFlags.context, this.getContext())) {
         this.resolveFlags().then(reportState);
-        reportState();
+      }
+      const close = this.contextChanges(() => {
+        if (this.flagState === 'READY') observer('STALE');
+        this.resolveFlags().then(reportState);
       });
 
       return () => {
@@ -160,6 +150,7 @@ export class Confidence implements EventSender, Trackable, FlagResolver {
   withContext(context: Context): Confidence {
     const child = new Confidence(this.config, this);
     child.setContext(context);
+    child.resolveFlags();
     return child;
   }
 
@@ -173,42 +164,34 @@ export class Confidence implements EventSender, Trackable, FlagResolver {
     return undefined;
   }
 
-  private resolveFlags(): PromiseLike<void> {
+  private resolveFlags(): AccessiblePromise<void> {
     const context = this.getContext();
 
     if (!this.pendingFlags || !Value.equal(this.pendingFlags.context, context)) {
-      // this.pendingFlags?.abort(new Error('Context changed'));
-      const myPending = (this.pendingFlags = this.config.flagResolverClient.resolve(context, []));
+      this.pendingFlags?.abort(new Error('Context changed'));
+      this.pendingFlags = this.config.flagResolverClient.resolve(context, []);
       this.pendingFlags
         .then(resolution => {
-          if (this.pendingFlags === myPending) {
-            this.currentFlags = resolution;
-            this.config.logger.debug?.('Confidence: resolved %o', resolution);
-          }
+          this.currentFlags = resolution;
         })
         .catch(e => {
           // TODO fix sloppy handling of error
           if (e.message !== 'Context changed') {
             this.config.logger.info?.('Resolve failed.', e);
           }
+        })
+        .finally(() => {
+          this.pendingFlags = undefined;
         });
-      // .finally(() => {
-      //   this.pendingFlags = undefined;
-      // });
     }
-    return this.pendingFlags.then(NOOP, NOOP);
+    // pendingFlags might resolve synchronously, in which case it's already removed and we can return a resolved promise
+    return this.pendingFlags?.then(NOOP, NOOP) ?? AccessiblePromise.resolve();
   }
 
   private get flagState(): State {
-    if (this.currentFlags && this.pendingFlags) {
-      switch (this.pendingFlags.state) {
-        case 'PENDING':
-          return 'STALE';
-        case 'RESOLVED':
-          return 'READY';
-        case 'REJECTED':
-          return 'ERROR';
-      }
+    if (this.currentFlags) {
+      if (this.pendingFlags) return 'STALE';
+      return 'READY';
     }
     return 'NOT_READY';
   }
@@ -236,24 +219,31 @@ export class Confidence implements EventSender, Trackable, FlagResolver {
     }).finally(close!);
   }
 
-  evaluateFlag<T extends Value>(path: string, defaultValue: T): FlagEvaluation<T> {
-    if (!this.pendingFlags) this.resolveFlags();
-    let pending = this.pendingFlags!;
-
-    const evaluation = pending.or(this.currentFlags ?? notReadyResolution).evaluate(path, defaultValue);
-
-    if (pending.state === 'PENDING') {
+  getFlag<T extends Value>(path: string, defaultValue: T): FlagEvaluation<T> {
+    let evaluation: FlagEvaluation<T>;
+    // resolveFlags might update state synchronously
+    if (!this.currentFlags && !this.pendingFlags) this.resolveFlags();
+    if (!this.currentFlags) {
+      evaluation = {
+        reason: 'ERROR',
+        errorCode: 'NOT_READY',
+        errorMessage: 'Flags are not yet ready',
+        value: defaultValue,
+      };
+    } else {
+      evaluation = this.currentFlags.evaluate(path, defaultValue);
+    }
+    if (!this.currentFlags || !Value.equal(this.currentFlags.context, this.getContext())) {
       const then: PromiseLike<FlagEvaluation.Resolved<T>>['then'] = (onfulfilled?, onrejected?) =>
         this.evaluateFlagAsync(path, defaultValue).then(onfulfilled, onrejected);
-      return Object.assign(evaluation, { then });
+      const staleEvaluation = {
+        ...evaluation,
+        then,
+      };
+      if (this.environment === 'react') throw staleEvaluation;
+      return staleEvaluation;
     }
     return evaluation;
-  }
-
-  getFlag<T extends Value>(path: string, defaultValue: T): AccessiblePromise<T> {
-    if (!this.pendingFlags) this.resolveFlags();
-    return this.pendingFlags!.then(flags => flags.evaluate(path, defaultValue).value);
-    // return AccessiblePromise.resolve(this.evaluateFlag(path, defaultValue)).then(evaluation => evaluation.value);
   }
 
   static create({
@@ -272,10 +262,10 @@ export class Confidence implements EventSender, Trackable, FlagResolver {
       clientSecret,
       fetchImplementation,
       sdk,
-      environment,
+      environment: environment === 'react' ? 'client' : environment,
       region,
     });
-    if (environment === 'client') {
+    if (['react', 'client'].includes(environment)) {
       flagResolverClient = new CachingFlagResolverClient(flagResolverClient, 30_000);
     }
     const estEventSizeKb = 1;
