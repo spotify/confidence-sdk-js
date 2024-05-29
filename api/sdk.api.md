@@ -12,8 +12,6 @@ export class Confidence implements EventSender, Trackable, FlagResolver {
     constructor(config: Configuration, parent?: Confidence);
     // (undocumented)
     clearContext(): void;
-    // Warning: (ae-forgotten-export) The symbol "Configuration" needs to be exported by the entry point index.d.ts
-    //
     // (undocumented)
     readonly config: Configuration;
     // Warning: (ae-forgotten-export) The symbol "Subscribe" needs to be exported by the entry point index.d.ts
@@ -28,8 +26,12 @@ export class Confidence implements EventSender, Trackable, FlagResolver {
     getContext(): Context;
     // (undocumented)
     getFlag<T extends Value>(path: string, defaultValue: T): FlagEvaluation<T>;
+    // Warning: (ae-forgotten-export) The symbol "AccessiblePromise" needs to be exported by the entry point index.d.ts
+    //
     // (undocumented)
-    setContext(context: Context): void;
+    protected resolveFlags(): AccessiblePromise<void>;
+    // (undocumented)
+    setContext(context: Context): boolean;
     // (undocumented)
     subscribe(onStateChange?: StateObserver): () => void;
     // (undocumented)
@@ -49,7 +51,7 @@ export interface ConfidenceOptions {
     // (undocumented)
     clientSecret: string;
     // (undocumented)
-    environment: 'client' | 'backend' | 'react';
+    environment: 'client' | 'backend';
     // Warning: (ae-forgotten-export) The symbol "SimpleFetch" needs to be exported by the entry point index.d.ts
     //
     // (undocumented)
@@ -64,6 +66,26 @@ export interface ConfidenceOptions {
     resolveUrl?: string;
     // (undocumented)
     timeout: number;
+}
+
+// Warning: (ae-missing-release-tag) "Configuration" is part of the package's API, but it is missing a release tag (@alpha, @beta, @public, or @internal)
+//
+// @public (undocumented)
+export interface Configuration {
+    // (undocumented)
+    readonly environment: 'client' | 'backend';
+    // Warning: (ae-forgotten-export) The symbol "EventSenderEngine" needs to be exported by the entry point index.d.ts
+    //
+    // @internal (undocumented)
+    readonly eventSenderEngine: EventSenderEngine;
+    // Warning: (ae-forgotten-export) The symbol "FlagResolverClient" needs to be exported by the entry point index.d.ts
+    //
+    // @internal (undocumented)
+    readonly flagResolverClient: FlagResolverClient;
+    // (undocumented)
+    readonly logger: Logger;
+    // (undocumented)
+    readonly timeout: number;
 }
 
 // Warning: (ae-missing-release-tag) "Context" is part of the package's API, but it is missing a release tag (@alpha, @beta, @public, or @internal)

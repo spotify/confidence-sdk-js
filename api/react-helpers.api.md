@@ -21,7 +21,7 @@ export const ConfidenceProvider: FC<PropsWithChildren<{
 // Warning: (ae-missing-release-tag) "useConfidence" is part of the package's API, but it is missing a release tag (@alpha, @beta, @public, or @internal)
 //
 // @public (undocumented)
-export const useConfidence: (withContext?: Context) => Confidence;
+export const useConfidence: () => Confidence;
 
 // Warning: (ae-missing-release-tag) "useFlagEvaluation" is part of the package's API, but it is missing a release tag (@alpha, @beta, @public, or @internal)
 //

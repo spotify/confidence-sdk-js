@@ -24,14 +24,14 @@ export interface ConfidenceOptions {
   clientSecret: string;
   region?: 'eu' | 'us';
   resolveUrl?: string;
-  environment: 'client' | 'backend' | 'react';
+  environment: 'client' | 'backend';
   fetchImplementation?: SimpleFetch;
   timeout: number;
   logger?: Logger;
 }
 
-interface Configuration {
-  readonly environment: 'client' | 'backend' | 'react';
+export interface Configuration {
+  readonly environment: 'client' | 'backend';
   readonly logger: Logger;
   readonly timeout: number;
   /** @internal */
@@ -123,7 +123,7 @@ export class Confidence implements EventSender, Trackable, FlagResolver {
     return Object.freeze(context);
   }
 
-  setContext(context: Context): void {
+  setContext(context: Context): boolean {
     const current = this.getContext();
     const changedKeys: string[] = [];
     for (const key of Object.keys(context)) {
@@ -134,6 +134,7 @@ export class Confidence implements EventSender, Trackable, FlagResolver {
     if (this.contextChanged && changedKeys.length > 0) {
       this.contextChanged(changedKeys);
     }
+    return changedKeys.length > 0;
   }
 
   clearContext(): void {
@@ -150,7 +151,7 @@ export class Confidence implements EventSender, Trackable, FlagResolver {
   withContext(context: Context): Confidence {
     const child = new Confidence(this.config, this);
     child.setContext(context);
-    child.resolveFlags();
+    // child.resolveFlags();
     return child;
   }
 
@@ -164,7 +165,7 @@ export class Confidence implements EventSender, Trackable, FlagResolver {
     return undefined;
   }
 
-  private resolveFlags(): AccessiblePromise<void> {
+  protected resolveFlags(): AccessiblePromise<void> {
     const context = this.getContext();
 
     if (!this.pendingFlags || !Value.equal(this.pendingFlags.context, context)) {
@@ -240,7 +241,7 @@ export class Confidence implements EventSender, Trackable, FlagResolver {
         ...evaluation,
         then,
       };
-      if (this.environment === 'react') throw staleEvaluation;
+      // if (this.environment === 'react') throw staleEvaluation;
       return staleEvaluation;
     }
     return evaluation;
@@ -262,11 +263,11 @@ export class Confidence implements EventSender, Trackable, FlagResolver {
       clientSecret,
       fetchImplementation,
       sdk,
-      environment: environment === 'react' ? 'client' : environment,
+      environment,
       region,
     });
-    if (['react', 'client'].includes(environment)) {
-      flagResolverClient = new CachingFlagResolverClient(flagResolverClient, 30_000);
+    if (environment === 'client') {
+      flagResolverClient = new CachingFlagResolverClient(flagResolverClient, 3000_000);
     }
     const estEventSizeKb = 1;
     const flushTimeoutMilliseconds = 500;

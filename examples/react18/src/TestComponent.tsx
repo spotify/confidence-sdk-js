@@ -1,13 +1,16 @@
 import { useConfidence, useFlagEvaluation, useFlagValue } from '@spotify-confidence/react-helpers';
-import { useState } from 'react';
+import { createContext, useContext, useState } from 'react';
+
+const fakeContext = createContext(undefined);
 
 const TestComponent = () => {
   const [clickCount, setClickCount] = useState(0);
-  const confidence = useConfidence({ targeting_key: 'user-a' });
+  const confidence = useConfidence().withContext({ targeting_key: 'user-a' });
   // const details = useFlagEvaluation('web-sdk-e2e-flag.str', 'default');
   // const details = confidence.evaluateFlag('web-sdk-e2e-flag.str', 'default');
   const details = confidence.getFlag('web-sdk-e2e-flag.str', 'default');
   // const details = useFlagValue('web-sdk-e2e-flag.str', 'default');
+  console.log(isRendering());
   return (
     <>
       <p>The flag is: </p>
@@ -24,10 +27,11 @@ const TestComponent = () => {
       <button
         onClick={() => {
           let { targeting_key } = confidence.getContext();
-          if (targeting_key === 'user_a') {
-            targeting_key = 'user_b';
+          console.log('got targeting  key:', targeting_key);
+          if (targeting_key === 'user-a') {
+            targeting_key = 'user-b';
           } else {
-            targeting_key = 'user_a';
+            targeting_key = 'user-a';
           }
           confidence.setContext({ targeting_key });
         }}
@@ -39,3 +43,13 @@ const TestComponent = () => {
 };
 
 export default TestComponent;
+
+function isRendering(): boolean {
+  try {
+    // eslint-disable-next-line
+    useContext(fakeContext);
+    return true;
+  } catch (e) {
+    return false;
+  }
+}

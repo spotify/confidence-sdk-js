@@ -6,7 +6,7 @@ import { ConfidenceProvider } from '@spotify-confidence/react-helpers';
 const confidence = Confidence.create({
   clientSecret: 'RxDVTrXvc6op1XxiQ4OaR31dKbJ39aYV',
   region: 'eu',
-  environment: 'react',
+  environment: 'client',
   timeout: 1000,
   logger: console,
 });
