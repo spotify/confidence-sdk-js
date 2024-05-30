@@ -65,16 +65,6 @@ export class ConfidenceReact implements EventSender, Trackable, FlagResolver {
 // @public (undocumented)
 export const useConfidence: () => ConfidenceReact;
 
-// Warning: (ae-missing-release-tag) "useFlagEvaluation" is part of the package's API, but it is missing a release tag (@alpha, @beta, @public, or @internal)
-//
-// @public (undocumented)
-export function useFlagEvaluation<T extends Value>(path: string, defaultValue: T): FlagEvaluation<T>;
-
-// Warning: (ae-missing-release-tag) "useFlagValue" is part of the package's API, but it is missing a release tag (@alpha, @beta, @public, or @internal)
-//
-// @public (undocumented)
-export function useFlagValue<T extends Value>(path: string, defaultValue: T): T;
-
 // (No @packageDocumentation comment for this package)
 
 ```

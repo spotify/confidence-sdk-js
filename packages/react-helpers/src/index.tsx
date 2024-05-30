@@ -15,15 +15,15 @@ import React, { createContext, FC, PropsWithChildren, useContext, useEffect, use
 
 const ConfidenceContext = createContext<ConfidenceReact | null>(null);
 
-function isRendering(): boolean {
-  try {
-    // eslint-disable-next-line
-    useContext(ConfidenceContext);
-    return true;
-  } catch (e) {
-    return false;
-  }
-}
+// function isRendering(): boolean {
+//   try {
+//     // eslint-disable-next-line
+//     useContext(ConfidenceContext);
+//     return true;
+//   } catch (e) {
+//     return false;
+//   }
+// }
 
 export class ConfidenceReact implements EventSender, Trackable, FlagResolver {
   #delegate: Confidence;
@@ -54,14 +54,15 @@ export class ConfidenceReact implements EventSender, Trackable, FlagResolver {
   }
 
   useWithContext(context: Context): ConfidenceReact {
-    const child = useMemo(() => this.withContext(context), [parent, context]);
+    const child = useMemo(() => this.withContext(context), [parent, Value.serialize(context)]);
+
     const [, setState] = useState(0);
     useEffect(
       () =>
-        child.subscribe(_state => {
-          if (_state === 'READY') setState(value => value + 1);
+        child.subscribe(state => {
+          if (state === 'READY') setState(value => value + 1);
         }),
-      [child],
+      [child, setState],
     );
     return child;
   }
@@ -75,7 +76,7 @@ export class ConfidenceReact implements EventSender, Trackable, FlagResolver {
   useFlag<T extends Value>(path: string, defaultValue: T): FlagEvaluation<T> {
     const evaluation = this.#delegate.getFlag(path, defaultValue);
     // TODO make it a setting to _enable skip throwing_ on stale value.
-    if (evaluation.reason === 'ERROR' && 'then' in evaluation && isRendering()) throw evaluation;
+    if (evaluation.reason === 'ERROR' && 'then' in evaluation) throw evaluation;
     return evaluation;
   }
   getFlag<T extends Value>(path: string, defaultValue: T): FlagEvaluation<T> {
@@ -100,37 +101,14 @@ export const useConfidence = (): ConfidenceReact => {
   const confidenceReact = useContext(ConfidenceContext);
   if (!confidenceReact)
     throw new Error('No Confidence instance found, did you forget to wrap your component in ConfidenceProvider?');
-  const [count, setState] = useState(0);
-
-  console.log('render count:', count);
+  const [, setState] = useState(0);
 
   useEffect(
     () =>
-      confidenceReact.subscribe(_state => {
-        if (_state === 'READY') setState(value => value + 1);
+      confidenceReact.subscribe(state => {
+        if (state === 'READY') setState(value => value + 1);
       }),
-    [confidenceReact],
+    [confidenceReact, setState],
   );
   return confidenceReact;
 };
-
-export function useFlagValue<T extends Value>(path: string, defaultValue: T): T {
-  return useFlagEvaluation(path, defaultValue).value;
-}
-
-export function useFlagEvaluation<T extends Value>(path: string, defaultValue: T): FlagEvaluation<T> {
-  const confidence = useConfidence();
-  const [evaluation, setEvaluation] = useState(() => confidence.getFlag(path, defaultValue));
-  useEffect(
-    () =>
-      confidence.subscribe(state => {
-        console.log(state);
-        setEvaluation(confidence.getFlag(path, defaultValue));
-      }),
-    [confidence, path, defaultValue],
-  );
-  if (evaluation.reason === 'ERROR' && 'then' in evaluation) {
-    throw Promise.resolve(evaluation);
-  }
-  return evaluation;
-}

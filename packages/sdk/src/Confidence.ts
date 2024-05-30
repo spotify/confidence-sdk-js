@@ -19,7 +19,6 @@ import { SimpleFetch } from './types';
 import { FlagResolution } from './FlagResolution';
 import { AccessiblePromise } from './AccessiblePromise';
 
-const NOOP = () => {};
 export interface ConfidenceOptions {
   clientSecret: string;
   region?: 'eu' | 'us';
@@ -167,11 +166,11 @@ export class Confidence implements EventSender, Trackable, FlagResolver {
 
   protected resolveFlags(): AccessiblePromise<void> {
     const context = this.getContext();
-
+    let donePromise: AccessiblePromise<void> | undefined;
     if (!this.pendingFlags || !Value.equal(this.pendingFlags.context, context)) {
       this.pendingFlags?.abort(new Error('Context changed'));
       this.pendingFlags = this.config.flagResolverClient.resolve(context, []);
-      this.pendingFlags
+      donePromise = this.pendingFlags
         .then(resolution => {
           this.currentFlags = resolution;
         })
@@ -186,7 +185,7 @@ export class Confidence implements EventSender, Trackable, FlagResolver {
         });
     }
     // pendingFlags might resolve synchronously, in which case it's already removed and we can return a resolved promise
-    return this.pendingFlags?.then(NOOP, NOOP) ?? AccessiblePromise.resolve();
+    return donePromise ?? AccessiblePromise.resolve();
   }
 
   private get flagState(): State {
