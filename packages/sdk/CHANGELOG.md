@@ -1,5 +1,30 @@
 # Changelog
 
+## [0.0.7](https://github.com/spotify/confidence-sdk-js/compare/sdk-v0.0.6...sdk-v0.0.7) (2024-05-28)
+
+
+### 🐛 Bug Fixes
+
+* npm deployment ([#146](https://github.com/spotify/confidence-sdk-js/issues/146)) ([0c93173](https://github.com/spotify/confidence-sdk-js/commit/0c931732a8c8df4b73d5e7a5b3bcda21684cb441))
+
+## [0.0.6](https://github.com/spotify/confidence-sdk-js/compare/sdk-v0.0.5...sdk-v0.0.6) (2024-05-27)
+
+
+### 🐛 Bug Fixes
+
+* widen flag return types ([#142](https://github.com/spotify/confidence-sdk-js/issues/142)) ([6554e8c](https://github.com/spotify/confidence-sdk-js/commit/6554e8c83c6c49103f11fbdcf3f53c5576870788))
+
+
+### ✨ New Features
+
+* confidence flag api ([#141](https://github.com/spotify/confidence-sdk-js/issues/141)) ([3583415](https://github.com/spotify/confidence-sdk-js/commit/3583415957915a4d181316b66e5549071836799f))
+* send context as a struct ([#144](https://github.com/spotify/confidence-sdk-js/issues/144)) ([2f73b3b](https://github.com/spotify/confidence-sdk-js/commit/2f73b3b519082fa58a64de3d3be957571dc72a00))
+
+
+### 📚 Documentation
+
+* update main README.md ([#134](https://github.com/spotify/confidence-sdk-js/issues/134)) ([730fceb](https://github.com/spotify/confidence-sdk-js/commit/730fcebbc87fdab7b39817ab61e1ef23951e3466))
+
 ## [0.0.5](https://github.com/spotify/confidence-openfeature-provider-js/compare/sdk-v0.0.4...sdk-v0.0.5) (2024-05-03)
 
 

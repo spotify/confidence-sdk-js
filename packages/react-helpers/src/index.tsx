@@ -73,14 +73,20 @@ export class ConfidenceReact implements EventSender, Trackable, FlagResolver {
   subscribe(onStateChange?: StateObserver | undefined): () => void {
     return this.#delegate.subscribe(onStateChange);
   }
-  useFlag<T extends Value>(path: string, defaultValue: T): FlagEvaluation<T> {
-    const evaluation = this.#delegate.getFlag(path, defaultValue);
+  useEvaluateFlag<T extends Value>(path: string, defaultValue: T): FlagEvaluation<Value.Widen<T>> {
+    const evaluation = this.#delegate.evaluateFlag(path, defaultValue);
     // TODO make it a setting to _enable skip throwing_ on stale value.
     if (evaluation.reason === 'ERROR' && 'then' in evaluation) throw evaluation;
     return evaluation;
   }
-  getFlag<T extends Value>(path: string, defaultValue: T): FlagEvaluation<T> {
+  evaluateFlag<T extends Value>(path: string, defaultValue: T): FlagEvaluation<Value.Widen<T>> {
+    return this.#delegate.evaluateFlag(path, defaultValue);
+  }
+  getFlag<T extends Value>(path: string, defaultValue: T): Promise<Value.Widen<T>> {
     return this.#delegate.getFlag(path, defaultValue);
+  }
+  useFlag<T extends Value>(path: string, defaultValue: T): Value.Widen<T> {
+    return this.useEvaluateFlag(path, defaultValue).value;
   }
   clearContext(): void {
     this.#delegate.clearContext();

@@ -1,7 +1,7 @@
 import { Closer } from './Closer';
 import { Confidence } from './Confidence';
-import { Value } from './Value';
 import { Context } from './context';
+import { EventData } from './events';
 
 export namespace Trackable {
   export type Controller = Pick<Confidence, 'setContext' | 'track' | 'config'>;
@@ -21,9 +21,9 @@ export namespace Trackable {
       return this.#delegate.setContext(context);
     }
 
-    track(name: string, message?: Value.Struct): void;
+    track(name: string, data?: EventData): void;
     track(manager: Trackable.Manager): Closer;
-    track(nameOrManager: string | Trackable.Manager, message?: Value.Struct): Closer | void {
+    track(nameOrManager: string | Trackable.Manager, data?: EventData): Closer | void {
       this.assertNonRevoked();
       if (typeof nameOrManager === 'function') {
         // if the manager starts tracking something
@@ -31,7 +31,7 @@ export namespace Trackable {
         this.#childTrackers.push(closer);
         return closer;
       }
-      return this.#delegate.track(nameOrManager, message);
+      return this.#delegate.track(nameOrManager, data);
     }
     get config() {
       this.assertNonRevoked();

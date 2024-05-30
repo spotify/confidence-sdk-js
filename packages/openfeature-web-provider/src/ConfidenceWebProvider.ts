@@ -11,7 +11,7 @@ import {
 } from '@openfeature/web-sdk';
 import equal from 'fast-deep-equal';
 
-import { Value, Context, FlagResolver } from '@spotify-confidence/sdk';
+import { Value, Context, FlagResolver, FlagEvaluation } from '@spotify-confidence/sdk';
 
 type Mutable<T> = { -readonly [K in keyof T]: T[K] };
 
@@ -77,7 +77,7 @@ export class ConfidenceWebProvider implements Provider {
   }
 
   private evaluateFlag<T extends Value>(flagKey: string, defaultValue: T): ResolutionDetails<T> {
-    const evaluation = this.confidence.getFlag(flagKey, defaultValue);
+    const evaluation = this.confidence.evaluateFlag(flagKey, defaultValue) as FlagEvaluation<T>;
     if (evaluation.reason === 'ERROR') {
       const { errorCode, ...rest } = evaluation;
       return {

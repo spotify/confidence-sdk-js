@@ -2,11 +2,11 @@ function isPromiseLike(value: unknown): value is PromiseLike<unknown> {
   return typeof value === 'object' && value !== null && 'then' in value && typeof value.then === 'function';
 }
 
-export class AccessiblePromise<T> implements AccessiblePromise<T> {
+export class AccessiblePromise<T> {
   #state: 'PENDING' | 'RESOLVED' | 'REJECTED';
   #value: any;
 
-  private constructor(value: any, rejected?: boolean) {
+  protected constructor(value: any, rejected?: boolean) {
     this.#value = value;
     if (isPromiseLike(value)) {
       // both value and reason can be promise like in which case we are still pending

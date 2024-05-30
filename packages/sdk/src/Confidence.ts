@@ -6,7 +6,7 @@ import {
 } from './FlagResolverClient';
 import { EventSenderEngine } from './EventSenderEngine';
 import { Value } from './Value';
-import { EventSender } from './events';
+import { EventData, EventSender } from './events';
 import { Context } from './context';
 import { Logger } from './logger';
 import { FlagEvaluation, FlagResolver, State, StateObserver } from './flags';
@@ -49,7 +49,7 @@ export class Confidence implements EventSender, Trackable, FlagResolver {
   readonly contextChanges: Subscribe<string[]>;
 
   private currentFlags?: FlagResolution;
-  private pendingFlags?: PendingResolution;
+  private pendingFlags?: PendingResolution<void>;
 
   private readonly flagStateSubject: Subscribe<State>;
 
@@ -93,8 +93,8 @@ export class Confidence implements EventSender, Trackable, FlagResolver {
     return this.config.environment;
   }
 
-  private sendEvent(name: string, message?: Value.Struct): void {
-    this.config.eventSenderEngine.send(this.getContext(), name, message);
+  private sendEvent(name: string, data?: EventData): void {
+    this.config.eventSenderEngine.send(this.getContext(), name, data);
   }
 
   private *contextEntries(): Iterable<[key: string, value: Value]> {
@@ -154,23 +154,22 @@ export class Confidence implements EventSender, Trackable, FlagResolver {
     return child;
   }
 
-  track(name: string, message?: Value.Struct): void;
+  track(name: string, data?: EventData): void;
   track(manager: Trackable.Manager): Closer;
-  track(nameOrManager: string | Trackable.Manager, message?: Value.Struct): Closer | undefined {
+  track(nameOrManager: string | Trackable.Manager, data?: EventData): Closer | undefined {
     if (typeof nameOrManager === 'function') {
       return Trackable.setup(this, nameOrManager);
     }
-    this.sendEvent(nameOrManager, message);
+    this.sendEvent(nameOrManager, data);
     return undefined;
   }
 
   protected resolveFlags(): AccessiblePromise<void> {
     const context = this.getContext();
-    let donePromise: AccessiblePromise<void> | undefined;
     if (!this.pendingFlags || !Value.equal(this.pendingFlags.context, context)) {
-      this.pendingFlags?.abort(new Error('Context changed'));
-      this.pendingFlags = this.config.flagResolverClient.resolve(context, []);
-      donePromise = this.pendingFlags
+      this.pendingFlags?.abort();
+      this.pendingFlags = this.config.flagResolverClient
+        .resolve(context, [])
         .then(resolution => {
           this.currentFlags = resolution;
         })
@@ -185,7 +184,7 @@ export class Confidence implements EventSender, Trackable, FlagResolver {
         });
     }
     // pendingFlags might resolve synchronously, in which case it's already removed and we can return a resolved promise
-    return donePromise ?? AccessiblePromise.resolve();
+    return this.pendingFlags ?? AccessiblePromise.resolve();
   }
 
   private get flagState(): State {
@@ -219,7 +218,7 @@ export class Confidence implements EventSender, Trackable, FlagResolver {
     }).finally(close!);
   }
 
-  getFlag<T extends Value>(path: string, defaultValue: T): FlagEvaluation<T> {
+  evaluateFlag<T extends Value>(path: string, defaultValue: T): FlagEvaluation<Value.Widen<T>> {
     let evaluation: FlagEvaluation<T>;
     // resolveFlags might update state synchronously
     if (!this.currentFlags && !this.pendingFlags) this.resolveFlags();
@@ -240,10 +239,13 @@ export class Confidence implements EventSender, Trackable, FlagResolver {
         ...evaluation,
         then,
       };
-      // if (this.environment === 'react') throw staleEvaluation;
-      return staleEvaluation;
+      return staleEvaluation as FlagEvaluation<Value.Widen<T>>;
     }
-    return evaluation;
+    return evaluation as FlagEvaluation<Value.Widen<T>>;
+  }
+
+  async getFlag<T extends Value>(path: string, defaultValue: T): Promise<Value.Widen<T>> {
+    return (await this.evaluateFlag(path, defaultValue)).value;
   }
 
   static create({
@@ -256,7 +258,7 @@ export class Confidence implements EventSender, Trackable, FlagResolver {
   }: ConfidenceOptions): Confidence {
     const sdk = {
       id: SdkId.SDK_ID_JS_CONFIDENCE,
-      version: '0.0.5', // x-release-please-version
+      version: '0.0.7', // x-release-please-version
     } as const;
     let flagResolverClient: FlagResolverClient = new FetchingFlagResolverClient({
       clientSecret,

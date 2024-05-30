@@ -14,9 +14,48 @@ import { SimpleFetch } from './types';
 
 const FLAG_PREFIX = 'flags/';
 
-export interface PendingResolution extends AccessiblePromise<FlagResolution> {
-  readonly context: Value.Struct;
-  abort(reason?: any): void;
+export class PendingResolution<T = FlagResolution> extends AccessiblePromise<T> {
+  #context: Context;
+  #controller: AbortController;
+
+  protected constructor(promise: PromiseLike<T>, context: Context, controller: AbortController) {
+    super(promise);
+    this.#context = context;
+    this.#controller = controller;
+  }
+
+  get context(): Context {
+    return this.#context;
+  }
+
+  abort(): void {
+    this.#controller.abort(new Error('Resolve aborted'));
+  }
+
+  then<TResult1 = T, TResult2 = never>(
+    onfulfilled?: ((value: T) => TResult1 | PromiseLike<TResult1>) | null | undefined,
+    onrejected?: ((reason: any) => TResult2 | PromiseLike<TResult2>) | null | undefined,
+  ): PendingResolution<TResult1 | TResult2> {
+    return new PendingResolution(super.then(onfulfilled, onrejected), this.#context, this.#controller);
+  }
+
+  catch<TResult = never>(
+    onrejected?: ((reason: any) => TResult | PromiseLike<TResult>) | null | undefined,
+  ): PendingResolution<T | TResult> {
+    return new PendingResolution(super.catch(onrejected), this.#context, this.#controller);
+  }
+
+  finally(onfinally?: (() => void) | null | undefined): PendingResolution<T> {
+    return new PendingResolution(super.finally(onfinally), this.#context, this.#controller);
+  }
+
+  static create(
+    context: Context,
+    executor: (signal: AbortSignal) => PromiseLike<FlagResolution>,
+  ): PendingResolution<FlagResolution> {
+    const controller = new AbortController();
+    return new PendingResolution(executor(controller.signal), context, controller);
+  }
 }
 
 export interface FlagResolverClient {
@@ -64,15 +103,12 @@ export class FetchingFlagResolverClient implements FlagResolverClient {
       sdk: this.sdk,
       flags: flags.map(name => FLAG_PREFIX + name),
     };
-    const abortController = new AbortController();
-    const resolution = this.resolveFlagsJson(request, abortController.signal).then(response =>
-      FlagResolution.create(context, response, this.createApplier(response.resolveToken)),
-    );
 
-    return Object.assign(AccessiblePromise.resolve(resolution), {
-      context,
-      abort: (reason?: any) => abortController.abort(reason),
-    });
+    return PendingResolution.create(context, signal =>
+      this.resolveFlagsJson(request, signal).then(response =>
+        FlagResolution.create(context, response, this.createApplier(response.resolveToken)),
+      ),
+    );
   }
 
   createApplier(resolveToken: Uint8Array): Applier {

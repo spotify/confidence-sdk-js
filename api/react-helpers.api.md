@@ -42,9 +42,11 @@ export class ConfidenceReact implements EventSender, Trackable, FlagResolver {
     // (undocumented)
     get config(): Configuration;
     // (undocumented)
+    evaluateFlag<T extends Value>(path: string, defaultValue: T): FlagEvaluation<Value.Widen<T>>;
+    // (undocumented)
     getContext(): Context;
     // (undocumented)
-    getFlag<T extends Value>(path: string, defaultValue: T): FlagEvaluation<T>;
+    getFlag<T extends Value>(path: string, defaultValue: T): Promise<Value.Widen<T>>;
     // (undocumented)
     setContext(context: Context): void;
     // (undocumented)
@@ -54,7 +56,9 @@ export class ConfidenceReact implements EventSender, Trackable, FlagResolver {
     // (undocumented)
     track(manager: Trackable.Manager): Closer;
     // (undocumented)
-    useFlag<T extends Value>(path: string, defaultValue: T): FlagEvaluation<T>;
+    useEvaluateFlag<T extends Value>(path: string, defaultValue: T): FlagEvaluation<Value.Widen<T>>;
+    // (undocumented)
+    useFlag<T extends Value>(path: string, defaultValue: T): Value.Widen<T>;
     // (undocumented)
     useWithContext(context: Context): ConfidenceReact;
     // (undocumented)

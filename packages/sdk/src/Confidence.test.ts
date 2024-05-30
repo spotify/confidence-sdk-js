@@ -11,7 +11,6 @@ const flagResolverClientMock: jest.Mocked<FlagResolverClient> = {
 };
 
 const eventSenderEngineMock: jest.Mocked<EventSenderEngine> = {} as any; // TODO fix any by using an interface
-const abortMock = jest.fn();
 
 describe('Confidence', () => {
   let confidence: Confidence;
@@ -40,10 +39,7 @@ describe('Confidence', () => {
         }, 0);
       });
 
-      return Object.assign(AccessiblePromise.resolve(flagResolution), {
-        context: {},
-        abort: abortMock,
-      });
+      return PendingResolution.create({}, () => flagResolution);
     });
   });
 
@@ -364,10 +360,9 @@ describe('Confidence', () => {
         context: {},
         evaluate: jest.fn().mockImplementation(() => matchedEvaluation),
       };
-      const mockPendingResolution: PendingResolution = Object.assign(AccessiblePromise.resolve(mockFlagResolution), {
-        context: {},
-        abort: abortMock,
-      });
+      const mockPendingResolution: PendingResolution = PendingResolution.create({}, () =>
+        AccessiblePromise.resolve(mockFlagResolution),
+      );
       flagResolverClientMock.resolve.mockReturnValueOnce(mockPendingResolution);
       const result = confidence.evaluateFlag('flag1', 'default');
       expect(await result).toEqual({

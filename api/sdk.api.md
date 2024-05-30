@@ -34,9 +34,11 @@ export class Confidence implements EventSender, Trackable, FlagResolver {
     // (undocumented)
     get environment(): string;
     // (undocumented)
+    evaluateFlag<T extends Value>(path: string, defaultValue: T): FlagEvaluation<Value.Widen<T>>;
+    // (undocumented)
     getContext(): Context;
     // (undocumented)
-    getFlag<T extends Value>(path: string, defaultValue: T): FlagEvaluation<T>;
+    getFlag<T extends Value>(path: string, defaultValue: T): Promise<Value.Widen<T>>;
     // Warning: (ae-forgotten-export) The symbol "AccessiblePromise" needs to be exported by the entry point index.d.ts
     //
     // (undocumented)
@@ -46,7 +48,7 @@ export class Confidence implements EventSender, Trackable, FlagResolver {
     // (undocumented)
     subscribe(onStateChange?: StateObserver): () => void;
     // (undocumented)
-    track(name: string, message?: Value.Struct): void;
+    track(name: string, data?: EventData): void;
     // (undocumented)
     track(manager: Trackable.Manager): Closer;
     // (undocumented)
@@ -129,12 +131,19 @@ export interface Contextual<Self extends Contextual<Self>> {
     withContext(context: Context): Self;
 }
 
+// Warning: (ae-missing-release-tag) "EventData" is part of the package's API, but it is missing a release tag (@alpha, @beta, @public, or @internal)
+//
+// @public (undocumented)
+export type EventData = Value.Struct & {
+    context?: never;
+};
+
 // Warning: (ae-missing-release-tag) "EventSender" is part of the package's API, but it is missing a release tag (@alpha, @beta, @public, or @internal)
 //
 // @public (undocumented)
 export interface EventSender extends Contextual<EventSender> {
     // (undocumented)
-    track(name: string, message?: Value.Struct): void;
+    track(name: string, data?: EventData): void;
 }
 
 // Warning: (ae-missing-release-tag) "FlagEvaluation" is part of the package's API, but it is missing a release tag (@alpha, @beta, @public, or @internal)
@@ -187,7 +196,9 @@ export interface FlagResolver extends Contextual<FlagResolver> {
         timeout: number;
     };
     // (undocumented)
-    getFlag<T extends Value>(path: string, defaultValue: T): FlagEvaluation<T>;
+    evaluateFlag<T extends Value>(path: string, defaultValue: T): FlagEvaluation<Value.Widen<T>>;
+    // (undocumented)
+    getFlag<T extends Value>(path: string, defaultValue: T): Promise<Value.Widen<T>>;
     // (undocumented)
     subscribe(onStateChange?: StateObserver): () => void;
 }
@@ -275,6 +286,8 @@ export namespace Value {
     };
     // (undocumented)
     export type TypeName = 'number' | 'string' | 'boolean' | 'Struct' | 'List' | 'undefined';
+    // (undocumented)
+    export type Widen<T extends Value> = T extends number ? number : T extends string ? string : T extends boolean ? boolean : T;
 }
 
 // @public (undocumented)
