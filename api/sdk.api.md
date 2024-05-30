@@ -4,7 +4,18 @@
 
 ```ts
 
-// Warning: (ae-forgotten-export) The symbol "Trackable" needs to be exported by the entry point index.d.ts
+// Warning: (ae-missing-release-tag) "Closer" is part of the package's API, but it is missing a release tag (@alpha, @beta, @public, or @internal)
+// Warning: (ae-missing-release-tag) "Closer" is part of the package's API, but it is missing a release tag (@alpha, @beta, @public, or @internal)
+//
+// @public (undocumented)
+export namespace Closer {
+    // (undocumented)
+    export function combine(...closers: Closer[]): Closer;
+}
+
+// @public (undocumented)
+export type Closer = () => void;
+
 // Warning: (ae-missing-release-tag) "Confidence" is part of the package's API, but it is missing a release tag (@alpha, @beta, @public, or @internal)
 //
 // @public (undocumented)
@@ -36,8 +47,6 @@ export class Confidence implements EventSender, Trackable, FlagResolver {
     subscribe(onStateChange?: StateObserver): () => void;
     // (undocumented)
     track(name: string, message?: Value.Struct): void;
-    // Warning: (ae-forgotten-export) The symbol "Closer" needs to be exported by the entry point index.d.ts
-    //
     // (undocumented)
     track(manager: Trackable.Manager): Closer;
     // (undocumented)
@@ -197,6 +206,27 @@ export type State = 'NOT_READY' | 'READY' | 'STALE' | 'ERROR';
 //
 // @public (undocumented)
 export type StateObserver = (state: State) => void;
+
+// Warning: (ae-missing-release-tag) "Trackable" is part of the package's API, but it is missing a release tag (@alpha, @beta, @public, or @internal)
+// Warning: (ae-missing-release-tag) "Trackable" is part of the package's API, but it is missing a release tag (@alpha, @beta, @public, or @internal)
+//
+// @public (undocumented)
+export namespace Trackable {
+    // (undocumented)
+    export type Cleanup = void | Closer;
+    // (undocumented)
+    export type Controller = Pick<Confidence, 'setContext' | 'track' | 'config'>;
+    // (undocumented)
+    export type Manager = (controller: Controller) => Cleanup;
+    // (undocumented)
+    export function setup(controller: Controller, manager: Manager): Closer;
+}
+
+// @public (undocumented)
+export interface Trackable {
+    // (undocumented)
+    track(manager: Trackable.Manager): Closer;
+}
 
 // Warning: (ae-missing-release-tag) "Value" is part of the package's API, but it is missing a release tag (@alpha, @beta, @public, or @internal)
 // Warning: (ae-missing-release-tag) "Value" is part of the package's API, but it is missing a release tag (@alpha, @beta, @public, or @internal)

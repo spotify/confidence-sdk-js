@@ -4,11 +4,17 @@
 
 ```ts
 
+import { Closer } from '@spotify-confidence/sdk';
 import { Confidence } from '@spotify-confidence/sdk';
+import { Configuration } from '@spotify-confidence/sdk';
 import { Context } from '@spotify-confidence/sdk';
+import { EventSender } from '@spotify-confidence/sdk';
 import { FC } from 'react';
 import { FlagEvaluation } from '@spotify-confidence/sdk';
+import { FlagResolver } from '@spotify-confidence/sdk';
 import { PropsWithChildren } from 'react';
+import { StateObserver } from '@spotify-confidence/sdk';
+import { Trackable } from '@spotify-confidence/sdk';
 import { Value } from '@spotify-confidence/sdk';
 
 // Warning: (ae-missing-release-tag) "ConfidenceProvider" is part of the package's API, but it is missing a release tag (@alpha, @beta, @public, or @internal)
@@ -18,10 +24,46 @@ export const ConfidenceProvider: FC<PropsWithChildren<{
     confidence: Confidence;
 }>>;
 
+// Warning: (ae-missing-release-tag) "ConfidenceProviderWithContext" is part of the package's API, but it is missing a release tag (@alpha, @beta, @public, or @internal)
+//
+// @public (undocumented)
+export const ConfidenceProviderWithContext: FC<PropsWithChildren<{
+    context: Context;
+}>>;
+
+// Warning: (ae-missing-release-tag) "ConfidenceReact" is part of the package's API, but it is missing a release tag (@alpha, @beta, @public, or @internal)
+//
+// @public (undocumented)
+export class ConfidenceReact implements EventSender, Trackable, FlagResolver {
+    constructor(delegate: Confidence);
+    // (undocumented)
+    clearContext(): void;
+    // (undocumented)
+    get config(): Configuration;
+    // (undocumented)
+    getContext(): Context;
+    // (undocumented)
+    getFlag<T extends Value>(path: string, defaultValue: T): FlagEvaluation<T>;
+    // (undocumented)
+    setContext(context: Context): void;
+    // (undocumented)
+    subscribe(onStateChange?: StateObserver | undefined): () => void;
+    // (undocumented)
+    track(name: string, message?: Value.Struct): void;
+    // (undocumented)
+    track(manager: Trackable.Manager): Closer;
+    // (undocumented)
+    useFlag<T extends Value>(path: string, defaultValue: T): FlagEvaluation<T>;
+    // (undocumented)
+    useWithContext(context: Context): ConfidenceReact;
+    // (undocumented)
+    withContext(context: Context): ConfidenceReact;
+}
+
 // Warning: (ae-missing-release-tag) "useConfidence" is part of the package's API, but it is missing a release tag (@alpha, @beta, @public, or @internal)
 //
 // @public (undocumented)
-export const useConfidence: () => Confidence;
+export const useConfidence: () => ConfidenceReact;
 
 // Warning: (ae-missing-release-tag) "useFlagEvaluation" is part of the package's API, but it is missing a release tag (@alpha, @beta, @public, or @internal)
 //
@@ -32,13 +74,6 @@ export function useFlagEvaluation<T extends Value>(path: string, defaultValue: T
 //
 // @public (undocumented)
 export function useFlagValue<T extends Value>(path: string, defaultValue: T): T;
-
-// Warning: (ae-missing-release-tag) "WithContext" is part of the package's API, but it is missing a release tag (@alpha, @beta, @public, or @internal)
-//
-// @public (undocumented)
-export const WithContext: FC<PropsWithChildren<{
-    context: Context;
-}>>;
 
 // (No @packageDocumentation comment for this package)
 

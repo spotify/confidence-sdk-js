@@ -5,10 +5,10 @@ const fakeContext = createContext(undefined);
 
 const TestComponent = () => {
   const [clickCount, setClickCount] = useState(0);
-  const confidence = useConfidence().withContext({ targeting_key: 'user-a' });
+  const confidence = useConfidence().useWithContext({ targeting_key: 'user-a' });
   // const details = useFlagEvaluation('web-sdk-e2e-flag.str', 'default');
   // const details = confidence.evaluateFlag('web-sdk-e2e-flag.str', 'default');
-  const details = confidence.getFlag('web-sdk-e2e-flag.str', 'default');
+  const details = confidence.useFlag('web-sdk-e2e-flag.str', 'default');
   // const details = useFlagValue('web-sdk-e2e-flag.str', 'default');
   console.log(isRendering());
   return (

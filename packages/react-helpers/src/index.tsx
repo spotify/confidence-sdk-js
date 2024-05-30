@@ -1,17 +1,19 @@
-import { Confidence, Value, FlagEvaluation, Context, Configuration } from '@spotify-confidence/sdk';
-import { AccessiblePromise } from '@spotify-confidence/sdk/src/AccessiblePromise';
-import React, {
-  createContext,
-  FC,
-  PropsWithChildren,
-  useCallback,
-  useContext,
-  useEffect,
-  useMemo,
-  useState,
-} from 'react';
+import {
+  Closer,
+  Confidence,
+  Value,
+  FlagEvaluation,
+  Context,
+  Configuration,
+  EventSender,
+  FlagResolver,
+  StateObserver,
+  Trackable,
+} from '@spotify-confidence/sdk';
 
-const ConfidenceContext = createContext<Confidence | null>(null);
+import React, { createContext, FC, PropsWithChildren, useContext, useEffect, useMemo, useState } from 'react';
+
+const ConfidenceContext = createContext<ConfidenceReact | null>(null);
 
 function isRendering(): boolean {
   try {
@@ -23,79 +25,93 @@ function isRendering(): boolean {
   }
 }
 
-class ConfidenceReact extends Confidence {
-  readonly scheduleRender: () => void;
-  constructor(config: Configuration, parent: Confidence, scheduleRender: () => void) {
-    super(config, parent);
-    this.scheduleRender = scheduleRender;
-    console.log('created react');
-  }
-  withContext(context: Context): Confidence {
-    return isRendering()
-      ? useMemo(() => {
-          const child = new ConfidenceReact(this.config, this, this.scheduleRender);
-          console.log('create child');
-          Confidence.prototype.setContext.call(child, context);
-          return child;
-        }, [this, Value.serialize(context)])
-      : super.withContext(context);
+export class ConfidenceReact implements EventSender, Trackable, FlagResolver {
+  #delegate: Confidence;
+
+  constructor(delegate: Confidence) {
+    this.#delegate = delegate;
   }
 
-  getFlag<T extends Value>(path: string, defaultValue: T): FlagEvaluation<T> {
-    const evaluation = super.getFlag(path, defaultValue);
+  get config(): Configuration {
+    return this.#delegate.config;
+  }
+
+  track(name: string, message?: Value.Struct): void;
+  track(manager: Trackable.Manager): Closer;
+  track(nameOrManager: string | Trackable.Manager, message?: Value.Struct): Closer | undefined {
+    if (typeof nameOrManager === 'function') {
+      return this.#delegate.track(nameOrManager);
+    } else {
+      this.#delegate.track(nameOrManager, message);
+      return;
+    }
+  }
+  getContext(): Context {
+    return this.#delegate.getContext();
+  }
+  setContext(context: Context): void {
+    this.#delegate.setContext(context);
+  }
+
+  useWithContext(context: Context): ConfidenceReact {
+    const child = useMemo(() => this.withContext(context), [parent, context]);
+    const [, setState] = useState(0);
+    useEffect(
+      () =>
+        child.subscribe(_state => {
+          if (_state === 'READY') setState(value => value + 1);
+        }),
+      [child],
+    );
+    return child;
+  }
+  withContext(context: Context): ConfidenceReact {
+    const child = this.#delegate.withContext(context);
+    return new ConfidenceReact(child);
+  }
+  subscribe(onStateChange?: StateObserver | undefined): () => void {
+    return this.#delegate.subscribe(onStateChange);
+  }
+  useFlag<T extends Value>(path: string, defaultValue: T): FlagEvaluation<T> {
+    const evaluation = this.#delegate.getFlag(path, defaultValue);
+    // TODO make it a setting to _enable skip throwing_ on stale value.
     if (evaluation.reason === 'ERROR' && 'then' in evaluation && isRendering()) throw evaluation;
     return evaluation;
   }
-
-  setContext(context: Context): boolean {
-    if (super.setContext(context)) {
-      const promise = this.resolveFlags();
-      this.rerender(promise);
-    }
-    return false;
+  getFlag<T extends Value>(path: string, defaultValue: T): FlagEvaluation<T> {
+    return this.#delegate.getFlag(path, defaultValue);
   }
-
-  private rerender(promise: AccessiblePromise<unknown>) {
-    if (isRendering() && promise.state === 'PENDING') {
-      throw promise;
-    } else {
-      promise.then(this.scheduleRender);
-    }
+  clearContext(): void {
+    this.#delegate.clearContext();
   }
 }
 export const ConfidenceProvider: FC<PropsWithChildren<{ confidence: Confidence }>> = ({ confidence, children }) => {
-  return <ConfidenceContext.Provider value={confidence} children={children} />;
+  const confidenceReact = useMemo(() => new ConfidenceReact(confidence), [confidence]);
+  return <ConfidenceContext.Provider value={confidenceReact} children={children} />;
 };
 
-export const WithContext: FC<PropsWithChildren<{ context: Context }>> = ({ context, children }) => {
-  // let optionalContext: Value.Struct | undefined;
-  // if (Object.keys(context).length > 0) optionalContext = context;
-  return <ConfidenceProvider confidence={useConfidence().withContext(context)}>{children}</ConfidenceProvider>;
+// TODO make this a child of ConfidenceProvider instead `ConfidenceProvider.WithContext`
+export const ConfidenceProviderWithContext: FC<PropsWithChildren<{ context: Context }>> = ({ context, children }) => {
+  const child = useConfidence().useWithContext(context);
+  return <ConfidenceContext.Provider value={child}>{children}</ConfidenceContext.Provider>;
 };
 
-export const useConfidence = (): Confidence => {
-  const parent = useContext(ConfidenceContext);
-  if (!parent)
+export const useConfidence = (): ConfidenceReact => {
+  const confidenceReact = useContext(ConfidenceContext);
+  if (!confidenceReact)
     throw new Error('No Confidence instance found, did you forget to wrap your component in ConfidenceProvider?');
   const [count, setState] = useState(0);
 
   console.log('render count:', count);
 
-  const rerender = useCallback(() => {
-    console.log('call set state');
-    setState(value => value + 1);
-  }, [setState]);
-
-  const child = useMemo(() => new ConfidenceReact(parent.config, parent, rerender), [parent, rerender]);
-  // useEffect(
-  //   () =>
-  //     child.subscribe(_state => {
-  //       if (_state === 'READY') rerender(value => value + 1);
-  //       // rerender(value => value + 1);
-  //     }),
-  //   [child],
-  // );
-  return child;
+  useEffect(
+    () =>
+      confidenceReact.subscribe(_state => {
+        if (_state === 'READY') setState(value => value + 1);
+      }),
+    [confidenceReact],
+  );
+  return confidenceReact;
 };
 
 export function useFlagValue<T extends Value>(path: string, defaultValue: T): T {
