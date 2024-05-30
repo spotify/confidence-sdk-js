@@ -1,16 +1,15 @@
-import { useConfidence, useFlagEvaluation, useFlagValue } from '@spotify-confidence/react-helpers';
+import { useConfidence } from '@spotify-confidence/react-helpers';
 import { createContext, useContext, useState } from 'react';
 
 const fakeContext = createContext(undefined);
 
 const TestComponent = () => {
   const [clickCount, setClickCount] = useState(0);
-  const confidence = useConfidence().useWithContext({ targeting_key: 'user-a' });
+  const confidence = useConfidence();
   // const details = useFlagEvaluation('web-sdk-e2e-flag.str', 'default');
   // const details = confidence.evaluateFlag('web-sdk-e2e-flag.str', 'default');
   const details = confidence.useFlag('web-sdk-e2e-flag.str', 'default');
   // const details = useFlagValue('web-sdk-e2e-flag.str', 'default');
-  console.log(isRendering());
   return (
     <>
       <p>The flag is: </p>

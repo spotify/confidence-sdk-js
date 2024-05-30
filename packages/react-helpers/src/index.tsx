@@ -86,16 +86,20 @@ export class ConfidenceReact implements EventSender, Trackable, FlagResolver {
     this.#delegate.clearContext();
   }
 }
-export const ConfidenceProvider: FC<PropsWithChildren<{ confidence: Confidence }>> = ({ confidence, children }) => {
+const _ConfidenceProvider: FC<PropsWithChildren<{ confidence: Confidence }>> = ({ confidence, children }) => {
   const confidenceReact = useMemo(() => new ConfidenceReact(confidence), [confidence]);
   return <ConfidenceContext.Provider value={confidenceReact} children={children} />;
 };
 
-// TODO make this a child of ConfidenceProvider instead `ConfidenceProvider.WithContext`
-export const ConfidenceProviderWithContext: FC<PropsWithChildren<{ context: Context }>> = ({ context, children }) => {
+const WithContext: FC<PropsWithChildren<{ context: Context }>> = ({ context, children }) => {
   const child = useConfidence().useWithContext(context);
   return <ConfidenceContext.Provider value={child}>{children}</ConfidenceContext.Provider>;
 };
+
+export type ConfidenceProvider = FC<PropsWithChildren<{ confidence: Confidence }>> & {
+  WithContext: FC<PropsWithChildren<{ context: Context }>>;
+};
+export const ConfidenceProvider: ConfidenceProvider = Object.assign(_ConfidenceProvider, { WithContext });
 
 export const useConfidence = (): ConfidenceReact => {
   const confidenceReact = useContext(ConfidenceContext);

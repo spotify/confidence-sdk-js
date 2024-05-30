@@ -18,18 +18,19 @@ import { Trackable } from '@spotify-confidence/sdk';
 import { Value } from '@spotify-confidence/sdk';
 
 // Warning: (ae-missing-release-tag) "ConfidenceProvider" is part of the package's API, but it is missing a release tag (@alpha, @beta, @public, or @internal)
+// Warning: (ae-missing-release-tag) "ConfidenceProvider" is part of the package's API, but it is missing a release tag (@alpha, @beta, @public, or @internal)
 //
 // @public (undocumented)
-export const ConfidenceProvider: FC<PropsWithChildren<{
+export type ConfidenceProvider = FC<PropsWithChildren<{
     confidence: Confidence;
-}>>;
+}>> & {
+    WithContext: FC<PropsWithChildren<{
+        context: Context;
+    }>>;
+};
 
-// Warning: (ae-missing-release-tag) "ConfidenceProviderWithContext" is part of the package's API, but it is missing a release tag (@alpha, @beta, @public, or @internal)
-//
 // @public (undocumented)
-export const ConfidenceProviderWithContext: FC<PropsWithChildren<{
-    context: Context;
-}>>;
+export const ConfidenceProvider: ConfidenceProvider;
 
 // Warning: (ae-missing-release-tag) "ConfidenceReact" is part of the package's API, but it is missing a release tag (@alpha, @beta, @public, or @internal)
 //

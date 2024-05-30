@@ -19,7 +19,9 @@ function App() {
       <h1>React 18 Example</h1>
       <div style={{ height: 2000 }}>
         <React.Suspense fallback={<p>Loading... </p>}>
-          <TestComponent />
+          <ConfidenceProvider.WithContext context={{ targeting_key: 'user-a' }}>
+            <TestComponent />
+          </ConfidenceProvider.WithContext>
         </React.Suspense>
       </div>
       <p>bottom</p>
