@@ -180,11 +180,15 @@ export class Confidence implements EventSender, Trackable, FlagResolver {
           }
         })
         .finally(() => {
+          // if this resolves synchronously, the assignment on 171 will actually happen after we clear it.
           this.pendingFlags = undefined;
         });
     }
-    // pendingFlags might resolve synchronously, in which case it's already removed and we can return a resolved promise
-    return this.pendingFlags ?? AccessiblePromise.resolve();
+    if (this.pendingFlags.state !== 'PENDING') {
+      this.pendingFlags = undefined;
+      return AccessiblePromise.resolve();
+    }
+    return this.pendingFlags;
   }
 
   private get flagState(): State {
