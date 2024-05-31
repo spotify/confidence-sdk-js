@@ -6,7 +6,7 @@
     "@babel/core": "^7.23.2",
     "@babel/plugin-syntax-flow": "^7.22.5",
     "@babel/plugin-transform-react-jsx": "^7.22.15",
-    "@spotify-confidence/react-helpers": "0.0.1",
+    "@spotify-confidence/react": "0.0.1",
     "@spotify-confidence/sdk": "0.0.7",
     "@testing-library/dom": "^7.29.6",
     "@testing-library/jest-dom": "^5.14.1",

@@ -1,4 +1,4 @@
-import { useConfidence } from '@spotify-confidence/react-helpers';
+import { useConfidence } from '@spotify-confidence/react';
 import { createContext, useContext, useState } from 'react';
 
 const fakeContext = createContext(undefined);

@@ -5,6 +5,6 @@
     { "path": "./packages/sdk" },
     { "path": "./packages/openfeature-server-provider" },
     { "path": "./packages/openfeature-web-provider" },
-    { "path": "./packages/react-helpers" }
+    { "path": "./packages/react" }
   ]
 }

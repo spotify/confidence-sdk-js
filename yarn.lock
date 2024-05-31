@@ -3640,9 +3640,9 @@ __metadata:
   languageName: unknown
   linkType: soft
 
-"@spotify-confidence/react-helpers@npm:0.0.1, @spotify-confidence/react-helpers@workspace:packages/react-helpers":
+"@spotify-confidence/react@npm:0.0.1, @spotify-confidence/react@workspace:packages/react":
   version: 0.0.0-use.local
-  resolution: "@spotify-confidence/react-helpers@workspace:packages/react-helpers"
+  resolution: "@spotify-confidence/react@workspace:packages/react"
   dependencies:
     "@microsoft/api-extractor": "npm:*"
     "@spotify-confidence/sdk": "npm:0.0.7"
@@ -14722,7 +14722,7 @@ __metadata:
     "@babel/plugin-syntax-flow": "npm:^7.22.5"
     "@babel/plugin-transform-private-property-in-object": "npm:^7.22.11"
     "@babel/plugin-transform-react-jsx": "npm:^7.22.15"
-    "@spotify-confidence/react-helpers": "npm:0.0.1"
+    "@spotify-confidence/react": "npm:0.0.1"
     "@spotify-confidence/sdk": "npm:0.0.7"
     "@testing-library/dom": "npm:^7.29.6"
     "@testing-library/jest-dom": "npm:^5.14.1"
