@@ -16,90 +16,95 @@ import React, { createContext, FC, PropsWithChildren, useContext, useEffect, use
 
 const ConfidenceContext = createContext<ConfidenceReact | null>(null);
 
-// function isRendering(): boolean {
-//   try {
-//     // eslint-disable-next-line
-//     useContext(ConfidenceContext);
-//     return true;
-//   } catch (e) {
-//     return false;
-//   }
-// }
+function isRendering(): boolean {
+  try {
+    // eslint-disable-next-line
+    useContext(ConfidenceContext);
+    return true;
+  } catch (e) {
+    return false;
+  }
+}
 
 export class ConfidenceReact implements EventSender, Trackable, FlagResolver {
-  #delegate: Confidence;
+  /** @internal */
+  readonly delegate: Confidence;
 
   constructor(delegate: Confidence) {
-    this.#delegate = delegate;
+    this.delegate = delegate;
   }
 
   get config(): Configuration {
-    return this.#delegate.config;
+    return this.delegate.config;
   }
 
   /** @internal */
   get state(): State {
-    return this.#delegate.flagState;
+    return this.delegate.flagState;
   }
 
   track(name: string, message?: Value.Struct): void;
   track(manager: Trackable.Manager): Closer;
   track(nameOrManager: string | Trackable.Manager, message?: Value.Struct): Closer | undefined {
     if (typeof nameOrManager === 'function') {
-      return this.#delegate.track(nameOrManager);
+      return this.delegate.track(nameOrManager);
     }
-    this.#delegate.track(nameOrManager, message);
+    this.delegate.track(nameOrManager, message);
     return undefined;
   }
   getContext(): Context {
-    return this.#delegate.getContext();
+    return this.delegate.getContext();
   }
   setContext(context: Context): void {
-    this.#delegate.setContext(context);
+    this.delegate.setContext(context);
+  }
+  subscribe(onStateChange?: StateObserver | undefined): () => void {
+    return this.delegate.subscribe(onStateChange);
+  }
+  clearContext(): void {
+    this.delegate.clearContext();
+  }
+
+  withContext(context: Context): ConfidenceReact {
+    this.assertContext('withContext', 'useWithContext');
+    return new ConfidenceReact(this.delegate.withContext(context));
+  }
+  evaluateFlag<T extends Value>(path: string, defaultValue: T): FlagEvaluation<Value.Widen<T>> {
+    this.assertContext('evaluateFlag', 'useEvaluateFlag');
+    return this.delegate.evaluateFlag(path, defaultValue);
+  }
+  getFlag<T extends Value>(path: string, defaultValue: T): Promise<Value.Widen<T>> {
+    this.assertContext('getFlag', 'useFlag');
+    return this.delegate.getFlag(path, defaultValue);
   }
 
   /* eslint-disable react-hooks/rules-of-hooks */
+
   useWithContext(context: Context): ConfidenceReact {
-    const serializedContext = Value.serialize(context);
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-    const child = useMemo(() => this.withContext(context), [parent, serializedContext]);
-
-    const [, setState] = useState(() => (child.state !== 'READY' ? '' : Value.serialize(child.getContext())));
-    useEffect(
-      () =>
-        child.subscribe(state => {
-          if (state === 'READY') setState(Value.serialize(child.getContext()));
-        }),
-      [child, setState],
-    );
-    return child;
-  }
-  /* eslint-enable react-hooks/rules-of-hooks */
-
-  withContext(context: Context): ConfidenceReact {
-    const child = this.#delegate.withContext(context);
-    return new ConfidenceReact(child);
-  }
-  subscribe(onStateChange?: StateObserver | undefined): () => void {
-    return this.#delegate.subscribe(onStateChange);
+    this.assertContext('useWithContext', 'withContext');
+    return useWithContext(context, this);
   }
   useEvaluateFlag<T extends Value>(path: string, defaultValue: T): FlagEvaluation<Value.Widen<T>> {
-    const evaluation = this.#delegate.evaluateFlag(path, defaultValue);
-    // TODO make it a setting to _enable skip throwing_ on stale value.
-    if (evaluation.reason === 'ERROR' && 'then' in evaluation) throw evaluation;
-    return evaluation;
-  }
-  evaluateFlag<T extends Value>(path: string, defaultValue: T): FlagEvaluation<Value.Widen<T>> {
-    return this.#delegate.evaluateFlag(path, defaultValue);
-  }
-  getFlag<T extends Value>(path: string, defaultValue: T): Promise<Value.Widen<T>> {
-    return this.#delegate.getFlag(path, defaultValue);
+    this.assertContext('useEvaluateFlag', 'evaluateFlag');
+    return useEvaluateFlag(path, defaultValue, this);
   }
   useFlag<T extends Value>(path: string, defaultValue: T): Value.Widen<T> {
-    return this.useEvaluateFlag(path, defaultValue).value;
+    this.assertContext('useFlag', 'getFlag');
+    return useFlag(path, defaultValue, this);
   }
-  clearContext(): void {
-    this.#delegate.clearContext();
+
+  /* eslint-enable react-hooks/rules-of-hooks */
+
+  private assertContext(fnName: string, altFnName: string) {
+    if (fnName.startsWith('use')) {
+      if (!isRendering())
+        throw new Error(
+          `${fnName} called outside the body of a function component. Did you mean to call ${altFnName}?`,
+        );
+    } else {
+      if (isRendering())
+        throw new Error(`${fnName} called inside the body of a function component. Did you mean to call ${altFnName}?`);
+    }
   }
 }
 const _ConfidenceProvider: FC<PropsWithChildren<{ confidence: Confidence }>> = ({ confidence, children }) => {
@@ -135,3 +140,48 @@ export const useConfidence = (): ConfidenceReact => {
   );
   return confidenceReact;
 };
+
+function useOptionalConfidence(confidence?: ConfidenceReact): ConfidenceReact {
+  try {
+    // to comply with hook-rules we always need to call useConfidence even if we don't need it.
+    const confidenceFromContext = useConfidence();
+    return confidence ?? confidenceFromContext;
+  } catch (e) {
+    if (!confidence) throw e;
+    return confidence;
+  }
+}
+
+export function useWithContext(context: Context, confidence?: ConfidenceReact): ConfidenceReact {
+  const parent = useOptionalConfidence(confidence);
+  const child = useMemo(
+    () => new ConfidenceReact(parent.delegate.withContext(context)),
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    [parent, Value.serialize(context)],
+  );
+
+  const [, setState] = useState(() => (child.state !== 'READY' ? '' : Value.serialize(child.getContext())));
+  useEffect(
+    () =>
+      child.subscribe(state => {
+        if (state === 'READY') setState(Value.serialize(child.getContext()));
+      }),
+    [child, setState],
+  );
+  return child;
+}
+
+export function useEvaluateFlag<T extends Value>(
+  path: string,
+  defaultValue: T,
+  confidence?: ConfidenceReact,
+): FlagEvaluation<Value.Widen<T>> {
+  const evaluation = useOptionalConfidence(confidence).delegate.evaluateFlag(path, defaultValue);
+  // TODO make it a setting to _enable skip throwing_ on stale value.
+  if (evaluation.reason === 'ERROR' && 'then' in evaluation) throw evaluation;
+  return evaluation;
+}
+
+export function useFlag<T extends Value>(path: string, defaultValue: T, confidence?: ConfidenceReact): Value.Widen<T> {
+  return useEvaluateFlag(path, defaultValue, confidence).value;
+}

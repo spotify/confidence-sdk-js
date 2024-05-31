@@ -42,6 +42,8 @@ export class ConfidenceReact implements EventSender, Trackable, FlagResolver {
     clearContext(): void;
     // (undocumented)
     get config(): Configuration;
+    // @internal (undocumented)
+    readonly delegate: Confidence;
     // (undocumented)
     evaluateFlag<T extends Value>(path: string, defaultValue: T): FlagEvaluation<Value.Widen<T>>;
     // (undocumented)
@@ -72,6 +74,21 @@ export class ConfidenceReact implements EventSender, Trackable, FlagResolver {
 //
 // @public (undocumented)
 export const useConfidence: () => ConfidenceReact;
+
+// Warning: (ae-missing-release-tag) "useFlag" is part of the package's API, but it is missing a release tag (@alpha, @beta, @public, or @internal)
+//
+// @public (undocumented)
+export function useFlag<T extends Value>(path: string, defaultValue: T, confidence?: ConfidenceReact): Value.Widen<T>;
+
+// Warning: (ae-missing-release-tag) "useFlagEvaluation" is part of the package's API, but it is missing a release tag (@alpha, @beta, @public, or @internal)
+//
+// @public (undocumented)
+export function useFlagEvaluation<T extends Value>(path: string, defaultValue: T, confidence?: ConfidenceReact): FlagEvaluation<Value.Widen<T>>;
+
+// Warning: (ae-missing-release-tag) "useWithContext" is part of the package's API, but it is missing a release tag (@alpha, @beta, @public, or @internal)
+//
+// @public (undocumented)
+export function useWithContext(context: Context, confidence?: ConfidenceReact): ConfidenceReact;
 
 // (No @packageDocumentation comment for this package)
 
