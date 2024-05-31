@@ -1,5 +1,21 @@
 # Changelog
 
+## [0.1.0](https://github.com/spotify/confidence-sdk-js/compare/sdk-v0.0.7...sdk-v0.1.0) (2024-05-31)
+
+
+### ⚠ BREAKING CHANGES
+
+* react support ([#145](https://github.com/spotify/confidence-sdk-js/issues/145))
+
+### 🐛 Bug Fixes
+
+* pageviews: handle missed load event ([#148](https://github.com/spotify/confidence-sdk-js/issues/148)) ([ae6bd43](https://github.com/spotify/confidence-sdk-js/commit/ae6bd436c8c66993f722d82d3dbbba7734c79543))
+
+
+### ✨ New Features
+
+* react support ([#145](https://github.com/spotify/confidence-sdk-js/issues/145)) ([0493005](https://github.com/spotify/confidence-sdk-js/commit/04930050ef970b8e0481b01fe005321723532ff3))
+
 ## [0.0.7](https://github.com/spotify/confidence-sdk-js/compare/sdk-v0.0.6...sdk-v0.0.7) (2024-05-28)
 
 

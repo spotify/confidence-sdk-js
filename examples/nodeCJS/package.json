@@ -9,7 +9,7 @@
     "@openfeature/core": "^1.1.0",
     "@openfeature/server-sdk": "^1.13.5",
     "@spotify-confidence/openfeature-server-provider": "0.2.5",
-    "@spotify-confidence/sdk": "0.0.7"
+    "@spotify-confidence/sdk": "0.1.0"
   },
   "scripts": {
     "dev": "node src/index.js"
