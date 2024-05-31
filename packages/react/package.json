@@ -1,0 +1,35 @@
+{
+  "name": "@spotify-confidence/react",
+  "license": "Apache-2.0",
+  "version": "0.0.1",
+  "types": "build/types/index.d.ts",
+  "files": [
+    "dist/index.*"
+  ],
+  "scripts": {
+    "bundle": "rollup -c && api-extractor run",
+    "build": "tsc"
+  },
+  "engineStrict": true,
+  "engines": {
+    "node": ">=18.17.0"
+  },
+  "publishConfig": {
+    "registry": "https://registry.npmjs.org/",
+    "access": "public",
+    "types": "dist/index.d.ts",
+    "main": "dist/index.js"
+  },
+  "peerDependencies": {
+    "@spotify-confidence/sdk": "0.0.7",
+    "react": "^18.2.0"
+  },
+  "devDependencies": {
+    "@microsoft/api-extractor": "*",
+    "@spotify-confidence/sdk": "0.0.7",
+    "react": "^18.2.0",
+    "rollup": "*"
+  },
+  "type": "module",
+  "main": "dist/index.js"
+}

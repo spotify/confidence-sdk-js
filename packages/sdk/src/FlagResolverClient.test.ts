@@ -1,18 +1,46 @@
-import { FlagResolverClient, withRequestLogic } from './FlagResolverClient';
+import { FetchingFlagResolverClient, withRequestLogic } from './FlagResolverClient';
 import { setMaxListeners } from 'node:events';
 import { SdkId } from './generated/confidence/flags/resolver/v1/types';
+import { abortableSleep } from './fetch-util';
+import { ApplyFlagsRequest, ResolveFlagsRequest } from './generated/confidence/flags/resolver/v1/api';
 const RESOLVE_ENDPOINT = 'https://resolver.confidence.dev/v1/flags:resolve';
 const APPLY_ENDPOINT = 'https://resolver.confidence.dev/v1/flags:apply';
 
 setMaxListeners(50);
 
 const dummyResolveToken = Uint8Array.from(atob('SGVsbG9Xb3JsZA=='), c => c.charCodeAt(0));
+
+const resolveHandlerMock = jest.fn();
+const applyHandlerMock = jest.fn();
+
+const fetchImplementation = async (request: Request): Promise<Response> => {
+  await abortableSleep(0, request.signal);
+
+  let handler: (reqBody: any) => any;
+  switch (request.url) {
+    case 'https://resolver.confidence.dev/v1/flags:resolve':
+      handler = data => resolveHandlerMock(ResolveFlagsRequest.fromJSON(data));
+      break;
+    case 'https://resolver.confidence.dev/v1/flags:apply':
+      handler = data => applyHandlerMock(ApplyFlagsRequest.fromJSON(data));
+      break;
+    default:
+      throw new Error(`Unknown url: ${request.url}`);
+  }
+  try {
+    const result = await handler(await request.json());
+    return new Response(JSON.stringify(result));
+  } catch (e: any) {
+    return new Response(null, { status: 500, statusText: e.message });
+  }
+};
+
+resolveHandlerMock.mockImplementation(createFlagResolutionResponse);
+
 describe('Client environment Evaluation', () => {
-  const mockFetch = jest.fn<Promise<Response>, [Request]>();
-  const flagResolutionResponseJson = JSON.stringify(createFlagResolutionResponse());
-  mockFetch.mockImplementation(async _ => new Response(flagResolutionResponseJson, { status: 200 }));
-  const instanceUnderTest = new FlagResolverClient({
-    fetchImplementation: mockFetch,
+  // const flagResolutionResponseJson = JSON.stringify(createFlagResolutionResponse());
+  const instanceUnderTest = new FetchingFlagResolverClient({
+    fetchImplementation,
     clientSecret: 'secret',
     applyTimeout: 10,
     sdk: {
@@ -21,40 +49,14 @@ describe('Client environment Evaluation', () => {
     },
     environment: 'client',
   });
-  const applyMock = jest.fn();
-  instanceUnderTest.apply = applyMock;
 
   describe('apply', () => {
     it('should send an apply event', async () => {
-      jest.useFakeTimers();
       const flagResolution = await instanceUnderTest.resolve({}, []);
       flagResolution.evaluate('testflag.bool', false);
-      await jest.runAllTimersAsync();
 
-      expect(applyMock).toHaveBeenCalledWith(
-        expect.objectContaining({
-          clientSecret: 'secret',
-          resolveToken: dummyResolveToken,
-          sendTime: expect.any(Date),
-          sdk: { id: 13, version: 'test' },
-          flags: [
-            {
-              applyTime: expect.any(Date),
-              flag: 'flags/testflag',
-            },
-          ],
-        }),
-      );
-    });
-  });
-
-  it('should apply when a flag has no segment match', async () => {
-    jest.useFakeTimers();
-    const flagResolution = await instanceUnderTest.resolve({}, []);
-    flagResolution.evaluate('no-seg-flag.enabled', false);
-    await jest.runAllTimersAsync();
-    expect(applyMock).toHaveBeenCalledWith(
-      expect.objectContaining({
+      const [applyRequest] = await nextMockArgs(applyHandlerMock);
+      expect(applyRequest).toMatchObject({
         clientSecret: 'secret',
         resolveToken: dummyResolveToken,
         sendTime: expect.any(Date),
@@ -62,21 +64,35 @@ describe('Client environment Evaluation', () => {
         flags: [
           {
             applyTime: expect.any(Date),
-            flag: 'flags/no-seg-flag',
+            flag: 'flags/testflag',
           },
         ],
-      }),
-    );
+      });
+    });
+  });
+
+  it('should apply when a flag has no segment match', async () => {
+    const flagResolution = await instanceUnderTest.resolve({}, []);
+    flagResolution.evaluate('no-seg-flag.enabled', false);
+    const [applyRequest] = await nextMockArgs(applyHandlerMock);
+    expect(applyRequest).toMatchObject({
+      clientSecret: 'secret',
+      resolveToken: dummyResolveToken,
+      sendTime: expect.any(Date),
+      sdk: { id: 13, version: 'test' },
+      flags: [
+        {
+          applyTime: expect.any(Date),
+          flag: 'flags/no-seg-flag',
+        },
+      ],
+    });
   });
 });
 
 describe('Backend environment Evaluation', () => {
-  const mockFetch = jest.fn<Promise<Response>, [Request]>();
-  mockFetch.mockImplementation(
-    async _ => new Response(JSON.stringify(createFlagResolutionResponse()), { status: 200 }),
-  );
-  const instanceUnderTest = new FlagResolverClient({
-    fetchImplementation: mockFetch,
+  const instanceUnderTest = new FetchingFlagResolverClient({
+    fetchImplementation,
     clientSecret: 'secret',
     sdk: {
       id: SdkId.SDK_ID_JS_CONFIDENCE,
@@ -442,4 +458,17 @@ function createFlagResolutionResponse(): unknown {
     resolveToken: 'SGVsbG9Xb3JsZA==',
     resolveId: 'resolve-id',
   };
+}
+
+function nextMockArgs<A extends any[]>(mock: jest.Mock<any, A>): Promise<A> {
+  return new Promise(resolve => {
+    const realImpl = mock.getMockImplementation();
+    mock.mockImplementationOnce((...args: A) => {
+      try {
+        return realImpl?.(...args);
+      } finally {
+        resolve(args);
+      }
+    });
+  });
 }

@@ -1,119 +1,65 @@
-import { Schema } from './Schema';
+import { AccessiblePromise } from './AccessiblePromise';
+import { Applier, FlagResolution } from './FlagResolution';
 import { Value } from './Value';
 import { Context } from './context';
-import { TypeMismatchError } from './error';
 import { FetchBuilder, TimeUnit } from './fetch-util';
-import { FlagEvaluation } from './flags';
 import {
   ResolveFlagsRequest,
   ResolveFlagsResponse,
   ApplyFlagsRequest,
   AppliedFlag,
 } from './generated/confidence/flags/resolver/v1/api';
-import { ResolveReason, Sdk } from './generated/confidence/flags/resolver/v1/types';
+import { Sdk } from './generated/confidence/flags/resolver/v1/types';
 import { SimpleFetch } from './types';
 
 const FLAG_PREFIX = 'flags/';
 
-type ResolvedFlag = {
-  schema: Schema;
-  value: Value.Struct;
-  variant: string;
-  reason:
-    | 'UNSPECIFIED'
-    | 'MATCH'
-    | 'NO_SEGMENT_MATCH'
-    | 'NO_TREATMENT_MATCH'
-    | 'FLAG_ARCHIVED'
-    | 'TARGETING_KEY_ERROR'
-    | 'ERROR';
-};
+export class PendingResolution<T = FlagResolution> extends AccessiblePromise<T> {
+  #context: Context;
+  #controller: AbortController;
 
-type Applier = (flagName: string) => void;
-
-export interface FlagResolution {
-  readonly context: Value.Struct;
-  // readonly flagNames:string[]
-  evaluate<T extends Value>(path: string, defaultValue: T): FlagEvaluation.Resolved<T>;
-}
-
-class FlagResolutionImpl implements FlagResolution {
-  private readonly flags: Map<string, ResolvedFlag> = new Map();
-  readonly resolveToken: string;
-
-  constructor(
-    readonly context: Value.Struct,
-    resolveResponse: ResolveFlagsResponse,
-    private readonly applier?: Applier,
-  ) {
-    for (const { flag, variant, value, reason, flagSchema } of resolveResponse.resolvedFlags) {
-      const name = flag.slice(FLAG_PREFIX.length);
-
-      const schema = flagSchema ? Schema.parse({ structSchema: flagSchema }) : Schema.ANY;
-      this.flags.set(name, {
-        schema,
-        value: value! as Value.Struct,
-        variant,
-        reason: toEvaluationReason(reason),
-      });
-    }
-    this.resolveToken = base64FromBytes(resolveResponse.resolveToken);
+  protected constructor(promise: PromiseLike<T>, context: Context, controller: AbortController) {
+    super(promise);
+    this.#context = context;
+    this.#controller = controller;
   }
 
-  evaluate<T extends Value>(path: string, defaultValue: T): FlagEvaluation.Resolved<T> {
-    try {
-      const [name, ...steps] = path.split('.');
-      const flag = this.flags.get(name);
-      if (!flag) {
-        return {
-          reason: 'ERROR',
-          value: defaultValue,
-          errorCode: 'FLAG_NOT_FOUND',
-          errorMessage: `Flag "${name}" not found`,
-        };
-      }
-      const reason = flag.reason;
-      if (reason === 'ERROR') throw new Error('Unknown resolve error');
-      if (reason !== 'MATCH') {
-        if (reason === 'NO_SEGMENT_MATCH' && this.applier) {
-          this.applier?.(name);
-        }
-        return {
-          reason,
-          value: defaultValue,
-        };
-      }
-
-      const value = TypeMismatchError.hoist(name, () => Value.get(flag.value, ...steps) as T);
-
-      const schema = flag.schema.get(...steps);
-      TypeMismatchError.hoist(['defaultValue', ...steps], () => {
-        schema.assertAssignsTo(defaultValue);
-      });
-
-      this.applier?.(name);
-      return {
-        reason,
-        value,
-        variant: flag.variant,
-      };
-    } catch (e: any) {
-      return {
-        reason: 'ERROR',
-        value: defaultValue,
-        errorCode: e instanceof TypeMismatchError ? 'TYPE_MISMATCH' : 'GENERAL',
-        errorMessage: e.message ?? 'Unknown error',
-      };
-    }
+  get context(): Context {
+    return this.#context;
   }
-  getValue<T extends Value>(path: string, defaultValue: T): T {
-    return this.evaluate(path, defaultValue).value;
+
+  abort(): void {
+    this.#controller.abort(new Error('Resolve aborted'));
+  }
+
+  then<TResult1 = T, TResult2 = never>(
+    onfulfilled?: ((value: T) => TResult1 | PromiseLike<TResult1>) | null | undefined,
+    onrejected?: ((reason: any) => TResult2 | PromiseLike<TResult2>) | null | undefined,
+  ): PendingResolution<TResult1 | TResult2> {
+    return new PendingResolution(super.then(onfulfilled, onrejected), this.#context, this.#controller);
+  }
+
+  catch<TResult = never>(
+    onrejected?: ((reason: any) => TResult | PromiseLike<TResult>) | null | undefined,
+  ): PendingResolution<T | TResult> {
+    return new PendingResolution(super.catch(onrejected), this.#context, this.#controller);
+  }
+
+  finally(onfinally?: (() => void) | null | undefined): PendingResolution<T> {
+    return new PendingResolution(super.finally(onfinally), this.#context, this.#controller);
+  }
+
+  static create(
+    context: Context,
+    executor: (signal: AbortSignal) => PromiseLike<FlagResolution>,
+  ): PendingResolution<FlagResolution> {
+    const controller = new AbortController();
+    return new PendingResolution(executor(controller.signal), context, controller);
   }
 }
 
-export interface PendingResolution extends Promise<FlagResolution> {
-  readonly context: Value.Struct;
-  abort(reason?: any): void;
+export interface FlagResolverClient {
+  resolve(context: Context, flags: string[]): PendingResolution;
 }
 
 export type FlagResolverClientOptions = {
@@ -124,7 +70,8 @@ export type FlagResolverClientOptions = {
   environment: 'client' | 'backend';
   region?: 'eu' | 'us';
 };
-export class FlagResolverClient {
+
+export class FetchingFlagResolverClient implements FlagResolverClient {
   private readonly fetchImplementation: SimpleFetch;
   private readonly clientSecret: string;
   private readonly sdk: Sdk;
@@ -141,7 +88,7 @@ export class FlagResolverClient {
     region,
   }: FlagResolverClientOptions) {
     // TODO think about both resolve and apply request logic for backends
-    this.fetchImplementation = environment === 'client' ? withRequestLogic(fetchImplementation) : fetchImplementation;
+    this.fetchImplementation = environment === 'backend' ? fetchImplementation : withRequestLogic(fetchImplementation);
     this.clientSecret = clientSecret;
     this.sdk = sdk;
     this.applyTimeout = applyTimeout;
@@ -156,12 +103,12 @@ export class FlagResolverClient {
       sdk: this.sdk,
       flags: flags.map(name => FLAG_PREFIX + name),
     };
-    const abortController = new AbortController();
-    const resolution = this.resolveFlagsJson(request, abortController.signal).then(
-      response => new FlagResolutionImpl(context, response, this.createApplier(response.resolveToken)),
-    );
 
-    return Object.assign(resolution, { context, abort: (reason?: any) => abortController.abort(reason) });
+    return PendingResolution.create(context, signal =>
+      this.resolveFlagsJson(request, signal).then(response =>
+        FlagResolution.create(context, response, this.createApplier(response.resolveToken)),
+      ),
+    );
   }
 
   createApplier(resolveToken: Uint8Array): Applier {
@@ -240,36 +187,46 @@ export class FlagResolverClient {
   // }
 }
 
-function toEvaluationReason(reason: ResolveReason): Exclude<FlagEvaluation<unknown>['reason'], 'PENDING'> {
-  switch (reason) {
-    case ResolveReason.RESOLVE_REASON_UNSPECIFIED:
-      return 'UNSPECIFIED';
-    case ResolveReason.RESOLVE_REASON_MATCH:
-      return 'MATCH';
-    case ResolveReason.RESOLVE_REASON_NO_SEGMENT_MATCH:
-      return 'NO_SEGMENT_MATCH';
-    case ResolveReason.RESOLVE_REASON_NO_TREATMENT_MATCH:
-      return 'NO_TREATMENT_MATCH';
-    case ResolveReason.RESOLVE_REASON_FLAG_ARCHIVED:
-      return 'FLAG_ARCHIVED';
-    case ResolveReason.RESOLVE_REASON_TARGETING_KEY_ERROR:
-      return 'TARGETING_KEY_ERROR';
-    case ResolveReason.RESOLVE_REASON_ERROR:
-      return 'ERROR';
-    default:
-      return 'UNSPECIFIED';
-  }
-}
+export class CachingFlagResolverClient implements FlagResolverClient {
+  readonly #cache: Map<string, { timestamp: number; value: PendingResolution; refCount: number }> = new Map();
+  readonly #source: FlagResolverClient;
+  readonly #ttl: number;
 
-function base64FromBytes(arr: Uint8Array): string {
-  if ((globalThis as any).Buffer) {
-    return globalThis.Buffer.from(arr).toString('base64');
+  constructor(source: FlagResolverClient, ttlMs: number) {
+    this.#source = source;
+    this.#ttl = ttlMs;
   }
-  const bin: string[] = [];
-  arr.forEach(byte => {
-    bin.push(globalThis.String.fromCharCode(byte));
-  });
-  return globalThis.btoa(bin.join(''));
+
+  resolve(context: Context, flags: string[]): PendingResolution {
+    this.evict();
+    const key = Value.serialize(context);
+    let entry = this.#cache.get(key);
+    if (!entry) {
+      const value = this.#source.resolve(context, flags);
+      entry = { refCount: 1, timestamp: Date.now(), value };
+      // TODO This patching is too hacky
+      patch(value, 'abort', abort => () => {
+        entry!.refCount--;
+        if (entry!.refCount === 0) {
+          abort();
+          this.#cache.delete(key);
+        }
+      });
+      this.#cache.set(key, entry);
+    } else {
+      entry.refCount++;
+    }
+    return entry.value;
+  }
+
+  evict() {
+    const now = Date.now();
+    for (const [key, { timestamp }] of this.#cache) {
+      const age = now - timestamp;
+      if (age < this.#ttl) return;
+      this.#cache.delete(key);
+    }
+  }
 }
 
 export function withRequestLogic(fetchImplementation: (request: Request) => Promise<Response>): typeof fetch {
@@ -303,4 +260,11 @@ export function withRequestLogic(fetchImplementation: (request: Request) => Prom
       // throw so we notice changes in endpoints that should be handled here
       .build(request => Promise.reject(new Error(`Unexpected url: ${request.url}`)))
   );
+}
+
+function patch<T, K extends keyof T>(obj: T, key: K, fn: (original: T[K]) => T[K]): T {
+  // @ts-ignore
+  const original = obj[key].bind(obj);
+  obj[key] = fn(original);
+  return obj;
 }

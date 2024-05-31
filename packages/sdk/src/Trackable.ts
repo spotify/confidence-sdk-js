@@ -16,7 +16,7 @@ export namespace Trackable {
     constructor(delegate: Controller) {
       this.#delegate = delegate;
     }
-    setContext(context: Context): void {
+    setContext(context: Context): boolean {
       this.assertNonRevoked();
       return this.#delegate.setContext(context);
     }

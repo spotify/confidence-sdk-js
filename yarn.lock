@@ -3147,16 +3147,6 @@ __metadata:
   languageName: node
   linkType: hard
 
-"@openfeature/react-sdk@npm:^0.3.3":
-  version: 0.3.3
-  resolution: "@openfeature/react-sdk@npm:0.3.3"
-  peerDependencies:
-    "@openfeature/web-sdk": ^1.0.2
-    react: ">=16.8.0"
-  checksum: 10c0/c8ee7b241db6087253e08ab98eb0a36872b31ce75c4c3b48f7398c8856fd01b7223dcd7e1bae14a9f9b9647c9d9f519243514739be08d93187979b691d9775cd
-  languageName: node
-  linkType: hard
-
 "@openfeature/server-sdk@npm:^1.13.5":
   version: 1.13.5
   resolution: "@openfeature/server-sdk@npm:1.13.5"
@@ -3635,7 +3625,7 @@ __metadata:
   languageName: unknown
   linkType: soft
 
-"@spotify-confidence/openfeature-web-provider@npm:0.2.5, @spotify-confidence/openfeature-web-provider@workspace:packages/openfeature-web-provider":
+"@spotify-confidence/openfeature-web-provider@workspace:packages/openfeature-web-provider":
   version: 0.0.0-use.local
   resolution: "@spotify-confidence/openfeature-web-provider@workspace:packages/openfeature-web-provider"
   dependencies:
@@ -3647,6 +3637,20 @@ __metadata:
   peerDependencies:
     "@openfeature/web-sdk": ^1.0.3
     "@spotify-confidence/sdk": 0.0.7
+  languageName: unknown
+  linkType: soft
+
+"@spotify-confidence/react@npm:0.0.1, @spotify-confidence/react@workspace:packages/react":
+  version: 0.0.0-use.local
+  resolution: "@spotify-confidence/react@workspace:packages/react"
+  dependencies:
+    "@microsoft/api-extractor": "npm:*"
+    "@spotify-confidence/sdk": "npm:0.0.7"
+    react: "npm:^18.2.0"
+    rollup: "npm:*"
+  peerDependencies:
+    "@spotify-confidence/sdk": 0.0.7
+    react: ^18.2.0
   languageName: unknown
   linkType: soft
 
@@ -4535,17 +4539,6 @@ __metadata:
     "@types/scheduler": "npm:*"
     csstype: "npm:^3.0.2"
   checksum: 10c0/3a90c1614765a03fc83408cfe7fd75a5284fad96014241654f59e64bf004bed81df3e757eff73310c8d332523e1d2b32230e35d9496f608a1ced93f9ca06a26e
-  languageName: node
-  linkType: hard
-
-"@types/react@npm:^18.0.0":
-  version: 18.2.28
-  resolution: "@types/react@npm:18.2.28"
-  dependencies:
-    "@types/prop-types": "npm:*"
-    "@types/scheduler": "npm:*"
-    csstype: "npm:^3.0.2"
-  checksum: 10c0/7bde71a9f5ba1feef7762b3a9280f3fc9dfba6ea905cbcb73f7e9cd55adcf69148d77e53da328c892767dc218dfb7319bf00a94f6550c1b58019b756cb27207d
   languageName: node
   linkType: hard
 
@@ -14729,10 +14722,7 @@ __metadata:
     "@babel/plugin-syntax-flow": "npm:^7.22.5"
     "@babel/plugin-transform-private-property-in-object": "npm:^7.22.11"
     "@babel/plugin-transform-react-jsx": "npm:^7.22.15"
-    "@openfeature/core": "npm:^1.1.0"
-    "@openfeature/react-sdk": "npm:^0.3.3"
-    "@openfeature/web-sdk": "npm:^1.0.3"
-    "@spotify-confidence/openfeature-web-provider": "npm:0.2.5"
+    "@spotify-confidence/react": "npm:0.0.1"
     "@spotify-confidence/sdk": "npm:0.0.7"
     "@testing-library/dom": "npm:^7.29.6"
     "@testing-library/jest-dom": "npm:^5.14.1"
@@ -14740,8 +14730,6 @@ __metadata:
     "@testing-library/user-event": "npm:^13.2.1"
     "@types/jest": "npm:^27.0.1"
     "@types/node": "npm:^16.7.13"
-    "@types/react": "npm:^18.0.0"
-    "@types/react-dom": "npm:^18.0.0"
     react: "npm:^18.2.0"
     react-dom: "npm:^18.2.0"
     react-scripts: "npm:5.0.1"

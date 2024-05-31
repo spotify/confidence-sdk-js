@@ -1,4 +1,9 @@
-import { FlagResolution, FlagResolverClient, PendingResolution } from './FlagResolverClient';
+import {
+  CachingFlagResolverClient,
+  FetchingFlagResolverClient,
+  FlagResolverClient,
+  PendingResolution,
+} from './FlagResolverClient';
 import { EventSenderEngine } from './EventSenderEngine';
 import { Value } from './Value';
 import { EventData, EventSender } from './events';
@@ -11,8 +16,9 @@ import { Trackable } from './Trackable';
 import { Closer } from './Closer';
 import { Subscribe, Observer, subject, changeObserver } from './observing';
 import { SimpleFetch } from './types';
+import { FlagResolution } from './FlagResolution';
+import { AccessiblePromise } from './AccessiblePromise';
 
-const NOOP = () => {};
 export interface ConfidenceOptions {
   clientSecret: string;
   region?: 'eu' | 'us';
@@ -23,7 +29,7 @@ export interface ConfidenceOptions {
   logger?: Logger;
 }
 
-interface Configuration {
+export interface Configuration {
   readonly environment: 'client' | 'backend';
   readonly logger: Logger;
   readonly timeout: number;
@@ -43,7 +49,7 @@ export class Confidence implements EventSender, Trackable, FlagResolver {
   readonly contextChanges: Subscribe<string[]>;
 
   private currentFlags?: FlagResolution;
-  private pendingFlags?: PendingResolution;
+  private pendingFlags?: PendingResolution<void>;
 
   private readonly flagStateSubject: Subscribe<State>;
 
@@ -71,8 +77,8 @@ export class Confidence implements EventSender, Trackable, FlagResolver {
         this.resolveFlags().then(reportState);
       }
       const close = this.contextChanges(() => {
+        if (this.flagState === 'READY') observer('STALE');
         this.resolveFlags().then(reportState);
-        reportState();
       });
 
       return () => {
@@ -116,7 +122,7 @@ export class Confidence implements EventSender, Trackable, FlagResolver {
     return Object.freeze(context);
   }
 
-  setContext(context: Context): void {
+  setContext(context: Context): boolean {
     const current = this.getContext();
     const changedKeys: string[] = [];
     for (const key of Object.keys(context)) {
@@ -127,6 +133,7 @@ export class Confidence implements EventSender, Trackable, FlagResolver {
     if (this.contextChanged && changedKeys.length > 0) {
       this.contextChanged(changedKeys);
     }
+    return changedKeys.length > 0;
   }
 
   clearContext(): void {
@@ -143,6 +150,7 @@ export class Confidence implements EventSender, Trackable, FlagResolver {
   withContext(context: Context): Confidence {
     const child = new Confidence(this.config, this);
     child.setContext(context);
+    // child.resolveFlags();
     return child;
   }
 
@@ -156,30 +164,34 @@ export class Confidence implements EventSender, Trackable, FlagResolver {
     return undefined;
   }
 
-  private async resolveFlags(): Promise<void> {
+  protected resolveFlags(): AccessiblePromise<void> {
     const context = this.getContext();
-
     if (!this.pendingFlags || !Value.equal(this.pendingFlags.context, context)) {
-      this.pendingFlags?.abort(new Error('Context changed'));
-      this.pendingFlags = this.config.flagResolverClient.resolve(context, []);
-      this.pendingFlags
+      this.pendingFlags?.abort();
+      this.pendingFlags = this.config.flagResolverClient
+        .resolve(context, [])
         .then(resolution => {
           this.currentFlags = resolution;
         })
         .catch(e => {
           // TODO fix sloppy handling of error
-          if (e.message !== 'Context changed') {
+          if (e.message !== 'Resolve aborted') {
             this.config.logger.info?.('Resolve failed.', e);
           }
         })
         .finally(() => {
+          // if this resolves synchronously, the assignment on 171 will actually happen after we clear it.
           this.pendingFlags = undefined;
         });
     }
-    return this.pendingFlags.then(NOOP, NOOP);
+    if (this.pendingFlags.state !== 'PENDING') {
+      this.pendingFlags = undefined;
+      return AccessiblePromise.resolve();
+    }
+    return this.pendingFlags;
   }
 
-  private get flagState(): State {
+  get flagState(): State {
     if (this.currentFlags) {
       if (this.pendingFlags) return 'STALE';
       return 'READY';
@@ -212,6 +224,8 @@ export class Confidence implements EventSender, Trackable, FlagResolver {
 
   evaluateFlag<T extends Value>(path: string, defaultValue: T): FlagEvaluation<Value.Widen<T>> {
     let evaluation: FlagEvaluation<T>;
+    // resolveFlags might update state synchronously
+    if (!this.currentFlags && !this.pendingFlags) this.resolveFlags();
     if (!this.currentFlags) {
       evaluation = {
         reason: 'ERROR',
@@ -219,14 +233,17 @@ export class Confidence implements EventSender, Trackable, FlagResolver {
         errorMessage: 'Flags are not yet ready',
         value: defaultValue,
       };
-      if (!this.pendingFlags) this.resolveFlags();
     } else {
       evaluation = this.currentFlags.evaluate(path, defaultValue);
     }
     if (!this.currentFlags || !Value.equal(this.currentFlags.context, this.getContext())) {
       const then: PromiseLike<FlagEvaluation.Resolved<T>>['then'] = (onfulfilled?, onrejected?) =>
         this.evaluateFlagAsync(path, defaultValue).then(onfulfilled, onrejected);
-      return Object.assign(evaluation, { then }) as FlagEvaluation<Value.Widen<T>>;
+      const staleEvaluation = {
+        ...evaluation,
+        then,
+      };
+      return staleEvaluation as FlagEvaluation<Value.Widen<T>>;
     }
     return evaluation as FlagEvaluation<Value.Widen<T>>;
   }
@@ -247,13 +264,16 @@ export class Confidence implements EventSender, Trackable, FlagResolver {
       id: SdkId.SDK_ID_JS_CONFIDENCE,
       version: '0.0.7', // x-release-please-version
     } as const;
-    const flagResolverClient = new FlagResolverClient({
+    let flagResolverClient: FlagResolverClient = new FetchingFlagResolverClient({
       clientSecret,
       fetchImplementation,
       sdk,
       environment,
       region,
     });
+    if (environment === 'client') {
+      flagResolverClient = new CachingFlagResolverClient(flagResolverClient, 30_000);
+    }
     const estEventSizeKb = 1;
     const flushTimeoutMilliseconds = 500;
     // default grpc payload limit is 4MB, so we aim for a 1MB batch-size

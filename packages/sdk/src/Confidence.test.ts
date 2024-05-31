@@ -1,15 +1,16 @@
+import { AccessiblePromise } from './AccessiblePromise';
 import { Closer } from './Closer';
 import { Confidence } from './Confidence';
 import { EventSenderEngine } from './EventSenderEngine';
-import { FlagResolution, FlagResolverClient } from './FlagResolverClient';
+import { FlagResolution } from './FlagResolution';
+import { FlagResolverClient, PendingResolution } from './FlagResolverClient';
 import { FlagEvaluation, State, StateObserver } from './flags';
 
 const flagResolverClientMock: jest.Mocked<FlagResolverClient> = {
   resolve: jest.fn(),
-} as any; // TODO fix any by using an interface
+};
 
 const eventSenderEngineMock: jest.Mocked<EventSenderEngine> = {} as any; // TODO fix any by using an interface
-const abortMock = jest.fn();
 
 describe('Confidence', () => {
   let confidence: Confidence;
@@ -29,7 +30,7 @@ describe('Confidence', () => {
       flagResolverClient: flagResolverClientMock,
     });
     flagResolverClientMock.resolve.mockImplementation((context, _flags) => {
-      const flagResolution = new Promise<FlagResolution>((resolve, _reject) => {
+      const flagResolution = new Promise<FlagResolution>(resolve => {
         setTimeout(() => {
           resolve({
             context: context,
@@ -38,10 +39,7 @@ describe('Confidence', () => {
         }, 0);
       });
 
-      return Object.assign(Promise.resolve(flagResolution), {
-        context: {},
-        abort: abortMock,
-      });
+      return PendingResolution.create({}, () => flagResolution);
     });
   });
 
@@ -355,6 +353,23 @@ describe('Confidence', () => {
         variant: 'mockVariant',
       });
       expect(flagResolverClientMock.resolve).toHaveBeenCalledTimes(1);
+    });
+
+    it('should handle a synchronously resolved promise', async () => {
+      const mockFlagResolution: FlagResolution = {
+        context: {},
+        evaluate: jest.fn().mockImplementation(() => matchedEvaluation),
+      };
+      const mockPendingResolution: PendingResolution = PendingResolution.create({}, () =>
+        AccessiblePromise.resolve(mockFlagResolution),
+      );
+      flagResolverClientMock.resolve.mockReturnValueOnce(mockPendingResolution);
+      const result = confidence.evaluateFlag('flag1', 'default');
+      expect(await result).toEqual({
+        reason: 'MATCH',
+        value: 'mockValue',
+        variant: 'mockVariant',
+      });
     });
   });
 });
