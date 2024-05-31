@@ -175,7 +175,7 @@ export class Confidence implements EventSender, Trackable, FlagResolver {
         })
         .catch(e => {
           // TODO fix sloppy handling of error
-          if (e.message !== 'Context changed') {
+          if (e.message !== 'Resolve aborted') {
             this.config.logger.info?.('Resolve failed.', e);
           }
         })
@@ -191,7 +191,7 @@ export class Confidence implements EventSender, Trackable, FlagResolver {
     return this.pendingFlags;
   }
 
-  private get flagState(): State {
+  get flagState(): State {
     if (this.currentFlags) {
       if (this.pendingFlags) return 'STALE';
       return 'READY';

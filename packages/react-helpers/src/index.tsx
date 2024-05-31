@@ -9,6 +9,7 @@ import {
   FlagResolver,
   StateObserver,
   Trackable,
+  State,
 } from '@spotify-confidence/sdk';
 
 import React, { createContext, FC, PropsWithChildren, useContext, useEffect, useMemo, useState } from 'react';
@@ -36,6 +37,11 @@ export class ConfidenceReact implements EventSender, Trackable, FlagResolver {
     return this.#delegate.config;
   }
 
+  /** @internal */
+  get state(): State {
+    return this.#delegate.flagState;
+  }
+
   track(name: string, message?: Value.Struct): void;
   track(manager: Trackable.Manager): Closer;
   track(nameOrManager: string | Trackable.Manager, message?: Value.Struct): Closer | undefined {
@@ -58,11 +64,11 @@ export class ConfidenceReact implements EventSender, Trackable, FlagResolver {
     // eslint-disable-next-line react-hooks/exhaustive-deps
     const child = useMemo(() => this.withContext(context), [parent, serializedContext]);
 
-    const [, setState] = useState(0);
+    const [, setState] = useState(() => (child.state !== 'READY' ? '' : Value.serialize(child.getContext())));
     useEffect(
       () =>
         child.subscribe(state => {
-          if (state === 'READY') setState(value => value + 1);
+          if (state === 'READY') setState(Value.serialize(child.getContext()));
         }),
       [child, setState],
     );
@@ -116,12 +122,14 @@ export const useConfidence = (): ConfidenceReact => {
   const confidenceReact = useContext(ConfidenceContext);
   if (!confidenceReact)
     throw new Error('No Confidence instance found, did you forget to wrap your component in ConfidenceProvider?');
-  const [, setState] = useState(0);
+  const [, setState] = useState(() =>
+    confidenceReact.state !== 'READY' ? '' : Value.serialize(confidenceReact.getContext()),
+  );
 
   useEffect(
     () =>
       confidenceReact.subscribe(state => {
-        if (state === 'READY') setState(value => value + 1);
+        if (state === 'READY') setState(Value.serialize(confidenceReact.getContext()));
       }),
     [confidenceReact, setState],
   );

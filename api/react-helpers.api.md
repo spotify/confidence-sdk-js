@@ -13,6 +13,7 @@ import { FC } from 'react';
 import { FlagEvaluation } from '@spotify-confidence/sdk';
 import { FlagResolver } from '@spotify-confidence/sdk';
 import { PropsWithChildren } from 'react';
+import { State } from '@spotify-confidence/sdk';
 import { StateObserver } from '@spotify-confidence/sdk';
 import { Trackable } from '@spotify-confidence/sdk';
 import { Value } from '@spotify-confidence/sdk';
@@ -49,6 +50,8 @@ export class ConfidenceReact implements EventSender, Trackable, FlagResolver {
     getFlag<T extends Value>(path: string, defaultValue: T): Promise<Value.Widen<T>>;
     // (undocumented)
     setContext(context: Context): void;
+    // @internal (undocumented)
+    get state(): State;
     // (undocumented)
     subscribe(onStateChange?: StateObserver | undefined): () => void;
     // (undocumented)
