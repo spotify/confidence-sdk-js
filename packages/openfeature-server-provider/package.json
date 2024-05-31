@@ -12,7 +12,7 @@
   },
   "peerDependencies": {
     "@openfeature/server-sdk": "^1.13.5",
-    "@spotify-confidence/sdk": "0.0.7"
+    "@spotify-confidence/sdk": "0.1.0"
   },
   "publishConfig": {
     "registry": "https://registry.npmjs.org/",
