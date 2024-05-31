@@ -41,10 +41,9 @@ export class ConfidenceReact implements EventSender, Trackable, FlagResolver {
   track(nameOrManager: string | Trackable.Manager, message?: Value.Struct): Closer | undefined {
     if (typeof nameOrManager === 'function') {
       return this.#delegate.track(nameOrManager);
-    } else {
-      this.#delegate.track(nameOrManager, message);
-      return;
     }
+    this.#delegate.track(nameOrManager, message);
+    return undefined;
   }
   getContext(): Context {
     return this.#delegate.getContext();
@@ -53,8 +52,11 @@ export class ConfidenceReact implements EventSender, Trackable, FlagResolver {
     this.#delegate.setContext(context);
   }
 
+  /* eslint-disable react-hooks/rules-of-hooks */
   useWithContext(context: Context): ConfidenceReact {
-    const child = useMemo(() => this.withContext(context), [parent, Value.serialize(context)]);
+    const serializedContext = Value.serialize(context);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    const child = useMemo(() => this.withContext(context), [parent, serializedContext]);
 
     const [, setState] = useState(0);
     useEffect(
@@ -66,6 +68,8 @@ export class ConfidenceReact implements EventSender, Trackable, FlagResolver {
     );
     return child;
   }
+  /* eslint-enable react-hooks/rules-of-hooks */
+
   withContext(context: Context): ConfidenceReact {
     const child = this.#delegate.withContext(context);
     return new ConfidenceReact(child);
@@ -105,6 +109,7 @@ const WithContext: FC<PropsWithChildren<{ context: Context }>> = ({ context, chi
 export type ConfidenceProvider = FC<PropsWithChildren<{ confidence: Confidence }>> & {
   WithContext: FC<PropsWithChildren<{ context: Context }>>;
 };
+// eslint-disable-next-line @typescript-eslint/no-redeclare
 export const ConfidenceProvider: ConfidenceProvider = Object.assign(_ConfidenceProvider, { WithContext });
 
 export const useConfidence = (): ConfidenceReact => {

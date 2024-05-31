@@ -15,10 +15,10 @@ export namespace Value {
   export type Widen<T extends Value> = T extends number
     ? number
     : T extends string
-    ? string
-    : T extends boolean
-    ? boolean
-    : T;
+      ? string
+      : T extends boolean
+        ? boolean
+        : T;
 
   export function assertValue(value: unknown): asserts value is Value {
     switch (typeof value) {
@@ -178,7 +178,9 @@ export namespace Value {
       return this.buffer.join('');
     }
 
+    // eslint-disable-next-line consistent-return
     writeValue(value: Value) {
+      // eslint-disable-next-line default-case
       switch (getType(value)) {
         case 'string':
           return this.writeString(value as string);
@@ -236,7 +238,9 @@ export namespace Value {
       this.str = data;
     }
 
+    // eslint-disable-next-line consistent-return
     readValue(): Value {
+      // eslint-disable-next-line default-case
       switch (this.str.charCodeAt(this.pos) as BinaryType) {
         case BinaryType.STRING:
           return this.readString();

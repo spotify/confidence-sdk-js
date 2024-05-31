@@ -12,9 +12,9 @@ export class AccessiblePromise<T> {
       // both value and reason can be promise like in which case we are still pending
       this.#state = 'PENDING';
       value.then(
-        value => {
+        v => {
           this.#state = 'RESOLVED';
-          this.#value = value;
+          this.#value = v;
         },
         reason => {
           this.#state = 'REJECTED';
@@ -34,6 +34,7 @@ export class AccessiblePromise<T> {
   ): AccessiblePromise<TResult1 | TResult2> {
     let value = this.#value;
     let rejected = false;
+    // eslint-disable-next-line default-case
     switch (this.#state) {
       case 'PENDING':
         value = value.then(onfulfilled, onrejected);
