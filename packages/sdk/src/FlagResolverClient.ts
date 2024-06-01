@@ -18,10 +18,14 @@ export class PendingResolution<T = FlagResolution> extends AccessiblePromise<T> 
   #context: Context;
   #controller: AbortController;
 
-  protected constructor(promise: PromiseLike<T>, context: Context, controller: AbortController) {
-    super(promise);
+  protected constructor(promise: PromiseLike<T>, context: Context, controller: AbortController, rejected?: boolean) {
+    super(promise, rejected);
     this.#context = context;
     this.#controller = controller;
+  }
+
+  protected chain<S>(value: any, rejected?: boolean | undefined): PendingResolution<S> {
+    return new PendingResolution(value, this.#context, this.#controller, rejected);
   }
 
   get context(): Context {
@@ -36,17 +40,17 @@ export class PendingResolution<T = FlagResolution> extends AccessiblePromise<T> 
     onfulfilled?: ((value: T) => TResult1 | PromiseLike<TResult1>) | null | undefined,
     onrejected?: ((reason: any) => TResult2 | PromiseLike<TResult2>) | null | undefined,
   ): PendingResolution<TResult1 | TResult2> {
-    return new PendingResolution(super.then(onfulfilled, onrejected), this.#context, this.#controller);
+    return super.then(onfulfilled, onrejected) as PendingResolution<TResult1 | TResult2>;
   }
 
   catch<TResult = never>(
     onrejected?: ((reason: any) => TResult | PromiseLike<TResult>) | null | undefined,
   ): PendingResolution<T | TResult> {
-    return new PendingResolution(super.catch(onrejected), this.#context, this.#controller);
+    return super.catch(onrejected) as PendingResolution<T | TResult>;
   }
 
   finally(onfinally?: (() => void) | null | undefined): PendingResolution<T> {
-    return new PendingResolution(super.finally(onfinally), this.#context, this.#controller);
+    return super.finally(onfinally) as PendingResolution<T>;
   }
 
   static create(

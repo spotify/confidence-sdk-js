@@ -17,6 +17,14 @@ describe('AccessiblePromise', () => {
       expect(other.state).toBe('RESOLVED');
       expect(other.or(0)).toBe(238);
     });
+
+    it('rejects if then handler throws', () => {
+      const other = resolved.then<number>(() => {
+        throw new Error('error');
+      });
+      expect(other.state).toBe('REJECTED');
+      expect(() => other.or(0)).toThrow('error');
+    });
   });
 
   describe('pending', () => {
