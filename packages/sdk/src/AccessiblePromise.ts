@@ -25,6 +25,11 @@ export class AccessiblePromise<T> {
       this.#state = rejected ? 'REJECTED' : 'RESOLVED';
     }
   }
+
+  protected chain<T>(value: any, rejected?: boolean): AccessiblePromise<T> {
+    return new AccessiblePromise(value, rejected);
+  }
+
   get state(): 'PENDING' | 'RESOLVED' | 'REJECTED' {
     return this.#state;
   }
@@ -60,7 +65,7 @@ export class AccessiblePromise<T> {
         }
         break;
     }
-    return new AccessiblePromise(value, rejected);
+    return this.chain(value, rejected);
   }
 
   catch<TResult = never>(
