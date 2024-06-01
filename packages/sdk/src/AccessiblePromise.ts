@@ -26,7 +26,7 @@ export class AccessiblePromise<T> {
     }
   }
 
-  protected chain<T>(value: any, rejected?: boolean): AccessiblePromise<T> {
+  protected chain<S>(value: any, rejected?: boolean): AccessiblePromise<S> {
     return new AccessiblePromise(value, rejected);
   }
 

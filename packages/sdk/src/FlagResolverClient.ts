@@ -24,7 +24,7 @@ export class PendingResolution<T = FlagResolution> extends AccessiblePromise<T> 
     this.#controller = controller;
   }
 
-  protected chain<T>(value: any, rejected?: boolean | undefined): PendingResolution<T> {
+  protected chain<S>(value: any, rejected?: boolean | undefined): PendingResolution<S> {
     return new PendingResolution(value, this.#context, this.#controller, rejected);
   }
 

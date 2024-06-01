@@ -20,7 +20,7 @@ describe('AccessiblePromise', () => {
 
     it('rejects if then handler throws', () => {
       const other = resolved.then<number>(() => {
-        throw 'error';
+        throw new Error('error');
       });
       expect(other.state).toBe('REJECTED');
       expect(() => other.or(0)).toThrow('error');
