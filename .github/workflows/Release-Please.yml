@@ -37,7 +37,7 @@ jobs:
         with:
           ref: ${{ needs.release-please.outputs.release_tag_name }}
       - name: Setup Node
-        uses: actions/setup-node@v4
+        uses: actions/setup-node@v3
         with:
           node-version: ${{ matrix.node-version }}
           registry-url: 'https://registry.npmjs.org'
