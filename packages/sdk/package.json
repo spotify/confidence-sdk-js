@@ -1,7 +1,7 @@
 {
   "name": "@spotify-confidence/sdk",
   "license": "Apache-2.0",
-  "version": "0.1.0",
+  "version": "0.1.1",
   "types": "build/types/index.d.ts",
   "engineStrict": true,
   "engines": {
