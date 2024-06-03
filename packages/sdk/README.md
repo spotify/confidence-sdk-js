@@ -64,6 +64,7 @@ At this point, the context of `childInstance` is `'pants-color': 'blue', 'pants-
 ## Event tracking
 
 Use `confidence.track()` from any Confidence instance to track an event in Confidence. Any context data set on the instance will be appended to the tracking event.
+Additional event data can be passed as an argument to the `track()` function.
 
 ```ts
 confidence.track('event_name', { 'message-detail1': 'something interesting' });
