@@ -21,7 +21,7 @@
     "main": "dist/index.js"
   },
   "peerDependencies": {
-    "@spotify-confidence/sdk": "0.1.0",
+    "@spotify-confidence/sdk": "0.1.2",
     "react": "^18.2.0"
   },
   "devDependencies": {
