@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.1.2](https://github.com/spotify/confidence-sdk-js/compare/sdk-v0.1.0...sdk-v0.1.2) (2024-06-03)
+
+
+### 🐛 Bug Fixes
+
+* excessive promises created by PendingResolution ([f0b97ef](https://github.com/spotify/confidence-sdk-js/commit/f0b97efd5b6b49654be61117d2aa7415ff8b87e9))
+
 ## [0.1.0](https://github.com/spotify/confidence-sdk-js/compare/sdk-v0.0.7...sdk-v0.1.0) (2024-05-31)
 
 
