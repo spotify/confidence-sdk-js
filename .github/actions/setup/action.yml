@@ -10,10 +10,13 @@ runs:
   using: 'composite'
   steps:
     - name: Setup Node
-      uses: actions/setup-node@v3
+      uses: actions/setup-node@v4
       with:
         node-version: ${{ inputs.node-version }}
         scope: '@spotify-confidence'
     - name: Install dependencies
       shell: bash
       run: corepack enable && yarn install --frozen-lockfile
+    - name: Echo yarn config
+      shell: bash
+      run: yarn config -v
