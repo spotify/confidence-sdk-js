@@ -21,8 +21,9 @@
     "main": "dist/index.js"
   },
   "scripts": {
-    "build": "tsc",
-    "bundle": "rollup -c && api-extractor run"
+    "build": "tsc -b",
+    "bundle": "rollup -c && api-extractor run",
+    "prepack": "yarn build && yarn bundle"
   },
   "files": [
     "dist/index.*"

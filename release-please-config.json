@@ -14,8 +14,7 @@
           "path": "/examples/*/package.json",
           "jsonpath": "$['dependencies']['@spotify-confidence/openfeature-server-provider']"
         }
-      ],
-      "release-as": "0.2.7"
+      ]
     },
     "packages/openfeature-web-provider": {
       "component": "openfeature-web-provider",
@@ -30,8 +29,7 @@
           "path": "/examples/*/package.json",
           "jsonpath": "$['dependencies']['@spotify-confidence/openfeature-web-provider']"
         }
-      ],
-      "release-as": "0.2.7"
+      ]
     },
     "packages/react": {
       "component": "react",
@@ -45,8 +43,7 @@
           "path": "/examples/*/package.json",
           "jsonpath": "$['dependencies']['@spotify-confidence/react']"
         }
-      ],
-      "release-as": "0.0.2"
+      ]
     },
     "packages/sdk": {
       "component": "sdk",
@@ -61,8 +58,7 @@
           "path": "/examples/*/package.json",
           "jsonpath": "$['dependencies']['@spotify-confidence/sdk']"
         }
-      ],
-      "release-as": "0.1.2"
+      ]
     }
   },
   "changelog-sections": [

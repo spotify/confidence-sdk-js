@@ -19,8 +19,9 @@ module.exports = defineConfig({
       workspace.unset('module');
       workspace.set('types', 'build/types/index.d.ts');
       workspace.set('files', ['dist/index.*']);
-      workspace.set('scripts.build', 'tsc');
+      workspace.set('scripts.build', 'tsc -b');
       workspace.set('scripts.bundle', 'rollup -c && api-extractor run');
+      workspace.set('scripts.prepack', 'yarn build && yarn bundle');
       workspace.set('publishConfig', {
         registry: 'https://registry.npmjs.org/',
         access: 'public',

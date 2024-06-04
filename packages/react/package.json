@@ -8,7 +8,8 @@
   ],
   "scripts": {
     "bundle": "rollup -c && api-extractor run",
-    "build": "tsc"
+    "build": "tsc -b",
+    "prepack": "yarn build && yarn bundle"
   },
   "engineStrict": true,
   "engines": {
