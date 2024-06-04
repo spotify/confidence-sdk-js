@@ -43,7 +43,7 @@ export class ConfidenceWebProvider implements Provider {
         isStale = true;
       }
     });
-    return this.expectReadyOrTimeout();
+    return this.expectReadyOrError();
   }
 
   async onClose(): Promise<void> {
@@ -57,20 +57,17 @@ export class ConfidenceWebProvider implements Provider {
       return Promise.resolve();
     }
     this.confidence.setContext(convertContext(changes));
-    return this.expectReadyOrTimeout();
+    return this.expectReadyOrError();
   }
 
-  private expectReadyOrTimeout(): Promise<void> {
-    const timeout = this.confidence.config.timeout;
+  private expectReadyOrError(): Promise<void> {
     let close: () => void;
     return new Promise<void>((resolve, reject) => {
-      const timeoutId = setTimeout(() => {
-        reject(new Error(`Resolve timed out after ${timeout}ms`));
-      }, timeout);
       close = this.confidence.subscribe(state => {
         if (state === 'READY') {
           resolve();
-          clearTimeout(timeoutId);
+        } else if (state === 'ERROR') {
+          reject(new Error('Provider initialization failed'));
         }
       });
     }).finally(close!);
@@ -88,7 +85,7 @@ export class ConfidenceWebProvider implements Provider {
     return evaluation;
   }
 
-  private mapErrorCode(errorCode: 'FLAG_NOT_FOUND' | 'TYPE_MISMATCH' | 'NOT_READY' | 'GENERAL'): ErrorCode {
+  private mapErrorCode(errorCode: FlagEvaluation.ErrorCode): ErrorCode {
     switch (errorCode) {
       case 'FLAG_NOT_FOUND':
         return ErrorCode.FLAG_NOT_FOUND;

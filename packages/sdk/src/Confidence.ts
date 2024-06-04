@@ -175,7 +175,7 @@ export class Confidence implements EventSender, Trackable, FlagResolver {
         })
         .catch(e => {
           // TODO fix sloppy handling of error
-          if (e.message !== 'Resolve aborted') {
+          if (e.name !== 'AbortError') {
             this.config.logger.info?.('Resolve failed.', e);
           }
         })
@@ -194,7 +194,7 @@ export class Confidence implements EventSender, Trackable, FlagResolver {
   get flagState(): State {
     if (this.currentFlags) {
       if (this.pendingFlags) return 'STALE';
-      return 'READY';
+      return this.currentFlags.state;
     }
     return 'NOT_READY';
   }
@@ -208,14 +208,10 @@ export class Confidence implements EventSender, Trackable, FlagResolver {
 
   private evaluateFlagAsync<T extends Value>(path: string, defaultValue: T): Promise<FlagEvaluation.Resolved<T>> {
     let close: () => void;
-    return new Promise<FlagEvaluation.Resolved<T>>((resolve, reject) => {
-      const timeoutId = setTimeout(() => {
-        reject(new Error(`Timeout evaluating flag "${path}"`));
-      }, this.config.timeout);
+    return new Promise<FlagEvaluation.Resolved<T>>(resolve => {
       close = this.subscribe(state => {
         // when state is ready we can be sure currentFlags exist
-        if (state === 'READY') {
-          clearTimeout(timeoutId);
+        if (state === 'READY' || state === 'ERROR') {
           resolve(this.currentFlags!.evaluate(path, defaultValue));
         }
       });
@@ -269,10 +265,11 @@ export class Confidence implements EventSender, Trackable, FlagResolver {
       fetchImplementation,
       sdk,
       environment,
+      resolveTimeout: timeout,
       region,
     });
     if (environment === 'client') {
-      flagResolverClient = new CachingFlagResolverClient(flagResolverClient, 30_000);
+      flagResolverClient = new CachingFlagResolverClient(flagResolverClient, 3600_000);
     }
     const estEventSizeKb = 1;
     const flushTimeoutMilliseconds = 500;

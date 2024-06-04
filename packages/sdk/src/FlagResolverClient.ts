@@ -1,3 +1,4 @@
+import { FlagEvaluation } from '.';
 import { AccessiblePromise } from './AccessiblePromise';
 import { Applier, FlagResolution } from './FlagResolution';
 import { Value } from './Value';
@@ -14,9 +15,21 @@ import { SimpleFetch } from './types';
 
 const FLAG_PREFIX = 'flags/';
 
+export class ResolveError extends Error {
+  constructor(
+    public readonly code: FlagEvaluation.ErrorCode,
+    message: string,
+  ) {
+    super(message);
+  }
+}
 export class PendingResolution<T = FlagResolution> extends AccessiblePromise<T> {
   #context: Context;
   #controller: AbortController;
+
+  get signal(): AbortSignal {
+    return this.#controller.signal;
+  }
 
   protected constructor(promise: PromiseLike<T>, context: Context, controller: AbortController, rejected?: boolean) {
     super(promise, rejected);
@@ -33,7 +46,7 @@ export class PendingResolution<T = FlagResolution> extends AccessiblePromise<T> 
   }
 
   abort(): void {
-    this.#controller.abort(new Error('Resolve aborted'));
+    this.#controller.abort();
   }
 
   then<TResult1 = T, TResult2 = never>(
@@ -71,6 +84,7 @@ export type FlagResolverClientOptions = {
   clientSecret: string;
   sdk: Sdk;
   applyTimeout?: number;
+  resolveTimeout: number;
   environment: 'client' | 'backend';
   region?: 'eu' | 'us';
 };
@@ -80,6 +94,7 @@ export class FetchingFlagResolverClient implements FlagResolverClient {
   private readonly clientSecret: string;
   private readonly sdk: Sdk;
   private readonly applyTimeout?: number;
+  private readonly resolveTimeout: number;
   private readonly baseUrl: string;
 
   constructor({
@@ -87,6 +102,7 @@ export class FetchingFlagResolverClient implements FlagResolverClient {
     clientSecret,
     sdk,
     applyTimeout,
+    resolveTimeout,
     // todo refactor to move out environment
     environment,
     region,
@@ -97,6 +113,7 @@ export class FetchingFlagResolverClient implements FlagResolverClient {
     this.sdk = sdk;
     this.applyTimeout = applyTimeout;
     this.baseUrl = region ? `https://resolver.${region}.confidence.dev/v1` : 'https://resolver.confidence.dev/v1';
+    this.resolveTimeout = resolveTimeout;
   }
 
   resolve(context: Context, flags: string[]): PendingResolution {
@@ -108,11 +125,22 @@ export class FetchingFlagResolverClient implements FlagResolverClient {
       flags: flags.map(name => FLAG_PREFIX + name),
     };
 
-    return PendingResolution.create(context, signal =>
-      this.resolveFlagsJson(request, signal).then(response =>
-        FlagResolution.create(context, response, this.createApplier(response.resolveToken)),
-      ),
-    );
+    return PendingResolution.create(context, signal => {
+      const signalWithTimeout = withTimeout(
+        signal,
+        this.resolveTimeout,
+        new ResolveError('TIMEOUT', 'Resolve timeout'),
+      );
+      return this.resolveFlagsJson(request, signalWithTimeout)
+        .then(response => FlagResolution.ready(context, response, this.createApplier(response.resolveToken)))
+        .catch(error => {
+          if (error instanceof ResolveError) {
+            return FlagResolution.failed(context, error.code, error.message);
+          }
+          throw error;
+          // return FlagResolution.failed(context, 'GENERAL', error.message);
+        });
+    });
   }
 
   createApplier(resolveToken: Uint8Array): Applier {
@@ -174,6 +202,7 @@ export class FetchingFlagResolverClient implements FlagResolverClient {
     }
     return ResolveFlagsResponse.fromJSON(await resp.json());
   }
+
   // async resolveFlagsProto(request: ResolveFlagsRequest): Promise<ResolveFlagsResponse> {
   //   const resp = await this.fetchImplementation(
   //     new Request('https://resolver.confidence.dev/v1/flags:resolve', {
@@ -208,15 +237,22 @@ export class CachingFlagResolverClient implements FlagResolverClient {
     if (!entry) {
       const value = this.#source.resolve(context, flags);
       entry = { refCount: 1, timestamp: Date.now(), value };
-      // TODO This patching is too hacky
-      patch(value, 'abort', abort => () => {
-        entry!.refCount--;
-        if (entry!.refCount === 0) {
-          abort();
-          this.#cache.delete(key);
-        }
-      });
       this.#cache.set(key, entry);
+
+      value.signal.addEventListener(
+        'abort',
+        () => {
+          entry!.refCount--;
+          if (entry!.refCount === 0) {
+            this.#cache.delete(key);
+          }
+        },
+        { once: true },
+      );
+
+      value.catch(() => {
+        this.#cache.delete(key);
+      });
     } else {
       entry.refCount++;
     }
@@ -266,9 +302,13 @@ export function withRequestLogic(fetchImplementation: (request: Request) => Prom
   );
 }
 
-function patch<T, K extends keyof T>(obj: T, key: K, fn: (original: T[K]) => T[K]): T {
-  // @ts-ignore
-  const original = obj[key].bind(obj);
-  obj[key] = fn(original);
-  return obj;
+function withTimeout(signal: AbortSignal, timeout: number, reason?: any): AbortSignal {
+  const controller = new AbortController();
+  const timeoutId: NodeJS.Timeout | number = setTimeout(() => controller.abort(reason), timeout);
+  if (typeof timeoutId === 'object') timeoutId.unref();
+  signal.addEventListener('abort', () => {
+    clearTimeout(timeoutId);
+    controller.abort(signal.reason);
+  });
+  return controller.signal;
 }

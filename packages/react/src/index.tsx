@@ -9,7 +9,6 @@ import {
   FlagResolver,
   StateObserver,
   Trackable,
-  State,
 } from '@spotify-confidence/sdk';
 
 import React, { createContext, FC, PropsWithChildren, useContext, useEffect, useMemo, useState } from 'react';
@@ -39,8 +38,15 @@ export class ConfidenceReact implements EventSender, Trackable, FlagResolver {
   }
 
   /** @internal */
-  get state(): State {
-    return this.delegate.flagState;
+  get contextState(): string {
+    const state = this.delegate.flagState;
+    switch (state) {
+      case 'READY':
+      case 'ERROR':
+        return state + Value.serialize(this.delegate.getContext());
+      default:
+        return '';
+    }
   }
 
   track(name: string, message?: Value.Struct): void;
@@ -127,14 +133,12 @@ export const useConfidence = (): ConfidenceReact => {
   const confidenceReact = useContext(ConfidenceContext);
   if (!confidenceReact)
     throw new Error('No Confidence instance found, did you forget to wrap your component in ConfidenceProvider?');
-  const [, setState] = useState(() =>
-    confidenceReact.state !== 'READY' ? '' : Value.serialize(confidenceReact.getContext()),
-  );
+  const [, setState] = useState(() => confidenceReact.contextState);
 
   useEffect(
     () =>
       confidenceReact.subscribe(state => {
-        if (state === 'READY') setState(Value.serialize(confidenceReact.getContext()));
+        if (state === 'READY' || state === 'ERROR') setState(confidenceReact.contextState);
       }),
     [confidenceReact, setState],
   );
@@ -160,11 +164,11 @@ export function useWithContext(context: Context, confidence?: ConfidenceReact): 
     [parent, Value.serialize(context)],
   );
 
-  const [, setState] = useState(() => (child.state !== 'READY' ? '' : Value.serialize(child.getContext())));
+  const [, setState] = useState(() => child.contextState);
   useEffect(
     () =>
       child.subscribe(state => {
-        if (state === 'READY') setState(Value.serialize(child.getContext()));
+        if (state === 'READY' || state === 'ERROR') setState(child.contextState);
       }),
     [child, setState],
   );

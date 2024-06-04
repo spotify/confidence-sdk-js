@@ -30,11 +30,10 @@ describe('ConfidenceWebProvider E2E tests', () => {
       const client = OpenFeature.getClient();
 
       expect(client.getStringDetails('web-sdk-e2e-flag.str', 'default')).toEqual({
-        errorCode: 'PROVIDER_NOT_READY',
+        errorCode: 'GENERAL',
         flagKey: 'web-sdk-e2e-flag.str',
         flagMetadata: {},
-        errorMessage: 'Flags are not yet ready',
-        then: expect.any(Function),
+        errorMessage: 'Resolve timeout',
         reason: 'ERROR',
         value: 'default',
       });

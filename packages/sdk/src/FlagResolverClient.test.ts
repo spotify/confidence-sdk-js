@@ -48,6 +48,7 @@ describe('Client environment Evaluation', () => {
       version: 'test',
     },
     environment: 'client',
+    resolveTimeout: 10,
   });
 
   describe('apply', () => {
@@ -99,6 +100,7 @@ describe('Backend environment Evaluation', () => {
       version: 'test',
     },
     environment: 'backend',
+    resolveTimeout: 10,
   });
 
   it('should resolve a full flag object', async () => {

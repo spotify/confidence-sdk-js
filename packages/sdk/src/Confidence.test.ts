@@ -33,6 +33,7 @@ describe('Confidence', () => {
       const flagResolution = new Promise<FlagResolution>(resolve => {
         setTimeout(() => {
           resolve({
+            state: 'READY',
             context: context,
             evaluate: jest.fn().mockImplementation(() => matchedEvaluation),
           });
@@ -357,6 +358,7 @@ describe('Confidence', () => {
 
     it('should handle a synchronously resolved promise', async () => {
       const mockFlagResolution: FlagResolution = {
+        state: 'READY',
         context: {},
         evaluate: jest.fn().mockImplementation(() => matchedEvaluation),
       };

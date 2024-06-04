@@ -2,6 +2,7 @@ import { Contextual } from '.';
 import { Value } from './Value';
 
 export namespace FlagEvaluation {
+  export type ErrorCode = 'FLAG_NOT_FOUND' | 'TYPE_MISMATCH' | 'NOT_READY' | 'TIMEOUT' | 'GENERAL';
   export interface Matched<T> {
     readonly reason: 'MATCH';
     readonly value: T;
@@ -21,7 +22,7 @@ export namespace FlagEvaluation {
   export interface Failed<T> {
     readonly reason: 'ERROR';
     readonly value: T;
-    readonly errorCode: 'FLAG_NOT_FOUND' | 'TYPE_MISMATCH' | 'NOT_READY' | 'GENERAL';
+    readonly errorCode: ErrorCode;
     readonly errorMessage: string;
   }
 
@@ -34,10 +35,6 @@ export type FlagEvaluation<T> = FlagEvaluation.Resolved<T> | FlagEvaluation.Stal
 export type State = 'NOT_READY' | 'READY' | 'STALE' | 'ERROR';
 export type StateObserver = (state: State) => void;
 export interface FlagResolver extends Contextual<FlagResolver> {
-  readonly config: {
-    timeout: number;
-  };
-
   subscribe(onStateChange?: StateObserver): () => void;
 
   evaluateFlag<T extends Value>(path: string, defaultValue: T): FlagEvaluation<Value.Widen<T>>;
