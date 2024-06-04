@@ -3,9 +3,6 @@ import { ConfidenceWebProvider } from './ConfidenceWebProvider';
 import { FlagResolver, StateObserver } from '@spotify-confidence/sdk';
 
 const confidenceMock: jest.Mocked<FlagResolver> = {
-  config: {
-    timeout: 10,
-  },
   getContext: jest.fn(),
   setContext: jest.fn(),
   withContext: jest.fn(),
@@ -25,10 +22,8 @@ describe('ConfidenceProvider', () => {
     instanceUnderTest = new ConfidenceWebProvider(confidenceMock);
 
     // subscribe will by default immediately emit READY
-    confidenceMock.subscribe.mockImplementation((...args) => {
-      const observer = args.pop();
-      if (typeof observer !== 'function') throw new Error('expected StateObserver in test');
-      observer('READY');
+    confidenceMock.subscribe.mockImplementation(observer => {
+      observer!('READY');
       return jest.fn();
     });
   });
@@ -37,14 +32,6 @@ describe('ConfidenceProvider', () => {
     it('should resolve if the state is ready', async () => {
       await expect(instanceUnderTest.initialize({ targetingKey: 'test' })).toResolve();
     });
-    it('should reject with timeout if state does not become ready', async () => {
-      // subscribe that never emits ready
-      confidenceMock.subscribe.mockImplementation(() => jest.fn());
-      await expect(instanceUnderTest.initialize({ targetingKey: 'test' })).rejects.toThrow(
-        'Resolve timed out after 10ms',
-      );
-    });
-
     it('should not set confidence context id no initial context', async () => {
       await instanceUnderTest.initialize();
       expect(confidenceMock.setContext).not.toHaveBeenCalled();

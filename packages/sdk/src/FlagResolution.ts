@@ -8,14 +8,19 @@ import { ResolveReason } from './generated/confidence/flags/resolver/v1/types';
 const FLAG_PREFIX = 'flags/';
 
 export interface FlagResolution {
+  readonly state: 'READY' | 'ERROR';
   readonly context: Value.Struct;
   // readonly flagNames:string[]
   evaluate<T extends Value>(path: string, defaultValue: T): FlagEvaluation.Resolved<T>;
 }
 
 export namespace FlagResolution {
-  export function create(context: Value.Struct, response: ResolveFlagsResponse, applier?: Applier): FlagResolution {
-    return new FlagResolutionImpl(context, response, applier);
+  export function ready(context: Value.Struct, response: ResolveFlagsResponse, applier?: Applier): FlagResolution {
+    return new ReadyFlagResolution(context, response, applier);
+  }
+
+  export function failed(context: Value.Struct, code: FlagEvaluation.ErrorCode, message: string): FlagResolution {
+    return new FailedFlagResolution(context, code, message);
   }
 }
 
@@ -35,11 +40,10 @@ type ResolvedFlag = {
 
 export type Applier = (flagName: string) => void;
 
-export class FlagResolutionImpl implements FlagResolution {
+export class ReadyFlagResolution implements FlagResolution {
   private readonly flags: Map<string, ResolvedFlag> = new Map();
-  // private readonly cachedEvaluations: Map<string, [defaultValue: any, evaluation: FlagEvaluation.Resolved<any>]> =
-  //   new Map();
   readonly resolveToken: string;
+  declare state: 'READY';
 
   constructor(
     readonly context: Value.Struct,
@@ -60,7 +64,7 @@ export class FlagResolutionImpl implements FlagResolution {
     this.resolveToken = base64FromBytes(resolveResponse.resolveToken);
   }
 
-  doEvaluate<T extends Value>(path: string, defaultValue: T): FlagEvaluation.Resolved<T> {
+  evaluate<T extends Value>(path: string, defaultValue: T): FlagEvaluation.Resolved<T> {
     try {
       const [name, ...steps] = path.split('.');
       const flag = this.flags.get(name);
@@ -106,21 +110,24 @@ export class FlagResolutionImpl implements FlagResolution {
       };
     }
   }
-  evaluate<T extends Value>(path: string, defaultValue: T): FlagEvaluation.Resolved<T> {
-    return this.doEvaluate(path, defaultValue);
-    // let entry = this.cachedEvaluations.get(path);
-    // if (!entry || !Value.equal(entry[0], defaultValue)) {
-    //   entry = [defaultValue, this.doEvaluate(path, defaultValue)];
-    //   // entry[1].id = Date.now();
-    //   this.cachedEvaluations.set(path, entry);
-    // }
-    // return entry[1];
-  }
+}
 
-  getValue<T extends Value>(path: string, defaultValue: T): T {
-    return this.evaluate(path, defaultValue).value;
+ReadyFlagResolution.prototype.state = 'READY';
+
+class FailedFlagResolution implements FlagResolution {
+  declare state: 'ERROR';
+  constructor(readonly context: Value.Struct, readonly code: FlagEvaluation.ErrorCode, readonly message: string) {}
+
+  evaluate<T extends Value>(_path: string, defaultValue: T): FlagEvaluation.Resolved<T> {
+    return {
+      reason: 'ERROR',
+      value: defaultValue,
+      errorCode: this.code,
+      errorMessage: this.message,
+    };
   }
 }
+FailedFlagResolution.prototype.state = 'ERROR';
 
 function toEvaluationReason(reason: ResolveReason): Exclude<FlagEvaluation<unknown>['reason'], 'PENDING'> {
   switch (reason) {

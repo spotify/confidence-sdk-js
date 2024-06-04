@@ -13,7 +13,6 @@ import { FC } from 'react';
 import { FlagEvaluation } from '@spotify-confidence/sdk';
 import { FlagResolver } from '@spotify-confidence/sdk';
 import { PropsWithChildren } from 'react';
-import { State } from '@spotify-confidence/sdk';
 import { StateObserver } from '@spotify-confidence/sdk';
 import { Trackable } from '@spotify-confidence/sdk';
 import { Value } from '@spotify-confidence/sdk';
@@ -43,6 +42,8 @@ export class ConfidenceReact implements EventSender, Trackable, FlagResolver {
     // (undocumented)
     get config(): Configuration;
     // @internal (undocumented)
+    get contextState(): string;
+    // @internal (undocumented)
     readonly delegate: Confidence;
     // (undocumented)
     evaluateFlag<T extends Value>(path: string, defaultValue: T): FlagEvaluation<Value.Widen<T>>;
@@ -52,8 +53,6 @@ export class ConfidenceReact implements EventSender, Trackable, FlagResolver {
     getFlag<T extends Value>(path: string, defaultValue: T): Promise<Value.Widen<T>>;
     // (undocumented)
     setContext(context: Context): void;
-    // @internal (undocumented)
-    get state(): State;
     // (undocumented)
     subscribe(onStateChange?: StateObserver | undefined): () => void;
     // (undocumented)
@@ -88,7 +87,7 @@ export function useFlag<T extends Value>(path: string, defaultValue: T, confiden
 // Warning: (ae-missing-release-tag) "useWithContext" is part of the package's API, but it is missing a release tag (@alpha, @beta, @public, or @internal)
 //
 // @public (undocumented)
-export function useWithContext(context: Context, confidence?: ConfidenceReact): ConfidenceReact;
+export function useWithContext(context: Context, parent?: ConfidenceReact): ConfidenceReact;
 
 // (No @packageDocumentation comment for this package)
 

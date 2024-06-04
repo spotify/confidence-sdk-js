@@ -42,7 +42,7 @@ export class ConfidenceServerProvider implements Provider {
     }
     return evaluation;
   }
-  private mapErrorCode(errorCode: 'FLAG_NOT_FOUND' | 'TYPE_MISMATCH' | 'NOT_READY' | 'GENERAL'): ErrorCode {
+  private mapErrorCode(errorCode: FlagEvaluation.ErrorCode): ErrorCode {
     switch (errorCode) {
       case 'FLAG_NOT_FOUND':
         return ErrorCode.FLAG_NOT_FOUND;

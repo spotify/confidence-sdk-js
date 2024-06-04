@@ -154,9 +154,11 @@ export interface EventSender extends Contextual<EventSender> {
 // @public (undocumented)
 export namespace FlagEvaluation {
     // (undocumented)
+    export type ErrorCode = 'FLAG_NOT_FOUND' | 'TYPE_MISMATCH' | 'NOT_READY' | 'TIMEOUT' | 'GENERAL';
+    // (undocumented)
     export interface Failed<T> {
         // (undocumented)
-        readonly errorCode: 'FLAG_NOT_FOUND' | 'TYPE_MISMATCH' | 'NOT_READY' | 'GENERAL';
+        readonly errorCode: ErrorCode;
         // (undocumented)
         readonly errorMessage: string;
         // (undocumented)
@@ -193,10 +195,6 @@ export type FlagEvaluation<T> = FlagEvaluation.Resolved<T> | FlagEvaluation.Stal
 //
 // @public (undocumented)
 export interface FlagResolver extends Contextual<FlagResolver> {
-    // (undocumented)
-    readonly config: {
-        timeout: number;
-    };
     // (undocumented)
     evaluateFlag<T extends Value>(path: string, defaultValue: T): FlagEvaluation<Value.Widen<T>>;
     // (undocumented)

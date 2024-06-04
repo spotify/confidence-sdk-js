@@ -1,5 +1,8 @@
 import { Closer } from './Closer';
 
+// This is a utility type which comes packaged with TS 5.4 and later.
+type NoInfer<T> = [T][T extends any ? 0 : never];
+
 export type Observer<T> = (value: T) => void;
 
 export type Subscribe<T> = (observer: Observer<T>) => Closer;
@@ -34,7 +37,7 @@ export function subject<T>(observable: Subscribe<T>): Subscribe<T> {
   };
 }
 
-export function changeObserver<T>(observer: Observer<T>, initialValue?: T): Observer<T> {
+export function changeObserver<T>(observer: Observer<T>, initialValue?: NoInfer<T>): Observer<T> {
   let prevValue: T | undefined = initialValue;
   return (value: T) => {
     if (!Object.is(value, prevValue)) {
