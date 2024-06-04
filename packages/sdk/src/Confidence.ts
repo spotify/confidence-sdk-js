@@ -77,7 +77,7 @@ export class Confidence implements EventSender, Trackable, FlagResolver {
         this.resolveFlags().then(reportState);
       }
       const close = this.contextChanges(() => {
-        if (this.flagState === 'READY') observer('STALE');
+        if (this.flagState === 'READY' || this.flagState === 'ERROR') observer('STALE');
         this.resolveFlags().then(reportState);
       });
 
@@ -269,7 +269,7 @@ export class Confidence implements EventSender, Trackable, FlagResolver {
       region,
     });
     if (environment === 'client') {
-      flagResolverClient = new CachingFlagResolverClient(flagResolverClient, 3600_000);
+      flagResolverClient = new CachingFlagResolverClient(flagResolverClient, 30_000);
     }
     const estEventSizeKb = 1;
     const flushTimeoutMilliseconds = 500;

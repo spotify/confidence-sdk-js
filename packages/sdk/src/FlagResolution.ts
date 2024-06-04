@@ -116,11 +116,7 @@ ReadyFlagResolution.prototype.state = 'READY';
 
 class FailedFlagResolution implements FlagResolution {
   declare state: 'ERROR';
-  constructor(
-    readonly context: Value.Struct,
-    readonly code: FlagEvaluation.ErrorCode,
-    readonly message: string,
-  ) {}
+  constructor(readonly context: Value.Struct, readonly code: FlagEvaluation.ErrorCode, readonly message: string) {}
 
   evaluate<T extends Value>(_path: string, defaultValue: T): FlagEvaluation.Resolved<T> {
     return {

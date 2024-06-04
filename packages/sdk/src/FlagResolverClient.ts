@@ -305,6 +305,7 @@ export function withRequestLogic(fetchImplementation: (request: Request) => Prom
 function withTimeout(signal: AbortSignal, timeout: number, reason?: any): AbortSignal {
   const controller = new AbortController();
   const timeoutId: NodeJS.Timeout | number = setTimeout(() => controller.abort(reason), timeout);
+  // in Node setTimeout returns an object, with an unref function which will prevent the timeout from keeping the process alive
   if (typeof timeoutId === 'object') timeoutId.unref();
   signal.addEventListener('abort', () => {
     clearTimeout(timeoutId);

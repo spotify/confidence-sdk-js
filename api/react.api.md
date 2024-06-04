@@ -87,7 +87,7 @@ export function useFlag<T extends Value>(path: string, defaultValue: T, confiden
 // Warning: (ae-missing-release-tag) "useWithContext" is part of the package's API, but it is missing a release tag (@alpha, @beta, @public, or @internal)
 //
 // @public (undocumented)
-export function useWithContext(context: Context, confidence?: ConfidenceReact): ConfidenceReact;
+export function useWithContext(context: Context, parent?: ConfidenceReact): ConfidenceReact;
 
 // (No @packageDocumentation comment for this package)
 

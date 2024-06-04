@@ -39,14 +39,7 @@ export class ConfidenceReact implements EventSender, Trackable, FlagResolver {
 
   /** @internal */
   get contextState(): string {
-    const state = this.delegate.flagState;
-    switch (state) {
-      case 'READY':
-      case 'ERROR':
-        return state + Value.serialize(this.delegate.getContext());
-      default:
-        return '';
-    }
+    return this.delegate.flagState + Value.serialize(this.delegate.getContext());
   }
 
   track(name: string, message?: Value.Struct): void;
@@ -145,19 +138,8 @@ export const useConfidence = (): ConfidenceReact => {
   return confidenceReact;
 };
 
-function useOptionalConfidence(confidence?: ConfidenceReact): ConfidenceReact {
-  try {
-    // to comply with hook-rules we always need to call useConfidence even if we don't need it.
-    const confidenceFromContext = useConfidence();
-    return confidence ?? confidenceFromContext;
-  } catch (e) {
-    if (!confidence) throw e;
-    return confidence;
-  }
-}
-
-export function useWithContext(context: Context, confidence?: ConfidenceReact): ConfidenceReact {
-  const parent = useOptionalConfidence(confidence);
+// eslint-disable-next-line react-hooks/rules-of-hooks
+export function useWithContext(context: Context, parent = useConfidence()): ConfidenceReact {
   const child = useMemo(
     () => new ConfidenceReact(parent.delegate.withContext(context)),
     // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -178,14 +160,16 @@ export function useWithContext(context: Context, confidence?: ConfidenceReact): 
 export function useEvaluateFlag<T extends Value>(
   path: string,
   defaultValue: T,
-  confidence?: ConfidenceReact,
+  // eslint-disable-next-line react-hooks/rules-of-hooks
+  confidence = useConfidence(),
 ): FlagEvaluation<Value.Widen<T>> {
-  const evaluation = useOptionalConfidence(confidence).delegate.evaluateFlag(path, defaultValue);
+  const evaluation = confidence.delegate.evaluateFlag(path, defaultValue);
   // TODO make it a setting to _enable skip throwing_ on stale value.
-  if (evaluation.reason === 'ERROR' && 'then' in evaluation) throw evaluation;
+  if (evaluation.reason === 'ERROR' && evaluation.errorCode === 'NOT_READY' && 'then' in evaluation) throw evaluation;
   return evaluation;
 }
 
-export function useFlag<T extends Value>(path: string, defaultValue: T, confidence?: ConfidenceReact): Value.Widen<T> {
+// eslint-disable-next-line react-hooks/rules-of-hooks
+export function useFlag<T extends Value>(path: string, defaultValue: T, confidence = useConfidence()): Value.Widen<T> {
   return useEvaluateFlag(path, defaultValue, confidence).value;
 }

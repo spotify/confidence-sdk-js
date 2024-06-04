@@ -20,15 +20,13 @@ const handleFailRequestsOnChange = (e: React.ChangeEvent<HTMLInputElement>) => {
 const confidence = Confidence.create({
   clientSecret: 'RxDVTrXvc6op1XxiQ4OaR31dKbJ39aYV',
   environment: 'client',
-  timeout: 5000,
+  timeout: 3000,
   logger: console,
   fetchImplementation: (req: Request) => {
     console.log('request', req.url);
     return state.failRequests ? Promise.resolve(new Response(null, { status: 500 })) : fetch(req);
   },
 });
-
-// confidence.track(pageViews());
 
 function App() {
   return (
@@ -69,7 +67,7 @@ function Outer() {
 
 function Inner() {
   const [count, setCount] = React.useState(0);
-  console.log('Inner render', count, performance.now());
+  console.log('Inner render', count);
 
   return (
     <fieldset>
