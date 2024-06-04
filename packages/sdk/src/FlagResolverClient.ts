@@ -16,7 +16,10 @@ import { SimpleFetch } from './types';
 const FLAG_PREFIX = 'flags/';
 
 export class ResolveError extends Error {
-  constructor(public readonly code: FlagEvaluation.ErrorCode, message: string) {
+  constructor(
+    public readonly code: FlagEvaluation.ErrorCode,
+    message: string,
+  ) {
     super(message);
   }
 }
@@ -135,7 +138,6 @@ export class FetchingFlagResolverClient implements FlagResolverClient {
             return FlagResolution.failed(context, error.code, error.message);
           }
           throw error;
-          // return FlagResolution.failed(context, 'GENERAL', error.message);
         });
     });
   }
