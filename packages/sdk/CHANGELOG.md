@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.1.3](https://github.com/spotify/confidence-sdk-js/compare/sdk-v0.1.2...sdk-v0.1.3) (2024-06-04)
+
+
+### 🐛 Bug Fixes
+
+* cache timeouts ([#157](https://github.com/spotify/confidence-sdk-js/issues/157)) ([357bb02](https://github.com/spotify/confidence-sdk-js/commit/357bb025b02183f26700fa5df857d3528a51f747)), closes [#155](https://github.com/spotify/confidence-sdk-js/issues/155)
+
 ## [0.1.2](https://github.com/spotify/confidence-sdk-js/compare/sdk-v0.1.0...sdk-v0.1.2) (2024-06-03)
 
 
