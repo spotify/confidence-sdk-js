@@ -52,5 +52,5 @@ jobs:
         env:
           NPM_TOKEN: ${{secrets.NPM_TOKEN}}
         run: |
-          echo "npmRegistries:\n  \"https://registry.npmjs.org\":\n    npmAuthToken: $NPM_TOKEN" >> .yarnrc.yml
+          yarn config set 'npmRegistries["https://registry.npmjs.org"].npmAuthToken' $NPM_TOKEN
           yarn publish-if-missing
