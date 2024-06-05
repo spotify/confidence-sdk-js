@@ -20,9 +20,15 @@ jobs:
         with:
           node-version: ${{ matrix.node-version }}
           scope: '@spotify-confidence'
+      - name: Enable corepack
+        shell: bash
+        run: corepack enable
+      - name: Fix constraints
+        shell: bash
+        run: yarn constraints --fix
       - name: Install dependencies
         shell: bash
-        run: corepack enable && yarn install
+        run: yarn install
         env:
           YARN_ENABLE_IMMUTABLE_INSTALLS: false
       - name: Check for changes in yarn.lock
@@ -30,6 +36,7 @@ jobs:
         run: |
           git status
           git add yarn.lock
+          git add packages/
           git diff --staged --exit-code || echo "::set-output name=changed::true"
       - name: Commit and push changes
         if: steps.git-check.outputs.changed == 'true'
