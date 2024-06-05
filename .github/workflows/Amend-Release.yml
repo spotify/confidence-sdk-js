@@ -35,8 +35,7 @@ jobs:
         id: git-check
         run: |
           git status
-          git add yarn.lock
-          git add packages/
+          git add -u
           git diff --staged --exit-code || echo "::set-output name=changed::true"
       - name: Commit and push changes
         if: steps.git-check.outputs.changed == 'true'
