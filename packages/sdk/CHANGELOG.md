@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.1.4](https://github.com/spotify/confidence-sdk-js/compare/sdk-v0.1.3...sdk-v0.1.4) (2024-06-05)
+
+
+### 🐛 Bug Fixes
+
+* invalid d.ts generation ([#162](https://github.com/spotify/confidence-sdk-js/issues/162)) ([ac1c415](https://github.com/spotify/confidence-sdk-js/commit/ac1c415b35d4a2a31d73791097ae5bc43047d994))
+
 ## [0.1.3](https://github.com/spotify/confidence-sdk-js/compare/sdk-v0.1.2...sdk-v0.1.3) (2024-06-04)
 
 
