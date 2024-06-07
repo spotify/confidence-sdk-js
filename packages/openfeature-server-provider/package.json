@@ -5,14 +5,15 @@
   "type": "module",
   "types": "build/types/index.d.ts",
   "devDependencies": {
-    "@microsoft/api-extractor": "*",
+    "@microsoft/api-extractor": "7.43.1",
     "@openfeature/core": "^1.1.0",
     "@openfeature/server-sdk": "^1.13.5",
-    "rollup": "*"
+    "@spotify-confidence/sdk": "workspace:",
+    "rollup": "4.14.2"
   },
   "peerDependencies": {
     "@openfeature/server-sdk": "^1.13.5",
-    "@spotify-confidence/sdk": "0.1.4"
+    "@spotify-confidence/sdk": "^0.1.4"
   },
   "publishConfig": {
     "registry": "https://registry.npmjs.org/",

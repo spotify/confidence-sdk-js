@@ -26,9 +26,9 @@
     "dist/index.*"
   ],
   "devDependencies": {
-    "@microsoft/api-extractor": "*",
+    "@microsoft/api-extractor": "7.43.1",
     "prettier": "*",
-    "rollup": "*",
+    "rollup": "4.14.2",
     "ts-proto": "^1.171.0"
   },
   "type": "module",
