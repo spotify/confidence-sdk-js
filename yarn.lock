@@ -3040,7 +3040,7 @@ __metadata:
   languageName: node
   linkType: hard
 
-"@microsoft/api-extractor@npm:*, @microsoft/api-extractor@npm:^7.43.1":
+"@microsoft/api-extractor@npm:7.43.1, @microsoft/api-extractor@npm:^7.43.1":
   version: 7.43.1
   resolution: "@microsoft/api-extractor@npm:7.43.1"
   dependencies:
@@ -3611,17 +3611,18 @@ __metadata:
   languageName: node
   linkType: hard
 
-"@spotify-confidence/openfeature-server-provider@npm:0.2.8, @spotify-confidence/openfeature-server-provider@workspace:packages/openfeature-server-provider":
+"@spotify-confidence/openfeature-server-provider@workspace:, @spotify-confidence/openfeature-server-provider@workspace:packages/openfeature-server-provider":
   version: 0.0.0-use.local
   resolution: "@spotify-confidence/openfeature-server-provider@workspace:packages/openfeature-server-provider"
   dependencies:
-    "@microsoft/api-extractor": "npm:*"
+    "@microsoft/api-extractor": "npm:7.43.1"
     "@openfeature/core": "npm:^1.1.0"
     "@openfeature/server-sdk": "npm:^1.13.5"
-    rollup: "npm:*"
+    "@spotify-confidence/sdk": "npm:0.1.4"
+    rollup: "npm:4.14.2"
   peerDependencies:
     "@openfeature/server-sdk": ^1.13.5
-    "@spotify-confidence/sdk": 0.1.4
+    "@spotify-confidence/sdk": ^0.1.4
   languageName: unknown
   linkType: soft
 
@@ -3629,38 +3630,39 @@ __metadata:
   version: 0.0.0-use.local
   resolution: "@spotify-confidence/openfeature-web-provider@workspace:packages/openfeature-web-provider"
   dependencies:
-    "@microsoft/api-extractor": "npm:*"
+    "@microsoft/api-extractor": "npm:7.43.1"
     "@openfeature/core": "npm:^1.1.0"
     "@openfeature/web-sdk": "npm:^1.0.3"
+    "@spotify-confidence/sdk": "npm:0.1.4"
     fast-deep-equal: "npm:^3.1.3"
-    rollup: "npm:*"
+    rollup: "npm:4.14.2"
   peerDependencies:
     "@openfeature/web-sdk": ^1.0.3
-    "@spotify-confidence/sdk": 0.1.4
+    "@spotify-confidence/sdk": ^0.1.4
   languageName: unknown
   linkType: soft
 
-"@spotify-confidence/react@npm:0.0.4, @spotify-confidence/react@workspace:packages/react":
+"@spotify-confidence/react@workspace:, @spotify-confidence/react@workspace:packages/react":
   version: 0.0.0-use.local
   resolution: "@spotify-confidence/react@workspace:packages/react"
   dependencies:
-    "@microsoft/api-extractor": "npm:*"
+    "@microsoft/api-extractor": "npm:7.43.1"
     "@spotify-confidence/sdk": "npm:0.1.4"
     react: "npm:^18.2.0"
-    rollup: "npm:*"
+    rollup: "npm:4.14.2"
   peerDependencies:
-    "@spotify-confidence/sdk": 0.1.4
+    "@spotify-confidence/sdk": ^0.1.4
     react: ^18.2.0
   languageName: unknown
   linkType: soft
 
-"@spotify-confidence/sdk@npm:0.1.4, @spotify-confidence/sdk@workspace:packages/sdk":
+"@spotify-confidence/sdk@npm:0.1.4, @spotify-confidence/sdk@workspace:, @spotify-confidence/sdk@workspace:packages/sdk":
   version: 0.0.0-use.local
   resolution: "@spotify-confidence/sdk@workspace:packages/sdk"
   dependencies:
-    "@microsoft/api-extractor": "npm:*"
+    "@microsoft/api-extractor": "npm:7.43.1"
     prettier: "npm:*"
-    rollup: "npm:*"
+    rollup: "npm:4.14.2"
     ts-proto: "npm:^1.171.0"
     web-vitals: "npm:^3.5.2"
   languageName: unknown
@@ -12769,8 +12771,8 @@ __metadata:
   dependencies:
     "@openfeature/core": "npm:^1.1.0"
     "@openfeature/server-sdk": "npm:^1.13.5"
-    "@spotify-confidence/openfeature-server-provider": "npm:0.2.8"
-    "@spotify-confidence/sdk": "npm:0.1.4"
+    "@spotify-confidence/openfeature-server-provider": "workspace:"
+    "@spotify-confidence/sdk": "workspace:"
   languageName: unknown
   linkType: soft
 
@@ -12780,8 +12782,8 @@ __metadata:
   dependencies:
     "@openfeature/core": "npm:^1.1.0"
     "@openfeature/server-sdk": "npm:^1.13.5"
-    "@spotify-confidence/openfeature-server-provider": "npm:0.2.8"
-    "@spotify-confidence/sdk": "npm:0.1.4"
+    "@spotify-confidence/openfeature-server-provider": "workspace:"
+    "@spotify-confidence/sdk": "workspace:"
   languageName: unknown
   linkType: soft
 
@@ -14722,8 +14724,8 @@ __metadata:
     "@babel/plugin-syntax-flow": "npm:^7.22.5"
     "@babel/plugin-transform-private-property-in-object": "npm:^7.22.11"
     "@babel/plugin-transform-react-jsx": "npm:^7.22.15"
-    "@spotify-confidence/react": "npm:0.0.4"
-    "@spotify-confidence/sdk": "npm:0.1.4"
+    "@spotify-confidence/react": "workspace:"
+    "@spotify-confidence/sdk": "workspace:"
     "@testing-library/dom": "npm:^7.29.6"
     "@testing-library/jest-dom": "npm:^5.14.1"
     "@testing-library/react": "npm:^13.0.0"
@@ -15229,7 +15231,7 @@ __metadata:
   languageName: node
   linkType: hard
 
-"rollup@npm:*, rollup@npm:^4.14.2":
+"rollup@npm:4.14.2, rollup@npm:^4.14.2":
   version: 4.14.2
   resolution: "rollup@npm:4.14.2"
   dependencies:
