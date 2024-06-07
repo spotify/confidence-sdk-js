@@ -8,7 +8,7 @@
   "dependencies": {
     "@openfeature/core": "^1.1.0",
     "@openfeature/server-sdk": "^1.13.5",
-    "@spotify-confidence/openfeature-server-provider": "workspace:",
+    "@spotify-confidence/openfeature-server-provider": "0.2.9",
     "@spotify-confidence/sdk": "workspace:"
   },
   "scripts": {
