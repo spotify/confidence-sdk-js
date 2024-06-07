@@ -6,59 +6,27 @@
       "changelog-path": "CHANGELOG.md",
       "bump-minor-pre-major": true,
       "bump-patch-for-minor-pre-major": true,
-      "extra-files": [
-        "src/factory.ts",
-        {
-          "type": "json",
-          "glob": true,
-          "path": "/examples/*/package.json",
-          "jsonpath": "$['dependencies']['@spotify-confidence/openfeature-server-provider']"
-        }
-      ]
+      "extra-files": ["src/factory.ts"]
     },
     "packages/openfeature-web-provider": {
       "component": "openfeature-web-provider",
       "changelog-path": "CHANGELOG.md",
       "bump-minor-pre-major": true,
       "bump-patch-for-minor-pre-major": true,
-      "extra-files": [
-        "src/factory.ts",
-        {
-          "type": "json",
-          "glob": true,
-          "path": "/examples/*/package.json",
-          "jsonpath": "$['dependencies']['@spotify-confidence/openfeature-web-provider']"
-        }
-      ]
+      "extra-files": ["src/factory.ts"]
     },
     "packages/react": {
       "component": "react",
       "changelog-path": "CHANGELOG.md",
       "bump-minor-pre-major": true,
-      "bump-patch-for-minor-pre-major": true,
-      "extra-files": [
-        {
-          "type": "json",
-          "glob": true,
-          "path": "/examples/*/package.json",
-          "jsonpath": "$['dependencies']['@spotify-confidence/react']"
-        }
-      ]
+      "bump-patch-for-minor-pre-major": true
     },
     "packages/sdk": {
       "component": "sdk",
       "changelog-path": "CHANGELOG.md",
       "bump-minor-pre-major": true,
       "bump-patch-for-minor-pre-major": true,
-      "extra-files": [
-        "src/Confidence.ts",
-        {
-          "type": "json",
-          "glob": true,
-          "path": "/examples/*/package.json",
-          "jsonpath": "$['dependencies']['@spotify-confidence/sdk']"
-        }
-      ]
+      "extra-files": ["src/Confidence.ts"]
     }
   },
   "changelog-sections": [
