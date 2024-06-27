@@ -1,8 +1,6 @@
-import React, { Suspense, useCallback } from 'react';
-import TestComponent from './TestComponent';
+import React, { Suspense, createContext, useCallback, useContext, useEffect, useState } from 'react';
 import { Confidence, pageViews } from '@spotify-confidence/sdk';
 import { ConfidenceProvider, ConfidenceReact, useConfidence } from '@spotify-confidence/react';
-import { Contextual } from '@spotify-confidence/sdk';
 
 const state = {
   get failRequests(): boolean {
@@ -29,6 +27,14 @@ const confidence = Confidence.create({
 });
 
 function App() {
+  const Fallback = (): React.ReactElement => {
+    const toggleBoundary = useContext(boundaryContext);
+    useEffect(() => {
+      console.log('mounted fallback');
+      // toggleBoundary(false);
+    });
+    return <p>Loading...</p>;
+  };
   return (
     <ConfidenceProvider confidence={confidence}>
       <h1>React 18 Example</h1>
@@ -38,7 +44,17 @@ function App() {
       </label>
 
       <Suspense fallback="App loading...">
-        <Outer />
+        <Level name="Outer">
+          <Suspense fallback="Outer loading...">
+            <Boundary>
+              <Suspense fallback={<Fallback />}>
+                <Level name="Inner">
+                  <Flags />
+                </Level>
+              </Suspense>
+            </Boundary>
+          </Suspense>
+        </Level>
       </Suspense>
     </ConfidenceProvider>
   );
@@ -46,43 +62,49 @@ function App() {
 
 export default App;
 
-function Outer() {
-  console.log('Outer render', performance.now());
-  return (
-    <fieldset>
-      <legend>Outer</legend>
-      <div>
-        <ContextControl confidence={useConfidence()} />
-      </div>
-      <div>
-        <React.Suspense fallback="Outer loading...">
-          <ConfidenceProvider.WithContext context={{ name: 'inner' }}>
-            <Inner />
-          </ConfidenceProvider.WithContext>
-        </React.Suspense>
-      </div>
-    </fieldset>
-  );
+const boundaryContext = createContext((toggle: boolean): void => {
+  throw new Error();
+});
+function Boundary({ children }: { children?: React.ReactNode }) {
+  const [boundaryState, setBoundaryState] = useState(true);
+  return <boundaryContext.Provider value={setBoundaryState}>{boundaryState && children}</boundaryContext.Provider>;
 }
-
-function Inner() {
+function Level({ name, children }: { name: string; children?: React.ReactNode }) {
   const [count, setCount] = React.useState(0);
-  console.log('Inner render', count);
-
+  console.log('render', name, count);
+  const confidence = useConfidence();
   return (
     <fieldset>
-      <legend>Inner</legend>
-      <ContextControl confidence={useConfidence()} />
-      <fieldset>
-        <legend>Flags</legend>
-        <pre>{JSON.stringify(useConfidence().useEvaluateFlag('web-sdk-e2e-flag.str', 'default'), null, '  ')}</pre>
-      </fieldset>
+      <legend>Level {name}</legend>
+      <div>
+        <ContextControl />
+      </div>
+      <div>
+        <ConfidenceProvider.WithContext context={{ level: name }}>{children}</ConfidenceProvider.WithContext>
+      </div>
       <button onClick={() => setCount(value => value + 1)}>Rerender</button>
     </fieldset>
   );
 }
-function ContextControl({ confidence }: { confidence: Contextual<any> }) {
-  const name = String(confidence.getContext().name ?? '');
+
+function Flags() {
+  const confidence = useConfidence();
+  const flagData = JSON.stringify(confidence.useEvaluateFlag('web-sdk-e2e-flag.str', 'default'), null, '  ');
+  // const flagData = useDeferredValue(confidence.useFlag('web-sdk-e2e-flag.str', 'default'));
+  return (
+    <fieldset>
+      <legend>Flags</legend>
+      <ContextControl />
+      <pre>{flagData}</pre>
+    </fieldset>
+  );
+}
+
+function ContextControl() {
+  // const name = String(confidence.getContext().level ?? '');
+  const confidence = useConfidence();
+  // const [isPending, startTransition] = useTransition();
+  // const setContext = (value: Context) => startTransition(() => confidence.setContext(value));
   const toggleTargetingKey = useCallback(() => {
     let { targeting_key } = confidence.getContext();
     if (targeting_key === 'user-a') {
@@ -95,8 +117,8 @@ function ContextControl({ confidence }: { confidence: Contextual<any> }) {
 
   return (
     <fieldset>
-      <legend>Context {name}</legend>
-      <pre>{JSON.stringify(confidence.getContext())}</pre>
+      <legend>Context</legend>
+      <pre>{JSON.stringify(confidence.useContext())}</pre>
       <button onClick={() => confidence.setContext({ targeting_key: Math.floor(2e6 * Math.random()).toString(16) })}>
         Randomize
       </button>
