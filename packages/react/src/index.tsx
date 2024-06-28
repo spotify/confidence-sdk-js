@@ -186,7 +186,7 @@ export function useEvaluateFlag<T extends Value>(
   const evaluation = confidence.delegate.evaluateFlag(path, defaultValue);
   const [, setState] = useState(() => confidence.contextState);
   useEffect(() => {
-    return confidence.delegate.contextChanges(() => {
+    return confidence.subscribe(() => {
       setState(confidence.contextState);
     });
   });
