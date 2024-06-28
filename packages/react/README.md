@@ -39,9 +39,11 @@ function App() {
 }
 ```
 
+Anywhere in the sub-tree under the `ConfidenceProvider` you can now access the confidence instance with the `useConfidence()` hook. The hook actually returns an instance of `ConfidenceReact` which is a wrapper around the normal `Confidence` API with some slight adaptations to integrate better with React. You can read more about the differences in the following sections.
+
 ### Managing context
 
-The `useConfidence()` hook supports the [standard context API's](https://github.com/spotify/confidence-sdk-js/blob/main/packages/sdk/README.md#setting-the-context). Additionally, the following wrapper component can be used to wrap a sub tree with additional context data.
+The `ConfidenceReact` instance supports the [standard context API](https://github.com/spotify/confidence-sdk-js/blob/main/packages/sdk/README.md#setting-the-context). Additionally, the following wrapper component can be used to wrap a sub tree with additional context data.
 
 ```ts
 <ConfidenceProvider.WithContext context={{ user_name: 'John Doe' }}>
@@ -54,11 +56,15 @@ The `useConfidence()` hook supports the [standard context API's](https://github.
 Flags are accessed with a set of hooks exported from `@spotify-confidence/react`
 
 - `useFlag(flagName, defaultValue)` will return the flag value or default.
-- `useEvaluateFlag(flagName, defaultValue)` will return more details about the flag evaluation, together with the value
+- `useEvaluateFlag(flagName, defaultValue)` will return more details about the flag evaluation, together with the value.
 
-Both of the flag hooks integrate with the React Suspense API so that the suspense fallback will be visible until flag values are available. It is therefore important to wrap .
+Alternatively the `ConfidenceReact` instance has the same hooks as methods on the instance itself, remember though, that these instance methods are hooks and the normal rules for hooks apply.
 
-Accessing flags will always attempt to provide a up to date value for the flag within the defined timeout, or else default values.
+Both of the flag hooks integrate with the React Suspense API so that the suspense fallback will be shown until flag values are available. It is therefore important to wrap any component using the above hooks in a suspense boundary.
+
+The hooks are also reactive so that if the context changes, any components using the hooks will be re-rendered. As dependent components are re-rendered as soon as the context changes, one might expect that would again trigger the suspense boundary while the flag values are resolved. That is normally not the case however as the `ConfidenceReact.setContext` method is by default wrapped in a React [Transition](https://react.dev/reference/react/startTransition). If you would rather manage the transition logic yourself (with for example [React.useTransition()](https://react.dev/reference/react/useTransition)), or if you want to always trigger a suspense fallback to never show stale values, you can turn off the default behavior by calling `ConfidenceReact.setContext({...}, { transition:false })`.
+
+If the hooks can't resolve the flag values withing the timeout specified on the Confidence instance, they will instead return the default value.
 
 ### Tracking events
 

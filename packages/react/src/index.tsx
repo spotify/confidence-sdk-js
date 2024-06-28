@@ -11,7 +11,16 @@ import {
   Trackable,
 } from '@spotify-confidence/sdk';
 
-import React, { createContext, FC, PropsWithChildren, useContext, useEffect, useMemo, useState } from 'react';
+import React, {
+  createContext,
+  FC,
+  PropsWithChildren,
+  startTransition,
+  useContext,
+  useEffect,
+  useMemo,
+  useState,
+} from 'react';
 
 const ConfidenceContext = createContext<ConfidenceReact | null>(null);
 
@@ -39,7 +48,7 @@ export class ConfidenceReact implements EventSender, Trackable, FlagResolver {
 
   /** @internal */
   get contextState(): string {
-    return this.delegate.flagState + Value.serialize(this.delegate.getContext());
+    return Value.serialize(this.delegate.getContext());
   }
 
   track(name: string, message?: Value.Struct): void;
@@ -52,16 +61,30 @@ export class ConfidenceReact implements EventSender, Trackable, FlagResolver {
     return undefined;
   }
   getContext(): Context {
+    this.assertContext('getContext', 'useContext');
     return this.delegate.getContext();
   }
-  setContext(context: Context): void {
-    this.delegate.setContext(context);
+  setContext(context: Context, { transition = true } = {}): void {
+    if (transition) {
+      startTransition(() => {
+        this.delegate.setContext(context);
+      });
+    } else {
+      this.delegate.setContext(context);
+    }
   }
+
   subscribe(onStateChange?: StateObserver | undefined): () => void {
     return this.delegate.subscribe(onStateChange);
   }
-  clearContext(): void {
-    this.delegate.clearContext();
+  clearContext({ transition = true } = {}): void {
+    if (transition) {
+      startTransition(() => {
+        this.delegate.clearContext();
+      });
+    } else {
+      this.delegate.clearContext();
+    }
   }
 
   withContext(context: Context): ConfidenceReact {
@@ -79,6 +102,10 @@ export class ConfidenceReact implements EventSender, Trackable, FlagResolver {
 
   /* eslint-disable react-hooks/rules-of-hooks */
 
+  useContext(): Context {
+    this.assertContext('useContext', 'getContext');
+    return useConfidenceContext(this);
+  }
   useWithContext(context: Context): ConfidenceReact {
     this.assertContext('useWithContext', 'withContext');
     return useWithContext(context, this);
@@ -126,15 +153,6 @@ export const useConfidence = (): ConfidenceReact => {
   const confidenceReact = useContext(ConfidenceContext);
   if (!confidenceReact)
     throw new Error('No Confidence instance found, did you forget to wrap your component in ConfidenceProvider?');
-  const [, setState] = useState(() => confidenceReact.contextState);
-
-  useEffect(
-    () =>
-      confidenceReact.subscribe(state => {
-        if (state === 'READY' || state === 'ERROR') setState(confidenceReact.contextState);
-      }),
-    [confidenceReact, setState],
-  );
   return confidenceReact;
 };
 
@@ -146,15 +164,17 @@ export function useWithContext(context: Context, parent = useConfidence()): Conf
     [parent, Value.serialize(context)],
   );
 
-  const [, setState] = useState(() => child.contextState);
-  useEffect(
-    () =>
-      child.subscribe(state => {
-        if (state === 'READY' || state === 'ERROR') setState(child.contextState);
-      }),
-    [child, setState],
-  );
   return child;
+}
+
+// this would be better named useContext, but would then collide with React.useContext
+// eslint-disable-next-line react-hooks/rules-of-hooks
+export function useConfidenceContext(confidence = useConfidence()): Context {
+  const [, setState] = useState(confidence.contextState);
+  useEffect(() => {
+    return confidence.delegate.contextChanges(() => setState(confidence.contextState));
+  });
+  return confidence.delegate.getContext();
 }
 
 export function useEvaluateFlag<T extends Value>(
@@ -164,8 +184,13 @@ export function useEvaluateFlag<T extends Value>(
   confidence = useConfidence(),
 ): FlagEvaluation<Value.Widen<T>> {
   const evaluation = confidence.delegate.evaluateFlag(path, defaultValue);
-  // TODO make it a setting to _enable skip throwing_ on stale value.
-  if (evaluation.reason === 'ERROR' && evaluation.errorCode === 'NOT_READY' && 'then' in evaluation) throw evaluation;
+  const [, setState] = useState(() => confidence.contextState);
+  useEffect(() => {
+    return confidence.subscribe(() => {
+      setState(confidence.contextState);
+    });
+  });
+  if ('then' in evaluation) throw evaluation;
   return evaluation;
 }
 
