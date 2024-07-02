@@ -1,8 +1,15 @@
-import { FetchingFlagResolverClient, withRequestLogic } from './FlagResolverClient';
+import {
+  CachingFlagResolverClient,
+  FetchingFlagResolverClient,
+  FlagResolverClient,
+  PendingResolution,
+  withRequestLogic,
+} from './FlagResolverClient';
 import { setMaxListeners } from 'node:events';
 import { SdkId } from './generated/confidence/flags/resolver/v1/types';
 import { abortableSleep } from './fetch-util';
 import { ApplyFlagsRequest, ResolveFlagsRequest } from './generated/confidence/flags/resolver/v1/api';
+import { FlagResolution } from './FlagResolution';
 const RESOLVE_ENDPOINT = 'https://resolver.confidence.dev/v1/flags:resolve';
 const APPLY_ENDPOINT = 'https://resolver.confidence.dev/v1/flags:apply';
 
@@ -375,6 +382,40 @@ describe('withRequestLogic', () => {
   });
 });
 
+describe('CachingFlagResolverClient', () => {
+  const flagResolverClientMock = jest.mocked<FlagResolverClient>({
+    resolve: jest.fn(),
+  });
+  it('should cache flag resolution', async () => {
+    const context = { a: 0 };
+    const mockResolution = jest.mocked<FlagResolution>({
+      evaluate: jest.fn(),
+      state: 'READY',
+      context,
+    });
+    const pendingResolution = PendingResolution.create(context, () => Promise.resolve(mockResolution));
+    const cachingClient = new CachingFlagResolverClient(flagResolverClientMock, 1000);
+    flagResolverClientMock.resolve.mockReturnValue(pendingResolution);
+    const first = await cachingClient.resolve(context, []);
+    const second = await cachingClient.resolve(context, []);
+    expect(first).toBe(second);
+    expect(flagResolverClientMock.resolve).toHaveBeenCalledTimes(1);
+  });
+
+  it('should abort the original resolution when all references are aborted', () => {
+    const context = { a: 0 };
+    const pendingResolution = PendingResolution.create(context, () => new Promise(() => {}));
+    const cachingClient = new CachingFlagResolverClient(flagResolverClientMock, 1000);
+    flagResolverClientMock.resolve.mockReturnValue(pendingResolution);
+    const firstResolution = cachingClient.resolve(context, []);
+    const secondResolution = cachingClient.resolve(context, []);
+    firstResolution.abort();
+    firstResolution.abort();
+    expect(pendingResolution.signal.aborted).toBe(false);
+    secondResolution.abort();
+    expect(pendingResolution.signal.aborted).toBe(true);
+  });
+});
 function nextCall(mock: jest.Mock): Promise<void> {
   return new Promise(resolve => {
     const impl = mock.getMockImplementation();
