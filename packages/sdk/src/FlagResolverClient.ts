@@ -242,10 +242,6 @@ export class CachingFlagResolverClient implements FlagResolverClient {
         },
         { once: true },
       );
-
-      // value.catch(() => {
-      //   this.#cache.delete(key);
-      // });
     } else {
       entry.refCount++;
     }

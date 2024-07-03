@@ -410,7 +410,6 @@ describe('CachingFlagResolverClient', () => {
     const firstResolution = cachingClient.resolve(context, []);
     const secondResolution = cachingClient.resolve(context, []);
     firstResolution.abort();
-    firstResolution.abort();
     expect(pendingResolution.signal.aborted).toBe(false);
     secondResolution.abort();
     expect(pendingResolution.signal.aborted).toBe(true);
