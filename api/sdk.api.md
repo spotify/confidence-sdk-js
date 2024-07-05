@@ -36,6 +36,8 @@ export class Confidence implements EventSender, Trackable, FlagResolver {
     // (undocumented)
     evaluateFlag<T extends Value>(path: string, defaultValue: T): FlagEvaluation<Value.Widen<T>>;
     // (undocumented)
+    evictFlagCache(): void;
+    // (undocumented)
     get flagState(): State;
     // (undocumented)
     getContext(): Context;
@@ -197,6 +199,8 @@ export type FlagEvaluation<T> = FlagEvaluation.Resolved<T> | FlagEvaluation.Stal
 export interface FlagResolver extends Contextual<FlagResolver> {
     // (undocumented)
     evaluateFlag<T extends Value>(path: string, defaultValue: T): FlagEvaluation<Value.Widen<T>>;
+    // (undocumented)
+    evictFlagCache(): void;
     // (undocumented)
     getFlag<T extends Value>(path: string, defaultValue: T): Promise<Value.Widen<T>>;
     // (undocumented)

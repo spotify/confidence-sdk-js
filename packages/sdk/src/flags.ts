@@ -40,4 +40,6 @@ export interface FlagResolver extends Contextual<FlagResolver> {
   evaluateFlag<T extends Value>(path: string, defaultValue: T): FlagEvaluation<Value.Widen<T>>;
 
   getFlag<T extends Value>(path: string, defaultValue: T): Promise<Value.Widen<T>>;
+
+  evictFlagCache(): void;
 }
