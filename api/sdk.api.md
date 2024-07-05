@@ -21,7 +21,7 @@ export class Confidence implements EventSender, Trackable, FlagResolver {
     //
     // @internal
     readonly contextChanges: Subscribe<string[]>;
-    static create({ clientSecret, region, timeout, environment, fetchImplementation, logger, }: ConfidenceOptions): Confidence;
+    static create({ clientSecret, region, timeout, environment, flagCacheTtl, fetchImplementation, logger, }: ConfidenceOptions): Confidence;
     get environment(): string;
     evaluateFlag<T extends Value>(path: string, defaultValue: T): FlagEvaluation<Value.Widen<T>>;
     evictFlagCache(): void;
@@ -43,6 +43,7 @@ export interface ConfidenceOptions {
     environment: 'client' | 'backend';
     // Warning: (ae-forgotten-export) The symbol "SimpleFetch" needs to be exported by the entry point index.d.ts
     fetchImplementation?: SimpleFetch;
+    flagCacheTtl?: number;
     // Warning: (ae-forgotten-export) The symbol "Logger" needs to be exported by the entry point index.d.ts
     logger?: Logger;
     region?: 'eu' | 'us';
