@@ -26,6 +26,7 @@ export interface ConfidenceOptions {
   environment: 'client' | 'backend';
   fetchImplementation?: SimpleFetch;
   timeout: number;
+  flagCacheTtl?: number;
   logger?: Logger;
 }
 
@@ -259,6 +260,7 @@ export class Confidence implements EventSender, Trackable, FlagResolver {
     region,
     timeout,
     environment,
+    flagCacheTtl = Number.POSITIVE_INFINITY,
     fetchImplementation = defaultFetchImplementation(),
     logger = defaultLogger(),
   }: ConfidenceOptions): Confidence {
@@ -275,7 +277,7 @@ export class Confidence implements EventSender, Trackable, FlagResolver {
       region,
     });
     if (environment === 'client') {
-      flagResolverClient = new CachingFlagResolverClient(flagResolverClient, Number.POSITIVE_INFINITY);
+      flagResolverClient = new CachingFlagResolverClient(flagResolverClient, flagCacheTtl);
     }
     const estEventSizeKb = 1;
     const flushTimeoutMilliseconds = 500;

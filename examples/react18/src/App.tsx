@@ -19,6 +19,7 @@ const confidence = Confidence.create({
   clientSecret: 'RxDVTrXvc6op1XxiQ4OaR31dKbJ39aYV',
   environment: 'client',
   timeout: 3000,
+  flagCacheTtl: 10_000,
   logger: console,
   fetchImplementation: (req: Request) => {
     console.log('request', req.url);
