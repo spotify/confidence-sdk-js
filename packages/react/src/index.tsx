@@ -110,6 +110,13 @@ export class ConfidenceReact implements EventSender, Trackable, FlagResolver {
   }
 
   /**
+   * Evicts the flag cache
+   */
+  evictFlagCache(): void {
+    this.delegate.evictFlagCache();
+  }
+
+  /**
    * Creates a new ConfidenceReact instance with context
    * @param context - Confidence context
    * @returns ConfidenceReact instance

@@ -179,6 +179,15 @@ export class Confidence implements EventSender, Trackable, FlagResolver {
   }
 
   /**
+   * Evicts flag cache
+   */
+  evictFlagCache(): void {
+    if (this.config.flagResolverClient instanceof CachingFlagResolverClient) {
+      (this.config.flagResolverClient as CachingFlagResolverClient).forceEvict();
+    }
+  }
+
+  /**
    * Creates a new Confidence instance with context
    * @param context - Confidence context
    * @returns Confidence instance

@@ -60,6 +60,7 @@ function App() {
             </Boundary>
           </Suspense>
         </Level>
+        <button onClick={() => confidence.evictFlagCache()}>Evict Cache</button>
       </Suspense>
     </ConfidenceProvider>
   );

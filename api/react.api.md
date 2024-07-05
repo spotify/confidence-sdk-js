@@ -41,6 +41,7 @@ export class ConfidenceReact implements EventSender, Trackable, FlagResolver {
     // @internal
     readonly delegate: Confidence;
     evaluateFlag<T extends Value>(path: string, defaultValue: T): FlagEvaluation<Value.Widen<T>>;
+    evictFlagCache(): void;
     getContext(): Context;
     getFlag<T extends Value>(path: string, defaultValue: T): Promise<Value.Widen<T>>;
     setContext(context: Context, { transition }?: {
