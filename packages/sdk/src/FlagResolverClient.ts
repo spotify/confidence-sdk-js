@@ -238,21 +238,25 @@ export class CachingFlagResolverClient implements FlagResolverClient {
       value.signal.addEventListener(
         'abort',
         () => {
-          entry!.refCount--;
-          if (entry!.refCount === 0) {
-            this.#cache.delete(key);
+          this.#cache.delete(key);
+        },
+        { once: true },
+      );
+    } else {
+      entry.refCount++;
+    }
+    return PendingResolution.create(context, signal => {
+      signal.addEventListener(
+        'abort',
+        () => {
+          if (--entry!.refCount === 0) {
+            entry!.value.abort();
           }
         },
         { once: true },
       );
-
-      value.catch(() => {
-        this.#cache.delete(key);
-      });
-    } else {
-      entry.refCount++;
-    }
-    return entry.value;
+      return entry!.value;
+    });
   }
 
   evict() {
