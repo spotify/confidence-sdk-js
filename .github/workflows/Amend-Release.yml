@@ -32,7 +32,6 @@ jobs:
           YARN_ENABLE_IMMUTABLE_INSTALLS: false
       - name: Commit and push changes changes in yarn.lock
         run: |
-          git status
           git add -u
           if ! git diff --staged --stat --exit-code; then
             git config user.name "confidence-bot"
