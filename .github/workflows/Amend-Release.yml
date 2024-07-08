@@ -2,7 +2,7 @@ name: Amend Release with yarn.lock update
 
 on:
   repository_dispatch:
-    types: [release_amend]
+    types: [release_amend_trigger]
 
 jobs:
   Amend-Release:
