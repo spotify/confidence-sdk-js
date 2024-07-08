@@ -269,7 +269,7 @@ export class Confidence implements EventSender, Trackable, FlagResolver {
       region,
     });
     if (environment === 'client') {
-      flagResolverClient = new CachingFlagResolverClient(flagResolverClient, 30_000);
+      flagResolverClient = new CachingFlagResolverClient(flagResolverClient, Number.POSITIVE_INFINITY);
     }
     const estEventSizeKb = 1;
     const flushTimeoutMilliseconds = 500;
