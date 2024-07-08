@@ -1,3 +1,5 @@
+name: Run Release Please
+
 on:
   push:
     branches:
@@ -7,7 +9,6 @@ permissions:
   contents: write
   pull-requests: write
 
-name: Run Release Please
 jobs:
   Release-Please:
     runs-on: ubuntu-latest
@@ -22,6 +23,14 @@ jobs:
           token: ${{secrets.GITHUB_TOKEN}}
           default-branch: main
           monorepo-tags: true
+      - name: Trigger Amend Release Workflow
+        if: ${{ ! steps.release.outputs.releases_created }}
+        run: |
+          curl -X POST \
+          -H "Accept: application/vnd.github.v3+json" \
+          -H "Authorization: token ${{ secrets.GITHUB_TOKEN }}" \
+          https://api.github.com/repos/spotify/confidence-sdk-js/dispatches \
+          -d '{"event_type":"release_amend_trigger", "client_payload": {}}'
 
   Build-And-Publish:
     environment: deployment

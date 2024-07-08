@@ -1,9 +1,8 @@
 name: Amend Release with yarn.lock update
 
 on:
-  push:
-    branches:
-      - 'release-please**'
+  repository_dispatch:
+    types: [release_amend_trigger]
 
 jobs:
   Amend-Release:
@@ -14,25 +13,32 @@ jobs:
     steps:
       - uses: actions/checkout@v4
         with:
-          ref: ${{ github.event.ref }}
+          ref: release-please--branches--main
       - name: Setup Node
         uses: actions/setup-node@v3
         with:
           node-version: ${{ matrix.node-version }}
           scope: '@spotify-confidence'
+      - name: Enable corepack
+        shell: bash
+        run: corepack enable
+      - name: Fix constraints
+        shell: bash
+        run: yarn constraints --fix
       - name: Install dependencies
         shell: bash
-        run: corepack enable && yarn install
+        run: yarn install
         env:
           YARN_ENABLE_IMMUTABLE_INSTALLS: false
-      - name: Commit and push changes
+      - name: Commit and push changes changes in yarn.lock
         run: |
-          git status && \
-          git --no-pager diff && \
-          git config user.name "confidence-bot" && \
-          git config user.email "confidence+bot@spotify.com" && \
-          git add yarn.lock && \
-          git commit -m "chore: auto update yarn.lock" && \
-          git push
+          git add -u
+          if ! git diff --staged --stat --exit-code; then
+            git config user.name "confidence-bot"
+            git config user.email "confidence+bot@spotify.com"
+            git add yarn.lock
+            git commit -m "chore: auto update yarn.lock"
+            git push
+          fi
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
