@@ -11,7 +11,7 @@
     "@microsoft/api-extractor": "7.43.1",
     "@openfeature/core": "^1.1.0",
     "@openfeature/web-sdk": "^1.0.3",
-    "@spotify-confidence/sdk": "0.1.5",
+    "@spotify-confidence/sdk": "0.1.4",
     "rollup": "4.14.2"
   },
   "peerDependencies": {
