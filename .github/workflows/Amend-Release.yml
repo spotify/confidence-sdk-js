@@ -30,19 +30,16 @@ jobs:
         run: yarn install
         env:
           YARN_ENABLE_IMMUTABLE_INSTALLS: false
-      - name: Check for changes in yarn.lock
-        id: git-check
+      - name: Commit and push changes changes in yarn.lock
         run: |
           git status
           git add -u
-          git diff --staged --exit-code || echo "::set-output name=changed::true"
-      - name: Commit and push changes
-        if: steps.git-check.outputs.changed == 'true'
-        run: |
-          git config user.name "confidence-bot" && \
-          git config user.email "confidence+bot@spotify.com" && \
-          git add yarn.lock && \
-          git commit -m "chore: auto update yarn.lock" && \
-          git push
+          if ! git diff --staged --stat --exit-code; then
+            git config user.name "confidence-bot"
+            git config user.email "confidence+bot@spotify.com"
+            git add yarn.lock
+            git commit -m "chore: auto update yarn.lock"
+            git push
+          fi
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
