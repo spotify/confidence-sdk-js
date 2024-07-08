@@ -1,9 +1,8 @@
 name: Amend Release with yarn.lock update
 
 on:
-  push:
-    branches:
-      - 'release-please**'
+  repository_dispatch:
+    types: [release_amend]
 
 jobs:
   Amend-Release:
@@ -14,7 +13,7 @@ jobs:
     steps:
       - uses: actions/checkout@v4
         with:
-          ref: ${{ github.event.ref }}
+          ref: release-please--branches--main
       - name: Setup Node
         uses: actions/setup-node@v3
         with:
