@@ -4,6 +4,12 @@
   "version": "0.2.9",
   "type": "module",
   "types": "build/types/index.d.ts",
+  "exports": {
+    ".": {
+      "import": "./dist/index.js",
+      "require": "./dist/index.cjs"
+    }
+  },
   "devDependencies": {
     "@microsoft/api-extractor": "7.43.1",
     "@openfeature/core": "^1.1.0",

@@ -32,5 +32,11 @@
     "ts-proto": "^1.171.0"
   },
   "type": "module",
-  "main": "dist/index.js"
+  "main": "dist/index.js",
+  "exports": {
+    ".": {
+      "import": "./dist/index.js",
+      "require": "./dist/index.cjs"
+    }
+  }
 }

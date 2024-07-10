@@ -55,6 +55,12 @@ module.exports = defineConfig({
       workspace.set('scripts.build', 'tsc -b');
       workspace.set('scripts.bundle', 'rollup -c && api-extractor run');
       workspace.set('scripts.prepack', 'yarn build && yarn bundle');
+      workspace.set('exports', {
+        '.': {
+          import: './dist/index.js',
+          require: './dist/index.cjs',
+        },
+      });
       workspace.set('publishConfig', {
         registry: 'https://registry.npmjs.org/',
         access: 'public',

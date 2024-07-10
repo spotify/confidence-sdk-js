@@ -32,5 +32,11 @@
     "rollup": "4.14.2"
   },
   "type": "module",
-  "main": "dist/index.js"
+  "main": "dist/index.js",
+  "exports": {
+    ".": {
+      "import": "./dist/index.js",
+      "require": "./dist/index.cjs"
+    }
+  }
 }

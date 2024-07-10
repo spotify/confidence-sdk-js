@@ -35,7 +35,7 @@ export default {
       generatedCode: 'es2015',
     },
     {
-      file: 'dist/index.cjs.js',
+      file: 'dist/index.cjs',
       format: 'cjs',
       sourcemap: true,
       generatedCode: 'es2015',
