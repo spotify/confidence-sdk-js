@@ -2,14 +2,7 @@
   "name": "@spotify-confidence/openfeature-server-provider",
   "license": "Apache-2.0",
   "version": "0.2.9",
-  "type": "module",
   "types": "build/types/index.d.ts",
-  "exports": {
-    ".": {
-      "import": "./dist/index.js",
-      "require": "./dist/index.cjs"
-    }
-  },
   "devDependencies": {
     "@microsoft/api-extractor": "7.43.1",
     "@openfeature/core": "^1.1.0",
@@ -25,7 +18,8 @@
     "registry": "https://registry.npmjs.org/",
     "access": "public",
     "types": "dist/index.d.ts",
-    "main": "dist/index.js"
+    "main": "dist/index.cjs.js",
+    "module": "dist/index.esm.js"
   },
   "scripts": {
     "build": "tsc -b",
@@ -35,5 +29,6 @@
   "files": [
     "dist/index.*"
   ],
-  "main": "dist/index.js"
+  "main": "dist/index.cjs.js",
+  "module": "dist/index.esm.js"
 }

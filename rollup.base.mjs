@@ -29,13 +29,13 @@ export default {
   },
   output: [
     {
-      file: 'dist/index.js',
+      file: 'dist/index.esm.js',
       format: 'es',
       sourcemap: true,
       generatedCode: 'es2015',
     },
     {
-      file: 'dist/index.cjs',
+      file: 'dist/index.cjs.js',
       format: 'cjs',
       sourcemap: true,
       generatedCode: 'es2015',
