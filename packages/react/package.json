@@ -19,7 +19,8 @@
     "registry": "https://registry.npmjs.org/",
     "access": "public",
     "types": "dist/index.d.ts",
-    "main": "dist/index.js"
+    "main": "dist/index.cjs.js",
+    "module": "dist/index.esm.js"
   },
   "peerDependencies": {
     "@spotify-confidence/sdk": "^0.1.4",
@@ -31,6 +32,6 @@
     "react": "^18.2.0",
     "rollup": "4.14.2"
   },
-  "type": "module",
-  "main": "dist/index.js"
+  "main": "dist/index.cjs.js",
+  "module": "dist/index.esm.js"
 }

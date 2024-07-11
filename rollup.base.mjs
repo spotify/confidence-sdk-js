@@ -1,4 +1,5 @@
 import { nodeResolve } from '@rollup/plugin-node-resolve';
+import commonjs from '@rollup/plugin-commonjs';
 import swc from '@rollup/plugin-swc';
 import { readFileSync } from 'node:fs';
 import { relative, resolve } from 'node:path';
@@ -26,14 +27,23 @@ export default {
     console.log('include:', path);
     return false;
   },
-  output: {
-    file: 'dist/index.js',
-    format: 'es',
-    sourcemap: true,
-    generatedCode: 'es2015',
-  },
+  output: [
+    {
+      file: 'dist/index.esm.js',
+      format: 'es',
+      sourcemap: true,
+      generatedCode: 'es2015',
+    },
+    {
+      file: 'dist/index.cjs.js',
+      format: 'cjs',
+      sourcemap: true,
+      generatedCode: 'es2015',
+    },
+  ],
   plugins: [
     nodeResolve(),
+    commonjs(),
     swc({
       swc: {
         jsc: {

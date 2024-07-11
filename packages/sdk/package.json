@@ -17,7 +17,8 @@
     "registry": "https://registry.npmjs.org/",
     "access": "public",
     "types": "dist/index.d.ts",
-    "main": "dist/index.js"
+    "main": "dist/index.cjs.js",
+    "module": "dist/index.esm.js"
   },
   "dependencies": {
     "web-vitals": "^3.5.2"
@@ -31,6 +32,6 @@
     "rollup": "4.14.2",
     "ts-proto": "^1.171.0"
   },
-  "type": "module",
-  "main": "dist/index.js"
+  "main": "dist/index.cjs.js",
+  "module": "dist/index.esm.js"
 }
