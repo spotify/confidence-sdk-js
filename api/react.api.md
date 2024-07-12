@@ -42,6 +42,8 @@ export class ConfidenceReact implements EventSender, Trackable, FlagResolver {
         transition?: boolean | undefined;
     }): void;
     // (undocumented)
+    clearFlagCache(): void;
+    // (undocumented)
     get config(): Configuration;
     // @internal (undocumented)
     get contextState(): string;

@@ -267,6 +267,10 @@ export class CachingFlagResolverClient implements FlagResolverClient {
       this.#cache.delete(key);
     }
   }
+
+  forceEvict() {
+    this.#cache.clear();
+  }
 }
 
 export function withRequestLogic(fetchImplementation: (request: Request) => Promise<Response>): typeof fetch {

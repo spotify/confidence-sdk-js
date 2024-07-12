@@ -87,6 +87,10 @@ export class ConfidenceReact implements EventSender, Trackable, FlagResolver {
     }
   }
 
+  clearFlagCache(): void {
+    this.delegate.clearFlagCache();
+  }
+
   withContext(context: Context): ConfidenceReact {
     this.assertContext('withContext', 'useWithContext');
     return new ConfidenceReact(this.delegate.withContext(context));
