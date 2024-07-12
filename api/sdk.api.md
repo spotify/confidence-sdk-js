@@ -24,6 +24,8 @@ export class Confidence implements EventSender, Trackable, FlagResolver {
     // (undocumented)
     clearContext(): void;
     // (undocumented)
+    clearFlagCache(): void;
+    // (undocumented)
     readonly config: Configuration;
     // Warning: (ae-forgotten-export) The symbol "Subscribe" needs to be exported by the entry point index.d.ts
     //
@@ -35,8 +37,6 @@ export class Confidence implements EventSender, Trackable, FlagResolver {
     get environment(): string;
     // (undocumented)
     evaluateFlag<T extends Value>(path: string, defaultValue: T): FlagEvaluation<Value.Widen<T>>;
-    // (undocumented)
-    evictFlagCache(): void;
     // (undocumented)
     get flagState(): State;
     // (undocumented)
@@ -200,9 +200,9 @@ export type FlagEvaluation<T> = FlagEvaluation.Resolved<T> | FlagEvaluation.Stal
 // @public (undocumented)
 export interface FlagResolver extends Contextual<FlagResolver> {
     // (undocumented)
-    evaluateFlag<T extends Value>(path: string, defaultValue: T): FlagEvaluation<Value.Widen<T>>;
+    clearFlagCache(): void;
     // (undocumented)
-    evictFlagCache(): void;
+    evaluateFlag<T extends Value>(path: string, defaultValue: T): FlagEvaluation<Value.Widen<T>>;
     // (undocumented)
     getFlag<T extends Value>(path: string, defaultValue: T): Promise<Value.Widen<T>>;
     // (undocumented)
