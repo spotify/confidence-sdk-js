@@ -9,7 +9,7 @@ const confidenceMock: jest.Mocked<FlagResolver> = {
   clearContext: jest.fn(),
   subscribe: jest.fn(),
   evaluateFlag: jest.fn(),
-  evictFlagCache: jest.fn(),
+  clearFlagCache: jest.fn(),
   getFlag: jest.fn(),
 };
 

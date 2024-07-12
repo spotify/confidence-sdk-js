@@ -35,13 +35,13 @@ export class ConfidenceReact implements EventSender, Trackable, FlagResolver {
     clearContext({ transition }?: {
         transition?: boolean | undefined;
     }): void;
+    clearFlagCache(): void;
     get config(): Configuration;
     // @internal
     get contextState(): string;
     // @internal
     readonly delegate: Confidence;
     evaluateFlag<T extends Value>(path: string, defaultValue: T): FlagEvaluation<Value.Widen<T>>;
-    evictFlagCache(): void;
     getContext(): Context;
     getFlag<T extends Value>(path: string, defaultValue: T): Promise<Value.Widen<T>>;
     setContext(context: Context, { transition }?: {

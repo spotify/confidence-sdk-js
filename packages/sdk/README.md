@@ -45,7 +45,7 @@ const confidence = Confidence.create({
 
 The client side version of the SDK has in memory caching enabled by default. This mean that it will keep the flag value (resolved flag data) in memory until the page is refreshed to maintain a consistent user experience.
 
-This can be configured using the `flagCacheTtl` option if you need a shorter TTL. You can also use the `evictFlagCache()` function there is need to evict the flags based on some other signal.
+This can be configured using the `flagCacheTtl` option if you need a shorter TTL. You can also use the `clearFlagCache()` function there is need to evict the flags based on some other signal.
 
 ```ts
 const confidence = Confidence.create({
@@ -53,7 +53,7 @@ const confidence = Confidence.create({
   // ... other options
 });
 
-confidence.evictFlagCache(); // forcefully evict the flag cache
+confidence.clearFlagCache(); // forcefully evict the flag cache
 ```
 
 ### Timeout

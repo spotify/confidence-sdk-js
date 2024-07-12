@@ -75,5 +75,5 @@ export interface FlagResolver extends Contextual<FlagResolver> {
   /** Returns flag value for a given flag */
   getFlag<T extends Value>(path: string, defaultValue: T): Promise<Value.Widen<T>>;
 
-  evictFlagCache(): void;
+  clearFlagCache(): void;
 }
