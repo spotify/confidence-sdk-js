@@ -15,10 +15,16 @@ import { Value, Context, FlagResolver, FlagEvaluation } from '@spotify-confidenc
 
 type Mutable<T> = { -readonly [K in keyof T]: T[K] };
 
+/**
+ * Confidence Web Provider for OpenFeature SDK
+ * @public
+ */
 export class ConfidenceWebProvider implements Provider {
+  /** Static data about the provider */
   readonly metadata: ProviderMetadata = {
     name: 'ConfidenceWebProvider',
   };
+  /** Events can be used by developers to track lifecycle events */
   readonly events = new OpenFeatureEventEmitter();
 
   private unsubscribe?: () => void;
@@ -28,6 +34,7 @@ export class ConfidenceWebProvider implements Provider {
     this.confidence = confidence;
   }
 
+  /** Initialize the Provider */
   async initialize(context?: EvaluationContext): Promise<void> {
     if (context) this.confidence.setContext(convertContext(context));
     let isStale = false;
@@ -46,11 +53,13 @@ export class ConfidenceWebProvider implements Provider {
     return this.expectReadyOrError();
   }
 
+  /** Function called on closing of a Provider, handles unsubscribing from the Provider */
   async onClose(): Promise<void> {
     this.unsubscribe?.();
     this.unsubscribe = undefined;
   }
 
+  /** Called on Confidence Context change */
   async onContextChange(oldContext: EvaluationContext, newContext: EvaluationContext): Promise<void> {
     const changes = contextChanges(oldContext, newContext);
     if (Object.keys(changes).length === 0) {
@@ -98,20 +107,24 @@ export class ConfidenceWebProvider implements Provider {
     }
   }
 
+  /** Resolves with an evaluation of a Boolean flag */
   resolveBooleanEvaluation(flagKey: string, defaultValue: boolean): ResolutionDetails<boolean> {
     return this.evaluateFlag(flagKey, defaultValue);
   }
 
+  /** Resolves with an evaluation of a Number flag */
   resolveNumberEvaluation(flagKey: string, defaultValue: number): ResolutionDetails<number> {
     return this.evaluateFlag(flagKey, defaultValue);
   }
 
+  /** Resolves with an evaluation of an Object flag */
   resolveObjectEvaluation<T extends JsonValue>(flagKey: string, defaultValue: T): ResolutionDetails<T> {
     // this might throw but will be caught by OpenFeature
     Value.assertValue(defaultValue);
     return this.evaluateFlag(flagKey, defaultValue);
   }
 
+  /** Resolves with an evaluation of a String flag */
   resolveStringEvaluation(flagKey: string, defaultValue: string): ResolutionDetails<string> {
     return this.evaluateFlag(flagKey, defaultValue);
   }

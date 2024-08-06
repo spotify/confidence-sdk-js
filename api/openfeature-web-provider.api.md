@@ -13,39 +13,26 @@ import { Provider } from '@openfeature/web-sdk';
 import { ProviderMetadata } from '@openfeature/web-sdk';
 import { ResolutionDetails } from '@openfeature/web-sdk';
 
-// Warning: (ae-missing-release-tag) "ConfidenceWebProvider" is part of the package's API, but it is missing a release tag (@alpha, @beta, @public, or @internal)
-//
-// @public (undocumented)
+// @public
 export class ConfidenceWebProvider implements Provider {
     constructor(confidence: FlagResolver);
-    // (undocumented)
     readonly events: OpenFeatureEventEmitter;
-    // (undocumented)
     initialize(context?: EvaluationContext): Promise<void>;
-    // (undocumented)
     readonly metadata: ProviderMetadata;
-    // (undocumented)
     onClose(): Promise<void>;
-    // (undocumented)
     onContextChange(oldContext: EvaluationContext, newContext: EvaluationContext): Promise<void>;
-    // (undocumented)
     resolveBooleanEvaluation(flagKey: string, defaultValue: boolean): ResolutionDetails<boolean>;
-    // (undocumented)
     resolveNumberEvaluation(flagKey: string, defaultValue: number): ResolutionDetails<number>;
-    // (undocumented)
     resolveObjectEvaluation<T extends JsonValue>(flagKey: string, defaultValue: T): ResolutionDetails<T>;
-    // (undocumented)
     resolveStringEvaluation(flagKey: string, defaultValue: string): ResolutionDetails<string>;
 }
 
 // Warning: (ae-forgotten-export) The symbol "ConfidenceWebProviderOptions" needs to be exported by the entry point index.d.ts
-// Warning: (ae-missing-release-tag) "createConfidenceWebProvider" is part of the package's API, but it is missing a release tag (@alpha, @beta, @public, or @internal)
-// Warning: (ae-missing-release-tag) "createConfidenceWebProvider" is part of the package's API, but it is missing a release tag (@alpha, @beta, @public, or @internal)
 //
-// @public (undocumented)
+// @public
 export function createConfidenceWebProvider(options: ConfidenceWebProviderOptions): Provider;
 
-// @public (undocumented)
+// @public
 export function createConfidenceWebProvider(confidence: Confidence): Provider;
 
 // (No @packageDocumentation comment for this package)
