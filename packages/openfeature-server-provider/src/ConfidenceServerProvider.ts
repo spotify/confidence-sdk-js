@@ -13,10 +13,16 @@ import { Context, FlagEvaluation, FlagResolver, Value } from '@spotify-confidenc
 
 type Mutable<T> = { -readonly [K in keyof T]: T[K] };
 
+/**
+ * Confidence Server Provider for OpenFeature SDK
+ * @public
+ */
 export class ConfidenceServerProvider implements Provider {
+  /** Static data about the provider */
   readonly metadata: ProviderMetadata = {
     name: 'ConfidenceServerProvider',
   };
+  /** Current status of the provider. Can be READY, NOT_READY, ERROR, STALE and FATAL. */
   status: ProviderStatus = ProviderStatus.READY;
   private readonly confidence: FlagResolver;
 
@@ -54,6 +60,7 @@ export class ConfidenceServerProvider implements Provider {
         return ErrorCode.GENERAL;
     }
   }
+  /** Resolves with an evaluation of a Boolean flag */
   resolveBooleanEvaluation(
     flagKey: string,
     defaultValue: boolean,
@@ -61,7 +68,7 @@ export class ConfidenceServerProvider implements Provider {
   ): Promise<ResolutionDetails<boolean>> {
     return this.fetchFlag(flagKey, defaultValue, context);
   }
-
+  /** Resolves with an evaluation of a Numbers flag */
   resolveNumberEvaluation(
     flagKey: string,
     defaultValue: number,
@@ -69,7 +76,7 @@ export class ConfidenceServerProvider implements Provider {
   ): Promise<ResolutionDetails<number>> {
     return this.fetchFlag(flagKey, defaultValue, context);
   }
-
+  /** Resolves with an evaluation of an Object flag */
   resolveObjectEvaluation<T extends JsonValue>(
     flagKey: string,
     defaultValue: T,
@@ -78,7 +85,7 @@ export class ConfidenceServerProvider implements Provider {
     Value.assertValue(defaultValue);
     return this.fetchFlag(flagKey, defaultValue, context);
   }
-
+  /** Resolves with an evaluation of a String flag */
   resolveStringEvaluation(
     flagKey: string,
     defaultValue: string,

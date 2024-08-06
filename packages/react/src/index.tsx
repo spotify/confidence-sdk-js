@@ -170,10 +170,10 @@ export function useWithContext(context: Context, parent = useConfidence()): Conf
 // this would be better named useContext, but would then collide with React.useContext
 // eslint-disable-next-line react-hooks/rules-of-hooks
 export function useConfidenceContext(confidence = useConfidence()): Context {
-  const [, setState] = useState(confidence.contextState);
-  useEffect(() => {
-    return confidence.delegate.contextChanges(() => setState(confidence.contextState));
-  });
+  // const [, setState] = useState(confidence.contextState);
+  // useEffect(() => {
+  //   return confidence.delegate.contextChanges(() => setState(confidence.contextState));
+  // });
   return confidence.delegate.getContext();
 }
 
