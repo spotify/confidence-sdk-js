@@ -20,6 +20,7 @@
     "main": "dist/index.js"
   },
   "dependencies": {
+    "crypto-js": "^4.2.0",
     "web-vitals": "^3.5.2"
   },
   "files": [
@@ -27,6 +28,7 @@
   ],
   "devDependencies": {
     "@microsoft/api-extractor": "7.43.1",
+    "@types/crypto-js": "^4",
     "prettier": "*",
     "rollup": "4.14.2",
     "ts-proto": "^1.171.0"
