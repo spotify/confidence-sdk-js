@@ -297,7 +297,7 @@ export class Confidence implements EventSender, Trackable, FlagResolver {
       logger,
     });
     if (environment === 'client') {
-      root.track(visitorIdentity());
+      root.track(visitorIdentity(clientSecret));
     }
     return root;
   }
