@@ -17,10 +17,7 @@ import { StateObserver } from '@spotify-confidence/sdk';
 import { Trackable } from '@spotify-confidence/sdk';
 import { Value } from '@spotify-confidence/sdk';
 
-// Warning: (ae-missing-release-tag) "ConfidenceProvider" is part of the package's API, but it is missing a release tag (@alpha, @beta, @public, or @internal)
-// Warning: (ae-missing-release-tag) "ConfidenceProvider" is part of the package's API, but it is missing a release tag (@alpha, @beta, @public, or @internal)
-//
-// @public (undocumented)
+// @public
 export type ConfidenceProvider = FC<PropsWithChildren<{
     confidence: Confidence;
 }>> & {
@@ -29,75 +26,49 @@ export type ConfidenceProvider = FC<PropsWithChildren<{
     }>>;
 };
 
-// @public (undocumented)
+// @public
 export const ConfidenceProvider: ConfidenceProvider;
 
-// Warning: (ae-missing-release-tag) "ConfidenceReact" is part of the package's API, but it is missing a release tag (@alpha, @beta, @public, or @internal)
-//
-// @public (undocumented)
+// @public
 export class ConfidenceReact implements EventSender, Trackable, FlagResolver {
     constructor(delegate: Confidence);
-    // (undocumented)
     clearContext({ transition }?: {
         transition?: boolean | undefined;
     }): void;
-    // (undocumented)
     get config(): Configuration;
-    // @internal (undocumented)
+    // @internal
     get contextState(): string;
-    // @internal (undocumented)
+    // @internal
     readonly delegate: Confidence;
-    // (undocumented)
     evaluateFlag<T extends Value>(path: string, defaultValue: T): FlagEvaluation<Value.Widen<T>>;
-    // (undocumented)
     getContext(): Context;
-    // (undocumented)
     getFlag<T extends Value>(path: string, defaultValue: T): Promise<Value.Widen<T>>;
-    // (undocumented)
     setContext(context: Context, { transition }?: {
         transition?: boolean | undefined;
     }): void;
-    // (undocumented)
     subscribe(onStateChange?: StateObserver | undefined): () => void;
-    // (undocumented)
     track(name: string, message?: Value.Struct): void;
-    // (undocumented)
     track(manager: Trackable.Manager): Closer;
-    // (undocumented)
     useContext(): Context;
-    // (undocumented)
     useEvaluateFlag<T extends Value>(path: string, defaultValue: T): FlagEvaluation<Value.Widen<T>>;
-    // (undocumented)
     useFlag<T extends Value>(path: string, defaultValue: T): Value.Widen<T>;
-    // (undocumented)
     useWithContext(context: Context): ConfidenceReact;
-    // (undocumented)
     withContext(context: Context): ConfidenceReact;
 }
 
-// Warning: (ae-missing-release-tag) "useConfidence" is part of the package's API, but it is missing a release tag (@alpha, @beta, @public, or @internal)
-//
-// @public (undocumented)
+// @public
 export const useConfidence: () => ConfidenceReact;
 
-// Warning: (ae-missing-release-tag) "useConfidenceContext" is part of the package's API, but it is missing a release tag (@alpha, @beta, @public, or @internal)
-//
-// @public (undocumented)
+// @public
 export function useConfidenceContext(confidence?: ConfidenceReact): Context;
 
-// Warning: (ae-missing-release-tag) "useEvaluateFlag" is part of the package's API, but it is missing a release tag (@alpha, @beta, @public, or @internal)
-//
-// @public (undocumented)
+// @public
 export function useEvaluateFlag<T extends Value>(path: string, defaultValue: T, confidence?: ConfidenceReact): FlagEvaluation<Value.Widen<T>>;
 
-// Warning: (ae-missing-release-tag) "useFlag" is part of the package's API, but it is missing a release tag (@alpha, @beta, @public, or @internal)
-//
-// @public (undocumented)
+// @public
 export function useFlag<T extends Value>(path: string, defaultValue: T, confidence?: ConfidenceReact): Value.Widen<T>;
 
-// Warning: (ae-missing-release-tag) "useWithContext" is part of the package's API, but it is missing a release tag (@alpha, @beta, @public, or @internal)
-//
-// @public (undocumented)
+// @public
 export function useWithContext(context: Context, parent?: ConfidenceReact): ConfidenceReact;
 
 // (No @packageDocumentation comment for this package)
