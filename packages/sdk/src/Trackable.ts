@@ -3,9 +3,16 @@ import { Confidence } from './Confidence';
 import { Context } from './context';
 import { EventData } from './events';
 
+/**
+ * Namespace describing something to track
+ * @public
+ */
 export namespace Trackable {
+  /** Trackable Controller */
   export type Controller = Pick<Confidence, 'setContext' | 'track' | 'config'>;
+  /** Trackable Cleanup */
   export type Cleanup = void | Closer;
+  /** Trackable Manager */
   export type Manager = (controller: Controller) => Cleanup;
 
   class RevocableController implements Controller {
@@ -56,6 +63,7 @@ export namespace Trackable {
     }
   }
 
+  /** Setup of Trackable */
   export function setup(controller: Controller, manager: Manager): Closer {
     const revocableController = new RevocableController(controller);
     const cleanup = manager(revocableController);
@@ -69,6 +77,11 @@ export namespace Trackable {
     };
   }
 }
+/**
+ * Namespace describing something to track
+ * @public
+ */
 export interface Trackable {
+  /** Tracks an event given a Trackable Manager */
   track(manager: Trackable.Manager): Closer;
 }
