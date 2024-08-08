@@ -46,7 +46,7 @@ export type WebVitalsOptions = {
  * Emit {@link https://web.dev/articles/vitals | Web Vitals} metric events.
  *
  * @param options - specifying which metrics to emit
- * @returns a {@link Topic} to be used with {@link Confidence.track }
+ * @returns a Topic to be used with Confidence.track
  * @public
  */
 export function webVitals({
