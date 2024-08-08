@@ -44,10 +44,7 @@ export class Confidence implements EventSender, Trackable, FlagResolver {
   private readonly parent?: Confidence;
   private _context: Map<string, Value> = new Map();
   private contextChanged?: Observer<string[]>;
-
-  /** @internal */
-  readonly contextChanges: Subscribe<string[]>;
-
+  contextChanges: Subscribe<string[]>;
   private currentFlags?: FlagResolution;
   private pendingFlags?: PendingResolution<void>;
 
