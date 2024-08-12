@@ -196,7 +196,7 @@ export class Confidence implements EventSender, Trackable, FlagResolver {
    * @param data - data to track */
   track(name: string, data?: EventData): void;
   /**
-   * Tracks an event
+   * Sets up a Trackable.Manager to manage event tracking or context changes.
    * @param manager - event manager
    */
   track(manager: Trackable.Manager): Closer;

@@ -110,7 +110,7 @@ export class ConfidenceReact implements EventSender, Trackable, FlagResolver {
   }
 
   /**
-   * Creates a new Confidence instance with context
+   * Creates a new ConfidenceReact instance with context
    * @param context - Confidence context
    * @returns ConfidenceReact instance
    */
@@ -131,22 +131,22 @@ export class ConfidenceReact implements EventSender, Trackable, FlagResolver {
 
   /* eslint-disable react-hooks/rules-of-hooks */
 
-  /** Uses Context */
+  /** Hook to access Context */
   useContext(): Context {
     this.assertContext('useContext', 'getContext');
     return useConfidenceContext(this);
   }
-  /** Uses Context */
+  /** Hook to access the WithContext functionality. Returns a  ConfidenceReact instance with the passed context. */
   useWithContext(context: Context): ConfidenceReact {
     this.assertContext('useWithContext', 'withContext');
     return useWithContext(context, this);
   }
-  /** Uses EvaluateFlag */
+  /** Hook to use EvaluateFlag functionality */
   useEvaluateFlag<T extends Value>(path: string, defaultValue: T): FlagEvaluation<Value.Widen<T>> {
     this.assertContext('useEvaluateFlag', 'evaluateFlag');
     return useEvaluateFlag(path, defaultValue, this);
   }
-  /** Uses Flag */
+  /** Hook to use getFlag functionality */
   useFlag<T extends Value>(path: string, defaultValue: T): Value.Widen<T> {
     this.assertContext('useFlag', 'getFlag');
     return useFlag(path, defaultValue, this);

@@ -14,7 +14,7 @@ import { Context, FlagEvaluation, FlagResolver, Value } from '@spotify-confidenc
 type Mutable<T> = { -readonly [K in keyof T]: T[K] };
 
 /**
- * Confidence Server Provider for OpenFeature SDK
+ * OpenFeature Provider for Confidence Server SDK
  * @public
  */
 export class ConfidenceServerProvider implements Provider {

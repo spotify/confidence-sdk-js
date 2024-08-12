@@ -16,7 +16,7 @@ import { Value, Context, FlagResolver, FlagEvaluation } from '@spotify-confidenc
 type Mutable<T> = { -readonly [K in keyof T]: T[K] };
 
 /**
- * Confidence Web Provider for OpenFeature SDK
+ * OpenFeature Provider for Confidence Web SDK
  * @public
  */
 export class ConfidenceWebProvider implements Provider {
@@ -53,7 +53,7 @@ export class ConfidenceWebProvider implements Provider {
     return this.expectReadyOrError();
   }
 
-  /** Function called on closing of a Provider, handles unsubscribing from the Provider */
+  /** Function called on closing of a Provider, handles unsubscribing from the Confidence SDK */
   async onClose(): Promise<void> {
     this.unsubscribe?.();
     this.unsubscribe = undefined;
