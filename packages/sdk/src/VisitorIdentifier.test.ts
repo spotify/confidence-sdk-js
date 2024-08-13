@@ -8,9 +8,6 @@ describe('visitorIdentity', () => {
 
   const mockedSetContextFn = mockController.setContext as jest.Mock<boolean, [context: Context]>;
 
-  /**
-   * @jest-environment jsdom
-   */
   it('should generate a UUID, hash it with client secret, and set it as visitor_id', () => {
     // @ts-ignore
     visitorIdentity('test1')(mockController);
