@@ -9,13 +9,12 @@ export const visitorIdentity =
     if (typeof document === 'undefined') return;
     let value = Cookie.get(COOKIE_NAME);
     if (!value) {
-      value = uuid();
+      value = generateUniqueId(uuid() + clientSecret).toString();
       // TODO check correct cookie options
       Cookie.set(COOKIE_NAME, value, { maxAge: 60 * 60 * 24 * 365 * 5 });
     }
 
-    const hashedValue = generateUniqueId(value + clientSecret).toString();
-    controller.setContext({ visitor_id: hashedValue });
+    controller.setContext({ visitor_id: value });
   };
 
 function generateUniqueId(inputString: string) {
