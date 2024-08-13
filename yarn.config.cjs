@@ -33,10 +33,7 @@ module.exports = defineConfig({
           dep.workspace.set(['devDependencies', dep.ident], dep.range.slice(1));
         } else if (dep.type === 'devDependencies') {
           const peerDep = depsToWorkspace.find(d => d.type === 'peerDependencies' && d.ident === dep.ident);
-          if (peerDep) {
-            // if we have a peer dep for this dev dep, the dev dep should use the lowest possible version
-            dep.update(peerDep.range.slice(1));
-          } else {
+          if (!peerDep) {
             // we don't have a peer dep and can use the workspace version
             dep.update('workspace:');
           }
