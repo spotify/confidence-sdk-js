@@ -9,8 +9,8 @@
 //
 // @public (undocumented)
 export namespace Closer {
-    // (undocumented)
-    export function combine(...closers: Closer[]): Closer;
+  // (undocumented)
+  export function combine(...closers: Closer[]): Closer;
 }
 
 // @public (undocumented)
@@ -20,132 +20,132 @@ export type Closer = () => void;
 //
 // @public (undocumented)
 export class Confidence implements EventSender, Trackable, FlagResolver {
-    constructor(config: Configuration, parent?: Confidence);
-    // (undocumented)
-    clearContext(): void;
-    // (undocumented)
-    readonly config: Configuration;
-    // Warning: (ae-forgotten-export) The symbol "Subscribe" needs to be exported by the entry point index.d.ts
-    //
-    // @internal (undocumented)
-    readonly contextChanges: Subscribe<string[]>;
-    // (undocumented)
-    static create({ clientSecret, region, timeout, environment, fetchImplementation, logger, }: ConfidenceOptions): Confidence;
-    // (undocumented)
-    get environment(): string;
-    // (undocumented)
-    evaluateFlag<T extends Value>(path: string, defaultValue: T): FlagEvaluation<Value.Widen<T>>;
-    // (undocumented)
-    get flagState(): State;
-    // (undocumented)
-    getContext(): Context;
-    // (undocumented)
-    getFlag<T extends Value>(path: string, defaultValue: T): Promise<Value.Widen<T>>;
-    // Warning: (ae-forgotten-export) The symbol "AccessiblePromise" needs to be exported by the entry point index.d.ts
-    //
-    // (undocumented)
-    protected resolveFlags(): AccessiblePromise<void>;
-    // (undocumented)
-    setContext(context: Context): boolean;
-    // (undocumented)
-    subscribe(onStateChange?: StateObserver): () => void;
-    // (undocumented)
-    track(name: string, data?: EventData): void;
-    // (undocumented)
-    track(manager: Trackable.Manager): Closer;
-    // (undocumented)
-    withContext(context: Context): Confidence;
+  constructor(config: Configuration, parent?: Confidence);
+  // (undocumented)
+  clearContext(): void;
+  // (undocumented)
+  readonly config: Configuration;
+  // Warning: (ae-forgotten-export) The symbol "Subscribe" needs to be exported by the entry point index.d.ts
+  //
+  // @internal (undocumented)
+  readonly contextChanges: Subscribe<string[]>;
+  // (undocumented)
+  static create({ clientSecret, region, timeout, environment, fetchImplementation, logger, }: ConfidenceOptions): Confidence;
+  // (undocumented)
+  get environment(): string;
+  // (undocumented)
+  evaluateFlag<T extends Value>(path: string, defaultValue: T): FlagEvaluation<Value.Widen<T>>;
+  // (undocumented)
+  get flagState(): State;
+  // (undocumented)
+  getContext(): Context;
+  // (undocumented)
+  getFlag<T extends Value>(path: string, defaultValue: T): Promise<Value.Widen<T>>;
+  // Warning: (ae-forgotten-export) The symbol "AccessiblePromise" needs to be exported by the entry point index.d.ts
+  //
+  // (undocumented)
+  protected resolveFlags(): AccessiblePromise<void>;
+  // (undocumented)
+  setContext(context: Context): boolean;
+  // (undocumented)
+  subscribe(onStateChange?: StateObserver): () => void;
+  // (undocumented)
+  track(name: string, data?: EventData): void;
+  // (undocumented)
+  track(manager: Trackable.Manager): Closer;
+  // (undocumented)
+  withContext(context: Context): Confidence;
 }
 
 // Warning: (ae-missing-release-tag) "ConfidenceOptions" is part of the package's API, but it is missing a release tag (@alpha, @beta, @public, or @internal)
 //
 // @public (undocumented)
 export interface ConfidenceOptions {
-    // (undocumented)
-    clientSecret: string;
-    // (undocumented)
-    environment: 'client' | 'backend';
-    // Warning: (ae-forgotten-export) The symbol "SimpleFetch" needs to be exported by the entry point index.d.ts
-    //
-    // (undocumented)
-    fetchImplementation?: SimpleFetch;
-    // Warning: (ae-forgotten-export) The symbol "Logger" needs to be exported by the entry point index.d.ts
-    //
-    // (undocumented)
-    logger?: Logger;
-    // (undocumented)
-    region?: 'eu' | 'us';
-    // (undocumented)
-    resolveUrl?: string;
-    // (undocumented)
-    timeout: number;
+  // (undocumented)
+  clientSecret: string;
+  // (undocumented)
+  environment: 'client' | 'backend';
+  // Warning: (ae-forgotten-export) The symbol "SimpleFetch" needs to be exported by the entry point index.d.ts
+  //
+  // (undocumented)
+  fetchImplementation?: SimpleFetch;
+  // Warning: (ae-forgotten-export) The symbol "Logger" needs to be exported by the entry point index.d.ts
+  //
+  // (undocumented)
+  logger?: Logger;
+  // (undocumented)
+  region?: 'eu' | 'us';
+  // (undocumented)
+  resolveUrl?: string;
+  // (undocumented)
+  timeout: number;
 }
 
 // Warning: (ae-missing-release-tag) "Configuration" is part of the package's API, but it is missing a release tag (@alpha, @beta, @public, or @internal)
 //
 // @public (undocumented)
 export interface Configuration {
-    // (undocumented)
-    readonly environment: 'client' | 'backend';
-    // Warning: (ae-forgotten-export) The symbol "EventSenderEngine" needs to be exported by the entry point index.d.ts
-    //
-    // @internal (undocumented)
-    readonly eventSenderEngine: EventSenderEngine;
-    // Warning: (ae-forgotten-export) The symbol "FlagResolverClient" needs to be exported by the entry point index.d.ts
-    //
-    // @internal (undocumented)
-    readonly flagResolverClient: FlagResolverClient;
-    // (undocumented)
-    readonly logger: Logger;
-    // (undocumented)
-    readonly timeout: number;
+  // (undocumented)
+  readonly environment: 'client' | 'backend';
+  // Warning: (ae-forgotten-export) The symbol "EventSenderEngine" needs to be exported by the entry point index.d.ts
+  //
+  // @internal (undocumented)
+  readonly eventSenderEngine: EventSenderEngine;
+  // Warning: (ae-forgotten-export) The symbol "FlagResolverClient" needs to be exported by the entry point index.d.ts
+  //
+  // @internal (undocumented)
+  readonly flagResolverClient: FlagResolverClient;
+  // (undocumented)
+  readonly logger: Logger;
+  // (undocumented)
+  readonly timeout: number;
 }
 
 // Warning: (ae-missing-release-tag) "Context" is part of the package's API, but it is missing a release tag (@alpha, @beta, @public, or @internal)
 //
 // @public (undocumented)
 export interface Context extends Value.Struct {
-    // (undocumented)
-    page?: {
-        path: string;
-        referrer: string;
-        search: string;
-        title: string;
-        url: string;
-    };
-    // (undocumented)
-    targeting_key?: string;
-    // (undocumented)
-    visitor_id?: string;
+  // (undocumented)
+  page?: {
+    path: string;
+    referrer: string;
+    search: string;
+    title: string;
+    url: string;
+  };
+  // (undocumented)
+  targeting_key?: string;
+  // (undocumented)
+  visitor_id?: string;
 }
 
 // Warning: (ae-missing-release-tag) "Contextual" is part of the package's API, but it is missing a release tag (@alpha, @beta, @public, or @internal)
 //
 // @public (undocumented)
 export interface Contextual<Self extends Contextual<Self>> {
-    // (undocumented)
-    clearContext(): void;
-    // (undocumented)
-    getContext(): Context;
-    // (undocumented)
-    setContext(context: Context): void;
-    // (undocumented)
-    withContext(context: Context): Self;
+  // (undocumented)
+  clearContext(): void;
+  // (undocumented)
+  getContext(): Context;
+  // (undocumented)
+  setContext(context: Context): void;
+  // (undocumented)
+  withContext(context: Context): Self;
 }
 
 // Warning: (ae-missing-release-tag) "EventData" is part of the package's API, but it is missing a release tag (@alpha, @beta, @public, or @internal)
 //
 // @public (undocumented)
 export type EventData = Value.Struct & {
-    context?: never;
+  context?: never;
 };
 
 // Warning: (ae-missing-release-tag) "EventSender" is part of the package's API, but it is missing a release tag (@alpha, @beta, @public, or @internal)
 //
 // @public (undocumented)
 export interface EventSender extends Contextual<EventSender> {
-    // (undocumented)
-    track(name: string, data?: EventData): void;
+  // (undocumented)
+  track(name: string, data?: EventData): void;
 }
 
 // Warning: (ae-missing-release-tag) "FlagEvaluation" is part of the package's API, but it is missing a release tag (@alpha, @beta, @public, or @internal)
@@ -153,39 +153,39 @@ export interface EventSender extends Contextual<EventSender> {
 //
 // @public (undocumented)
 export namespace FlagEvaluation {
+  // (undocumented)
+  export type ErrorCode = 'FLAG_NOT_FOUND' | 'TYPE_MISMATCH' | 'NOT_READY' | 'TIMEOUT' | 'GENERAL';
+  // (undocumented)
+  export interface Failed<T> {
     // (undocumented)
-    export type ErrorCode = 'FLAG_NOT_FOUND' | 'TYPE_MISMATCH' | 'NOT_READY' | 'TIMEOUT' | 'GENERAL';
+    readonly errorCode: ErrorCode;
     // (undocumented)
-    export interface Failed<T> {
-        // (undocumented)
-        readonly errorCode: ErrorCode;
-        // (undocumented)
-        readonly errorMessage: string;
-        // (undocumented)
-        readonly reason: 'ERROR';
-        // (undocumented)
-        readonly value: T;
-    }
+    readonly errorMessage: string;
     // (undocumented)
-    export interface Matched<T> {
-        // (undocumented)
-        readonly reason: 'MATCH';
-        // (undocumented)
-        readonly value: T;
-        // (undocumented)
-        readonly variant: string;
-    }
+    readonly reason: 'ERROR';
     // (undocumented)
-    export type Resolved<T> = Matched<T> | Unmatched<T> | Failed<T>;
+    readonly value: T;
+  }
+  // (undocumented)
+  export interface Matched<T> {
     // (undocumented)
-    export type Stale<T> = Resolved<T> & PromiseLike<Resolved<T>>;
+    readonly reason: 'MATCH';
     // (undocumented)
-    export interface Unmatched<T> {
-        // (undocumented)
-        readonly reason: 'UNSPECIFIED' | 'NO_SEGMENT_MATCH' | 'NO_TREATMENT_MATCH' | 'FLAG_ARCHIVED' | 'TARGETING_KEY_ERROR';
-        // (undocumented)
-        readonly value: T;
-    }
+    readonly value: T;
+    // (undocumented)
+    readonly variant: string;
+  }
+  // (undocumented)
+  export type Resolved<T> = Matched<T> | Unmatched<T> | Failed<T>;
+  // (undocumented)
+  export type Stale<T> = Resolved<T> & PromiseLike<Resolved<T>>;
+  // (undocumented)
+  export interface Unmatched<T> {
+    // (undocumented)
+    readonly reason: 'UNSPECIFIED' | 'NO_SEGMENT_MATCH' | 'NO_TREATMENT_MATCH' | 'FLAG_ARCHIVED' | 'TARGETING_KEY_ERROR';
+    // (undocumented)
+    readonly value: T;
+  }
 }
 
 // @public (undocumented)
@@ -195,12 +195,12 @@ export type FlagEvaluation<T> = FlagEvaluation.Resolved<T> | FlagEvaluation.Stal
 //
 // @public (undocumented)
 export interface FlagResolver extends Contextual<FlagResolver> {
-    // (undocumented)
-    evaluateFlag<T extends Value>(path: string, defaultValue: T): FlagEvaluation<Value.Widen<T>>;
-    // (undocumented)
-    getFlag<T extends Value>(path: string, defaultValue: T): Promise<Value.Widen<T>>;
-    // (undocumented)
-    subscribe(onStateChange?: StateObserver): () => void;
+  // (undocumented)
+  evaluateFlag<T extends Value>(path: string, defaultValue: T): FlagEvaluation<Value.Widen<T>>;
+  // (undocumented)
+  getFlag<T extends Value>(path: string, defaultValue: T): Promise<Value.Widen<T>>;
+  // (undocumented)
+  subscribe(onStateChange?: StateObserver): () => void;
 }
 
 // Warning: (ae-missing-release-tag) "pageViews" is part of the package's API, but it is missing a release tag (@alpha, @beta, @public, or @internal)
@@ -223,20 +223,20 @@ export type StateObserver = (state: State) => void;
 //
 // @public (undocumented)
 export namespace Trackable {
-    // (undocumented)
-    export type Cleanup = void | Closer;
-    // (undocumented)
-    export type Controller = Pick<Confidence, 'setContext' | 'track' | 'config'>;
-    // (undocumented)
-    export type Manager = (controller: Controller) => Cleanup;
-    // (undocumented)
-    export function setup(controller: Controller, manager: Manager): Closer;
+  // (undocumented)
+  export type Cleanup = void | Closer;
+  // (undocumented)
+  export type Controller = Pick<Confidence, 'setContext' | 'track' | 'config'>;
+  // (undocumented)
+  export type Manager = (controller: Controller) => Cleanup;
+  // (undocumented)
+  export function setup(controller: Controller, manager: Manager): Closer;
 }
 
 // @public (undocumented)
 export interface Trackable {
-    // (undocumented)
-    track(manager: Trackable.Manager): Closer;
+  // (undocumented)
+  track(manager: Trackable.Manager): Closer;
 }
 
 // Warning: (ae-missing-release-tag) "Value" is part of the package's API, but it is missing a release tag (@alpha, @beta, @public, or @internal)
@@ -244,50 +244,50 @@ export interface Trackable {
 //
 // @public (undocumented)
 export namespace Value {
-    // (undocumented)
-    export function assertType(expected: 'undefined', found: Value): asserts found is undefined;
-    // (undocumented)
-    export function assertType(expected: 'string', found: Value): asserts found is string;
-    // (undocumented)
-    export function assertType(expected: 'number', found: Value): asserts found is number;
-    // (undocumented)
-    export function assertType(expected: 'boolean', found: Value): asserts found is boolean;
-    // (undocumented)
-    export function assertType(expected: 'List', found: Value): asserts found is List;
-    // (undocumented)
-    export function assertType(expected: 'Struct', found: Value): asserts found is Struct;
-    // (undocumented)
-    export function assertValue(value: unknown): asserts value is Value;
-    // (undocumented)
-    export function clone<T extends Value>(value: T): T;
-    // (undocumented)
-    export function deserialize(data: string): Value;
-    // (undocumented)
-    export function equal(value1: Value, value2: Value): boolean;
-    // (undocumented)
-    export function get(struct: Struct | undefined, path: string): Value;
-    // (undocumented)
-    export function get(struct: Struct | undefined, ...steps: string[]): Value;
-    // (undocumented)
-    export function getType(value: Value): TypeName;
-    // (undocumented)
-    export function isList(value: Value): value is List;
-    // (undocumented)
-    export function isStruct(value: Value): value is Struct;
-    // (undocumented)
-    export type List = ReadonlyArray<number> | ReadonlyArray<string> | ReadonlyArray<boolean>;
-    // (undocumented)
-    export type Primitive = number | string | boolean;
-    // (undocumented)
-    export function serialize(value: Value): string;
-    // (undocumented)
-    export type Struct = {
-        readonly [key: string]: Value;
-    };
-    // (undocumented)
-    export type TypeName = 'number' | 'string' | 'boolean' | 'Struct' | 'List' | 'undefined';
-    // (undocumented)
-    export type Widen<T extends Value> = T extends number ? number : T extends string ? string : T extends boolean ? boolean : T;
+  // (undocumented)
+  export function assertType(expected: 'undefined', found: Value): asserts found is undefined;
+  // (undocumented)
+  export function assertType(expected: 'string', found: Value): asserts found is string;
+  // (undocumented)
+  export function assertType(expected: 'number', found: Value): asserts found is number;
+  // (undocumented)
+  export function assertType(expected: 'boolean', found: Value): asserts found is boolean;
+  // (undocumented)
+  export function assertType(expected: 'List', found: Value): asserts found is List;
+  // (undocumented)
+  export function assertType(expected: 'Struct', found: Value): asserts found is Struct;
+  // (undocumented)
+  export function assertValue(value: unknown): asserts value is Value;
+  // (undocumented)
+  export function clone<T extends Value>(value: T): T;
+  // (undocumented)
+  export function deserialize(data: string): Value;
+  // (undocumented)
+  export function equal(value1: Value, value2: Value): boolean;
+  // (undocumented)
+  export function get(struct: Struct | undefined, path: string): Value;
+  // (undocumented)
+  export function get(struct: Struct | undefined, ...steps: string[]): Value;
+  // (undocumented)
+  export function getType(value: Value): TypeName;
+  // (undocumented)
+  export function isList(value: Value): value is List;
+  // (undocumented)
+  export function isStruct(value: Value): value is Struct;
+  // (undocumented)
+  export type List = ReadonlyArray<number> | ReadonlyArray<string> | ReadonlyArray<boolean>;
+  // (undocumented)
+  export type Primitive = number | string | boolean;
+  // (undocumented)
+  export function serialize(value: Value): string;
+  // (undocumented)
+  export type Struct = {
+    readonly [key: string]: Value;
+  };
+  // (undocumented)
+  export type TypeName = 'number' | 'string' | 'boolean' | 'Struct' | 'List' | 'undefined';
+  // (undocumented)
+  export type Widen<T extends Value> = T extends number ? number : T extends string ? string : T extends boolean ? boolean : T;
 }
 
 // @public (undocumented)
@@ -296,7 +296,7 @@ export type Value = Value.Primitive | Value.Struct | Value.List | undefined;
 // Warning: (ae-missing-release-tag) "visitorIdentity" is part of the package's API, but it is missing a release tag (@alpha, @beta, @public, or @internal)
 //
 // @public (undocumented)
-export const visitorIdentity: () => Trackable.Manager;
+export const visitorIdentity: (clientSecret: string) => Trackable.Manager;
 
 // Warning: (ae-unresolved-link) The @link reference could not be resolved: The package "@spotify-confidence/sdk" does not have an export "Topic"
 // Warning: (ae-unresolved-link) The @link reference could not be resolved: The reference is ambiguous because "track" has more than one declaration; you need to add a TSDoc member reference selector
@@ -306,10 +306,10 @@ export function webVitals({ lcp, inp, cls, ttfb, }?: WebVitalsOptions): Trackabl
 
 // @public
 export type WebVitalsOptions = {
-    lcp?: boolean;
-    inp?: boolean;
-    cls?: boolean;
-    ttfb?: boolean;
+  lcp?: boolean;
+  inp?: boolean;
+  cls?: boolean;
+  ttfb?: boolean;
 };
 
 // (No @packageDocumentation comment for this package)
