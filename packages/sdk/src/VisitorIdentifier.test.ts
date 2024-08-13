@@ -1,10 +1,10 @@
-import {Context, Trackable} from ".";
-import {visitorIdentity} from "./trackers";
+import { Context, Trackable } from '.';
+import { visitorIdentity } from './trackers';
 
 describe('visitorIdentity', () => {
   const mockController: Partial<Trackable.Controller> = {
     setContext: jest.fn(),
-  }
+  };
 
   const mockedSetContextFn = mockController.setContext as jest.Mock<boolean, [context: Context]>;
 
@@ -23,7 +23,7 @@ describe('visitorIdentity', () => {
     const visitor2 = mockedSetContextFn.mock.calls[1][0].visitor_id;
     const visitor3 = mockedSetContextFn.mock.calls[2][0].visitor_id;
 
-    expect(visitor1).toEqual(visitor3)
-    expect(visitor2).not.toEqual(visitor1)
+    expect(visitor1).toEqual(visitor3);
+    expect(visitor2).not.toEqual(visitor1);
   });
 });
