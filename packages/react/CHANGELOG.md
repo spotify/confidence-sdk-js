@@ -6,6 +6,17 @@
   * devDependencies
     * @spotify-confidence/sdk bumped from 0.1.3 to 0.1.4
 
+## [0.1.0](https://github.com/spotify/confidence-sdk-js/compare/react-v0.0.5...react-v0.1.0) (2024-08-13)
+
+
+### ⚠ BREAKING CHANGES
+
+* update to correct peer dependencies ([#176](https://github.com/spotify/confidence-sdk-js/issues/176))
+
+### 🐛 Bug Fixes
+
+* update to correct peer dependencies ([#176](https://github.com/spotify/confidence-sdk-js/issues/176)) ([7a58ed9](https://github.com/spotify/confidence-sdk-js/commit/7a58ed95584726173dd964c956acf377e6a669f4))
+
 ## [0.0.5](https://github.com/spotify/confidence-sdk-js/compare/react-v0.0.4...react-v0.0.5) (2024-07-08)
 
 

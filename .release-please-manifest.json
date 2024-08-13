@@ -2,5 +2,5 @@
   "packages/openfeature-server-provider": "0.2.10",
   "packages/openfeature-web-provider": "0.2.10",
   "packages/sdk": "0.1.5",
-  "packages/react": "0.0.5"
+  "packages/react": "0.1.0"
 }
