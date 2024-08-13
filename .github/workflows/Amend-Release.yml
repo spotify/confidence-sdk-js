@@ -42,10 +42,3 @@ jobs:
           fi
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-      - name: Trigger CI Build, Test, Lint Workflow
-        run: |
-          curl -X POST \
-          -H "Accept: application/vnd.github.v3+json" \
-          -H "Authorization: token ${{ secrets.GITHUB_TOKEN }}" \
-          https://api.github.com/repos/spotify/confidence-sdk-js/dispatches \
-          -d '{"event_type":"ci_validation_trigger", "client_payload": {}}'
