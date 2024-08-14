@@ -12,6 +12,7 @@ export function spyOn<T extends {}, N extends keyof PickFn<T>>(
 ): CleanupFn {
   const t = target as any;
   const originalFn = t[fnName];
+  // eslint-disable-next-line func-names
   t[fnName] = function (...args: any): any {
     try {
       return originalFn.call(this, ...args);

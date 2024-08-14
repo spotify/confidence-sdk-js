@@ -2,6 +2,10 @@ import { Closer } from '../Closer';
 import { Trackable } from '../Trackable';
 import { listenOn, spyOn } from '../utils';
 
+/**
+ * Tracks page views
+ * @public
+ */
 export function pageViews(): Trackable.Manager {
   return controller => {
     let referrer: string = document.referrer;
