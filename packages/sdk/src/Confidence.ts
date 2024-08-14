@@ -19,33 +19,60 @@ import { SimpleFetch } from './types';
 import { FlagResolution } from './FlagResolution';
 import { AccessiblePromise } from './AccessiblePromise';
 
+/**
+ * Confidence options, to be used for easier initialization of Confidence
+ * @public
+ *  */
 export interface ConfidenceOptions {
+  /** Client secret, to be found in Confidence console*/
   clientSecret: string;
+  /** Region in which Confidence will operate */
   region?: 'eu' | 'us';
+  /** Resolve URL */
   resolveUrl?: string;
+  /** Environment: can be either client of backend */
   environment: 'client' | 'backend';
+  /** Fetch implementation */
   fetchImplementation?: SimpleFetch;
+  /** Resolve timeout */
   timeout: number;
+  /** Debug logger */
   logger?: Logger;
 }
 
+/**
+ * Confidence configuration
+ * @public
+ */
 export interface Configuration {
+  /** Environment: can be either client of backend */
   readonly environment: 'client' | 'backend';
+  /** Debug logger */
   readonly logger: Logger;
+  /** Resolve timeout */
   readonly timeout: number;
-  /** @internal */
+  /** Event Sender Engine
+   * @internal */
   readonly eventSenderEngine: EventSenderEngine;
-  /** @internal */
+  /** Flag Resolver Client
+   * @internal */
   readonly flagResolverClient: FlagResolverClient;
 }
 
+/**
+ * Class containing main Confidence APIs
+ * @public
+ */
 export class Confidence implements EventSender, Trackable, FlagResolver {
+  /** Internal Confidence configurations */
   readonly config: Configuration;
   private readonly parent?: Confidence;
   private _context: Map<string, Value> = new Map();
   private contextChanged?: Observer<string[]>;
 
-  /** @internal */
+  /**
+   * Emits Closers on context change
+   * @internal */
   readonly contextChanges: Subscribe<string[]>;
 
   private currentFlags?: FlagResolution;
@@ -89,6 +116,7 @@ export class Confidence implements EventSender, Trackable, FlagResolver {
     });
   }
 
+  /** Returns currently used environment */
   get environment(): string {
     return this.config.environment;
   }
@@ -114,6 +142,7 @@ export class Confidence implements EventSender, Trackable, FlagResolver {
     }
   }
 
+  /** Returns context of the current Confidence instance */
   getContext(): Context {
     const context: Record<string, Value> = {};
     for (const [key, value] of this.contextEntries()) {
@@ -122,6 +151,7 @@ export class Confidence implements EventSender, Trackable, FlagResolver {
     return Object.freeze(context);
   }
 
+  /** Set Confidence context */
   setContext(context: Context): boolean {
     const current = this.getContext();
     const changedKeys: string[] = [];
@@ -136,6 +166,7 @@ export class Confidence implements EventSender, Trackable, FlagResolver {
     return changedKeys.length > 0;
   }
 
+  /** Clears context of current Confidence instance */
   clearContext(): void {
     const oldContext = this.getContext();
     this._context.clear();
@@ -147,6 +178,11 @@ export class Confidence implements EventSender, Trackable, FlagResolver {
     }
   }
 
+  /**
+   * Creates a new Confidence instance with context
+   * @param context - Confidence context
+   * @returns Confidence instance
+   */
   withContext(context: Context): Confidence {
     const child = new Confidence(this.config, this);
     child.setContext(context);
@@ -154,8 +190,22 @@ export class Confidence implements EventSender, Trackable, FlagResolver {
     return child;
   }
 
+  /**
+   * Tracks an event
+   * @param name - event name
+   * @param data - data to track */
   track(name: string, data?: EventData): void;
+  /**
+   * Sets up a Trackable.Manager to manage event tracking or context changes.
+   * @param manager - event manager
+   */
   track(manager: Trackable.Manager): Closer;
+  /**
+   * Tracks an event
+   * @param nameOrManager - event name of event manager
+   * @param data - data to track
+   * @returns - Closer
+   */
   track(nameOrManager: string | Trackable.Manager, data?: EventData): Closer | undefined {
     if (typeof nameOrManager === 'function') {
       return Trackable.setup(this, nameOrManager);
@@ -164,6 +214,7 @@ export class Confidence implements EventSender, Trackable, FlagResolver {
     return undefined;
   }
 
+  /** Resolves all flags in cache */
   protected resolveFlags(): AccessiblePromise<void> {
     const context = this.getContext();
     if (!this.pendingFlags || !Value.equal(this.pendingFlags.context, context)) {
@@ -191,6 +242,10 @@ export class Confidence implements EventSender, Trackable, FlagResolver {
     return this.pendingFlags;
   }
 
+  /**
+   * Shows flag state
+   * @returns flag state - READY, NOT_READY, STALE or ERROR
+   */
   get flagState(): State {
     if (this.currentFlags) {
       if (this.pendingFlags) return 'STALE';
@@ -199,6 +254,7 @@ export class Confidence implements EventSender, Trackable, FlagResolver {
     return 'NOT_READY';
   }
 
+  /** Subscribe to flag changes in Confidence */
   subscribe(onStateChange: StateObserver = () => {}): () => void {
     const observer = changeObserver(onStateChange);
     const close = this.flagStateSubject(observer);
@@ -218,6 +274,7 @@ export class Confidence implements EventSender, Trackable, FlagResolver {
     }).finally(close!);
   }
 
+  /** Evaluates a flag */
   evaluateFlag<T extends Value>(path: string, defaultValue: T): FlagEvaluation<Value.Widen<T>> {
     let evaluation: FlagEvaluation<T>;
     // resolveFlags might update state synchronously
@@ -244,10 +301,21 @@ export class Confidence implements EventSender, Trackable, FlagResolver {
     return evaluation as FlagEvaluation<Value.Widen<T>>;
   }
 
+  /** Returns flag value for a given flag */
   async getFlag<T extends Value>(path: string, defaultValue: T): Promise<Value.Widen<T>> {
     return (await this.evaluateFlag(path, defaultValue)).value;
   }
 
+  /**
+   * Creates a Confidence instance
+   * @param clientSecret - clientSecret found on the Confidence console
+   * @param region - region in which Confidence will operate
+   * @param timeout - timeout for flag resolves
+   * @param environment - can be either "client" or "backend"
+   * @param fetchImplementation - fetch implementation
+   * @param logger - debug logger
+   * @returns
+   */
   static create({
     clientSecret,
     region,

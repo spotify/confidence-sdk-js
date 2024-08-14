@@ -1,17 +1,26 @@
 import { TypeMismatchError } from './error';
 
+/**
+ * Namespace that describes Values used in Confidence
+ * @public
+ */
 export namespace Value {
   // TODO should lists be able to contain Structs?
   const LIST_ITEM_TYPES = new Set(['number', 'string', 'boolean']);
 
+  /** TypeName enum */
   export type TypeName = 'number' | 'string' | 'boolean' | 'Struct' | 'List' | 'undefined';
   // TODO add Date
+  /** Primitive types */
   export type Primitive = number | string | boolean;
+  /** Struct in Confidence */
   export type Struct = {
     readonly [key: string]: Value;
   };
+  /** Readonly List */
   export type List = ReadonlyArray<number> | ReadonlyArray<string> | ReadonlyArray<boolean>;
 
+  /** Sets Confidence used Values to be implementations of primitive types */
   export type Widen<T extends Value> = T extends number
     ? number
     : T extends string
@@ -20,6 +29,7 @@ export namespace Value {
     ? boolean
     : T;
 
+  /** Asserts a Value */
   export function assertValue(value: unknown): asserts value is Value {
     switch (typeof value) {
       case 'bigint':
@@ -52,6 +62,7 @@ export namespace Value {
     }
   }
 
+  /** Clones a Value */
   export function clone<T extends Value>(value: T): T {
     if (isStruct(value)) {
       const cloned: Record<string, Value> = {};
@@ -66,6 +77,7 @@ export namespace Value {
     return value;
   }
 
+  /** Asserts if two Values are equal */
   export function equal(value1: Value, value2: Value): boolean {
     if (value1 === value2) return true;
     const type = getType(value1);
@@ -97,6 +109,7 @@ export namespace Value {
     return true;
   }
 
+  /** Returns typename of given Value */
   export function getType(value: Value): TypeName {
     const jsType = typeof value;
     switch (jsType) {
@@ -112,20 +125,29 @@ export namespace Value {
     throw new TypeError(`Invalid Value type "${jsType}"`);
   }
 
+  /** Asserts that Value is a Struct */
   export function isStruct(value: Value): value is Struct {
     return Value.getType(value) === 'Struct';
   }
 
+  /** Asserts that Value is a List */
   export function isList(value: Value): value is List {
     return Value.getType(value) === 'List';
   }
 
+  /** Asserts that type of value is undefined */
   export function assertType(expected: 'undefined', found: Value): asserts found is undefined;
+  /** Asserts that type of value is string */
   export function assertType(expected: 'string', found: Value): asserts found is string;
+  /** Asserts that type of value is number */
   export function assertType(expected: 'number', found: Value): asserts found is number;
+  /** Asserts that type of value is boolean */
   export function assertType(expected: 'boolean', found: Value): asserts found is boolean;
+  /** Asserts that type of value is List */
   export function assertType(expected: 'List', found: Value): asserts found is List;
+  /** Asserts that type of value is Struct */
   export function assertType(expected: 'Struct', found: Value): asserts found is Struct;
+  /** Asserts that type of value is Value */
   export function assertType(expected: TypeName, found: Value): asserts found is Value {
     const actual = Value.getType(found);
     if (expected !== actual) {
@@ -133,8 +155,11 @@ export namespace Value {
     }
   }
 
+  /** Returns a Value given a Struct */
   export function get(struct: Struct | undefined, path: string): Value;
+  /** Returns a Value given a Struct */
   export function get(struct: Struct | undefined, ...steps: string[]): Value;
+  /** Returns a Value given a Struct */
   export function get(struct: Struct | undefined, ...parts: string[]): Value {
     let value: Value = struct;
     const errorPath: string[] = [];
@@ -150,12 +175,14 @@ export namespace Value {
     return value;
   }
 
+  /** Serializes value */
   export function serialize(value: Value): string {
     const writer = new Writer();
     writer.writeValue(value);
     return writer.data;
   }
 
+  /** Deserializes value */
   export function deserialize(data: string): Value {
     const reader = new Reader(data);
     return reader.readValue();
@@ -321,5 +348,6 @@ export namespace Value {
     }
   }
 }
+/** Confidence used Values */
 // eslint-disable-next-line @typescript-eslint/no-redeclare
 export type Value = Value.Primitive | Value.Struct | Value.List | undefined;

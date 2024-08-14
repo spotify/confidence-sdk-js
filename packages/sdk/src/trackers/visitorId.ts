@@ -3,6 +3,9 @@ import { uuid, Cookie } from '../utils';
 
 const COOKIE_NAME = 'cnfdVisitorId';
 
+/**
+ * Visitor Identity which can be used in Cookies
+ * @public  */
 export const visitorIdentity = (): Trackable.Manager => controller => {
   if (typeof document === 'undefined') return;
   let value = Cookie.get(COOKIE_NAME);

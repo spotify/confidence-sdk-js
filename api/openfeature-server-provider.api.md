@@ -13,33 +13,29 @@ import { ProviderMetadata } from '@openfeature/server-sdk';
 import { ProviderStatus } from '@openfeature/server-sdk';
 import { ResolutionDetails } from '@openfeature/server-sdk';
 
-// Warning: (ae-missing-release-tag) "ConfidenceServerProvider" is part of the package's API, but it is missing a release tag (@alpha, @beta, @public, or @internal)
-//
-// @public (undocumented)
+// @public
+export type ConfidenceProviderFactoryOptions = {
+    region?: 'eu' | 'us';
+    fetchImplementation?: typeof fetch;
+    clientSecret: string;
+    timeout: number;
+};
+
+// @public
 export class ConfidenceServerProvider implements Provider {
     constructor(client: FlagResolver);
-    // (undocumented)
     readonly metadata: ProviderMetadata;
-    // (undocumented)
     resolveBooleanEvaluation(flagKey: string, defaultValue: boolean, context: EvaluationContext): Promise<ResolutionDetails<boolean>>;
-    // (undocumented)
     resolveNumberEvaluation(flagKey: string, defaultValue: number, context: EvaluationContext): Promise<ResolutionDetails<number>>;
-    // (undocumented)
     resolveObjectEvaluation<T extends JsonValue>(flagKey: string, defaultValue: T, context: EvaluationContext): Promise<ResolutionDetails<T>>;
-    // (undocumented)
     resolveStringEvaluation(flagKey: string, defaultValue: string, context: EvaluationContext): Promise<ResolutionDetails<string>>;
-    // (undocumented)
     status: ProviderStatus;
 }
 
-// Warning: (ae-forgotten-export) The symbol "ConfidenceProviderFactoryOptions" needs to be exported by the entry point index.d.ts
-// Warning: (ae-missing-release-tag) "createConfidenceServerProvider" is part of the package's API, but it is missing a release tag (@alpha, @beta, @public, or @internal)
-// Warning: (ae-missing-release-tag) "createConfidenceServerProvider" is part of the package's API, but it is missing a release tag (@alpha, @beta, @public, or @internal)
-//
-// @public (undocumented)
+// @public
 export function createConfidenceServerProvider(options: ConfidenceProviderFactoryOptions): Provider;
 
-// @public (undocumented)
+// @public
 export function createConfidenceServerProvider(confidence: Confidence): Provider;
 
 // (No @packageDocumentation comment for this package)
