@@ -47,5 +47,5 @@ jobs:
           curl -X POST \
           -H "Accept: application/vnd.github.v3+json" \
           -H "Authorization: token ${{ secrets.GITHUB_TOKEN }}" \
-          https://api.github.com/repos/spotify/confidence-sdk-js/dispatches \
-          -d '{"event_type":"ci_validation_trigger", "client_payload": {}}'
+          https://api.github.com/repos/spotify/confidence-sdk-js/actions/workflows/Build.yml/dispatches \
+          -d '{"ref":"release-please--branches--main", "inputs":{"branch":"release-please--branches--main"}}'
