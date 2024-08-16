@@ -5,8 +5,13 @@ on:
     branches: [main]
   pull_request:
     branches: [main]
-  repository_dispatch:
-    types: [ci_validation_trigger]
+  workflow_dispatch:
+    inputs:
+      branch:
+        description: 'Branch to run on'
+        required: true
+        default: 'release-please--branches--main'
+        type: string
 
 jobs:
   Build-And-Test:
@@ -18,9 +23,9 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v3
       - name: Checkout release branch
-        # If the job is triggered by a repository_dispatch event, checkout the release branch
-        if: ${{ github.github.event.event_type == 'ci_validation_trigger' }}
-        run: git checkout release-please--branches--main
+        # If the job is triggered by a workflow_dispatch event, checkout the provided branch
+        if: ${{ github.event_name == 'workflow_dispatch' }}
+        run: git checkout ${{ github.event.inputs.branch }}
       - id: setup-environment
         uses: ./.github/actions/setup
         with:
