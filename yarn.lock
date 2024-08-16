@@ -3647,11 +3647,11 @@ __metadata:
   resolution: "@spotify-confidence/react@workspace:packages/react"
   dependencies:
     "@microsoft/api-extractor": "npm:7.43.1"
-    "@spotify-confidence/sdk": "npm:0.1.5"
+    "@spotify-confidence/sdk": "npm:0.1.4"
     react: "npm:^18.2.0"
     rollup: "npm:4.14.2"
   peerDependencies:
-    "@spotify-confidence/sdk": ^0.1.5
+    "@spotify-confidence/sdk": ^0.1.4
     react: ^18.2.0
   languageName: unknown
   linkType: soft
@@ -3665,7 +3665,7 @@ __metadata:
   languageName: node
   linkType: hard
 
-"@spotify-confidence/sdk@npm:0.1.5, @spotify-confidence/sdk@workspace:, @spotify-confidence/sdk@workspace:packages/sdk":
+"@spotify-confidence/sdk@workspace:, @spotify-confidence/sdk@workspace:packages/sdk":
   version: 0.0.0-use.local
   resolution: "@spotify-confidence/sdk@workspace:packages/sdk"
   dependencies:
