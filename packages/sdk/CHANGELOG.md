@@ -1,13 +1,5 @@
 # Changelog
 
-## [0.1.5](https://github.com/spotify/confidence-sdk-js/compare/sdk-v0.1.4...sdk-v0.1.5) (2024-07-08)
-
-
-### 🐛 Bug Fixes
-
-* infinite in memory flag cache ([#170](https://github.com/spotify/confidence-sdk-js/issues/170)) ([9156dd7](https://github.com/spotify/confidence-sdk-js/commit/9156dd70942f295c4f45125137c022526b15ffdb))
-* shared requests aborted ([#169](https://github.com/spotify/confidence-sdk-js/issues/169)) ([9dc6314](https://github.com/spotify/confidence-sdk-js/commit/9dc6314fab1028af940a672adc5811ec35c570ea))
-
 ## [0.1.4](https://github.com/spotify/confidence-sdk-js/compare/sdk-v0.1.3...sdk-v0.1.4) (2024-06-05)
 
 

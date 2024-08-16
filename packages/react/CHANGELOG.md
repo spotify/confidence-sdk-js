@@ -6,20 +6,6 @@
   * devDependencies
     * @spotify-confidence/sdk bumped from 0.1.3 to 0.1.4
 
-## [0.0.5](https://github.com/spotify/confidence-sdk-js/compare/react-v0.0.4...react-v0.0.5) (2024-07-08)
-
-
-### ✨ New Features
-
-* improved suspense management ([#167](https://github.com/spotify/confidence-sdk-js/issues/167)) ([0a96d8f](https://github.com/spotify/confidence-sdk-js/commit/0a96d8f8d6ea25a13c1ecdf2f5a1598e53e9c1fc))
-
-
-### Dependencies
-
-* The following workspace dependencies were updated
-  * devDependencies
-    * @spotify-confidence/sdk bumped from 0.1.4 to 0.1.5
-
 ## [0.0.3](https://github.com/spotify/confidence-sdk-js/compare/react-v0.0.2...react-v0.0.3) (2024-06-04)
 
 

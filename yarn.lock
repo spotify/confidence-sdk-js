@@ -3656,16 +3656,7 @@ __metadata:
   languageName: unknown
   linkType: soft
 
-"@spotify-confidence/sdk@npm:0.1.4":
-  version: 0.1.4
-  resolution: "@spotify-confidence/sdk@npm:0.1.4"
-  dependencies:
-    web-vitals: "npm:^3.5.2"
-  checksum: 10c0/a77c3e051a6378641125fc890559d29e36639490b05df00b266a480a0bd90022a5aabca0a6c555035ae3f2d53d5da1afe6bbb0536b6b229ab652e1765885e452
-  languageName: node
-  linkType: hard
-
-"@spotify-confidence/sdk@workspace:, @spotify-confidence/sdk@workspace:packages/sdk":
+"@spotify-confidence/sdk@npm:0.1.4, @spotify-confidence/sdk@workspace:, @spotify-confidence/sdk@workspace:packages/sdk":
   version: 0.0.0-use.local
   resolution: "@spotify-confidence/sdk@workspace:packages/sdk"
   dependencies:
