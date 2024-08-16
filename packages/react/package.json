@@ -1,7 +1,7 @@
 {
   "name": "@spotify-confidence/react",
   "license": "Apache-2.0",
-  "version": "0.0.4",
+  "version": "0.1.0",
   "types": "build/types/index.d.ts",
   "files": [
     "dist/index.*"
@@ -27,7 +27,7 @@
   },
   "devDependencies": {
     "@microsoft/api-extractor": "7.43.1",
-    "@spotify-confidence/sdk": "0.1.4",
+    "@spotify-confidence/sdk": "0.1.5",
     "react": "^18.2.0",
     "rollup": "4.14.2"
   },

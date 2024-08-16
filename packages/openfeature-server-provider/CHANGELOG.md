@@ -12,6 +12,27 @@
   * dependencies
     * @spotify-confidence/sdk bumped from 0.0.2 to 0.0.3
 
+## [0.2.10](https://github.com/spotify/confidence-sdk-js/compare/openfeature-server-provider-v0.2.9...openfeature-server-provider-v0.2.10) (2024-08-16)
+
+
+### 🧹 Chore
+
+* release main ([#172](https://github.com/spotify/confidence-sdk-js/issues/172)) ([45cb2dc](https://github.com/spotify/confidence-sdk-js/commit/45cb2dcf219d42ff27ee37fbca9554ffba0ea95e))
+
+
+### 📚 Documentation
+
+* Add documentation to the SDK to resolve MD warnings ([#177](https://github.com/spotify/confidence-sdk-js/issues/177)) ([ee9c7a3](https://github.com/spotify/confidence-sdk-js/commit/ee9c7a3778a15431ed952022a20bafd616c0ec8c))
+
+
+### Dependencies
+
+* The following workspace dependencies were updated
+  * devDependencies
+    * @spotify-confidence/sdk bumped from 0.1.4 to 0.1.5
+  * peerDependencies
+    * @spotify-confidence/sdk bumped from ^0.1.4 to ^0.1.5
+
 ## [0.2.9](https://github.com/spotify/confidence-sdk-js/compare/openfeature-server-provider-v0.2.8...openfeature-server-provider-v0.2.9) (2024-06-07)
 
 
