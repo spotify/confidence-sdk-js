@@ -6,7 +6,7 @@ async function main() {
   const { createConfidenceServerProvider } = await import('@spotify-confidence/openfeature-server-provider');
 
   const provider = createConfidenceServerProvider({
-    clientSecret: 'RxDVTrXvc6op1XxiQ4OaR31dKbJ39aYV',
+    clientSecret: process.env.CLIENT_SECRET,
     region: 'eu',
     fetchImplementation: fetch,
     timeout: 1000,

@@ -1,7 +1,7 @@
 import { Confidence } from '@spotify-confidence/sdk';
 
 const confidence = Confidence.create({
-  clientSecret: 'RxDVTrXvc6op1XxiQ4OaR31dKbJ39aYV',
+  clientSecret: process.env.CLIENT_SECRET,
   fetchImplementation: fetch,
   timeout: 1000,
   logger: console,
