@@ -17,7 +17,7 @@ async function main() {
   const client = OpenFeature.getClient();
 
   client
-    .getBooleanValue('web-sdk-e2e-flag.bool', false, {
+    .getStringValue('tutorial-feature.title', 'Default', {
       targetingKey: `user-${Math.random()}`,
     })
     .then(result => {

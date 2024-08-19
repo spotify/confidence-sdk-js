@@ -11,7 +11,7 @@ main();
 async function main() {
   confidence.subscribe(state => console.log('state:', state));
   confidence.setContext({ targeting_key: 'user-a' });
-  const fe = confidence.evaluateFlag('web-sdk-e2e-flag.int', 0);
+  const fe = confidence.evaluateFlag('tutorial-feature.title', 'Default');
 
   console.log(fe);
 
