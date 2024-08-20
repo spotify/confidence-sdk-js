@@ -8,7 +8,7 @@
     "@microsoft/api-extractor": "7.43.1",
     "@openfeature/core": "^1.1.0",
     "@openfeature/server-sdk": "^1.13.5",
-    "@spotify-confidence/sdk": "workspace:",
+    "@spotify-confidence/sdk": "workspace:*",
     "rollup": "4.14.2"
   },
   "peerDependencies": {

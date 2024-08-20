@@ -30,9 +30,9 @@ module.exports = defineConfig({
             dep.error(`Expected peer dependency to use a caret (^) range.`);
           }
           // peer dependencies should also have a dev dependency to the workspace
-          dep.workspace.set(['devDependencies', dep.ident], 'workspace:');
+          dep.workspace.set(['devDependencies', dep.ident], 'workspace:*');
         } else if (dep.type === 'devDependencies') {
-          dep.update('workspace:');
+          dep.update('workspace:*');
         } else if (dep.type === 'dependencies') {
           // there should be no regular deps between packages.
           dep.delete();
