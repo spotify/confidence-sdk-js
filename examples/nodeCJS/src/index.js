@@ -1,5 +1,8 @@
 const { OpenFeature } = require('@openfeature/server-sdk');
 
+if (!process.env.CLIENT_SECRET) {
+  console.log('CLIENT_SECRET is not set inb .env');
+}
 main();
 
 async function main() {
