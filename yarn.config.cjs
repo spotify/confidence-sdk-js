@@ -23,16 +23,16 @@ module.exports = defineConfig({
       for (const dep of depsToWorkspace) {
         if (dep.workspace.cwd.startsWith('examples/')) {
           // example apps should always use the workspace version
-          dep.update('workspace:');
+          dep.update('workspace:*');
         } else if (dep.type === 'peerDependencies') {
           // peer dependencies should use a caret range
           if (!dep.range.startsWith('^')) {
             dep.error(`Expected peer dependency to use a caret (^) range.`);
           }
           // peer dependencies should also have a dev dependency to the workspace
-          dep.workspace.set(['devDependencies', dep.ident], 'workspace:');
+          dep.workspace.set(['devDependencies', dep.ident], 'workspace:*');
         } else if (dep.type === 'devDependencies') {
-          dep.update('workspace:');
+          dep.update('workspace:*');
         } else if (dep.type === 'dependencies') {
           // there should be no regular deps between packages.
           dep.delete();

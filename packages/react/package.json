@@ -27,7 +27,7 @@
   },
   "devDependencies": {
     "@microsoft/api-extractor": "7.43.1",
-    "@spotify-confidence/sdk": "workspace:",
+    "@spotify-confidence/sdk": "workspace:*",
     "react": "^18.2.0",
     "rollup": "4.14.2"
   },
