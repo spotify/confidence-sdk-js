@@ -15,9 +15,9 @@ examples/*/build
 examples/*/.next
 examples/*/out
 examples/*/*.log*
-examples/*/.env*
 examples/*/*.tsbuildinfo
 examples/*/next-env.d.ts
+examples/.env
 
 # logs
 npm-debug.log*

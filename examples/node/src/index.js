@@ -1,7 +1,10 @@
 import { Confidence } from '@spotify-confidence/sdk';
 
+if (!process.env.CLIENT_SECRET) {
+  console.log('CLIENT_SECRET is not set inb .env');
+}
 const confidence = Confidence.create({
-  clientSecret: 'RxDVTrXvc6op1XxiQ4OaR31dKbJ39aYV',
+  clientSecret: process.env.CLIENT_SECRET,
   fetchImplementation: fetch,
   timeout: 1000,
   logger: console,
@@ -11,7 +14,7 @@ main();
 async function main() {
   confidence.subscribe(state => console.log('state:', state));
   confidence.setContext({ targeting_key: 'user-a' });
-  const fe = confidence.evaluateFlag('web-sdk-e2e-flag.int', 0);
+  const fe = confidence.evaluateFlag('tutorial-feature.title', 'Default');
 
   console.log(fe);
 

@@ -15,8 +15,13 @@ const handleFailRequestsOnChange = (e: React.ChangeEvent<HTMLInputElement>) => {
   state.failRequests = e.target.checked;
 };
 
+if (!process.env.REACT_APP_CLIENT_SECRET) {
+  console.error('REACT_APP_CLIENT_SECRET not set in .env');
+  process.exit(1);
+}
+
 const confidence = Confidence.create({
-  clientSecret: 'RxDVTrXvc6op1XxiQ4OaR31dKbJ39aYV',
+  clientSecret: process.env.REACT_APP_CLIENT_SECRET,
   environment: 'client',
   timeout: 3000,
   logger: console,
@@ -89,7 +94,7 @@ function Level({ name, children }: { name: string; children?: React.ReactNode })
 
 function Flags() {
   const confidence = useConfidence();
-  const flagData = JSON.stringify(confidence.useEvaluateFlag('web-sdk-e2e-flag.str', 'default'), null, '  ');
+  const flagData = JSON.stringify(confidence.useEvaluateFlag('tutorial-feature.title', 'Default'), null, '  ');
   // const flagData = useDeferredValue(confidence.useFlag('web-sdk-e2e-flag.str', 'default'));
   return (
     <fieldset>

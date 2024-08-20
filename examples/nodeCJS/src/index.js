@@ -1,12 +1,15 @@
 const { OpenFeature } = require('@openfeature/server-sdk');
 
+if (!process.env.CLIENT_SECRET) {
+  console.log('CLIENT_SECRET is not set inb .env');
+}
 main();
 
 async function main() {
   const { createConfidenceServerProvider } = await import('@spotify-confidence/openfeature-server-provider');
 
   const provider = createConfidenceServerProvider({
-    clientSecret: 'RxDVTrXvc6op1XxiQ4OaR31dKbJ39aYV',
+    clientSecret: process.env.CLIENT_SECRET,
     region: 'eu',
     fetchImplementation: fetch,
     timeout: 1000,
@@ -17,7 +20,7 @@ async function main() {
   const client = OpenFeature.getClient();
 
   client
-    .getBooleanValue('web-sdk-e2e-flag.bool', false, {
+    .getStringValue('tutorial-feature.title', 'Default', {
       targetingKey: `user-${Math.random()}`,
     })
     .then(result => {
