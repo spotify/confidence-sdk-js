@@ -1,4 +1,6 @@
 const { OpenFeature } = require('@openfeature/server-sdk');
+const { Confidence } = require('@spotify-confidence/sdk');
+const { createConfidenceServerProvider } = require('@spotify-confidence/openfeature-server-provider');
 
 if (!process.env.CLIENT_SECRET) {
   console.log('CLIENT_SECRET is not set inb .env');
@@ -13,7 +15,10 @@ async function main() {
     region: 'eu',
     fetchImplementation: fetch,
     timeout: 1000,
+    environment: 'backend',
   });
+
+  const provider = createConfidenceServerProvider(confidence);
 
   OpenFeature.setProvider(provider);
 
@@ -24,6 +29,9 @@ async function main() {
       targetingKey: `user-${Math.random()}`,
     })
     .then(result => {
-      console.log('result:', result);
+      console.log('result from open feature:', result);
     });
+
+  const fe = await confidence.withContext({ targeting_key: 'user-a' }).evaluateFlag('web-sdk-e2e-flag.int', 0);
+  console.log('from confidence API: ', fe);
 }
