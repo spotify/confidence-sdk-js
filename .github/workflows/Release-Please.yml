@@ -30,7 +30,7 @@ jobs:
           -H "Accept: application/vnd.github.v3+json" \
           -H "Authorization: token ${{ secrets.GITHUB_TOKEN }}" \
           https://api.github.com/repos/spotify/confidence-sdk-js/actions/workflows/Amend-Release.yml/dispatches \
-          -d '{"ref":"release-please--branches--main"}'
+          -d '{"ref":"release-please--branches--main", "inputs": {"branch": "release-please--branches--main"}}'
 
   Build-And-Publish:
     environment: deployment

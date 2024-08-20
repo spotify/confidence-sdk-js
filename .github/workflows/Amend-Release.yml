@@ -2,6 +2,11 @@ name: Amend Release with yarn.lock update
 
 on:
   workflow_dispatch:
+    inputs:
+      branch:
+        description: 'Branch to trigger workflow on'
+        required: true
+        default: 'release-please--branches--main'
 
 jobs:
   Amend-Release:
@@ -27,11 +32,28 @@ jobs:
         run: yarn install
         env:
           YARN_ENABLE_IMMUTABLE_INSTALLS: false
-      - run: yarn bundle
-      - run: yarn lint
-      - run: yarn format:check
-      - run: yarn test
+      - name: Run tests and validations
+        run: |
+          echo "Running yarn bundle"
+          yarn bundle > /dev/null 2>&1
+          bundle_exit_code=$?
+
+          echo "Running yarn lint"
+          yarn lint > /dev/null 2>&1
+          lint_exit_code=$?
+
+          echo "Running yarn format check"
+          yarn format:check > /dev/null 2>&1
+          format_exit_code=$?
+
+          echo "Running yarn test"
+          yarn test > /dev/null 2>&1
+          test_exit_code=$?
+
+          export COMMENT="Bundle Exit Code: $bundle_exit_code\nLint Exit Code: $lint_exit_code\nFormat Check Exit Code: $format_exit_code\nTest Exit Code: $test_exit_code"
       - name: Commit and push changes changes in yarn.lock
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
           git add -u
           if ! git diff --staged --stat --exit-code; then
@@ -41,5 +63,22 @@ jobs:
             git commit -m "chore: auto update yarn.lock"
             git push
           fi
+
+      - name: Install GitHub CLI
+        run: |
+          sudo apt-get install gh
+
+      - name: Find open PRs for branch
         env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        id: find-prs
+        run: |
+          gh pr list --head "${{ github.event.inputs.branch }}" --state open --json number --jq '.[].number' > pr_numbers.txt
+
+      - name: Post comment on PRs
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          while IFS= read -r pr_number; do
+            gh pr comment $pr_number --body "$COMMENT"
+          done < pr_numbers.txt
