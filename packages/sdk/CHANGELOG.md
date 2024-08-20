@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.1.6](https://github.com/spotify/confidence-sdk-js/compare/sdk-v0.1.5...sdk-v0.1.6) (2024-08-20)
+
+
+### 📚 Documentation
+
+* add documentation to the SDK to resolve MD warnings ([#177](https://github.com/spotify/confidence-sdk-js/issues/177)) ([956594b](https://github.com/spotify/confidence-sdk-js/commit/956594b3f666de3eb9567f7b4855d69a6057d2d0))
+
 ## [0.1.5](https://github.com/spotify/confidence-sdk-js/compare/sdk-v0.1.4...sdk-v0.1.5) (2024-07-08)
 
 
