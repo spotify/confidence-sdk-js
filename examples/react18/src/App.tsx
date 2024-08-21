@@ -24,6 +24,7 @@ const confidence = Confidence.create({
   clientSecret: process.env.REACT_APP_CLIENT_SECRET,
   environment: 'client',
   timeout: 3000,
+  flagCacheTtl: 10_000,
   logger: console,
   fetchImplementation: (req: Request) => {
     console.log('request', req.url);
@@ -60,6 +61,7 @@ function App() {
             </Boundary>
           </Suspense>
         </Level>
+        <button onClick={() => confidence.clearFlagCache()}>Evict Cache</button>
       </Suspense>
     </ConfidenceProvider>
   );

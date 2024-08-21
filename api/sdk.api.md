@@ -16,12 +16,13 @@ export type Closer = () => void;
 export class Confidence implements EventSender, Trackable, FlagResolver {
     constructor(config: Configuration, parent?: Confidence);
     clearContext(): void;
+    clearFlagCache(): void;
     readonly config: Configuration;
     // Warning: (ae-forgotten-export) The symbol "Subscribe" needs to be exported by the entry point index.d.ts
     //
     // @internal
     readonly contextChanges: Subscribe<string[]>;
-    static create({ clientSecret, region, timeout, environment, fetchImplementation, logger, }: ConfidenceOptions): Confidence;
+    static create({ clientSecret, region, timeout, environment, flagCacheTtl, fetchImplementation, logger, }: ConfidenceOptions): Confidence;
     get environment(): string;
     evaluateFlag<T extends Value>(path: string, defaultValue: T): FlagEvaluation<Value.Widen<T>>;
     get flagState(): State;
@@ -42,6 +43,7 @@ export interface ConfidenceOptions {
     environment: 'client' | 'backend';
     // Warning: (ae-forgotten-export) The symbol "SimpleFetch" needs to be exported by the entry point index.d.ts
     fetchImplementation?: SimpleFetch;
+    flagCacheTtl?: number;
     // Warning: (ae-forgotten-export) The symbol "Logger" needs to be exported by the entry point index.d.ts
     logger?: Logger;
     region?: 'eu' | 'us';
@@ -124,6 +126,8 @@ export type FlagEvaluation<T> = FlagEvaluation.Resolved<T> | FlagEvaluation.Stal
 
 // @public
 export interface FlagResolver extends Contextual<FlagResolver> {
+    // (undocumented)
+    clearFlagCache(): void;
     evaluateFlag<T extends Value>(path: string, defaultValue: T): FlagEvaluation<Value.Widen<T>>;
     getFlag<T extends Value>(path: string, defaultValue: T): Promise<Value.Widen<T>>;
     subscribe(onStateChange?: StateObserver): () => void;

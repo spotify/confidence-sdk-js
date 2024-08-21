@@ -36,6 +36,8 @@ export interface ConfidenceOptions {
   fetchImplementation?: SimpleFetch;
   /** Resolve timeout */
   timeout: number;
+  /** Flag cache TTL */
+  flagCacheTtl?: number;
   /** Debug logger */
   logger?: Logger;
 }
@@ -175,6 +177,13 @@ export class Confidence implements EventSender, Trackable, FlagResolver {
       const unionKeys = Array.from(new Set([...Object.keys(oldContext), ...Object.keys(newContext)]));
       const changedKeys = unionKeys.filter(key => !Value.equal(oldContext[key], newContext[key]));
       if (changedKeys.length) this.contextChanged(changedKeys);
+    }
+  }
+
+  /** Clears flag cache */
+  clearFlagCache(): void {
+    if (this.config.flagResolverClient instanceof CachingFlagResolverClient) {
+      this.config.flagResolverClient.forceEvict();
     }
   }
 
@@ -321,6 +330,7 @@ export class Confidence implements EventSender, Trackable, FlagResolver {
     region,
     timeout,
     environment,
+    flagCacheTtl = Number.POSITIVE_INFINITY,
     fetchImplementation = defaultFetchImplementation(),
     logger = defaultLogger(),
   }: ConfidenceOptions): Confidence {
@@ -337,7 +347,7 @@ export class Confidence implements EventSender, Trackable, FlagResolver {
       region,
     });
     if (environment === 'client') {
-      flagResolverClient = new CachingFlagResolverClient(flagResolverClient, Number.POSITIVE_INFINITY);
+      flagResolverClient = new CachingFlagResolverClient(flagResolverClient, flagCacheTtl);
     }
     const estEventSizeKb = 1;
     const flushTimeoutMilliseconds = 500;
