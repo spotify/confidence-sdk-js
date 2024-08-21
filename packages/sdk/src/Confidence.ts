@@ -275,7 +275,11 @@ export class Confidence implements EventSender, Trackable, FlagResolver {
   }
 
   /** Evaluates a flag */
-  evaluateFlag<T extends Value>(path: string, defaultValue: T): FlagEvaluation<Value.Widen<T>> {
+  evaluateFlag(path: string, defaultValue: string): FlagEvaluation<string>;
+  evaluateFlag(path: string, defaultValue: boolean): FlagEvaluation<boolean>;
+  evaluateFlag(path: string, defaultValue: number): FlagEvaluation<number>;
+  evaluateFlag<T extends Value>(path: string, defaultValue: T): FlagEvaluation<T>;
+  evaluateFlag<T extends Value>(path: string, defaultValue: T): FlagEvaluation<T> {
     let evaluation: FlagEvaluation<T>;
     // resolveFlags might update state synchronously
     if (!this.currentFlags && !this.pendingFlags) this.resolveFlags();
@@ -296,13 +300,17 @@ export class Confidence implements EventSender, Trackable, FlagResolver {
         ...evaluation,
         then,
       };
-      return staleEvaluation as FlagEvaluation<Value.Widen<T>>;
+      return staleEvaluation;
     }
-    return evaluation as FlagEvaluation<Value.Widen<T>>;
+    return evaluation;
   }
 
   /** Returns flag value for a given flag */
-  async getFlag<T extends Value>(path: string, defaultValue: T): Promise<Value.Widen<T>> {
+  getFlag(path: string, defaultValue: string): Promise<string>;
+  getFlag(path: string, defaultValue: boolean): Promise<boolean>;
+  getFlag(path: string, defaultValue: number): Promise<number>;
+  getFlag<T extends Value>(path: string, defaultValue: T): Promise<T>;
+  async getFlag<T extends Value>(path: string, defaultValue: any): Promise<T> {
     return (await this.evaluateFlag(path, defaultValue)).value;
   }
 

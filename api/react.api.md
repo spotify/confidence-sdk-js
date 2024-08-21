@@ -40,9 +40,21 @@ export class ConfidenceReact implements EventSender, Trackable, FlagResolver {
     get contextState(): string;
     // @internal
     readonly delegate: Confidence;
-    evaluateFlag<T extends Value>(path: string, defaultValue: T): FlagEvaluation<Value.Widen<T>>;
+    evaluateFlag(path: string, defaultValue: string): FlagEvaluation<string>;
+    // (undocumented)
+    evaluateFlag(path: string, defaultValue: boolean): FlagEvaluation<boolean>;
+    // (undocumented)
+    evaluateFlag(path: string, defaultValue: number): FlagEvaluation<number>;
+    // (undocumented)
+    evaluateFlag<T extends Value>(path: string, defaultValue: T): FlagEvaluation<T>;
     getContext(): Context;
-    getFlag<T extends Value>(path: string, defaultValue: T): Promise<Value.Widen<T>>;
+    getFlag(path: string, defaultValue: string): Promise<string>;
+    // (undocumented)
+    getFlag(path: string, defaultValue: boolean): Promise<boolean>;
+    // (undocumented)
+    getFlag(path: string, defaultValue: number): Promise<number>;
+    // (undocumented)
+    getFlag<T extends Value>(path: string, defaultValue: T): Promise<T>;
     setContext(context: Context, { transition }?: {
         transition?: boolean | undefined;
     }): void;
@@ -50,8 +62,20 @@ export class ConfidenceReact implements EventSender, Trackable, FlagResolver {
     track(name: string, message?: Value.Struct): void;
     track(manager: Trackable.Manager): Closer;
     useContext(): Context;
-    useEvaluateFlag<T extends Value>(path: string, defaultValue: T): FlagEvaluation<Value.Widen<T>>;
-    useFlag<T extends Value>(path: string, defaultValue: T): Value.Widen<T>;
+    useEvaluateFlag(path: string, defaultValue: string): FlagEvaluation<string>;
+    // (undocumented)
+    useEvaluateFlag(path: string, defaultValue: number): FlagEvaluation<number>;
+    // (undocumented)
+    useEvaluateFlag(path: string, defaultValue: boolean): FlagEvaluation<boolean>;
+    // (undocumented)
+    useEvaluateFlag<T extends Value>(path: string, defaultValue: T): FlagEvaluation<T>;
+    useFlag(path: string, defaultValue: string): string;
+    // (undocumented)
+    useFlag(path: string, defaultValue: number): number;
+    // (undocumented)
+    useFlag(path: string, defaultValue: boolean): boolean;
+    // (undocumented)
+    useFlag<T extends Value>(path: string, defaultValue: T): T;
     useWithContext(context: Context): ConfidenceReact;
     withContext(context: Context): ConfidenceReact;
 }
@@ -62,11 +86,37 @@ export const useConfidence: () => ConfidenceReact;
 // @public
 export function useConfidenceContext(confidence?: ConfidenceReact): Context;
 
+// Warning: (ae-missing-release-tag) "useEvaluateFlag" is part of the package's API, but it is missing a release tag (@alpha, @beta, @public, or @internal)
+// Warning: (ae-missing-release-tag) "useEvaluateFlag" is part of the package's API, but it is missing a release tag (@alpha, @beta, @public, or @internal)
+// Warning: (ae-missing-release-tag) "useEvaluateFlag" is part of the package's API, but it is missing a release tag (@alpha, @beta, @public, or @internal)
+//
 // @public
-export function useEvaluateFlag<T extends Value>(path: string, defaultValue: T, confidence?: ConfidenceReact): FlagEvaluation<Value.Widen<T>>;
+export function useEvaluateFlag(path: string, defaultValue: string, confidence?: ConfidenceReact): FlagEvaluation<string>;
 
+// @public (undocumented)
+export function useEvaluateFlag(path: string, defaultValue: number, confidence?: ConfidenceReact): FlagEvaluation<number>;
+
+// @public (undocumented)
+export function useEvaluateFlag(path: string, defaultValue: boolean, confidence?: ConfidenceReact): FlagEvaluation<boolean>;
+
+// @public (undocumented)
+export function useEvaluateFlag<T extends Value>(path: string, defaultValue: T, confidence?: ConfidenceReact): FlagEvaluation<T>;
+
+// Warning: (ae-missing-release-tag) "useFlag" is part of the package's API, but it is missing a release tag (@alpha, @beta, @public, or @internal)
+// Warning: (ae-missing-release-tag) "useFlag" is part of the package's API, but it is missing a release tag (@alpha, @beta, @public, or @internal)
+// Warning: (ae-missing-release-tag) "useFlag" is part of the package's API, but it is missing a release tag (@alpha, @beta, @public, or @internal)
+//
 // @public
-export function useFlag<T extends Value>(path: string, defaultValue: T, confidence?: ConfidenceReact): Value.Widen<T>;
+export function useFlag(path: string, defaultValue: string, confidence?: ConfidenceReact): string;
+
+// @public (undocumented)
+export function useFlag(path: string, defaultValue: number, confidence?: ConfidenceReact): number;
+
+// @public (undocumented)
+export function useFlag(path: string, defaultValue: boolean, confidence?: ConfidenceReact): boolean;
+
+// @public (undocumented)
+export function useFlag<T extends Value>(path: string, defaultValue: T, confidence?: ConfidenceReact): T;
 
 // @public
 export function useWithContext(context: Context, parent?: ConfidenceReact): ConfidenceReact;
