@@ -290,11 +290,11 @@ export function useEvaluateFlag<T extends Value>(
  * Use Flag
  * @public
  */
-// eslint-disable-next-line react-hooks/rules-of-hooks
 export function useFlag(path: string, defaultValue: string, confidence?: ConfidenceReact): string;
 export function useFlag(path: string, defaultValue: number, confidence?: ConfidenceReact): number;
 export function useFlag(path: string, defaultValue: boolean, confidence?: ConfidenceReact): boolean;
 export function useFlag<T extends Value>(path: string, defaultValue: T, confidence?: ConfidenceReact): T;
+// eslint-disable-next-line react-hooks/rules-of-hooks
 export function useFlag<T extends Value>(path: string, defaultValue: T, confidence = useConfidence()): T {
   return useEvaluateFlag(path, defaultValue, confidence).value;
 }
