@@ -80,6 +80,7 @@ export class Confidence implements EventSender, Trackable, FlagResolver {
 
   private readonly flagStateSubject: Subscribe<State>;
 
+  /** @internal */
   constructor(config: Configuration, parent?: Confidence) {
     this.config = config;
     this.parent = parent;

@@ -14,6 +14,7 @@ export type Closer = () => void;
 
 // @public
 export class Confidence implements EventSender, Trackable, FlagResolver {
+    // @internal
     constructor(config: Configuration, parent?: Confidence);
     clearContext(): void;
     readonly config: Configuration;
