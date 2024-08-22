@@ -20,15 +20,6 @@ export namespace Value {
   /** Readonly List */
   export type List = ReadonlyArray<number> | ReadonlyArray<string> | ReadonlyArray<boolean>;
 
-  /** Sets Confidence used Values to be implementations of primitive types */
-  export type Widen<T extends Value> = T extends number
-    ? number
-    : T extends string
-    ? string
-    : T extends boolean
-    ? boolean
-    : T;
-
   /** Asserts a Value */
   export function assertValue(value: unknown): asserts value is Value {
     switch (typeof value) {

@@ -24,10 +24,22 @@ export class Confidence implements EventSender, Trackable, FlagResolver {
     readonly contextChanges: Subscribe<string[]>;
     static create({ clientSecret, region, timeout, environment, fetchImplementation, logger, }: ConfidenceOptions): Confidence;
     get environment(): string;
-    evaluateFlag<T extends Value>(path: string, defaultValue: T): FlagEvaluation<Value.Widen<T>>;
+    evaluateFlag(path: string, defaultValue: string): FlagEvaluation<string>;
+    // (undocumented)
+    evaluateFlag(path: string, defaultValue: boolean): FlagEvaluation<boolean>;
+    // (undocumented)
+    evaluateFlag(path: string, defaultValue: number): FlagEvaluation<number>;
+    // (undocumented)
+    evaluateFlag<T extends Value>(path: string, defaultValue: T): FlagEvaluation<T>;
     get flagState(): State;
     getContext(): Context;
-    getFlag<T extends Value>(path: string, defaultValue: T): Promise<Value.Widen<T>>;
+    getFlag(path: string, defaultValue: string): Promise<string>;
+    // (undocumented)
+    getFlag(path: string, defaultValue: boolean): Promise<boolean>;
+    // (undocumented)
+    getFlag(path: string, defaultValue: number): Promise<number>;
+    // (undocumented)
+    getFlag<T extends Value>(path: string, defaultValue: T): Promise<T>;
     // Warning: (ae-forgotten-export) The symbol "AccessiblePromise" needs to be exported by the entry point index.d.ts
     protected resolveFlags(): AccessiblePromise<void>;
     setContext(context: Context): boolean;
@@ -125,8 +137,14 @@ export type FlagEvaluation<T> = FlagEvaluation.Resolved<T> | FlagEvaluation.Stal
 
 // @public
 export interface FlagResolver extends Contextual<FlagResolver> {
-    evaluateFlag<T extends Value>(path: string, defaultValue: T): FlagEvaluation<Value.Widen<T>>;
-    getFlag<T extends Value>(path: string, defaultValue: T): Promise<Value.Widen<T>>;
+    evaluateFlag(path: string, defaultValue: string): FlagEvaluation<string>;
+    evaluateFlag(path: string, defaultValue: boolean): FlagEvaluation<boolean>;
+    evaluateFlag(path: string, defaultValue: number): FlagEvaluation<number>;
+    evaluateFlag<T extends Value>(path: string, defaultValue: T): FlagEvaluation<T>;
+    getFlag(path: string, defaultValue: string): Promise<string>;
+    getFlag(path: string, defaultValue: boolean): Promise<boolean>;
+    getFlag(path: string, defaultValue: number): Promise<number>;
+    getFlag<T extends Value>(path: string, defaultValue: T): Promise<T>;
     subscribe(onStateChange?: StateObserver): () => void;
 }
 
@@ -178,7 +196,6 @@ export namespace Value {
         readonly [key: string]: Value;
     };
     export type TypeName = 'number' | 'string' | 'boolean' | 'Struct' | 'List' | 'undefined';
-    export type Widen<T extends Value> = T extends number ? number : T extends string ? string : T extends boolean ? boolean : T;
 }
 
 // @public

@@ -119,12 +119,20 @@ export class ConfidenceReact implements EventSender, Trackable, FlagResolver {
     return new ConfidenceReact(this.delegate.withContext(context));
   }
   /** Evaluates a flag */
-  evaluateFlag<T extends Value>(path: string, defaultValue: T): FlagEvaluation<Value.Widen<T>> {
+  evaluateFlag(path: string, defaultValue: string): FlagEvaluation<string>;
+  evaluateFlag(path: string, defaultValue: boolean): FlagEvaluation<boolean>;
+  evaluateFlag(path: string, defaultValue: number): FlagEvaluation<number>;
+  evaluateFlag<T extends Value>(path: string, defaultValue: T): FlagEvaluation<T>;
+  evaluateFlag<T extends Value>(path: string, defaultValue: T): FlagEvaluation<T> {
     this.assertContext('evaluateFlag', 'useEvaluateFlag');
     return this.delegate.evaluateFlag(path, defaultValue);
   }
   /** Returns flag value for a given flag */
-  getFlag<T extends Value>(path: string, defaultValue: T): Promise<Value.Widen<T>> {
+  getFlag(path: string, defaultValue: string): Promise<string>;
+  getFlag(path: string, defaultValue: boolean): Promise<boolean>;
+  getFlag(path: string, defaultValue: number): Promise<number>;
+  getFlag<T extends Value>(path: string, defaultValue: T): Promise<T>;
+  getFlag<T extends Value>(path: string, defaultValue: T): Promise<T> {
     this.assertContext('getFlag', 'useFlag');
     return this.delegate.getFlag(path, defaultValue);
   }
@@ -142,12 +150,20 @@ export class ConfidenceReact implements EventSender, Trackable, FlagResolver {
     return useWithContext(context, this);
   }
   /** Hook to use EvaluateFlag functionality */
-  useEvaluateFlag<T extends Value>(path: string, defaultValue: T): FlagEvaluation<Value.Widen<T>> {
+  useEvaluateFlag(path: string, defaultValue: string): FlagEvaluation<string>;
+  useEvaluateFlag(path: string, defaultValue: number): FlagEvaluation<number>;
+  useEvaluateFlag(path: string, defaultValue: boolean): FlagEvaluation<boolean>;
+  useEvaluateFlag<T extends Value>(path: string, defaultValue: T): FlagEvaluation<T>;
+  useEvaluateFlag<T extends Value>(path: string, defaultValue: T): FlagEvaluation<T> {
     this.assertContext('useEvaluateFlag', 'evaluateFlag');
     return useEvaluateFlag(path, defaultValue, this);
   }
   /** Hook to use getFlag functionality */
-  useFlag<T extends Value>(path: string, defaultValue: T): Value.Widen<T> {
+  useFlag(path: string, defaultValue: string): string;
+  useFlag(path: string, defaultValue: number): number;
+  useFlag(path: string, defaultValue: boolean): boolean;
+  useFlag<T extends Value>(path: string, defaultValue: T): T;
+  useFlag<T extends Value>(path: string, defaultValue: T): T {
     this.assertContext('useFlag', 'getFlag');
     return useFlag(path, defaultValue, this);
   }
@@ -233,12 +249,32 @@ export function useConfidenceContext(confidence = useConfidence()): Context {
 /**
  * Use EvaluateFlag
  * @public */
+export function useEvaluateFlag(
+  path: string,
+  defaultValue: string,
+  confidence?: ConfidenceReact,
+): FlagEvaluation<string>;
+export function useEvaluateFlag(
+  path: string,
+  defaultValue: number,
+  confidence?: ConfidenceReact,
+): FlagEvaluation<number>;
+export function useEvaluateFlag(
+  path: string,
+  defaultValue: boolean,
+  confidence?: ConfidenceReact,
+): FlagEvaluation<boolean>;
+export function useEvaluateFlag<T extends Value>(
+  path: string,
+  defaultValue: T,
+  confidence?: ConfidenceReact,
+): FlagEvaluation<T>;
 export function useEvaluateFlag<T extends Value>(
   path: string,
   defaultValue: T,
   // eslint-disable-next-line react-hooks/rules-of-hooks
   confidence = useConfidence(),
-): FlagEvaluation<Value.Widen<T>> {
+): FlagEvaluation<T> {
   const evaluation = confidence.delegate.evaluateFlag(path, defaultValue);
   const [, setState] = useState(() => confidence.contextState);
   useEffect(() => {
@@ -254,7 +290,11 @@ export function useEvaluateFlag<T extends Value>(
  * Use Flag
  * @public
  */
+export function useFlag(path: string, defaultValue: string, confidence?: ConfidenceReact): string;
+export function useFlag(path: string, defaultValue: number, confidence?: ConfidenceReact): number;
+export function useFlag(path: string, defaultValue: boolean, confidence?: ConfidenceReact): boolean;
+export function useFlag<T extends Value>(path: string, defaultValue: T, confidence?: ConfidenceReact): T;
 // eslint-disable-next-line react-hooks/rules-of-hooks
-export function useFlag<T extends Value>(path: string, defaultValue: T, confidence = useConfidence()): Value.Widen<T> {
+export function useFlag<T extends Value>(path: string, defaultValue: T, confidence = useConfidence()): T {
   return useEvaluateFlag(path, defaultValue, confidence).value;
 }

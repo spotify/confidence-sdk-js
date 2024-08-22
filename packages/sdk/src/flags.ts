@@ -69,9 +69,21 @@ export interface FlagResolver extends Contextual<FlagResolver> {
   /** Subscribe to flag changes in Confidence */
   subscribe(onStateChange?: StateObserver): () => void;
 
+  /** Evaluates a string flag */
+  evaluateFlag(path: string, defaultValue: string): FlagEvaluation<string>;
+  /** Evaluates a boolean flag */
+  evaluateFlag(path: string, defaultValue: boolean): FlagEvaluation<boolean>;
+  /** Evaluates a numeric flag */
+  evaluateFlag(path: string, defaultValue: number): FlagEvaluation<number>;
   /** Evaluates a flag */
-  evaluateFlag<T extends Value>(path: string, defaultValue: T): FlagEvaluation<Value.Widen<T>>;
+  evaluateFlag<T extends Value>(path: string, defaultValue: T): FlagEvaluation<T>;
 
-  /** Returns flag value for a given flag */
-  getFlag<T extends Value>(path: string, defaultValue: T): Promise<Value.Widen<T>>;
+  /** Returns flag value for a string flag */
+  getFlag(path: string, defaultValue: string): Promise<string>;
+  /** Returns flag value for a boolean flag */
+  getFlag(path: string, defaultValue: boolean): Promise<boolean>;
+  /** Returns flag value for a numeric flag */
+  getFlag(path: string, defaultValue: number): Promise<number>;
+  /** Returns flag value for a flag */
+  getFlag<T extends Value>(path: string, defaultValue: T): Promise<T>;
 }
