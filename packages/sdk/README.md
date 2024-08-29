@@ -61,8 +61,8 @@ const childInstance = confidence.withContext({ 'pants-color': 'blue', 'pants-fit
 
 At this point, the context of `childInstance` is `'pants-color': 'blue', 'pants-fit': 'slim'` while the context of `confidence` remains `{'pants-color': 'yellow'}`.
 
-[!IMPORTANT]
-When using the SDK in a server environment, you should call `withContext` rather than `setContext`. This will give you a new instance scoped to the request and prevent context from leaking between requests.
+> [!IMPORTANT]
+> When using the SDK in a server environment, you should call `withContext` rather than `setContext`. This will give you a new instance scoped to the request and prevent context from leaking between requests.
 
 ## Event tracking
 
