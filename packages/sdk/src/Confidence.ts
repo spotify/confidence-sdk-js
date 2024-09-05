@@ -11,7 +11,6 @@ import { Context } from './context';
 import { Logger } from './logger';
 import { FlagEvaluation, FlagResolver, State, StateObserver } from './flags';
 import { SdkId } from './generated/confidence/flags/resolver/v1/types';
-import { visitorIdentity } from './trackers';
 import { Trackable } from './Trackable';
 import { Closer } from './Closer';
 import { Subscribe, Observer, subject, changeObserver } from './observing';
@@ -366,17 +365,13 @@ export class Confidence implements EventSender, Trackable, FlagResolver {
       maxOpenRequests: (50 * 1024) / (estEventSizeKb * maxBatchSize),
       logger,
     });
-    const root = new Confidence({
+    return new Confidence({
       environment: environment,
       flagResolverClient,
       eventSenderEngine,
       timeout,
       logger,
     });
-    if (environment === 'client') {
-      root.track(visitorIdentity());
-    }
-    return root;
   }
 }
 
