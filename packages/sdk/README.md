@@ -75,6 +75,20 @@ confidence.track('event_name', { 'message-detail1': 'something interesting' });
 ### Auto track
 
 Confidence supports automatically tracking certain things out of the box and supports API's for you to extend that functionality.
+
+#### Visitor ID (web)
+
+Confidence can provide all flag resolves and tracking events with a browser specific identifier. We call this `visitor_id`.  
+The `visitor_id` is stored in a cookie. To add a generated `visitor_id` to the context, use the following:
+
+```ts
+import { visitorIdentity } from './trackers';
+confidence.track(visitorIdentity());
+```
+
+#### Page Views (web)
+
+Confidence can automatically track `page views` on events such as `load`, `pushState`, `replaceState`, `popstate` and `hashchange`.
 To automatically track `page views`, use the following:
 
 ```ts
@@ -82,7 +96,9 @@ import { Confidence, pageViews } from '@spotify-confidence/sdk';
 confidence.track(pageViews());
 ```
 
-and to automatically track events containing web vitals data, use:
+#### Web vitals (web)
+
+To automatically send tracking events containing [web vitals data](https://web.dev/articles/vitals), use:
 
 ```ts
 import { Confidence, webVitals } from '@spotify-confidence/sdk';
