@@ -3,14 +3,12 @@ const { Confidence } = require('@spotify-confidence/sdk');
 const { createConfidenceServerProvider } = require('@spotify-confidence/openfeature-server-provider');
 
 if (!process.env.CLIENT_SECRET) {
-  console.log('CLIENT_SECRET is not set inb .env');
+  console.log('CLIENT_SECRET is not set in .env');
 }
 main();
 
 async function main() {
-  const { createConfidenceServerProvider } = await import('@spotify-confidence/openfeature-server-provider');
-
-  const provider = createConfidenceServerProvider({
+  const confidence = Confidence.create({
     clientSecret: process.env.CLIENT_SECRET,
     region: 'eu',
     fetchImplementation: fetch,
@@ -32,6 +30,8 @@ async function main() {
       console.log('result from open feature:', result);
     });
 
-  const fe = await confidence.withContext({ targeting_key: 'user-a' }).evaluateFlag('web-sdk-e2e-flag.int', 0);
+  const fe = await confidence
+    .withContext({ targeting_key: 'user-a' })
+    .evaluateFlag('tutorial-feature.title', 'Default');
   console.log('from confidence API: ', fe);
 }

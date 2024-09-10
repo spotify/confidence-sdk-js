@@ -1,7 +1,7 @@
 import { Confidence } from '@spotify-confidence/sdk';
 
 if (!process.env.CLIENT_SECRET) {
-  console.log('CLIENT_SECRET is not set inb .env');
+  console.log('CLIENT_SECRET is not set in .env');
 }
 const confidence = Confidence.create({
   clientSecret: process.env.CLIENT_SECRET,
