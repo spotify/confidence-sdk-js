@@ -22,7 +22,7 @@ export class Confidence implements EventSender, Trackable, FlagResolver {
     //
     // @internal
     readonly contextChanges: Subscribe<string[]>;
-    static create({ clientSecret, region, timeout, environment, fetchImplementation, logger, }: ConfidenceOptions): Confidence;
+    static create({ clientSecret, region, timeout, environment, fetchImplementation, logger, resolveBaseUrl, }: ConfidenceOptions): Confidence;
     get environment(): string;
     evaluateFlag(path: string, defaultValue: string): FlagEvaluation<string>;
     // (undocumented)
@@ -50,17 +50,15 @@ export class Confidence implements EventSender, Trackable, FlagResolver {
 }
 
 // @public
-export interface ConfidenceOptions {
+export type ConfidenceOptions = {
     clientSecret: string;
-    environment: 'client' | 'backend';
-    // Warning: (ae-forgotten-export) The symbol "SimpleFetch" needs to be exported by the entry point index.d.ts
-    fetchImplementation?: SimpleFetch;
-    // Warning: (ae-forgotten-export) The symbol "Logger" needs to be exported by the entry point index.d.ts
-    logger?: Logger;
     region?: 'eu' | 'us';
-    resolveUrl?: string;
+    environment: 'client' | 'backend';
+    fetchImplementation?: SimpleFetch;
     timeout: number;
-}
+    logger?: Logger;
+    resolveBaseUrl?: string;
+};
 
 // @public
 export interface Configuration {
@@ -214,6 +212,11 @@ export type WebVitalsOptions = {
     cls?: boolean;
     ttfb?: boolean;
 };
+
+// Warnings were encountered during analysis:
+//
+// src/Confidence.ts:34:3 - (ae-forgotten-export) The symbol "SimpleFetch" needs to be exported by the entry point index.d.ts
+// src/Confidence.ts:38:3 - (ae-forgotten-export) The symbol "Logger" needs to be exported by the entry point index.d.ts
 
 // (No @packageDocumentation comment for this package)
 

@@ -23,13 +23,11 @@ import { AccessiblePromise } from './AccessiblePromise';
  * Confidence options, to be used for easier initialization of Confidence
  * @public
  *  */
-export interface ConfidenceOptions {
+export type ConfidenceOptions = {
   /** Client secret, to be found in Confidence console*/
   clientSecret: string;
   /** Region in which Confidence will operate */
   region?: 'eu' | 'us';
-  /** Resolve URL */
-  resolveUrl?: string;
   /** Environment: can be either client of backend */
   environment: 'client' | 'backend';
   /** Fetch implementation */
@@ -38,7 +36,9 @@ export interface ConfidenceOptions {
   timeout: number;
   /** Debug logger */
   logger?: Logger;
-}
+  /** Sets an alternative resolve url */
+  resolveBaseUrl?: string;
+};
 
 /**
  * Confidence configuration
@@ -323,6 +323,7 @@ export class Confidence implements EventSender, Trackable, FlagResolver {
    * @param environment - can be either "client" or "backend"
    * @param fetchImplementation - fetch implementation
    * @param logger - debug logger
+   * @param resolveBaseUrl - custom backend resolve URL
    * @returns
    */
   static create({
@@ -332,6 +333,7 @@ export class Confidence implements EventSender, Trackable, FlagResolver {
     environment,
     fetchImplementation = defaultFetchImplementation(),
     logger = defaultLogger(),
+    resolveBaseUrl,
   }: ConfidenceOptions): Confidence {
     const sdk = {
       id: SdkId.SDK_ID_JS_CONFIDENCE,
@@ -344,6 +346,7 @@ export class Confidence implements EventSender, Trackable, FlagResolver {
       environment,
       resolveTimeout: timeout,
       region,
+      resolveBaseUrl,
     });
     if (environment === 'client') {
       flagResolverClient = new CachingFlagResolverClient(flagResolverClient, Number.POSITIVE_INFINITY);
