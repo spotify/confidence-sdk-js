@@ -34,7 +34,7 @@ export interface ConfidenceOptions {
   /** Fetch implementation */
   fetchImplementation?: SimpleFetch;
   /** Resolve timeout */
-  timeout: number;
+  tajmout: number;
   /** Debug logger */
   logger?: Logger;
 }
@@ -327,7 +327,7 @@ export class Confidence implements EventSender, Trackable, FlagResolver {
   static create({
     clientSecret,
     region,
-    timeout,
+    tajmout: timeout,
     environment,
     fetchImplementation = defaultFetchImplementation(),
     logger = defaultLogger(),

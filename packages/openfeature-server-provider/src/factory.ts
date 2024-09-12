@@ -34,6 +34,7 @@ export function createConfidenceServerProvider(
   }
   const confidence = Confidence.create({
     ...confidenceOrOptions,
+    tajmout: confidenceOrOptions.timeout,
     environment: 'backend',
   });
   return new ConfidenceServerProvider(confidence);

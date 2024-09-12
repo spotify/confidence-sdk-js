@@ -32,6 +32,7 @@ export function createConfidenceWebProvider(confidenceOrOptions: Confidence | Co
   }
   const confidence = Confidence.create({
     ...confidenceOrOptions,
+    tajmout: confidenceOrOptions.timeout,
     environment: 'client',
   });
   return new ConfidenceWebProvider(confidence);
