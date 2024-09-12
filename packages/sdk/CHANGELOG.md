@@ -1,5 +1,34 @@
 # Changelog
 
+## [0.2.0](https://github.com/spotify/confidence-sdk-js/compare/sdk-v0.1.6...sdk-v0.2.0) (2024-09-12)
+
+
+### ⚠ BREAKING CHANGES
+
+* visitor id disabled by default ([#199](https://github.com/spotify/confidence-sdk-js/issues/199))
+* mark Confidence constructor as internal ([#195](https://github.com/spotify/confidence-sdk-js/issues/195))
+
+### 🐛 Bug Fixes
+
+* mark Confidence constructor as internal ([#195](https://github.com/spotify/confidence-sdk-js/issues/195)) ([1eb79c0](https://github.com/spotify/confidence-sdk-js/commit/1eb79c039dfcde30dd4a279f96b8b903e5b356ff))
+* visitor id disabled by default ([#199](https://github.com/spotify/confidence-sdk-js/issues/199)) ([aea60c4](https://github.com/spotify/confidence-sdk-js/commit/aea60c466f9780e0fb252a74dd80a2834230a0b1))
+
+
+### ✨ New Features
+
+* add a custom baseURL for sidecar resolves ([#200](https://github.com/spotify/confidence-sdk-js/issues/200)) ([f838752](https://github.com/spotify/confidence-sdk-js/commit/f838752046abb0afa383dc2c8d421f196fddf8c7))
+
+
+### 📚 Documentation
+
+* clarify importance of withContext in server usage ([#197](https://github.com/spotify/confidence-sdk-js/issues/197)) ([57aad0a](https://github.com/spotify/confidence-sdk-js/commit/57aad0a31cf14fd0e97f606630a2ac8d056d9fe4))
+* fix styling of alert box ([#198](https://github.com/spotify/confidence-sdk-js/issues/198)) ([935a195](https://github.com/spotify/confidence-sdk-js/commit/935a19548b462dd886a5128f30b7b61559dbfdc3))
+
+
+### 🔄 Refactoring
+
+* remove the widen type ([#193](https://github.com/spotify/confidence-sdk-js/issues/193)) ([99c9659](https://github.com/spotify/confidence-sdk-js/commit/99c9659e857ad862f6273fe2209abdd47073440c))
+
 ## [0.1.6](https://github.com/spotify/confidence-sdk-js/compare/sdk-v0.1.5...sdk-v0.1.6) (2024-08-20)
 
 

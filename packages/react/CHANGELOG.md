@@ -6,6 +6,20 @@
   * devDependencies
     * @spotify-confidence/sdk bumped from 0.1.3 to 0.1.4
 
+## [0.0.7](https://github.com/spotify/confidence-sdk-js/compare/react-v0.0.6...react-v0.0.7) (2024-09-12)
+
+
+### 🔄 Refactoring
+
+* remove the widen type ([#193](https://github.com/spotify/confidence-sdk-js/issues/193)) ([99c9659](https://github.com/spotify/confidence-sdk-js/commit/99c9659e857ad862f6273fe2209abdd47073440c))
+
+
+### Dependencies
+
+* The following workspace dependencies were updated
+  * devDependencies
+    * @spotify-confidence/sdk bumped to 0.2.0
+
 ## [0.0.6](https://github.com/spotify/confidence-sdk-js/compare/react-v0.0.5...react-v0.0.6) (2024-08-20)
 
 
