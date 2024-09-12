@@ -23,7 +23,7 @@ import { AccessiblePromise } from './AccessiblePromise';
  * Confidence options, to be used for easier initialization of Confidence
  * @public
  *  */
-export type ConfidenceOptions = {
+export interface ConfidenceOptions {
   /** Client secret, to be found in Confidence console*/
   clientSecret: string;
   /** Region in which Confidence will operate */
@@ -38,7 +38,7 @@ export type ConfidenceOptions = {
   logger?: Logger;
   /** Sets an alternative resolve url */
   resolveBaseUrl?: string;
-};
+}
 
 /**
  * Confidence configuration

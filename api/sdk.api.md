@@ -50,15 +50,17 @@ export class Confidence implements EventSender, Trackable, FlagResolver {
 }
 
 // @public
-export type ConfidenceOptions = {
+export interface ConfidenceOptions {
     clientSecret: string;
-    region?: 'eu' | 'us';
     environment: 'client' | 'backend';
+    // Warning: (ae-forgotten-export) The symbol "SimpleFetch" needs to be exported by the entry point index.d.ts
     fetchImplementation?: SimpleFetch;
-    timeout: number;
+    // Warning: (ae-forgotten-export) The symbol "Logger" needs to be exported by the entry point index.d.ts
     logger?: Logger;
+    region?: 'eu' | 'us';
     resolveBaseUrl?: string;
-};
+    timeout: number;
+}
 
 // @public
 export interface Configuration {
@@ -212,11 +214,6 @@ export type WebVitalsOptions = {
     cls?: boolean;
     ttfb?: boolean;
 };
-
-// Warnings were encountered during analysis:
-//
-// src/Confidence.ts:34:3 - (ae-forgotten-export) The symbol "SimpleFetch" needs to be exported by the entry point index.d.ts
-// src/Confidence.ts:38:3 - (ae-forgotten-export) The symbol "Logger" needs to be exported by the entry point index.d.ts
 
 // (No @packageDocumentation comment for this package)
 
