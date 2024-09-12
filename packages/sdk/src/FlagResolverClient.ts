@@ -84,6 +84,7 @@ export type FlagResolverClientOptions = {
   resolveTimeout: number;
   environment: 'client' | 'backend';
   region?: 'eu' | 'us';
+  resolveBaseUrl?: string;
 };
 
 export class FetchingFlagResolverClient implements FlagResolverClient {
@@ -103,13 +104,18 @@ export class FetchingFlagResolverClient implements FlagResolverClient {
     // todo refactor to move out environment
     environment,
     region,
+    resolveBaseUrl,
   }: FlagResolverClientOptions) {
     // TODO think about both resolve and apply request logic for backends
     this.fetchImplementation = environment === 'backend' ? fetchImplementation : withRequestLogic(fetchImplementation);
     this.clientSecret = clientSecret;
     this.sdk = sdk;
     this.applyTimeout = applyTimeout;
-    this.baseUrl = region ? `https://resolver.${region}.confidence.dev/v1` : 'https://resolver.confidence.dev/v1';
+    if (resolveBaseUrl) {
+      this.baseUrl = `${resolveBaseUrl}/v1`;
+    } else {
+      this.baseUrl = region ? `https://resolver.${region}.confidence.dev/v1` : 'https://resolver.confidence.dev/v1';
+    }
     this.resolveTimeout = resolveTimeout;
   }
 

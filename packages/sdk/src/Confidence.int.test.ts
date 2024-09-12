@@ -27,6 +27,7 @@ const fetchImplementation = async (request: Request): Promise<Response> => {
 
   let handler: (reqBody: any) => any;
   switch (request.url) {
+    case 'https://custom.dev/v1/flags:resolve':
     case 'https://resolver.confidence.dev/v1/flags:resolve':
       handler = resolveHandlerMock;
       break;
@@ -60,6 +61,18 @@ describe('Confidence integration tests', () => {
 
     resolveHandlerMock.mockReturnValue(mockResolveResponse);
     publishHandlerMock.mockReturnValue(mockPublishResponse);
+  });
+
+  it('should resolve against provided base url', async () => {
+    const customCondifence = Confidence.create({
+      clientSecret: '<client-secret>',
+      timeout: 100,
+      environment: 'client',
+      fetchImplementation,
+      resolveBaseUrl: 'https://custom.dev',
+    });
+
+    expect(await customCondifence.getFlag('flag1.str', 'goodbye')).toBe('hello');
   });
 
   it('should resolve a value and send apply', async () => {

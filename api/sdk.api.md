@@ -22,7 +22,7 @@ export class Confidence implements EventSender, Trackable, FlagResolver {
     //
     // @internal
     readonly contextChanges: Subscribe<string[]>;
-    static create({ clientSecret, region, timeout, environment, fetchImplementation, logger, }: ConfidenceOptions): Confidence;
+    static create({ clientSecret, region, timeout, environment, fetchImplementation, logger, resolveBaseUrl, }: ConfidenceOptions): Confidence;
     get environment(): string;
     evaluateFlag(path: string, defaultValue: string): FlagEvaluation<string>;
     // (undocumented)
@@ -58,7 +58,7 @@ export interface ConfidenceOptions {
     // Warning: (ae-forgotten-export) The symbol "Logger" needs to be exported by the entry point index.d.ts
     logger?: Logger;
     region?: 'eu' | 'us';
-    resolveUrl?: string;
+    resolveBaseUrl?: string;
     timeout: number;
 }
 
