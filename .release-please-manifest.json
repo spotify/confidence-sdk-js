@@ -1,6 +1,6 @@
 {
-  "packages/openfeature-server-provider": "0.2.12",
-  "packages/openfeature-web-provider": "0.2.12",
-  "packages/sdk": "0.2.0",
-  "packages/react": "0.0.7"
+  "packages/openfeature-server-provider": "0.2.13",
+  "packages/openfeature-web-provider": "0.2.13",
+  "packages/sdk": "0.2.1",
+  "packages/react": "0.0.8"
 }

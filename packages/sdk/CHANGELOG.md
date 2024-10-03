@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.2.1](https://github.com/spotify/confidence-sdk-js/compare/sdk-v0.2.0...sdk-v0.2.1) (2024-10-03)
+
+
+### 🐛 Bug Fixes
+
+* react-native runtime incompatibilities ([#202](https://github.com/spotify/confidence-sdk-js/issues/202)) ([f594e77](https://github.com/spotify/confidence-sdk-js/commit/f594e773db1a6077558a619513ba872bd5e15640))
+
 ## [0.2.0](https://github.com/spotify/confidence-sdk-js/compare/sdk-v0.1.6...sdk-v0.2.0) (2024-09-12)
 
 
