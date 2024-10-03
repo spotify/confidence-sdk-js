@@ -233,7 +233,7 @@ export class FetchBuilder {
       let retryCount = 0;
 
       const doRetry = async (e: unknown): Promise<Response> => {
-        request.signal?.throwIfAborted();
+        if (request.signal?.aborted ?? false) throw new Error('Request aborted');
         // if there are no more attempts we throw the last error
         if (retryCount >= maxRetries) throw e;
 
