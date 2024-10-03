@@ -233,7 +233,7 @@ export class FetchBuilder {
       let retryCount = 0;
 
       const doRetry = async (e: unknown): Promise<Response> => {
-        if (request.signal?.aborted ?? false) throw request.signal?.reason;
+        if (request.signal?.aborted ?? false) throw request.signal.reason;
         // if there are no more attempts we throw the last error
         if (retryCount >= maxRetries) throw e;
 
@@ -266,7 +266,7 @@ export class FetchBuilder {
    * @returns the builder itself
    */
   route(match: (url: string) => boolean, fetch: SimpleFetch) {
-    return this.compose(next => request => match(request.url) ? fetch(request) : next(request));
+    return this.compose(next => request => (match(request.url) ? fetch(request) : next(request)));
   }
 
   /**
