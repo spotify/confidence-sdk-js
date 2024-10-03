@@ -292,7 +292,7 @@ export function withRequestLogic(fetchImplementation: (request: Request) => Prom
     // update send-time before sending
     .modifyRequest(async request => {
       if (request.method === 'POST') {
-        const body = JSON.stringify({ ...(await request.json()), sendTime: new Date().toISOString() });
+        const body = JSON.stringify({ ...(await request.clone().json()), sendTime: new Date().toISOString() });
         return new Request(request, { body });
       }
       return request;
