@@ -266,7 +266,7 @@ export class FetchBuilder {
    * @returns the builder itself
    */
   route(match: (url: string) => boolean, fetch: SimpleFetch) {
-    return this.compose(next => request => (match(request.url) ? fetch(request) : next(request)));
+    return this.compose(next => request => match(request.url) ? fetch(request) : next(request));
   }
 
   /**
