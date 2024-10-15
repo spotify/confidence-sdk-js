@@ -52,7 +52,7 @@
     "jest-environment-jsdom": "^29.6.1",
     "jest-extended": "^4.0.0",
     "prettier": "^2.8.8",
-    "rollup": "^4.14.2",
+    "rollup": "^4.22.4",
     "ts-jest": "^29.1.0",
     "typescript": "^5.1.3"
   },
