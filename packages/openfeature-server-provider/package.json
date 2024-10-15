@@ -8,7 +8,7 @@
     "@openfeature/core": "^1.1.0",
     "@openfeature/server-sdk": "^1.13.5",
     "@spotify-confidence/sdk": "workspace:*",
-    "rollup": "4.14.2"
+    "rollup": "4.22.4"
   },
   "peerDependencies": {
     "@openfeature/server-sdk": "^1.13.5",
