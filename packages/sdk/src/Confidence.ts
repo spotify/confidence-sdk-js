@@ -37,6 +37,8 @@ export interface ConfidenceOptions {
   logger?: Logger;
   /** Sets an alternative resolve url */
   resolveBaseUrl?: string;
+  /** Enable telemetry */
+  enableTelemetry?: boolean;
 }
 
 /**
@@ -333,6 +335,7 @@ export class Confidence implements EventSender, Trackable, FlagResolver {
     fetchImplementation = defaultFetchImplementation(),
     logger = defaultLogger(),
     resolveBaseUrl,
+    enableTelemetry = true,
   }: ConfidenceOptions): Confidence {
     const sdk = {
       id: SdkId.SDK_ID_JS_CONFIDENCE,
@@ -346,6 +349,7 @@ export class Confidence implements EventSender, Trackable, FlagResolver {
       resolveTimeout: timeout,
       region,
       resolveBaseUrl,
+      enableTelemetry,
     });
     if (environment === 'client') {
       flagResolverClient = new CachingFlagResolverClient(flagResolverClient, Number.POSITIVE_INFINITY);

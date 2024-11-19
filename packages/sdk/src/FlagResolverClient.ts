@@ -11,12 +11,20 @@ import {
   AppliedFlag,
 } from './generated/confidence/flags/resolver/v1/api';
 import { Sdk } from './generated/confidence/flags/resolver/v1/types';
+import {
+  LibraryTraces_Library,
+  LibraryTraces_TraceId,
+  Monitoring,
+} from './generated/confidence/telemetry/v1/telemetry';
 import { SimpleFetch } from './types';
 
 const FLAG_PREFIX = 'flags/';
 
 export class ResolveError extends Error {
-  constructor(public readonly code: FlagEvaluation.ErrorCode, message: string) {
+  constructor(
+    public readonly code: FlagEvaluation.ErrorCode,
+    message: string,
+  ) {
     super(message);
   }
 }
@@ -85,6 +93,7 @@ export type FlagResolverClientOptions = {
   environment: 'client' | 'backend';
   region?: 'eu' | 'us';
   resolveBaseUrl?: string;
+  enableTelemetry: boolean;
 };
 
 export class FetchingFlagResolverClient implements FlagResolverClient {
@@ -105,9 +114,18 @@ export class FetchingFlagResolverClient implements FlagResolverClient {
     environment,
     region,
     resolveBaseUrl,
+    enableTelemetry,
   }: FlagResolverClientOptions) {
-    // TODO think about both resolve and apply request logic for backends
-    this.fetchImplementation = environment === 'backend' ? fetchImplementation : withRequestLogic(fetchImplementation);
+    if (!enableTelemetry) {
+      // TODO think about both resolve and apply request logic for backends
+      this.fetchImplementation =
+        environment === 'backend' ? fetchImplementation : withRequestLogic(fetchImplementation);
+    } else {
+      this.fetchImplementation =
+        environment === 'backend'
+          ? withTelemetryData(fetchImplementation)
+          : withRequestLogic(withTelemetryData(fetchImplementation));
+    }
     this.clientSecret = clientSecret;
     this.sdk = sdk;
     this.applyTimeout = applyTimeout;
@@ -273,6 +291,33 @@ export class CachingFlagResolverClient implements FlagResolverClient {
       this.#cache.delete(key);
     }
   }
+}
+
+export function withTelemetryData(fetchImplementation: (request: Request) => Promise<Response>): typeof fetch {
+  return new FetchBuilder()
+    .modifyRequest(async request => {
+      // TODO pull actual telemetry data
+      const monitoring: Monitoring = {
+        libraryTraces: [
+          {
+            library: LibraryTraces_Library.LIBRARY_CONFIDENCE,
+            libraryVersion: '0.1.0',
+            traces: [
+              {
+                id: LibraryTraces_TraceId.TRACE_ID_RESOLVE_LATENCY,
+                millisecondDuration: 100,
+              },
+            ],
+          },
+        ],
+      };
+      const headers = new Headers(request.headers);
+      const base64Message = btoa(String.fromCharCode(...Monitoring.encode(monitoring).finish()));
+
+      headers.set('X-CONFIDENCE-TELEMETRY', base64Message);
+      return new Request(request, { headers });
+    })
+    .build(fetchImplementation);
 }
 
 export function withRequestLogic(fetchImplementation: (request: Request) => Promise<Response>): typeof fetch {
