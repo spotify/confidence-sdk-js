@@ -4,6 +4,9 @@
 
 ```ts
 
+import { BinaryReader } from '@bufbuild/protobuf/wire';
+import { BinaryWriter } from '@bufbuild/protobuf/wire';
+
 // @public
 export namespace Closer {
     export function combine(...closers: Closer[]): Closer;

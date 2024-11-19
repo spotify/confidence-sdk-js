@@ -5,6 +5,7 @@
 // source: confidence/flags/types/v1/types.proto
 
 /* eslint-disable */
+import { BinaryReader, BinaryWriter } from '@bufbuild/protobuf/wire';
 
 export const protobufPackage = 'confidence.flags.types.v1';
 
@@ -79,7 +80,104 @@ export interface FlagSchema_ListFlagSchema {
   elementSchema: FlagSchema | undefined;
 }
 
+function createBaseFlagSchema(): FlagSchema {
+  return {
+    structSchema: undefined,
+    listSchema: undefined,
+    intSchema: undefined,
+    doubleSchema: undefined,
+    stringSchema: undefined,
+    boolSchema: undefined,
+  };
+}
+
 export const FlagSchema: MessageFns<FlagSchema> = {
+  encode(message: FlagSchema, writer: BinaryWriter = new BinaryWriter()): BinaryWriter {
+    if (message.structSchema !== undefined) {
+      FlagSchema_StructFlagSchema.encode(message.structSchema, writer.uint32(10).fork()).join();
+    }
+    if (message.listSchema !== undefined) {
+      FlagSchema_ListFlagSchema.encode(message.listSchema, writer.uint32(18).fork()).join();
+    }
+    if (message.intSchema !== undefined) {
+      FlagSchema_IntFlagSchema.encode(message.intSchema, writer.uint32(26).fork()).join();
+    }
+    if (message.doubleSchema !== undefined) {
+      FlagSchema_DoubleFlagSchema.encode(message.doubleSchema, writer.uint32(34).fork()).join();
+    }
+    if (message.stringSchema !== undefined) {
+      FlagSchema_StringFlagSchema.encode(message.stringSchema, writer.uint32(42).fork()).join();
+    }
+    if (message.boolSchema !== undefined) {
+      FlagSchema_BoolFlagSchema.encode(message.boolSchema, writer.uint32(50).fork()).join();
+    }
+    return writer;
+  },
+
+  decode(input: BinaryReader | Uint8Array, length?: number): FlagSchema {
+    const reader = input instanceof BinaryReader ? input : new BinaryReader(input);
+    let end = length === undefined ? reader.len : reader.pos + length;
+    const message = createBaseFlagSchema();
+    while (reader.pos < end) {
+      const tag = reader.uint32();
+      switch (tag >>> 3) {
+        case 1: {
+          if (tag !== 10) {
+            break;
+          }
+
+          message.structSchema = FlagSchema_StructFlagSchema.decode(reader, reader.uint32());
+          continue;
+        }
+        case 2: {
+          if (tag !== 18) {
+            break;
+          }
+
+          message.listSchema = FlagSchema_ListFlagSchema.decode(reader, reader.uint32());
+          continue;
+        }
+        case 3: {
+          if (tag !== 26) {
+            break;
+          }
+
+          message.intSchema = FlagSchema_IntFlagSchema.decode(reader, reader.uint32());
+          continue;
+        }
+        case 4: {
+          if (tag !== 34) {
+            break;
+          }
+
+          message.doubleSchema = FlagSchema_DoubleFlagSchema.decode(reader, reader.uint32());
+          continue;
+        }
+        case 5: {
+          if (tag !== 42) {
+            break;
+          }
+
+          message.stringSchema = FlagSchema_StringFlagSchema.decode(reader, reader.uint32());
+          continue;
+        }
+        case 6: {
+          if (tag !== 50) {
+            break;
+          }
+
+          message.boolSchema = FlagSchema_BoolFlagSchema.decode(reader, reader.uint32());
+          continue;
+        }
+      }
+      if ((tag & 7) === 4 || tag === 0) {
+        break;
+      }
+      reader.skip(tag & 7);
+    }
+    return message;
+  },
+
   fromJSON(object: any): FlagSchema {
     return {
       structSchema: isSet(object.structSchema) ? FlagSchema_StructFlagSchema.fromJSON(object.structSchema) : undefined,
@@ -115,7 +213,45 @@ export const FlagSchema: MessageFns<FlagSchema> = {
   },
 };
 
+function createBaseFlagSchema_StructFlagSchema(): FlagSchema_StructFlagSchema {
+  return { schema: {} };
+}
+
 export const FlagSchema_StructFlagSchema: MessageFns<FlagSchema_StructFlagSchema> = {
+  encode(message: FlagSchema_StructFlagSchema, writer: BinaryWriter = new BinaryWriter()): BinaryWriter {
+    Object.entries(message.schema).forEach(([key, value]) => {
+      FlagSchema_StructFlagSchema_SchemaEntry.encode({ key: key as any, value }, writer.uint32(10).fork()).join();
+    });
+    return writer;
+  },
+
+  decode(input: BinaryReader | Uint8Array, length?: number): FlagSchema_StructFlagSchema {
+    const reader = input instanceof BinaryReader ? input : new BinaryReader(input);
+    let end = length === undefined ? reader.len : reader.pos + length;
+    const message = createBaseFlagSchema_StructFlagSchema();
+    while (reader.pos < end) {
+      const tag = reader.uint32();
+      switch (tag >>> 3) {
+        case 1: {
+          if (tag !== 10) {
+            break;
+          }
+
+          const entry1 = FlagSchema_StructFlagSchema_SchemaEntry.decode(reader, reader.uint32());
+          if (entry1.value !== undefined) {
+            message.schema[entry1.key] = entry1.value;
+          }
+          continue;
+        }
+      }
+      if ((tag & 7) === 4 || tag === 0) {
+        break;
+      }
+      reader.skip(tag & 7);
+    }
+    return message;
+  },
+
   fromJSON(object: any): FlagSchema_StructFlagSchema {
     return {
       schema: isObject(object.schema)
@@ -142,7 +278,53 @@ export const FlagSchema_StructFlagSchema: MessageFns<FlagSchema_StructFlagSchema
   },
 };
 
+function createBaseFlagSchema_StructFlagSchema_SchemaEntry(): FlagSchema_StructFlagSchema_SchemaEntry {
+  return { key: '', value: undefined };
+}
+
 export const FlagSchema_StructFlagSchema_SchemaEntry: MessageFns<FlagSchema_StructFlagSchema_SchemaEntry> = {
+  encode(message: FlagSchema_StructFlagSchema_SchemaEntry, writer: BinaryWriter = new BinaryWriter()): BinaryWriter {
+    if (message.key !== '') {
+      writer.uint32(10).string(message.key);
+    }
+    if (message.value !== undefined) {
+      FlagSchema.encode(message.value, writer.uint32(18).fork()).join();
+    }
+    return writer;
+  },
+
+  decode(input: BinaryReader | Uint8Array, length?: number): FlagSchema_StructFlagSchema_SchemaEntry {
+    const reader = input instanceof BinaryReader ? input : new BinaryReader(input);
+    let end = length === undefined ? reader.len : reader.pos + length;
+    const message = createBaseFlagSchema_StructFlagSchema_SchemaEntry();
+    while (reader.pos < end) {
+      const tag = reader.uint32();
+      switch (tag >>> 3) {
+        case 1: {
+          if (tag !== 10) {
+            break;
+          }
+
+          message.key = reader.string();
+          continue;
+        }
+        case 2: {
+          if (tag !== 18) {
+            break;
+          }
+
+          message.value = FlagSchema.decode(reader, reader.uint32());
+          continue;
+        }
+      }
+      if ((tag & 7) === 4 || tag === 0) {
+        break;
+      }
+      reader.skip(tag & 7);
+    }
+    return message;
+  },
+
   fromJSON(object: any): FlagSchema_StructFlagSchema_SchemaEntry {
     return {
       key: isSet(object.key) ? globalThis.String(object.key) : '',
@@ -162,7 +344,31 @@ export const FlagSchema_StructFlagSchema_SchemaEntry: MessageFns<FlagSchema_Stru
   },
 };
 
+function createBaseFlagSchema_DoubleFlagSchema(): FlagSchema_DoubleFlagSchema {
+  return {};
+}
+
 export const FlagSchema_DoubleFlagSchema: MessageFns<FlagSchema_DoubleFlagSchema> = {
+  encode(_: FlagSchema_DoubleFlagSchema, writer: BinaryWriter = new BinaryWriter()): BinaryWriter {
+    return writer;
+  },
+
+  decode(input: BinaryReader | Uint8Array, length?: number): FlagSchema_DoubleFlagSchema {
+    const reader = input instanceof BinaryReader ? input : new BinaryReader(input);
+    let end = length === undefined ? reader.len : reader.pos + length;
+    const message = createBaseFlagSchema_DoubleFlagSchema();
+    while (reader.pos < end) {
+      const tag = reader.uint32();
+      switch (tag >>> 3) {
+      }
+      if ((tag & 7) === 4 || tag === 0) {
+        break;
+      }
+      reader.skip(tag & 7);
+    }
+    return message;
+  },
+
   fromJSON(_: any): FlagSchema_DoubleFlagSchema {
     return {};
   },
@@ -173,7 +379,31 @@ export const FlagSchema_DoubleFlagSchema: MessageFns<FlagSchema_DoubleFlagSchema
   },
 };
 
+function createBaseFlagSchema_IntFlagSchema(): FlagSchema_IntFlagSchema {
+  return {};
+}
+
 export const FlagSchema_IntFlagSchema: MessageFns<FlagSchema_IntFlagSchema> = {
+  encode(_: FlagSchema_IntFlagSchema, writer: BinaryWriter = new BinaryWriter()): BinaryWriter {
+    return writer;
+  },
+
+  decode(input: BinaryReader | Uint8Array, length?: number): FlagSchema_IntFlagSchema {
+    const reader = input instanceof BinaryReader ? input : new BinaryReader(input);
+    let end = length === undefined ? reader.len : reader.pos + length;
+    const message = createBaseFlagSchema_IntFlagSchema();
+    while (reader.pos < end) {
+      const tag = reader.uint32();
+      switch (tag >>> 3) {
+      }
+      if ((tag & 7) === 4 || tag === 0) {
+        break;
+      }
+      reader.skip(tag & 7);
+    }
+    return message;
+  },
+
   fromJSON(_: any): FlagSchema_IntFlagSchema {
     return {};
   },
@@ -184,7 +414,31 @@ export const FlagSchema_IntFlagSchema: MessageFns<FlagSchema_IntFlagSchema> = {
   },
 };
 
+function createBaseFlagSchema_StringFlagSchema(): FlagSchema_StringFlagSchema {
+  return {};
+}
+
 export const FlagSchema_StringFlagSchema: MessageFns<FlagSchema_StringFlagSchema> = {
+  encode(_: FlagSchema_StringFlagSchema, writer: BinaryWriter = new BinaryWriter()): BinaryWriter {
+    return writer;
+  },
+
+  decode(input: BinaryReader | Uint8Array, length?: number): FlagSchema_StringFlagSchema {
+    const reader = input instanceof BinaryReader ? input : new BinaryReader(input);
+    let end = length === undefined ? reader.len : reader.pos + length;
+    const message = createBaseFlagSchema_StringFlagSchema();
+    while (reader.pos < end) {
+      const tag = reader.uint32();
+      switch (tag >>> 3) {
+      }
+      if ((tag & 7) === 4 || tag === 0) {
+        break;
+      }
+      reader.skip(tag & 7);
+    }
+    return message;
+  },
+
   fromJSON(_: any): FlagSchema_StringFlagSchema {
     return {};
   },
@@ -195,7 +449,31 @@ export const FlagSchema_StringFlagSchema: MessageFns<FlagSchema_StringFlagSchema
   },
 };
 
+function createBaseFlagSchema_BoolFlagSchema(): FlagSchema_BoolFlagSchema {
+  return {};
+}
+
 export const FlagSchema_BoolFlagSchema: MessageFns<FlagSchema_BoolFlagSchema> = {
+  encode(_: FlagSchema_BoolFlagSchema, writer: BinaryWriter = new BinaryWriter()): BinaryWriter {
+    return writer;
+  },
+
+  decode(input: BinaryReader | Uint8Array, length?: number): FlagSchema_BoolFlagSchema {
+    const reader = input instanceof BinaryReader ? input : new BinaryReader(input);
+    let end = length === undefined ? reader.len : reader.pos + length;
+    const message = createBaseFlagSchema_BoolFlagSchema();
+    while (reader.pos < end) {
+      const tag = reader.uint32();
+      switch (tag >>> 3) {
+      }
+      if ((tag & 7) === 4 || tag === 0) {
+        break;
+      }
+      reader.skip(tag & 7);
+    }
+    return message;
+  },
+
   fromJSON(_: any): FlagSchema_BoolFlagSchema {
     return {};
   },
@@ -206,7 +484,42 @@ export const FlagSchema_BoolFlagSchema: MessageFns<FlagSchema_BoolFlagSchema> = 
   },
 };
 
+function createBaseFlagSchema_ListFlagSchema(): FlagSchema_ListFlagSchema {
+  return { elementSchema: undefined };
+}
+
 export const FlagSchema_ListFlagSchema: MessageFns<FlagSchema_ListFlagSchema> = {
+  encode(message: FlagSchema_ListFlagSchema, writer: BinaryWriter = new BinaryWriter()): BinaryWriter {
+    if (message.elementSchema !== undefined) {
+      FlagSchema.encode(message.elementSchema, writer.uint32(10).fork()).join();
+    }
+    return writer;
+  },
+
+  decode(input: BinaryReader | Uint8Array, length?: number): FlagSchema_ListFlagSchema {
+    const reader = input instanceof BinaryReader ? input : new BinaryReader(input);
+    let end = length === undefined ? reader.len : reader.pos + length;
+    const message = createBaseFlagSchema_ListFlagSchema();
+    while (reader.pos < end) {
+      const tag = reader.uint32();
+      switch (tag >>> 3) {
+        case 1: {
+          if (tag !== 10) {
+            break;
+          }
+
+          message.elementSchema = FlagSchema.decode(reader, reader.uint32());
+          continue;
+        }
+      }
+      if ((tag & 7) === 4 || tag === 0) {
+        break;
+      }
+      reader.skip(tag & 7);
+    }
+    return message;
+  },
+
   fromJSON(object: any): FlagSchema_ListFlagSchema {
     return { elementSchema: isSet(object.elementSchema) ? FlagSchema.fromJSON(object.elementSchema) : undefined };
   },
@@ -229,6 +542,8 @@ function isSet(value: any): boolean {
 }
 
 export interface MessageFns<T> {
+  encode(message: T, writer?: BinaryWriter): BinaryWriter;
+  decode(input: BinaryReader | Uint8Array, length?: number): T;
   fromJSON(object: any): T;
   toJSON(message: T): unknown;
 }
