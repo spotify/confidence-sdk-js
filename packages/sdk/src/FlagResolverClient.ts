@@ -1,6 +1,7 @@
 import { FlagEvaluation } from '.';
 import { AccessiblePromise } from './AccessiblePromise';
 import { Applier, FlagResolution } from './FlagResolution';
+import Telemetry from './Telemetry';
 import { Value } from './Value';
 import { Context } from './context';
 import { FetchBuilder, TimeUnit } from './fetch-util';
@@ -11,20 +12,13 @@ import {
   AppliedFlag,
 } from './generated/confidence/flags/resolver/v1/api';
 import { Sdk } from './generated/confidence/flags/resolver/v1/types';
-import {
-  LibraryTraces_Library,
-  LibraryTraces_TraceId,
-  Monitoring,
-} from './generated/confidence/telemetry/v1/telemetry';
+import { Monitoring } from './generated/confidence/telemetry/v1/telemetry';
 import { SimpleFetch } from './types';
 
 const FLAG_PREFIX = 'flags/';
 
 export class ResolveError extends Error {
-  constructor(
-    public readonly code: FlagEvaluation.ErrorCode,
-    message: string,
-  ) {
+  constructor(public readonly code: FlagEvaluation.ErrorCode, message: string) {
     super(message);
   }
 }
@@ -93,7 +87,7 @@ export type FlagResolverClientOptions = {
   environment: 'client' | 'backend';
   region?: 'eu' | 'us';
   resolveBaseUrl?: string;
-  enableTelemetry: boolean;
+  disableTelemetry: boolean;
 };
 
 export class FetchingFlagResolverClient implements FlagResolverClient {
@@ -114,9 +108,9 @@ export class FetchingFlagResolverClient implements FlagResolverClient {
     environment,
     region,
     resolveBaseUrl,
-    enableTelemetry,
+    disableTelemetry,
   }: FlagResolverClientOptions) {
-    if (!enableTelemetry) {
+    if (disableTelemetry) {
       // TODO think about both resolve and apply request logic for backends
       this.fetchImplementation =
         environment === 'backend' ? fetchImplementation : withRequestLogic(fetchImplementation);
@@ -152,6 +146,7 @@ export class FetchingFlagResolverClient implements FlagResolverClient {
         this.resolveTimeout,
         new ResolveError('TIMEOUT', 'Resolve timeout'),
       );
+      const start = new Date().getTime();
       return this.resolveFlagsJson(request, signalWithTimeout)
         .then(response => FlagResolution.ready(context, response, this.createApplier(response.resolveToken)))
         .catch(error => {
@@ -159,6 +154,9 @@ export class FetchingFlagResolverClient implements FlagResolverClient {
             return FlagResolution.failed(context, error.code, error.message);
           }
           throw error;
+        })
+        .finally(() => {
+          Telemetry.getInstance().markFlagResolved(new Date().getTime() - start);
         });
     });
   }
@@ -297,20 +295,7 @@ export function withTelemetryData(fetchImplementation: (request: Request) => Pro
   return new FetchBuilder()
     .modifyRequest(async request => {
       // TODO pull actual telemetry data
-      const monitoring: Monitoring = {
-        libraryTraces: [
-          {
-            library: LibraryTraces_Library.LIBRARY_CONFIDENCE,
-            libraryVersion: '0.1.0',
-            traces: [
-              {
-                id: LibraryTraces_TraceId.TRACE_ID_RESOLVE_LATENCY,
-                millisecondDuration: 100,
-              },
-            ],
-          },
-        ],
-      };
+      const monitoring: Monitoring = Telemetry.getInstance().getSnapshot();
       const headers = new Headers(request.headers);
       const base64Message = btoa(String.fromCharCode(...Monitoring.encode(monitoring).finish()));
 
