@@ -78,7 +78,10 @@ export class Telemetry {
       return undefined;
     }
     const snapshot = { ...this.monitoring };
-    this.monitoring = { libraryTraces: [] }; //TODO only clear traces!
+    this.monitoring.libraryTraces.forEach(trace => {
+      // only clear traces. keep library and version since they are registered.
+      trace.traces = [];
+    });
     return snapshot;
   }
 }
