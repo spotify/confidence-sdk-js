@@ -5,7 +5,7 @@
 // source: confidence/telemetry/v1/telemetry.proto
 
 /* eslint-disable */
-import { BinaryReader, BinaryWriter } from '@bufbuild/protobuf/wire';
+import { BinaryWriter } from '@bufbuild/protobuf/wire';
 
 export const protobufPackage = 'confidence.telemetry.v1';
 
@@ -121,40 +121,12 @@ export interface LibraryTraces_Trace {
   millisecondDuration?: number | undefined;
 }
 
-function createBaseMonitoring(): Monitoring {
-  return { libraryTraces: [] };
-}
-
 export const Monitoring: MessageFns<Monitoring> = {
   encode(message: Monitoring, writer: BinaryWriter = new BinaryWriter()): BinaryWriter {
     for (const v of message.libraryTraces) {
       LibraryTraces.encode(v!, writer.uint32(10).fork()).join();
     }
     return writer;
-  },
-
-  decode(input: BinaryReader | Uint8Array, length?: number): Monitoring {
-    const reader = input instanceof BinaryReader ? input : new BinaryReader(input);
-    let end = length === undefined ? reader.len : reader.pos + length;
-    const message = createBaseMonitoring();
-    while (reader.pos < end) {
-      const tag = reader.uint32();
-      switch (tag >>> 3) {
-        case 1: {
-          if (tag !== 10) {
-            break;
-          }
-
-          message.libraryTraces.push(LibraryTraces.decode(reader, reader.uint32()));
-          continue;
-        }
-      }
-      if ((tag & 7) === 4 || tag === 0) {
-        break;
-      }
-      reader.skip(tag & 7);
-    }
-    return message;
   },
 
   fromJSON(object: any): Monitoring {
@@ -174,10 +146,6 @@ export const Monitoring: MessageFns<Monitoring> = {
   },
 };
 
-function createBaseLibraryTraces(): LibraryTraces {
-  return { library: 0, libraryVersion: '', traces: [] };
-}
-
 export const LibraryTraces: MessageFns<LibraryTraces> = {
   encode(message: LibraryTraces, writer: BinaryWriter = new BinaryWriter()): BinaryWriter {
     if (message.library !== 0) {
@@ -190,46 +158,6 @@ export const LibraryTraces: MessageFns<LibraryTraces> = {
       LibraryTraces_Trace.encode(v!, writer.uint32(26).fork()).join();
     }
     return writer;
-  },
-
-  decode(input: BinaryReader | Uint8Array, length?: number): LibraryTraces {
-    const reader = input instanceof BinaryReader ? input : new BinaryReader(input);
-    let end = length === undefined ? reader.len : reader.pos + length;
-    const message = createBaseLibraryTraces();
-    while (reader.pos < end) {
-      const tag = reader.uint32();
-      switch (tag >>> 3) {
-        case 1: {
-          if (tag !== 8) {
-            break;
-          }
-
-          message.library = reader.int32() as any;
-          continue;
-        }
-        case 2: {
-          if (tag !== 18) {
-            break;
-          }
-
-          message.libraryVersion = reader.string();
-          continue;
-        }
-        case 3: {
-          if (tag !== 26) {
-            break;
-          }
-
-          message.traces.push(LibraryTraces_Trace.decode(reader, reader.uint32()));
-          continue;
-        }
-      }
-      if ((tag & 7) === 4 || tag === 0) {
-        break;
-      }
-      reader.skip(tag & 7);
-    }
-    return message;
   },
 
   fromJSON(object: any): LibraryTraces {
@@ -257,10 +185,6 @@ export const LibraryTraces: MessageFns<LibraryTraces> = {
   },
 };
 
-function createBaseLibraryTraces_Trace(): LibraryTraces_Trace {
-  return { id: 0, millisecondDuration: undefined };
-}
-
 export const LibraryTraces_Trace: MessageFns<LibraryTraces_Trace> = {
   encode(message: LibraryTraces_Trace, writer: BinaryWriter = new BinaryWriter()): BinaryWriter {
     if (message.id !== 0) {
@@ -270,38 +194,6 @@ export const LibraryTraces_Trace: MessageFns<LibraryTraces_Trace> = {
       writer.uint32(16).uint64(message.millisecondDuration);
     }
     return writer;
-  },
-
-  decode(input: BinaryReader | Uint8Array, length?: number): LibraryTraces_Trace {
-    const reader = input instanceof BinaryReader ? input : new BinaryReader(input);
-    let end = length === undefined ? reader.len : reader.pos + length;
-    const message = createBaseLibraryTraces_Trace();
-    while (reader.pos < end) {
-      const tag = reader.uint32();
-      switch (tag >>> 3) {
-        case 1: {
-          if (tag !== 8) {
-            break;
-          }
-
-          message.id = reader.int32() as any;
-          continue;
-        }
-        case 2: {
-          if (tag !== 16) {
-            break;
-          }
-
-          message.millisecondDuration = longToNumber(reader.uint64());
-          continue;
-        }
-      }
-      if ((tag & 7) === 4 || tag === 0) {
-        break;
-      }
-      reader.skip(tag & 7);
-    }
-    return message;
   },
 
   fromJSON(object: any): LibraryTraces_Trace {
@@ -325,24 +217,12 @@ export const LibraryTraces_Trace: MessageFns<LibraryTraces_Trace> = {
   },
 };
 
-function longToNumber(int64: { toString(): string }): number {
-  const num = globalThis.Number(int64.toString());
-  if (num > globalThis.Number.MAX_SAFE_INTEGER) {
-    throw new globalThis.Error('Value is larger than Number.MAX_SAFE_INTEGER');
-  }
-  if (num < globalThis.Number.MIN_SAFE_INTEGER) {
-    throw new globalThis.Error('Value is smaller than Number.MIN_SAFE_INTEGER');
-  }
-  return num;
-}
-
 function isSet(value: any): boolean {
   return value !== null && value !== undefined;
 }
 
 export interface MessageFns<T> {
   encode(message: T, writer?: BinaryWriter): BinaryWriter;
-  decode(input: BinaryReader | Uint8Array, length?: number): T;
   fromJSON(object: any): T;
   toJSON(message: T): unknown;
 }
