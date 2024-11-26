@@ -10,6 +10,7 @@ import { SdkId } from './generated/confidence/flags/resolver/v1/types';
 import { abortableSleep } from './fetch-util';
 import { ApplyFlagsRequest, ResolveFlagsRequest } from './generated/confidence/flags/resolver/v1/api';
 import { FlagResolution } from './FlagResolution';
+import { Telemetry } from './Telemetry';
 const RESOLVE_ENDPOINT = 'https://resolver.confidence.dev/v1/flags:resolve';
 const APPLY_ENDPOINT = 'https://resolver.confidence.dev/v1/flags:apply';
 
@@ -56,7 +57,7 @@ describe('Client environment Evaluation', () => {
     },
     environment: 'client',
     resolveTimeout: 10,
-    disableTelemetry: false,
+    telemetry: new Telemetry({ disabled: true }),
   });
 
   describe('apply', () => {
@@ -109,7 +110,7 @@ describe('Backend environment Evaluation', () => {
     },
     environment: 'backend',
     resolveTimeout: 10,
-    disableTelemetry: false,
+    telemetry: new Telemetry({ disabled: true }),
   });
 
   it('should resolve a full flag object', async () => {

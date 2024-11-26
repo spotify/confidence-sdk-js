@@ -4,64 +4,81 @@ import {
   Monitoring,
 } from './generated/confidence/telemetry/v1/telemetry';
 
-class Telemetry {
-  private static instance: Telemetry;
+export type TelemetryOptions = { disabled: boolean };
+
+export type Tag = {
+  library: LibraryTraces_Library;
+  version: string;
+  id: LibraryTraces_TraceId;
+};
+
+export type Counter = () => void;
+export type Meter = (value: number) => void;
+
+export class Telemetry {
+  private disabled: boolean;
+  constructor(opts: TelemetryOptions) {
+    this.disabled = opts.disabled;
+  }
+
   private monitoring: Monitoring = {
     libraryTraces: [],
   };
 
-  static getInstance(): Telemetry {
-    if (!Telemetry.instance) {
-      Telemetry.instance = new Telemetry();
-    }
-    return Telemetry.instance;
-  }
-
-  markStaleFlag(): void {
-    this.pushTrace(LibraryTraces_TraceId.TRACE_ID_STALE_FLAG);
-  }
-
-  pushTrace(traceId: LibraryTraces_TraceId, latency: number | undefined = undefined): void {
-    const { library, version } = this.getLibraryAndVersion();
+  private pushTrace(tags: Tag, value: number | undefined = undefined): void {
+    const library = tags.library;
+    const version = tags.version;
     const existing = this.monitoring.libraryTraces.find(trace => {
       return trace.library === library && trace.libraryVersion === version;
     });
     if (existing) {
       existing.traces.push({
-        id: traceId,
-        millisecondDuration: latency,
+        id: tags.id,
+        millisecondDuration: value,
       });
     } else {
+      // should never happen. remove?
       this.monitoring.libraryTraces.push({
         library,
         libraryVersion: version,
         traces: [
           {
-            id: traceId,
-            millisecondDuration: latency,
+            id: tags.id,
+            millisecondDuration: value,
           },
         ],
       });
     }
   }
 
-  getLibraryAndVersion(): { library: LibraryTraces_Library; version: string } {
-    // TODO - get the library and version somehow
-    return {
-      library: LibraryTraces_Library.LIBRARY_CONFIDENCE,
-      version: '0.0.0',
+  registerCounter(tag: Tag): Counter {
+    this.monitoring.libraryTraces.push({
+      library: tag.library,
+      libraryVersion: tag.version,
+      traces: [],
+    });
+    return () => {
+      this.pushTrace(tag);
     };
   }
 
-  markFlagResolved(latency: number): void {
-    this.pushTrace(LibraryTraces_TraceId.TRACE_ID_RESOLVE_LATENCY, latency);
+  registerMeter(tag: Tag): Meter {
+    this.monitoring.libraryTraces.push({
+      library: tag.library,
+      libraryVersion: tag.version,
+      traces: [],
+    });
+    return (value: number) => {
+      this.pushTrace(tag, value);
+    };
   }
 
-  getSnapshot(): Monitoring {
+  getSnapshot(): Monitoring | undefined {
+    if (this.disabled) {
+      return undefined;
+    }
     const snapshot = { ...this.monitoring };
-    this.monitoring = { libraryTraces: [] }; // Reset the state
+    this.monitoring = { libraryTraces: [] }; //TODO only clear traces!
     return snapshot;
   }
 }
-
-export default Telemetry;

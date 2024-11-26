@@ -1,7 +1,7 @@
 import { FlagEvaluation } from '.';
 import { AccessiblePromise } from './AccessiblePromise';
 import { Applier, FlagResolution } from './FlagResolution';
-import Telemetry from './Telemetry';
+import { Telemetry, Meter } from './Telemetry';
 import { Value } from './Value';
 import { Context } from './context';
 import { FetchBuilder, TimeUnit } from './fetch-util';
@@ -12,7 +12,11 @@ import {
   AppliedFlag,
 } from './generated/confidence/flags/resolver/v1/api';
 import { Sdk } from './generated/confidence/flags/resolver/v1/types';
-import { Monitoring } from './generated/confidence/telemetry/v1/telemetry';
+import {
+  LibraryTraces_Library,
+  LibraryTraces_TraceId,
+  Monitoring,
+} from './generated/confidence/telemetry/v1/telemetry';
 import { SimpleFetch } from './types';
 
 const FLAG_PREFIX = 'flags/';
@@ -87,7 +91,7 @@ export type FlagResolverClientOptions = {
   environment: 'client' | 'backend';
   region?: 'eu' | 'us';
   resolveBaseUrl?: string;
-  disableTelemetry: boolean;
+  telemetry: Telemetry;
 };
 
 export class FetchingFlagResolverClient implements FlagResolverClient {
@@ -97,6 +101,7 @@ export class FetchingFlagResolverClient implements FlagResolverClient {
   private readonly applyTimeout?: number;
   private readonly resolveTimeout: number;
   private readonly baseUrl: string;
+  private readonly markLatency: Meter;
 
   constructor({
     fetchImplementation,
@@ -108,18 +113,20 @@ export class FetchingFlagResolverClient implements FlagResolverClient {
     environment,
     region,
     resolveBaseUrl,
-    disableTelemetry,
+    telemetry,
   }: FlagResolverClientOptions) {
-    if (disableTelemetry) {
-      // TODO think about both resolve and apply request logic for backends
-      this.fetchImplementation =
-        environment === 'backend' ? fetchImplementation : withRequestLogic(fetchImplementation);
-    } else {
-      this.fetchImplementation =
-        environment === 'backend'
-          ? withTelemetryData(fetchImplementation)
-          : withRequestLogic(withTelemetryData(fetchImplementation));
-    }
+    this.markLatency = telemetry.registerMeter({
+      // TODO how to get library name?
+      library: LibraryTraces_Library.LIBRARY_CONFIDENCE,
+      version: sdk.version,
+      id: LibraryTraces_TraceId.TRACE_ID_RESOLVE_LATENCY,
+    });
+    // TODO think about both resolve and apply request logic for backends
+    this.fetchImplementation =
+      environment === 'backend'
+        ? withTelemetryData(fetchImplementation, telemetry)
+        : withRequestLogic(withTelemetryData(fetchImplementation, telemetry));
+
     this.clientSecret = clientSecret;
     this.sdk = sdk;
     this.applyTimeout = applyTimeout;
@@ -156,7 +163,7 @@ export class FetchingFlagResolverClient implements FlagResolverClient {
           throw error;
         })
         .finally(() => {
-          Telemetry.getInstance().markFlagResolved(new Date().getTime() - start);
+          this.markLatency(new Date().getTime() - start);
         });
     });
   }
@@ -291,16 +298,21 @@ export class CachingFlagResolverClient implements FlagResolverClient {
   }
 }
 
-export function withTelemetryData(fetchImplementation: (request: Request) => Promise<Response>): typeof fetch {
+export function withTelemetryData(
+  fetchImplementation: (request: Request) => Promise<Response>,
+  telemetry: Telemetry,
+): typeof fetch {
   return new FetchBuilder()
     .modifyRequest(async request => {
-      // TODO pull actual telemetry data
-      const monitoring: Monitoring = Telemetry.getInstance().getSnapshot();
-      const headers = new Headers(request.headers);
-      const base64Message = btoa(String.fromCharCode(...Monitoring.encode(monitoring).finish()));
+      const monitoring = telemetry.getSnapshot();
+      if (monitoring) {
+        const headers = new Headers(request.headers);
+        const base64Message = btoa(String.fromCharCode(...Monitoring.encode(monitoring).finish()));
 
-      headers.set('X-CONFIDENCE-TELEMETRY', base64Message);
-      return new Request(request, { headers });
+        headers.set('X-CONFIDENCE-TELEMETRY', base64Message);
+        return new Request(request, { headers });
+      }
+      return request;
     })
     .build(fetchImplementation);
 }

@@ -17,6 +17,7 @@ import { Subscribe, Observer, subject, changeObserver } from './observing';
 import { SimpleFetch } from './types';
 import { FlagResolution } from './FlagResolution';
 import { AccessiblePromise } from './AccessiblePromise';
+import { Telemetry } from './Telemetry';
 
 /**
  * Confidence options, to be used for easier initialization of Confidence
@@ -341,6 +342,9 @@ export class Confidence implements EventSender, Trackable, FlagResolver {
       id: SdkId.SDK_ID_JS_CONFIDENCE,
       version: '0.2.1', // x-release-please-version
     } as const;
+    const telemetry = new Telemetry({
+      disabled: disableTelemetry,
+    });
     let flagResolverClient: FlagResolverClient = new FetchingFlagResolverClient({
       clientSecret,
       fetchImplementation,
@@ -349,7 +353,7 @@ export class Confidence implements EventSender, Trackable, FlagResolver {
       resolveTimeout: timeout,
       region,
       resolveBaseUrl,
-      disableTelemetry,
+      telemetry,
     });
     if (environment === 'client') {
       flagResolverClient = new CachingFlagResolverClient(flagResolverClient, Number.POSITIVE_INFINITY);
