@@ -56,6 +56,8 @@ export interface Configuration {
   /** Flag Resolver Client
    * @internal */
   readonly flagResolverClient: FlagResolverClient;
+  /* @internal */
+  readonly clientSecret: string;
 }
 
 /**
@@ -311,7 +313,13 @@ export class Confidence implements EventSender, Trackable, FlagResolver {
   getFlag(path: string, defaultValue: number): Promise<number>;
   getFlag<T extends Value>(path: string, defaultValue: T): Promise<T>;
   async getFlag<T extends Value>(path: string, defaultValue: any): Promise<T> {
-    return (await this.evaluateFlag(path, defaultValue)).value;
+    const clientKey = this.config.clientSecret;
+    const flag = (await this.evaluateFlag(path, defaultValue)).value;
+    const context = this._context;
+    this.config.logger.debug?.(
+      `Resolve debug: https://app.confidence.spotify.com/flags/resolver-test?client-key=${clientKey}&flag=flags/${flag}&context=${context}`,
+    );
+    return flag;
   }
 
   /**
@@ -374,6 +382,7 @@ export class Confidence implements EventSender, Trackable, FlagResolver {
       eventSenderEngine,
       timeout,
       logger,
+      clientSecret,
     });
   }
 }
