@@ -293,6 +293,7 @@ export class Confidence implements EventSender, Trackable, FlagResolver {
         value: defaultValue,
       };
     } else {
+      this.showLoggerLink(path, this.getContext());
       evaluation = this.currentFlags.evaluate(path, defaultValue);
     }
     if (!this.currentFlags || !Value.equal(this.currentFlags.context, this.getContext())) {
@@ -313,13 +314,15 @@ export class Confidence implements EventSender, Trackable, FlagResolver {
   getFlag(path: string, defaultValue: number): Promise<number>;
   getFlag<T extends Value>(path: string, defaultValue: T): Promise<T>;
   async getFlag<T extends Value>(path: string, defaultValue: any): Promise<T> {
-    const clientKey = this.config.clientSecret;
-    const flag = (await this.evaluateFlag(path, defaultValue)).value;
-    const context = this._context;
-    this.config.logger.debug?.(
-      `Resolve debug: https://app.confidence.spotify.com/flags/resolver-test?client-key=${clientKey}&flag=flags/${flag}&context=${context}`,
+    return (await this.evaluateFlag(path, defaultValue)).value;
+  }
+
+  private showLoggerLink(flag: string, context: Context) {
+    this.config.logger.info?.(
+      `Resolve debug: https://app.confidence.spotify.com/flags/resolver-test?client-key=${
+        this.config.clientSecret
+      }&flag=flags/${flag}&context=${JSON.stringify(context)}`,
     );
-    return flag;
   }
 
   /**

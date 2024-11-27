@@ -23,6 +23,7 @@ describe('Confidence', () => {
 
   beforeEach(() => {
     confidence = new Confidence({
+      clientSecret: 'secret',
       timeout: 10,
       environment: 'client',
       logger: {},

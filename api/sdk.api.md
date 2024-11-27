@@ -64,6 +64,8 @@ export interface ConfidenceOptions {
 
 // @public
 export interface Configuration {
+    // (undocumented)
+    readonly clientSecret: string;
     readonly environment: 'client' | 'backend';
     // Warning: (ae-forgotten-export) The symbol "EventSenderEngine" needs to be exported by the entry point index.d.ts
     //
