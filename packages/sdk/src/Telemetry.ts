@@ -3,8 +3,9 @@ import {
   LibraryTraces_TraceId,
   Monitoring,
 } from './generated/confidence/telemetry/v1/telemetry';
+import { Logger } from './logger';
 
-export type TelemetryOptions = { disabled: boolean };
+export type TelemetryOptions = { disabled: boolean; logger?: Logger };
 
 export type Tag = {
   library: LibraryTraces_Library;
@@ -17,8 +18,10 @@ export type Meter = (value: number) => void;
 
 export class Telemetry {
   private disabled: boolean;
+  private logger?: Logger;
   constructor(opts: TelemetryOptions) {
     this.disabled = opts.disabled;
+    this.logger = opts.logger;
   }
 
   private monitoring: Monitoring = {
@@ -37,17 +40,9 @@ export class Telemetry {
         millisecondDuration: value,
       });
     } else {
-      // should never happen. remove?
-      this.monitoring.libraryTraces.push({
-        library,
-        libraryVersion: version,
-        traces: [
-          {
-            id: tags.id,
-            millisecondDuration: value,
-          },
-        ],
-      });
+      if (this.logger?.warn) {
+        this.logger.warn(`pushTrace() got called before registering tag (${library}, ${version})`);
+      }
     }
   }
 
@@ -80,7 +75,7 @@ export class Telemetry {
     // retrieve a snapshot with all monitoring data but deep copied
     const snapshot = structuredClone(this.monitoring);
     this.monitoring.libraryTraces.forEach(trace => {
-      // only clear traces. keep library and version since they are registered.
+      // only clear traces. keep library and version since tags are registered on this.
       trace.traces = [];
     });
     return snapshot;

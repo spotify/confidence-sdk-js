@@ -116,7 +116,6 @@ export class FetchingFlagResolverClient implements FlagResolverClient {
     telemetry,
   }: FlagResolverClientOptions) {
     this.markLatency = telemetry.registerMeter({
-      // TODO how to get library name?
       library: LibraryTraces_Library.LIBRARY_CONFIDENCE,
       version: sdk.version,
       id: LibraryTraces_TraceId.TRACE_ID_RESOLVE_LATENCY,
