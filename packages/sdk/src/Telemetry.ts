@@ -77,7 +77,8 @@ export class Telemetry {
     if (this.disabled) {
       return undefined;
     }
-    const snapshot = { ...this.monitoring };
+    // retrieve a snapshot with all monitoring data but deep copied
+    const snapshot = structuredClone(this.monitoring);
     this.monitoring.libraryTraces.forEach(trace => {
       // only clear traces. keep library and version since they are registered.
       trace.traces = [];
