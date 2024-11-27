@@ -5,7 +5,7 @@ import {
 } from './generated/confidence/telemetry/v1/telemetry';
 import { Logger } from './logger';
 
-export type TelemetryOptions = { disabled: boolean; logger?: Logger };
+export type TelemetryOptions = { disabled: boolean; logger: Logger };
 
 export type Tag = {
   library: LibraryTraces_Library;
@@ -18,7 +18,7 @@ export type Meter = (value: number) => void;
 
 export class Telemetry {
   private disabled: boolean;
-  private logger?: Logger;
+  private logger: Logger;
   constructor(opts: TelemetryOptions) {
     this.disabled = opts.disabled;
     this.logger = opts.logger;
@@ -40,9 +40,7 @@ export class Telemetry {
         millisecondDuration: value,
       });
     } else {
-      if (this.logger?.warn) {
-        this.logger.warn(`pushTrace() got called before registering tag (${library}, ${version})`);
-      }
+      this.logger.warn?.(`pushTrace() got called before registering tag (${library}, ${version})`);
     }
   }
 

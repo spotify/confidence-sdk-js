@@ -3,7 +3,7 @@ import { Telemetry } from './Telemetry';
 
 describe('Telemetry', () => {
   it('registerCounter and increment counter', () => {
-    const telemetry = new Telemetry({ disabled: false });
+    const telemetry = new Telemetry({ disabled: false, logger: { warn: jest.fn() } });
     const counter = telemetry.registerCounter({
       library: LibraryTraces_Library.LIBRARY_CONFIDENCE,
       version: '9.9.9',
