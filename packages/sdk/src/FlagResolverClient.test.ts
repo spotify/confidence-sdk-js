@@ -272,7 +272,7 @@ describe('Backend environment Evaluation', () => {
   });
 });
 
-describe('withRequestLogic', () => {
+describe('intercept', () => {
   const fetchMock = jest.fn<Promise<Response>, [Request]>();
 
   let underTest: typeof fetch;
@@ -287,23 +287,10 @@ describe('withRequestLogic', () => {
     jest.useRealTimers();
   });
 
-  it('should throw on unknown urls', async () => {
-    fetchMock.mockResolvedValue(new Response());
-
-    await expect(underTest('https://resolver.confidence.dev/v1/flags:bad')).rejects.toThrow(
-      'Unexpected url: https://resolver.confidence.dev/v1/flags:bad',
-    );
-  });
-
   describe('withTelemetryData', () => {
-    const fetchMock = jest.fn<Promise<Response>, [Request]>();
     const telemetryMock = jest.mocked(new Telemetry({ disabled: false }));
 
-    let underTest: typeof fetch;
-
     beforeEach(() => {
-      jest.useFakeTimers();
-      jest.setSystemTime(0);
       underTest = withTelemetryData(fetchMock, telemetryMock);
       telemetryMock.getSnapshot = jest.fn().mockReturnValue({
         libraryTraces: [
@@ -315,10 +302,6 @@ describe('withRequestLogic', () => {
         ],
       });
     });
-    afterEach(() => {
-      if (jest.getTimerCount() !== 0) throw new Error('test finished with remaining timers');
-      jest.useRealTimers();
-    });
 
     it('should add telemetry header', async () => {
       fetchMock.mockResolvedValue(new Response());
@@ -327,6 +310,16 @@ describe('withRequestLogic', () => {
       const request = fetchMock.mock.calls[0][0];
       expect(request.headers.has('X-Confidence-Telemetry')).toBeTruthy();
       expect(request.headers.get('X-Confidence-Telemetry')).toEqual('CgwIAxIEdGVzdBoCCAM=');
+    });
+  });
+
+  describe('withRequestLogic', () => {
+    it('should throw on unknown urls', async () => {
+      fetchMock.mockResolvedValue(new Response());
+
+      await expect(underTest('https://resolver.confidence.dev/v1/flags:bad')).rejects.toThrow(
+        'Unexpected url: https://resolver.confidence.dev/v1/flags:bad',
+      );
     });
   });
 
