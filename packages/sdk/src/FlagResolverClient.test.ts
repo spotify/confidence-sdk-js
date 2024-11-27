@@ -4,6 +4,7 @@ import {
   FlagResolverClient,
   PendingResolution,
   withRequestLogic,
+  withTelemetryData,
 } from './FlagResolverClient';
 import { setMaxListeners } from 'node:events';
 import { SdkId } from './generated/confidence/flags/resolver/v1/types';
@@ -11,6 +12,7 @@ import { abortableSleep } from './fetch-util';
 import { ApplyFlagsRequest, ResolveFlagsRequest } from './generated/confidence/flags/resolver/v1/api';
 import { FlagResolution } from './FlagResolution';
 import { Telemetry } from './Telemetry';
+import { LibraryTraces_Library, LibraryTraces_TraceId } from './generated/confidence/telemetry/v1/telemetry';
 const RESOLVE_ENDPOINT = 'https://resolver.confidence.dev/v1/flags:resolve';
 const APPLY_ENDPOINT = 'https://resolver.confidence.dev/v1/flags:apply';
 
@@ -291,6 +293,41 @@ describe('withRequestLogic', () => {
     await expect(underTest('https://resolver.confidence.dev/v1/flags:bad')).rejects.toThrow(
       'Unexpected url: https://resolver.confidence.dev/v1/flags:bad',
     );
+  });
+
+  describe('withTelemetryData', () => {
+    const fetchMock = jest.fn<Promise<Response>, [Request]>();
+    const telemetryMock = jest.mocked(new Telemetry({ disabled: false }));
+
+    let underTest: typeof fetch;
+
+    beforeEach(() => {
+      jest.useFakeTimers();
+      jest.setSystemTime(0);
+      underTest = withTelemetryData(fetchMock, telemetryMock);
+      telemetryMock.getSnapshot = jest.fn().mockReturnValue({
+        libraryTraces: [
+          {
+            library: LibraryTraces_Library.LIBRARY_REACT,
+            libraryVersion: 'test',
+            traces: [{ id: LibraryTraces_TraceId.TRACE_ID_FLAG_TYPE_MISMATCH }],
+          },
+        ],
+      });
+    });
+    afterEach(() => {
+      if (jest.getTimerCount() !== 0) throw new Error('test finished with remaining timers');
+      jest.useRealTimers();
+    });
+
+    it('should add telemetry header', async () => {
+      fetchMock.mockResolvedValue(new Response());
+      await underTest('https://resolver.confidence.dev/v1/flags:resolve', { method: 'POST', body: '{}' });
+      expect(fetchMock).toBeCalledTimes(1);
+      const request = fetchMock.mock.calls[0][0];
+      expect(request.headers.has('X-Confidence-Telemetry')).toBeTruthy();
+      expect(request.headers.get('X-Confidence-Telemetry')).toEqual('CgwIAxIEdGVzdBoCCAM=');
+    });
   });
 
   describe('resolve', () => {
