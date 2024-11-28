@@ -155,7 +155,7 @@ export class FetchingFlagResolverClient implements FlagResolverClient {
         this.resolveTimeout,
         new ResolveError('TIMEOUT', 'Resolve timeout'),
       );
-      const start = new Date().getTime();
+      const start = Date.now();
       return this.resolveFlagsJson(request, signalWithTimeout)
         .then(response => FlagResolution.ready(context, response, this.createApplier(response.resolveToken)))
         .catch(error => {
@@ -165,7 +165,7 @@ export class FetchingFlagResolverClient implements FlagResolverClient {
           throw error;
         })
         .finally(() => {
-          this.markLatency(new Date().getTime() - start);
+          this.markLatency(Date.now() - start);
         });
     });
   }
