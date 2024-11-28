@@ -22,7 +22,10 @@ import { SimpleFetch } from './types';
 const FLAG_PREFIX = 'flags/';
 
 export class ResolveError extends Error {
-  constructor(public readonly code: FlagEvaluation.ErrorCode, message: string) {
+  constructor(
+    public readonly code: FlagEvaluation.ErrorCode,
+    message: string,
+  ) {
     super(message);
   }
 }
@@ -304,7 +307,7 @@ export function withTelemetryData(
   return new FetchBuilder()
     .modifyRequest(async request => {
       const monitoring = telemetry.getSnapshot();
-      if (monitoring) {
+      if (monitoring.libraryTraces.length > 0) {
         const headers = new Headers(request.headers);
         const base64Message = btoa(String.fromCharCode(...Monitoring.encode(monitoring).finish()));
 

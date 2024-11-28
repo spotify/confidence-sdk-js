@@ -57,7 +57,7 @@ describe('Telemetry', () => {
     });
     counter();
     const snapshot = telemetry.getSnapshot();
-    expect(snapshot).toBeUndefined();
+    expect(snapshot.libraryTraces.length).toBe(0);
   });
 
   it('monitoring gets cleared after snapshot is obtained', () => {
@@ -73,9 +73,7 @@ describe('Telemetry', () => {
     expect(snapshotFirst?.libraryTraces.length).toEqual(1);
     expect(snapshotFirst?.libraryTraces[0].traces).toEqual([{ id: LibraryTraces_TraceId.TRACE_ID_STALE_FLAG }]);
     const snapshotSecond = telemetry.getSnapshot();
-    expect(snapshotSecond).toBeTruthy();
     // the counter is still registered but the traces are cleared
-    expect(snapshotSecond?.libraryTraces.length).toEqual(1);
-    expect(snapshotSecond?.libraryTraces[0].traces).toEqual([]);
+    expect(snapshotSecond?.libraryTraces.length).toBe(0);
   });
 });

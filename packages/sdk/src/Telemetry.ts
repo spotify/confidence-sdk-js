@@ -1,5 +1,7 @@
 import {
+  LibraryTraces,
   LibraryTraces_Library,
+  LibraryTraces_Trace,
   LibraryTraces_TraceId,
   Monitoring,
 } from './generated/confidence/telemetry/v1/telemetry';
@@ -15,67 +17,54 @@ export type Tag = {
 
 export type Counter = () => void;
 export type Meter = (value: number) => void;
-
+export type TraceConsumer = (trace: Omit<LibraryTraces_Trace, 'id'>) => void;
 export class Telemetry {
-  private disabled: boolean;
-  private logger: Logger;
+  private readonly disabled: boolean;
+  private readonly logger: Logger;
+  private readonly libraryTraces: LibraryTraces[] = [];
+
   constructor(opts: TelemetryOptions) {
     this.disabled = opts.disabled;
     this.logger = opts.logger;
   }
 
-  private monitoring: Monitoring = {
-    libraryTraces: [],
-  };
-
-  private pushTrace(tags: Tag, value: number | undefined = undefined): void {
-    const library = tags.library;
-    const version = tags.version;
-    const existing = this.monitoring.libraryTraces.find(trace => {
-      return trace.library === library && trace.libraryVersion === version;
-    });
-    if (existing) {
-      existing.traces.push({
-        id: tags.id,
-        millisecondDuration: value,
-      });
-    } else {
-      this.logger.warn?.(`pushTrace() got called before registering tag (${library}, ${version})`);
+  private registerLibraryTraces({ library, version, id }: Tag): TraceConsumer {
+    if (this.disabled) {
+      return () => {};
     }
+    const traces: LibraryTraces_Trace[] = [];
+    this.libraryTraces.push({
+      library: library,
+      libraryVersion: version,
+      traces,
+    });
+    return data => {
+      this.logger.trace?.(LibraryTraces_TraceId[id], data);
+      traces.push({
+        id,
+        ...data,
+      });
+    };
   }
 
   registerCounter(tag: Tag): Counter {
-    this.monitoring.libraryTraces.push({
-      library: tag.library,
-      libraryVersion: tag.version,
-      traces: [],
-    });
-    return () => {
-      this.pushTrace(tag);
-    };
+    const traceConsumer = this.registerLibraryTraces(tag);
+    return () => traceConsumer({});
   }
 
   registerMeter(tag: Tag): Meter {
-    this.monitoring.libraryTraces.push({
-      library: tag.library,
-      libraryVersion: tag.version,
-      traces: [],
-    });
-    return (value: number) => {
-      this.pushTrace(tag, value);
-    };
+    const traceConsumer = this.registerLibraryTraces(tag);
+    return (millisecondDuration: number) => traceConsumer({ millisecondDuration });
   }
 
-  getSnapshot(): Monitoring | undefined {
-    if (this.disabled) {
-      return undefined;
-    }
-    // retrieve a snapshot with all monitoring data but deep copied
-    const snapshot = structuredClone(this.monitoring);
-    this.monitoring.libraryTraces.forEach(trace => {
-      // only clear traces. keep library and version since tags are registered on this.
-      trace.traces = [];
-    });
-    return snapshot;
+  getSnapshot(): Monitoring {
+    const libraryTraces = this.libraryTraces
+      .filter(({ traces }) => traces.length > 0)
+      .map(({ library, libraryVersion, traces }) => ({
+        library,
+        libraryVersion,
+        traces: traces.splice(0, traces.length),
+      }));
+    return { libraryTraces };
   }
 }
