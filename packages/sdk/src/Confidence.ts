@@ -319,9 +319,9 @@ export class Confidence implements EventSender, Trackable, FlagResolver {
 
   private showLoggerLink(flag: string, context: Context) {
     this.config.logger.info?.(
-      `Resolve debug: https://app.confidence.spotify.com/flags/resolver-test?client-key=${
+      `[Resolve debug] https://app.confidence.spotify.com/flags/resolver-test?client-key=${
         this.config.clientSecret
-      }&flag=flags/${flag}&context=${JSON.stringify(context)}`,
+      }&flag=flags/${flag}&context=${encodeURIComponent(JSON.stringify(context))}`,
     );
   }
 
@@ -402,7 +402,7 @@ function defaultFetchImplementation(): typeof fetch {
 function defaultLogger(): Logger {
   try {
     if (process.env.NODE_ENV === 'development') {
-      return Logger.withLevel(console, 'info');
+      return Logger.withLevel(console, 'debug');
     }
   } catch (e) {
     // ignore
