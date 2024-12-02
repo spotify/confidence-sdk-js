@@ -345,6 +345,7 @@ export class Confidence implements EventSender, Trackable, FlagResolver {
     const telemetry = new Telemetry({
       disabled: disableTelemetry,
       logger,
+      environment,
     });
     let flagResolverClient: FlagResolverClient = new FetchingFlagResolverClient({
       clientSecret,

@@ -3,7 +3,7 @@ import { Telemetry } from './Telemetry';
 
 describe('Telemetry', () => {
   it('registerCounter and increment counter', () => {
-    const telemetry = new Telemetry({ disabled: false, logger: { warn: jest.fn() } });
+    const telemetry = new Telemetry({ disabled: false, logger: { warn: jest.fn() }, environment: 'backend' });
     const counter = telemetry.registerCounter({
       library: LibraryTraces_Library.LIBRARY_CONFIDENCE,
       version: '9.9.9',
@@ -26,7 +26,7 @@ describe('Telemetry', () => {
   });
 
   it('registerMeter and add measurement', () => {
-    const telemetry = new Telemetry({ disabled: false, logger: { warn: jest.fn() } });
+    const telemetry = new Telemetry({ disabled: false, logger: { warn: jest.fn() }, environment: 'client' });
     const meter = telemetry.registerMeter({
       library: LibraryTraces_Library.LIBRARY_CONFIDENCE,
       version: '9.9.9',
@@ -49,7 +49,7 @@ describe('Telemetry', () => {
   });
 
   it('snapshot is empty when telemetry is disabled', () => {
-    const telemetry = new Telemetry({ disabled: true, logger: { warn: jest.fn() } });
+    const telemetry = new Telemetry({ disabled: true, logger: { warn: jest.fn() }, environment: 'client' });
     const counter = telemetry.registerCounter({
       library: LibraryTraces_Library.LIBRARY_CONFIDENCE,
       version: '9.9.9',
@@ -61,7 +61,7 @@ describe('Telemetry', () => {
   });
 
   it('monitoring gets cleared after snapshot is obtained', () => {
-    const telemetry = new Telemetry({ disabled: false, logger: { warn: jest.fn() } });
+    const telemetry = new Telemetry({ disabled: false, logger: { warn: jest.fn() }, environment: 'client' });
     const counter = telemetry.registerCounter({
       library: LibraryTraces_Library.LIBRARY_CONFIDENCE,
       version: '9.9.9',

@@ -59,7 +59,7 @@ describe('Client environment Evaluation', () => {
     },
     environment: 'client',
     resolveTimeout: 10,
-    telemetry: new Telemetry({ disabled: true, logger: { warn: jest.fn() } }),
+    telemetry: new Telemetry({ disabled: true, logger: { warn: jest.fn() }, environment: 'client' }),
   });
 
   describe('apply', () => {
@@ -112,7 +112,7 @@ describe('Backend environment Evaluation', () => {
     },
     environment: 'backend',
     resolveTimeout: 10,
-    telemetry: new Telemetry({ disabled: true, logger: { warn: jest.fn() } }),
+    telemetry: new Telemetry({ disabled: true, logger: { warn: jest.fn() }, environment: 'backend' }),
   });
 
   it('should resolve a full flag object', async () => {
@@ -288,7 +288,9 @@ describe('intercept', () => {
   });
 
   describe('withTelemetryData', () => {
-    const telemetryMock = jest.mocked(new Telemetry({ disabled: false, logger: { warn: jest.fn() } }));
+    const telemetryMock = jest.mocked(
+      new Telemetry({ disabled: false, logger: { warn: jest.fn() }, environment: 'client' }),
+    );
 
     beforeEach(() => {
       underTest = withTelemetryData(fetchBuilder, telemetryMock).build(fetchMock);
