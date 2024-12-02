@@ -1,6 +1,7 @@
 import { FlagEvaluation } from '.';
 import { AccessiblePromise } from './AccessiblePromise';
 import { Applier, FlagResolution } from './FlagResolution';
+import { Telemetry, Meter } from './Telemetry';
 import { Value } from './Value';
 import { Context } from './context';
 import { FetchBuilder, TimeUnit } from './fetch-util';
@@ -11,6 +12,11 @@ import {
   AppliedFlag,
 } from './generated/confidence/flags/resolver/v1/api';
 import { Sdk } from './generated/confidence/flags/resolver/v1/types';
+import {
+  LibraryTraces_Library,
+  LibraryTraces_TraceId,
+  Monitoring,
+} from './generated/confidence/telemetry/v1/telemetry';
 import { SimpleFetch } from './types';
 
 const FLAG_PREFIX = 'flags/';
@@ -85,6 +91,7 @@ export type FlagResolverClientOptions = {
   environment: 'client' | 'backend';
   region?: 'eu' | 'us';
   resolveBaseUrl?: string;
+  telemetry: Telemetry;
 };
 
 export class FetchingFlagResolverClient implements FlagResolverClient {
@@ -94,6 +101,7 @@ export class FetchingFlagResolverClient implements FlagResolverClient {
   private readonly applyTimeout?: number;
   private readonly resolveTimeout: number;
   private readonly baseUrl: string;
+  private readonly markLatency: Meter;
 
   constructor({
     fetchImplementation,
@@ -105,9 +113,18 @@ export class FetchingFlagResolverClient implements FlagResolverClient {
     environment,
     region,
     resolveBaseUrl,
+    telemetry,
   }: FlagResolverClientOptions) {
+    this.markLatency = telemetry.registerMeter({
+      library: LibraryTraces_Library.LIBRARY_CONFIDENCE,
+      version: sdk.version,
+      id: LibraryTraces_TraceId.TRACE_ID_RESOLVE_LATENCY,
+    });
+    const fetchBuilderWithTelemetry = withTelemetryData(new FetchBuilder(), telemetry);
     // TODO think about both resolve and apply request logic for backends
-    this.fetchImplementation = environment === 'backend' ? fetchImplementation : withRequestLogic(fetchImplementation);
+    const fetchWithTelemetry = fetchBuilderWithTelemetry.build(fetchImplementation);
+    this.fetchImplementation = environment === 'backend' ? fetchWithTelemetry : withRequestLogic(fetchWithTelemetry);
+
     this.clientSecret = clientSecret;
     this.sdk = sdk;
     this.applyTimeout = applyTimeout;
@@ -134,6 +151,7 @@ export class FetchingFlagResolverClient implements FlagResolverClient {
         this.resolveTimeout,
         new ResolveError('TIMEOUT', 'Resolve timeout'),
       );
+      const start = Date.now();
       return this.resolveFlagsJson(request, signalWithTimeout)
         .then(response => FlagResolution.ready(context, response, this.createApplier(response.resolveToken)))
         .catch(error => {
@@ -141,6 +159,9 @@ export class FetchingFlagResolverClient implements FlagResolverClient {
             return FlagResolution.failed(context, error.code, error.message);
           }
           throw error;
+        })
+        .finally(() => {
+          this.markLatency(Date.now() - start);
         });
     });
   }
@@ -273,6 +294,20 @@ export class CachingFlagResolverClient implements FlagResolverClient {
       this.#cache.delete(key);
     }
   }
+}
+
+export function withTelemetryData(fetchBuilder: FetchBuilder, telemetry: Telemetry): FetchBuilder {
+  return fetchBuilder.modifyRequest(async request => {
+    const monitoring = telemetry.getSnapshot();
+    if (monitoring.libraryTraces.length > 0) {
+      const headers = new Headers(request.headers);
+      const base64Message = btoa(String.fromCharCode(...Monitoring.encode(monitoring).finish()));
+
+      headers.set('X-CONFIDENCE-TELEMETRY', base64Message);
+      return new Request(request, { headers });
+    }
+    return request;
+  });
 }
 
 export function withRequestLogic(fetchImplementation: (request: Request) => Promise<Response>): typeof fetch {

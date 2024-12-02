@@ -1,0 +1,41 @@
+syntax = "proto3";
+
+package confidence.telemetry.v1;
+
+enum Platform {
+  PLATFORM_UNSPECIFIED = 0;
+  PLATFORM_JS_WEB = 4;
+  PLATFORM_JS_SERVER = 5;
+}
+
+message Monitoring {
+  repeated LibraryTraces library_traces = 1;
+  Platform platform = 2;
+}
+
+message LibraryTraces {
+  Library library = 1;
+  string library_version = 2;
+  repeated Trace traces = 3;
+
+  message Trace {
+    TraceId id = 1;
+    // only used for timed events.
+    optional uint64 millisecond_duration = 2;
+  }
+
+  enum Library {
+    LIBRARY_UNSPECIFIED = 0;
+    LIBRARY_CONFIDENCE = 1;
+    LIBRARY_OPEN_FEATURE = 2;
+    LIBRARY_REACT = 3;
+  }
+
+  enum TraceId {
+    TRACE_ID_UNSPECIFIED = 0;
+    TRACE_ID_RESOLVE_LATENCY = 1;
+    TRACE_ID_STALE_FLAG = 2;
+    TRACE_ID_FLAG_TYPE_MISMATCH = 3;
+    TRACE_ID_WITH_CONTEXT = 4;
+  }
+}

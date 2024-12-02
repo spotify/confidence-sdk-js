@@ -4,12 +4,15 @@ import {
   FlagResolverClient,
   PendingResolution,
   withRequestLogic,
+  withTelemetryData,
 } from './FlagResolverClient';
 import { setMaxListeners } from 'node:events';
 import { SdkId } from './generated/confidence/flags/resolver/v1/types';
-import { abortableSleep } from './fetch-util';
+import { abortableSleep, FetchBuilder } from './fetch-util';
 import { ApplyFlagsRequest, ResolveFlagsRequest } from './generated/confidence/flags/resolver/v1/api';
 import { FlagResolution } from './FlagResolution';
+import { Telemetry } from './Telemetry';
+import { LibraryTraces_Library, LibraryTraces_TraceId, Platform } from './generated/confidence/telemetry/v1/telemetry';
 const RESOLVE_ENDPOINT = 'https://resolver.confidence.dev/v1/flags:resolve';
 const APPLY_ENDPOINT = 'https://resolver.confidence.dev/v1/flags:apply';
 
@@ -56,6 +59,7 @@ describe('Client environment Evaluation', () => {
     },
     environment: 'client',
     resolveTimeout: 10,
+    telemetry: new Telemetry({ disabled: true, logger: { warn: jest.fn() }, environment: 'client' }),
   });
 
   describe('apply', () => {
@@ -108,6 +112,7 @@ describe('Backend environment Evaluation', () => {
     },
     environment: 'backend',
     resolveTimeout: 10,
+    telemetry: new Telemetry({ disabled: true, logger: { warn: jest.fn() }, environment: 'backend' }),
   });
 
   it('should resolve a full flag object', async () => {
@@ -267,9 +272,9 @@ describe('Backend environment Evaluation', () => {
   });
 });
 
-describe('withRequestLogic', () => {
+describe('intercept', () => {
   const fetchMock = jest.fn<Promise<Response>, [Request]>();
-
+  const fetchBuilder = new FetchBuilder();
   let underTest: typeof fetch;
 
   beforeEach(() => {
@@ -282,12 +287,43 @@ describe('withRequestLogic', () => {
     jest.useRealTimers();
   });
 
-  it('should throw on unknown urls', async () => {
-    fetchMock.mockResolvedValue(new Response());
-
-    await expect(underTest('https://resolver.confidence.dev/v1/flags:bad')).rejects.toThrow(
-      'Unexpected url: https://resolver.confidence.dev/v1/flags:bad',
+  describe('withTelemetryData', () => {
+    const telemetryMock = jest.mocked(
+      new Telemetry({ disabled: false, logger: { warn: jest.fn() }, environment: 'client' }),
     );
+
+    beforeEach(() => {
+      underTest = withTelemetryData(fetchBuilder, telemetryMock).build(fetchMock);
+      telemetryMock.getSnapshot = jest.fn().mockReturnValue({
+        libraryTraces: [
+          {
+            library: LibraryTraces_Library.LIBRARY_REACT,
+            libraryVersion: 'test',
+            traces: [{ id: LibraryTraces_TraceId.TRACE_ID_FLAG_TYPE_MISMATCH }],
+          },
+        ],
+        platform: Platform.PLATFORM_JS_WEB,
+      });
+    });
+
+    it('should add telemetry header', async () => {
+      fetchMock.mockResolvedValue(new Response());
+      await underTest('https://resolver.confidence.dev/v1/flags:resolve', { method: 'POST', body: '{}' });
+      expect(fetchMock).toBeCalledTimes(1);
+      const request = fetchMock.mock.calls[0][0];
+      expect(request.headers.has('X-Confidence-Telemetry')).toBeTruthy();
+      expect(request.headers.get('X-Confidence-Telemetry')).toEqual('CgwIAxIEdGVzdBoCCAMQBA==');
+    });
+  });
+
+  describe('withRequestLogic', () => {
+    it('should throw on unknown urls', async () => {
+      fetchMock.mockResolvedValue(new Response());
+
+      await expect(underTest('https://resolver.confidence.dev/v1/flags:bad')).rejects.toThrow(
+        'Unexpected url: https://resolver.confidence.dev/v1/flags:bad',
+      );
+    });
   });
 
   describe('resolve', () => {

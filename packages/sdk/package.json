@@ -8,7 +8,7 @@
     "node": ">=18.17.0"
   },
   "scripts": {
-    "gen:proto": "protoc --plugin=$(yarn bin protoc-gen-ts_proto) --ts_proto_out=src/generated -I proto proto/confidence/flags/resolver/v1/api.proto --ts_proto_opt=outputEncodeMethods=false --ts_proto_opt=outputPartialMethods=false && prettier --config ../../prettier.config.js -w src/generated",
+    "gen:proto": "protoc --plugin=$(yarn bin protoc-gen-ts_proto) --ts_proto_out=src/generated -I proto proto/confidence/flags/resolver/v1/api.proto proto/confidence/telemetry/v1/telemetry.proto --ts_proto_opt=outputEncodeMethods=true --ts_proto_opt=outputPartialMethods=false && prettier --config ../../prettier.config.js -w src/generated",
     "build": "tsc -b",
     "bundle": "rollup -c && api-extractor run",
     "prepack": "yarn build && yarn bundle"
@@ -21,6 +21,7 @@
     "module": "dist/index.esm.js"
   },
   "dependencies": {
+    "@bufbuild/protobuf": "^2.0.0",
     "web-vitals": "^3.5.2"
   },
   "files": [
@@ -30,7 +31,7 @@
     "@microsoft/api-extractor": "7.43.1",
     "prettier": "*",
     "rollup": "4.24.0",
-    "ts-proto": "^1.171.0"
+    "ts-proto": "^2.3.0"
   },
   "main": "dist/index.cjs.js",
   "module": "dist/index.esm.js"
