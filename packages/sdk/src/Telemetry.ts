@@ -42,7 +42,7 @@ export class Telemetry {
       traces,
     });
     return data => {
-      this.logger.trace?.(LibraryTraces_TraceId[id], data);
+      this.logger.debug?.(LibraryTraces_TraceId[id], data);
       traces.push({
         id,
         ...data,
