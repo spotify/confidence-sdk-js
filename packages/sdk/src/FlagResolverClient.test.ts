@@ -12,7 +12,7 @@ import { abortableSleep, FetchBuilder } from './fetch-util';
 import { ApplyFlagsRequest, ResolveFlagsRequest } from './generated/confidence/flags/resolver/v1/api';
 import { FlagResolution } from './FlagResolution';
 import { Telemetry } from './Telemetry';
-import { LibraryTraces_Library, LibraryTraces_TraceId } from './generated/confidence/telemetry/v1/telemetry';
+import { LibraryTraces_Library, LibraryTraces_TraceId, Platform } from './generated/confidence/telemetry/v1/telemetry';
 const RESOLVE_ENDPOINT = 'https://resolver.confidence.dev/v1/flags:resolve';
 const APPLY_ENDPOINT = 'https://resolver.confidence.dev/v1/flags:apply';
 
@@ -59,7 +59,7 @@ describe('Client environment Evaluation', () => {
     },
     environment: 'client',
     resolveTimeout: 10,
-    telemetry: new Telemetry({ disabled: true, logger: { warn: jest.fn() } }),
+    telemetry: new Telemetry({ disabled: true, logger: { warn: jest.fn() }, environment: 'client' }),
   });
 
   describe('apply', () => {
@@ -112,7 +112,7 @@ describe('Backend environment Evaluation', () => {
     },
     environment: 'backend',
     resolveTimeout: 10,
-    telemetry: new Telemetry({ disabled: true, logger: { warn: jest.fn() } }),
+    telemetry: new Telemetry({ disabled: true, logger: { warn: jest.fn() }, environment: 'backend' }),
   });
 
   it('should resolve a full flag object', async () => {
@@ -288,7 +288,9 @@ describe('intercept', () => {
   });
 
   describe('withTelemetryData', () => {
-    const telemetryMock = jest.mocked(new Telemetry({ disabled: false, logger: { warn: jest.fn() } }));
+    const telemetryMock = jest.mocked(
+      new Telemetry({ disabled: false, logger: { warn: jest.fn() }, environment: 'client' }),
+    );
 
     beforeEach(() => {
       underTest = withTelemetryData(fetchBuilder, telemetryMock).build(fetchMock);
@@ -300,6 +302,7 @@ describe('intercept', () => {
             traces: [{ id: LibraryTraces_TraceId.TRACE_ID_FLAG_TYPE_MISMATCH }],
           },
         ],
+        platform: Platform.PLATFORM_JS_WEB,
       });
     });
 
@@ -309,7 +312,7 @@ describe('intercept', () => {
       expect(fetchMock).toBeCalledTimes(1);
       const request = fetchMock.mock.calls[0][0];
       expect(request.headers.has('X-Confidence-Telemetry')).toBeTruthy();
-      expect(request.headers.get('X-Confidence-Telemetry')).toEqual('CgwIAxIEdGVzdBoCCAM=');
+      expect(request.headers.get('X-Confidence-Telemetry')).toEqual('CgwIAxIEdGVzdBoCCAMQBA==');
     });
   });
 

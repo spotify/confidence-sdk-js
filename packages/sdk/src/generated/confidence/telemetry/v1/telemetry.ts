@@ -9,8 +9,102 @@ import { BinaryWriter } from '@bufbuild/protobuf/wire';
 
 export const protobufPackage = 'confidence.telemetry.v1';
 
+export enum Platform {
+  PLATFORM_UNSPECIFIED = 0,
+  PLATFORM_JAVA = 1,
+  PLATFORM_KOTLIN = 2,
+  PLATFORM_SWIFT = 3,
+  PLATFORM_JS_WEB = 4,
+  PLATFORM_JS_SERVER = 5,
+  PLATFORM_PYTHON = 6,
+  PLATFORM_GO = 7,
+  PLATFORM_RUBY = 8,
+  PLATFORM_RUST = 9,
+  PLATFORM_FLUTTER_IOS = 10,
+  PLATFORM_FLUTTER_ANDROID = 11,
+  UNRECOGNIZED = -1,
+}
+
+export function platformFromJSON(object: any): Platform {
+  switch (object) {
+    case 0:
+    case 'PLATFORM_UNSPECIFIED':
+      return Platform.PLATFORM_UNSPECIFIED;
+    case 1:
+    case 'PLATFORM_JAVA':
+      return Platform.PLATFORM_JAVA;
+    case 2:
+    case 'PLATFORM_KOTLIN':
+      return Platform.PLATFORM_KOTLIN;
+    case 3:
+    case 'PLATFORM_SWIFT':
+      return Platform.PLATFORM_SWIFT;
+    case 4:
+    case 'PLATFORM_JS_WEB':
+      return Platform.PLATFORM_JS_WEB;
+    case 5:
+    case 'PLATFORM_JS_SERVER':
+      return Platform.PLATFORM_JS_SERVER;
+    case 6:
+    case 'PLATFORM_PYTHON':
+      return Platform.PLATFORM_PYTHON;
+    case 7:
+    case 'PLATFORM_GO':
+      return Platform.PLATFORM_GO;
+    case 8:
+    case 'PLATFORM_RUBY':
+      return Platform.PLATFORM_RUBY;
+    case 9:
+    case 'PLATFORM_RUST':
+      return Platform.PLATFORM_RUST;
+    case 10:
+    case 'PLATFORM_FLUTTER_IOS':
+      return Platform.PLATFORM_FLUTTER_IOS;
+    case 11:
+    case 'PLATFORM_FLUTTER_ANDROID':
+      return Platform.PLATFORM_FLUTTER_ANDROID;
+    case -1:
+    case 'UNRECOGNIZED':
+    default:
+      return Platform.UNRECOGNIZED;
+  }
+}
+
+export function platformToJSON(object: Platform): string {
+  switch (object) {
+    case Platform.PLATFORM_UNSPECIFIED:
+      return 'PLATFORM_UNSPECIFIED';
+    case Platform.PLATFORM_JAVA:
+      return 'PLATFORM_JAVA';
+    case Platform.PLATFORM_KOTLIN:
+      return 'PLATFORM_KOTLIN';
+    case Platform.PLATFORM_SWIFT:
+      return 'PLATFORM_SWIFT';
+    case Platform.PLATFORM_JS_WEB:
+      return 'PLATFORM_JS_WEB';
+    case Platform.PLATFORM_JS_SERVER:
+      return 'PLATFORM_JS_SERVER';
+    case Platform.PLATFORM_PYTHON:
+      return 'PLATFORM_PYTHON';
+    case Platform.PLATFORM_GO:
+      return 'PLATFORM_GO';
+    case Platform.PLATFORM_RUBY:
+      return 'PLATFORM_RUBY';
+    case Platform.PLATFORM_RUST:
+      return 'PLATFORM_RUST';
+    case Platform.PLATFORM_FLUTTER_IOS:
+      return 'PLATFORM_FLUTTER_IOS';
+    case Platform.PLATFORM_FLUTTER_ANDROID:
+      return 'PLATFORM_FLUTTER_ANDROID';
+    case Platform.UNRECOGNIZED:
+    default:
+      return 'UNRECOGNIZED';
+  }
+}
+
 export interface Monitoring {
   libraryTraces: LibraryTraces[];
+  platform: Platform;
 }
 
 export interface LibraryTraces {
@@ -126,6 +220,9 @@ export const Monitoring: MessageFns<Monitoring> = {
     for (const v of message.libraryTraces) {
       LibraryTraces.encode(v!, writer.uint32(10).fork()).join();
     }
+    if (message.platform !== 0) {
+      writer.uint32(16).int32(message.platform);
+    }
     return writer;
   },
 
@@ -134,6 +231,7 @@ export const Monitoring: MessageFns<Monitoring> = {
       libraryTraces: globalThis.Array.isArray(object?.libraryTraces)
         ? object.libraryTraces.map((e: any) => LibraryTraces.fromJSON(e))
         : [],
+      platform: isSet(object.platform) ? platformFromJSON(object.platform) : 0,
     };
   },
 
@@ -141,6 +239,9 @@ export const Monitoring: MessageFns<Monitoring> = {
     const obj: any = {};
     if (message.libraryTraces?.length) {
       obj.libraryTraces = message.libraryTraces.map(e => LibraryTraces.toJSON(e));
+    }
+    if (message.platform !== 0) {
+      obj.platform = platformToJSON(message.platform);
     }
     return obj;
   },
