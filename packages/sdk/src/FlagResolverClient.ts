@@ -120,11 +120,10 @@ export class FetchingFlagResolverClient implements FlagResolverClient {
       version: sdk.version,
       id: LibraryTraces_TraceId.TRACE_ID_RESOLVE_LATENCY,
     });
+    const fetchBuilderWithTelemetry = withTelemetryData(new FetchBuilder(), telemetry);
     // TODO think about both resolve and apply request logic for backends
-    this.fetchImplementation =
-      environment === 'backend'
-        ? withTelemetryData(fetchImplementation, telemetry)
-        : withRequestLogic(withTelemetryData(fetchImplementation, telemetry));
+    const fetchWithTelemetry = fetchBuilderWithTelemetry.build(fetchImplementation);
+    this.fetchImplementation = environment === 'backend' ? fetchWithTelemetry : withRequestLogic(fetchWithTelemetry);
 
     this.clientSecret = clientSecret;
     this.sdk = sdk;
@@ -297,23 +296,18 @@ export class CachingFlagResolverClient implements FlagResolverClient {
   }
 }
 
-export function withTelemetryData(
-  fetchImplementation: (request: Request) => Promise<Response>,
-  telemetry: Telemetry,
-): typeof fetch {
-  return new FetchBuilder()
-    .modifyRequest(async request => {
-      const monitoring = telemetry.getSnapshot();
-      if (monitoring.libraryTraces.length > 0) {
-        const headers = new Headers(request.headers);
-        const base64Message = btoa(String.fromCharCode(...Monitoring.encode(monitoring).finish()));
+export function withTelemetryData(fetchBuilder: FetchBuilder, telemetry: Telemetry): FetchBuilder {
+  return fetchBuilder.modifyRequest(async request => {
+    const monitoring = telemetry.getSnapshot();
+    if (monitoring.libraryTraces.length > 0) {
+      const headers = new Headers(request.headers);
+      const base64Message = btoa(String.fromCharCode(...Monitoring.encode(monitoring).finish()));
 
-        headers.set('X-CONFIDENCE-TELEMETRY', base64Message);
-        return new Request(request, { headers });
-      }
-      return request;
-    })
-    .build(fetchImplementation);
+      headers.set('X-CONFIDENCE-TELEMETRY', base64Message);
+      return new Request(request, { headers });
+    }
+    return request;
+  });
 }
 
 export function withRequestLogic(fetchImplementation: (request: Request) => Promise<Response>): typeof fetch {

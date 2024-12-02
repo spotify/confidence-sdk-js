@@ -8,7 +8,7 @@ import {
 } from './FlagResolverClient';
 import { setMaxListeners } from 'node:events';
 import { SdkId } from './generated/confidence/flags/resolver/v1/types';
-import { abortableSleep } from './fetch-util';
+import { abortableSleep, FetchBuilder } from './fetch-util';
 import { ApplyFlagsRequest, ResolveFlagsRequest } from './generated/confidence/flags/resolver/v1/api';
 import { FlagResolution } from './FlagResolution';
 import { Telemetry } from './Telemetry';
@@ -274,7 +274,7 @@ describe('Backend environment Evaluation', () => {
 
 describe('intercept', () => {
   const fetchMock = jest.fn<Promise<Response>, [Request]>();
-
+  const fetchBuilder = new FetchBuilder();
   let underTest: typeof fetch;
 
   beforeEach(() => {
@@ -291,7 +291,7 @@ describe('intercept', () => {
     const telemetryMock = jest.mocked(new Telemetry({ disabled: false, logger: { warn: jest.fn() } }));
 
     beforeEach(() => {
-      underTest = withTelemetryData(fetchMock, telemetryMock);
+      underTest = withTelemetryData(fetchBuilder, telemetryMock).build(fetchMock);
       telemetryMock.getSnapshot = jest.fn().mockReturnValue({
         libraryTraces: [
           {
