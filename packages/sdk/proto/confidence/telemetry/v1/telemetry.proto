@@ -4,17 +4,8 @@ package confidence.telemetry.v1;
 
 enum Platform {
   PLATFORM_UNSPECIFIED = 0;
-  PLATFORM_JAVA = 1;
-  PLATFORM_KOTLIN = 2;
-  PLATFORM_SWIFT = 3;
   PLATFORM_JS_WEB = 4;
   PLATFORM_JS_SERVER = 5;
-  PLATFORM_PYTHON = 6;
-  PLATFORM_GO = 7;
-  PLATFORM_RUBY = 8;
-  PLATFORM_RUST = 9;
-  PLATFORM_FLUTTER_IOS = 10;
-  PLATFORM_FLUTTER_ANDROID = 11;
 }
 
 message Monitoring {
