@@ -1,5 +1,18 @@
 # Changelog
 
+## [0.2.2](https://github.com/spotify/confidence-sdk-js/compare/sdk-v0.2.1...sdk-v0.2.2) (2025-01-10)
+
+
+### 🐛 Bug Fixes
+
+* hanging resolve bug ([#212](https://github.com/spotify/confidence-sdk-js/issues/212)) ([7b22bc0](https://github.com/spotify/confidence-sdk-js/commit/7b22bc07d266226528fa511fec4465ad96570d1c))
+
+
+### ✨ New Features
+
+* Resolve Debug to redirect to UI tool on web ([#209](https://github.com/spotify/confidence-sdk-js/issues/209)) ([988707e](https://github.com/spotify/confidence-sdk-js/commit/988707e1ff607713093369cfcc4d615270c36856))
+* Telemetry header ([#208](https://github.com/spotify/confidence-sdk-js/issues/208)) ([b0c8acb](https://github.com/spotify/confidence-sdk-js/commit/b0c8acbeddc2db68902bb6856ea11a6dee78f898))
+
 ## [0.2.1](https://github.com/spotify/confidence-sdk-js/compare/sdk-v0.2.0...sdk-v0.2.1) (2024-10-03)
 
 
