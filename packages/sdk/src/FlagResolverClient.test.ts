@@ -275,6 +275,12 @@ describe('Backend environment Evaluation', () => {
     resolveHandlerMock.mockRejectedValue(new Error('Test error'));
     const flagResolution = await instanceUnderTest.resolve({}, ['testflag']);
     expect(flagResolution).toBeInstanceOf(FailedFlagResolution);
+    expect(flagResolution.evaluate('testflag', {})).toEqual({
+      errorCode: 'GENERAL',
+      errorMessage: '500: Test error',
+      reason: 'ERROR',
+      value: {},
+    });
   });
 });
 
