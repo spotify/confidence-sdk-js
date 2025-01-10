@@ -157,8 +157,9 @@ export class FetchingFlagResolverClient implements FlagResolverClient {
         .catch(error => {
           if (error instanceof ResolveError) {
             return FlagResolution.failed(context, error.code, error.message);
+          } else {
+            return FlagResolution.failed(context, 'GENERAL', error.message);
           }
-          throw error;
         })
         .finally(() => {
           this.markLatency(Date.now() - start);

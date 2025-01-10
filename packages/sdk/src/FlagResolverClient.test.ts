@@ -10,7 +10,7 @@ import { setMaxListeners } from 'node:events';
 import { SdkId } from './generated/confidence/flags/resolver/v1/types';
 import { abortableSleep, FetchBuilder } from './fetch-util';
 import { ApplyFlagsRequest, ResolveFlagsRequest } from './generated/confidence/flags/resolver/v1/api';
-import { FlagResolution } from './FlagResolution';
+import { FailedFlagResolution, FlagResolution } from './FlagResolution';
 import { Telemetry } from './Telemetry';
 import { LibraryTraces_Library, LibraryTraces_TraceId, Platform } from './generated/confidence/telemetry/v1/telemetry';
 const RESOLVE_ENDPOINT = 'https://resolver.confidence.dev/v1/flags:resolve';
@@ -270,6 +270,12 @@ describe('Backend environment Evaluation', () => {
       });
     });
   });
+
+  it('should resolve a FailedFlagResolution on fetch errors', async () => {
+    resolveHandlerMock.mockRejectedValue(new Error('Test error'));
+    const flagResolution = await instanceUnderTest.resolve({}, ['testflag']);
+    expect(flagResolution).toBeInstanceOf(FailedFlagResolution);
+  });
 });
 
 describe('intercept', () => {
@@ -451,6 +457,7 @@ describe('CachingFlagResolverClient', () => {
     expect(pendingResolution.signal.aborted).toBe(true);
   });
 });
+
 function nextCall(mock: jest.Mock): Promise<void> {
   return new Promise(resolve => {
     const impl = mock.getMockImplementation();
