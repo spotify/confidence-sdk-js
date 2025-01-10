@@ -10,7 +10,7 @@ import { setMaxListeners } from 'node:events';
 import { SdkId } from './generated/confidence/flags/resolver/v1/types';
 import { abortableSleep, FetchBuilder } from './fetch-util';
 import { ApplyFlagsRequest, ResolveFlagsRequest } from './generated/confidence/flags/resolver/v1/api';
-import { FlagResolution } from './FlagResolution';
+import { FailedFlagResolution, FlagResolution } from './FlagResolution';
 import { Telemetry } from './Telemetry';
 import { LibraryTraces_Library, LibraryTraces_TraceId, Platform } from './generated/confidence/telemetry/v1/telemetry';
 const RESOLVE_ENDPOINT = 'https://resolver.confidence.dev/v1/flags:resolve';
@@ -45,28 +45,52 @@ const fetchImplementation = async (request: Request): Promise<Response> => {
   }
 };
 
-resolveHandlerMock.mockImplementation(createFlagResolutionResponse);
+beforeEach(() => {
+  resolveHandlerMock.mockImplementation(createFlagResolutionResponse);
+});
+
+afterEach(() => {
+  resolveHandlerMock.mockClear();
+  applyHandlerMock.mockClear();
+});
 
 describe('Client environment Evaluation', () => {
   // const flagResolutionResponseJson = JSON.stringify(createFlagResolutionResponse());
-  const instanceUnderTest = new FetchingFlagResolverClient({
-    fetchImplementation,
-    clientSecret: 'secret',
-    applyTimeout: 10,
-    sdk: {
-      id: SdkId.SDK_ID_JS_CONFIDENCE,
-      version: 'test',
-    },
-    environment: 'client',
-    resolveTimeout: 10,
-    telemetry: new Telemetry({ disabled: true, logger: { warn: jest.fn() }, environment: 'client' }),
+  let instanceUnderTest: FetchingFlagResolverClient;
+
+  beforeEach(() => {
+    instanceUnderTest = new FetchingFlagResolverClient({
+      fetchImplementation,
+      clientSecret: 'secret',
+      applyTimeout: 10,
+      sdk: {
+        id: SdkId.SDK_ID_JS_CONFIDENCE,
+        version: 'test',
+      },
+      environment: 'client',
+      resolveTimeout: 10,
+      telemetry: new Telemetry({ disabled: true, logger: { warn: jest.fn() }, environment: 'client' }),
+    });
+  });
+
+  it('should resolve a FailedFlagResolution on fetch errors', async () => {
+    resolveHandlerMock.mockRejectedValue(new Error('Test error'));
+    const flagResolution = await instanceUnderTest.resolve({}, []);
+    expect(flagResolution).toBeInstanceOf(FailedFlagResolution);
+    // Expect this error to log as a Resolve timeout in the client environment
+    // This is due the request logic that's only used in the client environment
+    expect(flagResolution.evaluate('testflag', {})).toEqual({
+      errorCode: 'TIMEOUT',
+      errorMessage: 'Resolve timeout',
+      reason: 'ERROR',
+      value: {},
+    });
   });
 
   describe('apply', () => {
     it('should send an apply event', async () => {
       const flagResolution = await instanceUnderTest.resolve({}, []);
       flagResolution.evaluate('testflag.bool', false);
-
       const [applyRequest] = await nextMockArgs(applyHandlerMock);
       expect(applyRequest).toMatchObject({
         clientSecret: 'secret',
@@ -81,23 +105,23 @@ describe('Client environment Evaluation', () => {
         ],
       });
     });
-  });
 
-  it('should apply when a flag has no segment match', async () => {
-    const flagResolution = await instanceUnderTest.resolve({}, []);
-    flagResolution.evaluate('no-seg-flag.enabled', false);
-    const [applyRequest] = await nextMockArgs(applyHandlerMock);
-    expect(applyRequest).toMatchObject({
-      clientSecret: 'secret',
-      resolveToken: dummyResolveToken,
-      sendTime: expect.any(Date),
-      sdk: { id: 13, version: 'test' },
-      flags: [
-        {
-          applyTime: expect.any(Date),
-          flag: 'flags/no-seg-flag',
-        },
-      ],
+    it('should apply when a flag has no segment match', async () => {
+      const flagResolution = await instanceUnderTest.resolve({}, []);
+      flagResolution.evaluate('no-seg-flag.enabled', false);
+      const [applyRequest] = await nextMockArgs(applyHandlerMock);
+      expect(applyRequest).toMatchObject({
+        clientSecret: 'secret',
+        resolveToken: dummyResolveToken,
+        sendTime: expect.any(Date),
+        sdk: { id: 13, version: 'test' },
+        flags: [
+          {
+            applyTime: expect.any(Date),
+            flag: 'flags/no-seg-flag',
+          },
+        ],
+      });
     });
   });
 });
@@ -268,6 +292,18 @@ describe('Backend environment Evaluation', () => {
         errorMessage: `Expected undefined, but found ${typeof defaultValue}, at path 'defaultValue.obj.404'`,
         reason: 'ERROR',
       });
+    });
+  });
+
+  it('should resolve a FailedFlagResolution on fetch errors', async () => {
+    resolveHandlerMock.mockRejectedValue(new Error('Test error'));
+    const flagResolution = await instanceUnderTest.resolve({}, ['testflag']);
+    expect(flagResolution).toBeInstanceOf(FailedFlagResolution);
+    expect(flagResolution.evaluate('testflag', {})).toEqual({
+      errorCode: 'GENERAL',
+      errorMessage: '500: Test error',
+      reason: 'ERROR',
+      value: {},
     });
   });
 });
@@ -451,6 +487,7 @@ describe('CachingFlagResolverClient', () => {
     expect(pendingResolution.signal.aborted).toBe(true);
   });
 });
+
 function nextCall(mock: jest.Mock): Promise<void> {
   return new Promise(resolve => {
     const impl = mock.getMockImplementation();

@@ -114,7 +114,7 @@ export class ReadyFlagResolution implements FlagResolution {
 
 ReadyFlagResolution.prototype.state = 'READY';
 
-class FailedFlagResolution implements FlagResolution {
+export class FailedFlagResolution implements FlagResolution {
   declare state: 'ERROR';
   constructor(readonly context: Value.Struct, readonly code: FlagEvaluation.ErrorCode, readonly message: string) {}
 
