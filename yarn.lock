@@ -3722,7 +3722,7 @@ __metadata:
     rollup: "npm:4.24.0"
   peerDependencies:
     "@openfeature/server-sdk": ^1.13.5
-    "@spotify-confidence/sdk": ^0.2.0
+    "@spotify-confidence/sdk": ">=0.1.4 <=0.2.2"
   languageName: unknown
   linkType: soft
 
@@ -3738,7 +3738,7 @@ __metadata:
     rollup: "npm:4.24.0"
   peerDependencies:
     "@openfeature/web-sdk": ^1.0.3
-    "@spotify-confidence/sdk": ^0.2.0
+    "@spotify-confidence/sdk": ">=0.1.4 <=0.2.2"
   languageName: unknown
   linkType: soft
 
@@ -3751,7 +3751,7 @@ __metadata:
     react: "npm:^18.2.0"
     rollup: "npm:4.24.0"
   peerDependencies:
-    "@spotify-confidence/sdk": ^0.2.0
+    "@spotify-confidence/sdk": ">=0.1.4 <=0.2.2"
     react: ^18.2.0
   languageName: unknown
   linkType: soft
