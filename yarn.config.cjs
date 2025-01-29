@@ -25,10 +25,15 @@ module.exports = defineConfig({
           // example apps should always use the workspace version
           dep.update('workspace:*');
         } else if (dep.type === 'peerDependencies') {
-          // peer dependencies should use a caret range
-          if (!dep.range.startsWith('^')) {
-            dep.error(`Expected peer dependency to use a caret (^) range.`);
+          // peer dependencies should use a GT & LT range
+          // example: ">=0.1.4 <=0.3.x" where 0.3.x is the next breaking version
+          const [minVersion] = dep.range.match(/^>=\d+\.\d+\.\d+/) || [];
+          if (!minVersion) {
+            dep.error(`Expected peer dependency to use a min version`);
           }
+          // TODO maybe automatically set the max version to the next breaking version
+          // dep.workspace.set(['peerDependencies', dep.ident], `${minVersion} <=${workspace.pkg.version}`);
+
           // peer dependencies should also have a dev dependency to the workspace
           dep.workspace.set(['devDependencies', dep.ident], 'workspace:*');
         } else if (dep.type === 'devDependencies') {
