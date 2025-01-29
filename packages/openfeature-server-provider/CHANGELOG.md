@@ -36,6 +36,13 @@
   * devDependencies
     * @spotify-confidence/sdk bumped to 0.2.2
 
+## [0.2.15](https://github.com/spotify/confidence-sdk-js/compare/openfeature-server-provider-v0.2.14...openfeature-server-provider-v0.2.15) (2025-01-29)
+
+
+### 🧹 Chore
+
+* update peer deps to min and max version ranges ([#213](https://github.com/spotify/confidence-sdk-js/issues/213)) ([b805491](https://github.com/spotify/confidence-sdk-js/commit/b805491bf97f3b3617a4b192f3f9fc54ab9012fa))
+
 ## [0.2.11](https://github.com/spotify/confidence-sdk-js/compare/openfeature-server-provider-v0.2.10...openfeature-server-provider-v0.2.11) (2024-08-20)
 
 

@@ -18,6 +18,13 @@
   * devDependencies
     * @spotify-confidence/sdk bumped to 0.2.2
 
+## [0.0.10](https://github.com/spotify/confidence-sdk-js/compare/react-v0.0.9...react-v0.0.10) (2025-01-29)
+
+
+### 🧹 Chore
+
+* update peer deps to min and max version ranges ([#213](https://github.com/spotify/confidence-sdk-js/issues/213)) ([b805491](https://github.com/spotify/confidence-sdk-js/commit/b805491bf97f3b3617a4b192f3f9fc54ab9012fa))
+
 ## [0.0.7](https://github.com/spotify/confidence-sdk-js/compare/react-v0.0.6...react-v0.0.7) (2024-09-12)
 
 
