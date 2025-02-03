@@ -4129,7 +4129,7 @@ __metadata:
   languageName: unknown
   linkType: soft
 
-"@spotify-confidence/react@workspace:*, @spotify-confidence/react@workspace:packages/react":
+"@spotify-confidence/react@npm:^0.0.10, @spotify-confidence/react@workspace:*, @spotify-confidence/react@workspace:packages/react":
   version: 0.0.0-use.local
   resolution: "@spotify-confidence/react@workspace:packages/react"
   dependencies:
@@ -4143,7 +4143,7 @@ __metadata:
   languageName: unknown
   linkType: soft
 
-"@spotify-confidence/sdk@workspace:*, @spotify-confidence/sdk@workspace:packages/sdk":
+"@spotify-confidence/sdk@npm:^0.2.2, @spotify-confidence/sdk@workspace:*, @spotify-confidence/sdk@workspace:packages/sdk":
   version: 0.0.0-use.local
   resolution: "@spotify-confidence/sdk@workspace:packages/sdk"
   dependencies:
@@ -19221,8 +19221,8 @@ __metadata:
   resolution: "testnext@workspace:examples/nextjs"
   dependencies:
     "@eslint/eslintrc": "npm:^3"
-    "@spotify-confidence/react": "workspace:*"
-    "@spotify-confidence/sdk": "workspace:*"
+    "@spotify-confidence/react": "npm:^0.0.10"
+    "@spotify-confidence/sdk": "npm:^0.2.2"
     "@types/node": "npm:^20"
     "@types/react": "npm:^18"
     "@types/react-dom": "npm:^18"
