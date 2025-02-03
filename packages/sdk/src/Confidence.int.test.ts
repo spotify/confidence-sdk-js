@@ -9,6 +9,15 @@ const mockResolveResponse = {
       value: { str: 'hello' },
       flagSchema: { schema: { str: { stringSchema: {} } } },
       reason: 'RESOLVE_REASON_MATCH',
+      shouldApply: true,
+    },
+    {
+      flag: 'flags/flag2',
+      variant: 'treatment',
+      value: { str: 'hello again' },
+      flagSchema: { schema: { str: { stringSchema: {} } } },
+      reason: 'RESOLVE_REASON_MATCH',
+      shouldApply: false,
     },
   ],
   resolveToken: 'xyz',
@@ -85,6 +94,10 @@ describe('Confidence integration tests', () => {
         resolveToken: 'xyw=',
       }),
     );
+  });
+  it('should resolve a value but not send apply if shouldApply is false', async () => {
+    expect(await confidence.getFlag('flag2.str', 'goodbye')).toBe('hello again');
+    expect(applyHandlerMock).not.toHaveBeenCalled();
   });
   it('should abort previous requests when context changes', async () => {
     confidence.setContext({ pants: 'yellow' });

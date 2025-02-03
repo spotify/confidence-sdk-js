@@ -106,7 +106,7 @@ describe('Client environment Evaluation', () => {
       });
     });
 
-    it('should apply when a flag has no segment match', async () => {
+    it('should apply based on shouldApply', async () => {
       const flagResolution = await instanceUnderTest.resolve({}, []);
       flagResolution.evaluate('no-seg-flag.enabled', false);
       const [applyRequest] = await nextMockArgs(applyHandlerMock);
@@ -122,6 +122,9 @@ describe('Client environment Evaluation', () => {
           },
         ],
       });
+      expect(applyHandlerMock).toHaveBeenCalledTimes(1);
+      flagResolution.evaluate('no-flag-apply-flag.str', 'default');
+      expect(applyHandlerMock).toHaveBeenCalledTimes(1);
     });
   });
 });
@@ -562,12 +565,30 @@ function createFlagResolutionResponse(): unknown {
           },
         },
         reason: 'RESOLVE_REASON_MATCH',
+        shouldApply: true,
       },
       {
         flag: 'flags/no-seg-flag',
         variant: '',
         value: {},
         reason: 'RESOLVE_REASON_NO_SEGMENT_MATCH',
+        shouldApply: true,
+      },
+      {
+        flag: 'flags/no-flag-apply-flag',
+        variant: '',
+        value: {
+          str: 'string',
+        },
+        reason: 'RESOLVE_REASON_MATCH',
+        flagSchema: {
+          schema: {
+            str: {
+              stringSchema: {},
+            },
+          },
+        },
+        shouldApply: true,
       },
     ],
     resolveToken: 'SGVsbG9Xb3JsZA==',
