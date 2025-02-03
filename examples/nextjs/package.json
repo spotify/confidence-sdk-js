@@ -9,8 +9,8 @@
     "lint": "next lint"
   },
   "dependencies": {
-    "@spotify-confidence/react": "^0.0.10",
-    "@spotify-confidence/sdk": "^0.2.2",
+    "@spotify-confidence/react": "workspace:*",
+    "@spotify-confidence/sdk": "workspace:*",
     "next": "15.1.6",
     "react": "^18.2.0",
     "react-dom": "^18.2.0"
