@@ -50,7 +50,7 @@ to make sure to make sure that our entire App is wrapped around it
 if we want to set some things like our visitor_id in the global context.
 
 The simplest way of doing that is to creat a component that you
-will wrap your entire application in like so (see rootconfprovider.tsx):
+will wrap your entire application in like so (see RootConfidenceProvider.tsx):
 
 ```javascript
 'use client';
@@ -81,16 +81,16 @@ type RootConfProviderProps = {
   children: ReactNode,
 };
 
-export default function RootConfProvider({ children }: RootConfProviderProps) {
+export default function RootConfidenceProvider({ children }: RootConfProviderProps) {
   return <ConfidenceProvider confidence={cf}>{children}</ConfidenceProvider>;
 }
 ```
 
 Next you should locate `layout.tsx` and make sure our App uses the
-RootConfProvider we just created:
+RootConfidenceProvider we just created:
 
 ```typescript jsx
-import RootConfProvider from '@/app/rootconfprovider';
+import RootConfidenceProvider from '@/app/rootconfprovider';
 
 export default function RootLayout({
   children,
@@ -100,7 +100,7 @@ export default function RootLayout({
   return (
     <html lang="en">
       <body className={`${geistSans.variable} ${geistMono.variable} antialiased`}>
-        <RootConfProvider>{children}</RootConfProvider>
+        <RootConfidenceProvider>{children}</RootConfidenceProvider>
       </body>
     </html>
   );
