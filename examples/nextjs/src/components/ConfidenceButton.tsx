@@ -2,7 +2,7 @@
 
 import { useConfidence } from '@spotify-confidence/react';
 import { useRouter } from 'next/navigation';
-import { ReactNode, useCallback } from 'react';
+import { ReactNode } from 'react';
 
 export type MTButtonProps = {
   inverted?: boolean;
@@ -23,17 +23,17 @@ export function ConfidenceButton(props: MTButtonProps) {
 
   const cn = props.inverted ? invertedCN : nonInvertedCN;
 
-  const handleClick = useCallback(() => {
+  function onClick() {
     if (props.trackEvent) {
       confidence.track(props.trackEvent);
     }
     if (props.href) {
       router.push(props.href);
     }
-  }, []);
+  }
 
   return (
-    <button className={cn} onClick={handleClick}>
+    <button className={cn} onClick={onClick}>
       {props.children}
     </button>
   );
