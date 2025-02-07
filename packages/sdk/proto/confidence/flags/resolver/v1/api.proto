@@ -101,4 +101,7 @@ message ResolvedFlag {
 
   // The reason to why the flag could be resolved or not.
   ResolveReason reason = 5;
+
+  // Determines whether the flag should be applied in the clients
+  bool should_apply = 6;
 }

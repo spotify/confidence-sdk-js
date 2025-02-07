@@ -36,6 +36,7 @@ type ResolvedFlag = {
     | 'FLAG_ARCHIVED'
     | 'TARGETING_KEY_ERROR'
     | 'ERROR';
+  shouldApply: boolean;
 };
 
 export type Applier = (flagName: string) => void;
@@ -50,7 +51,7 @@ export class ReadyFlagResolution implements FlagResolution {
     resolveResponse: ResolveFlagsResponse,
     private readonly applier?: Applier,
   ) {
-    for (const { flag, variant, value, reason, flagSchema } of resolveResponse.resolvedFlags) {
+    for (const { flag, variant, value, reason, flagSchema, shouldApply } of resolveResponse.resolvedFlags) {
       const name = flag.slice(FLAG_PREFIX.length);
 
       const schema = flagSchema ? Schema.parse({ structSchema: flagSchema }) : Schema.ANY;
@@ -59,6 +60,7 @@ export class ReadyFlagResolution implements FlagResolution {
         value: value! as Value.Struct,
         variant,
         reason: toEvaluationReason(reason),
+        shouldApply,
       });
     }
     this.resolveToken = base64FromBytes(resolveResponse.resolveToken);
@@ -78,10 +80,12 @@ export class ReadyFlagResolution implements FlagResolution {
       }
       const reason = flag.reason;
       if (reason === 'ERROR') throw new Error('Unknown resolve error');
+
+      if (flag.shouldApply && this.applier) {
+        this.applier?.(name);
+      }
+
       if (reason !== 'MATCH') {
-        if (reason === 'NO_SEGMENT_MATCH' && this.applier) {
-          this.applier?.(name);
-        }
         return {
           reason,
           value: defaultValue,
@@ -95,7 +99,6 @@ export class ReadyFlagResolution implements FlagResolution {
         schema.assertAssignsTo(defaultValue);
       });
 
-      this.applier?.(name);
       return {
         reason,
         value,
