@@ -11,9 +11,10 @@ export const dynamic = 'force-dynamic';
 // confidence.setContext({ userId: 'andreas' });
 
 export default function Page() {
+  const confidence = new Confidence({ cache: getCache(), context: { userId: 'andreas' } });
   return (
     <>
-      <ConfidenceProvider value={new Confidence({ cache: getCache(), context: { userId: 'andreas' } })}>
+      <ConfidenceProvider value={confidence}>
         <Suspense fallback="Loading...">
           <ServerComponent />
           <ClientComponent />

@@ -9,21 +9,18 @@ type Cache = Record<string, AccessiblePromise<Flags>>;
 type Data = { cache?: Cache; context?: Context };
 export class Confidence {
   private context: Context = {};
-  cache: Cache = {};
+  private cache: Cache = {};
+  private onChangeListeners = new Set<() => void>();
 
   constructor({ cache = {}, context = {} }: Data = {}) {
     this.cache = cache;
     this.context = context;
-    const key = JSON.stringify(this.context);
-    if (!this.cache[key]) {
-      this.cache[key] = AccessiblePromise.resolve(fetchFlags(this.context));
-    }
+    this.resolve();
   }
 
   setContext(ctx: Context) {
     this.context = ctx;
-    const key = JSON.stringify(this.context);
-    this.cache[key] = AccessiblePromise.resolve(fetchFlags(this.context));
+    this.resolve();
   }
 
   withContext(context: Context) {
@@ -39,15 +36,31 @@ export class Confidence {
     return cached.then(flags => (flags[name] as T) ?? defaultValue);
   }
 
+  subscribe(onChange: () => void): () => void {
+    this.onChangeListeners.add(onChange);
+    return () => {
+      this.onChangeListeners.delete(onChange);
+    };
+  }
+
   toJSON() {
     return { ...this };
+  }
+
+  private resolve() {
+    const key = JSON.stringify(this.context);
+    const flags = (this.cache[key] = AccessiblePromise.resolve(fetchFlags(this.context)));
+    flags.then(() => {
+      this.onChangeListeners.forEach(listener => listener());
+    });
   }
 }
 
 async function fetchFlags(ctx: Context): Promise<Flags> {
+  console.log('fetchFlags', ctx);
   await sleep(1000);
-  if (ctx.userId) {
-    if (ctx.userId === 'a') {
+  if (typeof ctx.userId === 'string') {
+    if (ctx.userId.startsWith('a')) {
       return {
         pantsColor: 'blue',
       };
