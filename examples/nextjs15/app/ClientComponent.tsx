@@ -1,22 +1,21 @@
 'use client';
-/* eslint-disable no-console */
+
 import React, { FC, ReactNode, use, useEffect, useState } from 'react';
-import { ServerComponent } from './ServerComponent';
+import { useConfidence } from './confidence/client';
 
 export const ClientComponent: FC<{ children?: ReactNode }> = ({ children }) => {
-  console.log('rendering client component..........');
-  const [name, setName] = useState('world');
-  useEffect(() => {
-    console.log('client effect');
-    setTimeout(() => {
-      setName('hawkeye!');
-    }, 1000);
-  }, [setName]);
+  console.log('ClientComponent render');
+  const pantsColor = useConfidence().getFlag('pantsColor', 'green').orSuspend();
+  const onClick = () => {
+    console.log('clicked');
+  };
+
   return (
-    <div>
-      <h1>Hello client</h1>
+    <fieldset>
+      <legend>ClientComponent</legend>
+      <h1 onClick={onClick}>Hello {pantsColor}</h1>
       {/* <ServerComponent name={name} /> */}
       {children}
-    </div>
+    </fieldset>
   );
 };
