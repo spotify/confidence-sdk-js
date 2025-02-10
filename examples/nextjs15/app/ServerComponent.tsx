@@ -1,21 +1,18 @@
 import React, { FC, Suspense, use } from 'react';
 import { fetchData } from './api';
-/* eslint-disable no-console */
+import { useConfidence } from './confidence/server';
 
 export const ServerComponent: FC<{ name?: string }> = ({ name = 'hawkeye' }) => {
-  console.log('rendering server component..........', Date.now());
+  const confidence = useConfidence();
+  // debugger;
+  console.log('ServerComponent render');
+  const pantsColor = confidence.getFlag('pantsColor', 'green').orSuspend();
+  console.log('ServerComponent', pantsColor);
   //   const time = use(fetchData());
   return (
-    <>
-      <h1>Hello {name}</h1>
-      <Suspense fallback="loading....">
-        <DataViewComponent />
-      </Suspense>
-    </>
+    <fieldset>
+      <legend>ServerComponent</legend>
+      <h1>Hello {pantsColor}</h1>
+    </fieldset>
   );
-};
-
-const DataViewComponent: FC = () => {
-  const time = use(fetchData());
-  return <div>{time}</div>;
 };
