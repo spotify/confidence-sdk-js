@@ -1,6 +1,6 @@
 'use client';
 
-import { createContext, ReactNode, use, useContext, useEffect } from 'react';
+import { createContext, ReactNode, use, useContext, useEffect, useState } from 'react';
 import { Confidence } from './confidence';
 import { AccessiblePromise } from './AccessiblePromise';
 
@@ -25,4 +25,15 @@ export function useConfidence(): Confidence {
     throw new Error('ConfidenceProvider is missing');
   }
   return confidence;
+}
+
+export function useFlag<T>(name: string, defaultValue: T): T {
+  const confidence = useConfidence();
+  const [value, setValue] = useState<T>(confidence.getFlag(name, defaultValue).orSuspend());
+  useEffect(() => {
+    confidence.subscribe(() => {
+      setValue(confidence.getFlag(name, defaultValue).orThrow());
+    });
+  }, [confidence]);
+  return value;
 }
