@@ -115,6 +115,9 @@ export class AccessiblePromise<T> {
   }
 
   static resolve<T = void>(value?: T | PromiseLike<T>): AccessiblePromise<T> {
+    if (value instanceof AccessiblePromise) {
+      return value;
+    }
     return new AccessiblePromise(value);
   }
 
