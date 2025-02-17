@@ -32,14 +32,7 @@ const confidence = Confidence.create({
 ### Region
 
 The region option is used to set the region for the network request to the Confidence backend. When the region is not set, the default (global) region will be used.
-The current regions are: `eu` and `us`, the region can be set as follows:
-
-```ts
-const provider = createConfidenceWebProvider({
-  region: 'eu', // or 'us'
-  // ... other options
-});
-```
+The current regions are: `eu` and `us`.
 
 ### Timeout
 
@@ -63,6 +56,32 @@ At this point, the context of `childInstance` is `'pants-color': 'blue', 'pants-
 
 > [!IMPORTANT]
 > When using the SDK in a server environment, you should call `withContext` rather than `setContext`. This will give you a new instance scoped to the request and prevent context from leaking between requests.
+
+## Accessing flags
+
+Flags can be accessed with two different API's.
+
+The flag value API returns the Confidence assigned flag value or the passed in default value if no value was returned.
+The evaluate API returns a `FlagEvaluation` type that also contain information about `variant`, `reason` and possible error details.
+
+```ts
+const flag = await confidence.getFlag('tutorial-feature', {});
+const flagEvaluation = await confidence.evaluateFlag('tutorial-feature', {});
+```
+
+### Dot notation
+
+Both the "flag value", and the "evaluate" API's support dot notation, meaning that if the Confidence flag has a property `enabled` or `title` on the flag, you can access them directly:
+
+```ts
+const enabled = await confidence.getFlag('tutorial-feature.enabled', false);
+const messageEvaluation = await confidence.evaluateFlag('tutorial-feature.message', 'default message');
+const message = messageEvaluation.value;
+```
+
+### Synchronous access
+
+In a client application (where `environment` is set to `client`), the SDK fetches and caches all flags when the context is updated. This means the flags can be accessed synchronously after that.
 
 ## Event tracking
 
