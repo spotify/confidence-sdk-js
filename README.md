@@ -6,13 +6,81 @@ JavaScript implementation of the [Confidence](https://confidence.spotify.com/) S
 
 # Usage
 
+We recommend to try out Confidence using the vanilla [sdk](packages/sdk/README.md). The setup guide below will help you get started.
+
 This monorepo exports multiple packages, with their own docs:
 
+- [sdk](packages/sdk/README.md)
+- [react](packages/react/README.md)
 - [openfeature-web-provider](packages/openfeature-web-provider/README.md)
 - [openfeature-server-provider](packages/openfeature-server-provider/README.md)
-- [sdk](packages/sdk/README.md)
 
-# Development
+## SDK setup
+
+### Adding the dependencies
+
+To add the packages to your dependencies run:
+
+```sh
+yarn add @spotify-confidence/sdk
+```
+
+### Initializing the SDK
+
+Run the `Confidence.create` function to obtain a root instance of `Confidence`.
+
+The SDK initialization requires an API key (`clientSecret`) to work. This key obtained through the [Confidence console](https://app.confidence.spotify.com/).
+
+```ts
+import { Confidence } from '@spotify-confidence/sdk';
+
+const confidence = Confidence.create({
+  clientSecret: 'mysecret',
+  region: 'eu', // or 'us'
+  environment: 'client', // or 'server'
+  timeout: 1000,
+});
+```
+
+### Setting the context
+
+You can set the context manually by using `setContext({})` or obtain a "child instance" of Confidence with a modified context by using `withContext({})`.
+
+```ts
+confidence.setContext({ 'pants-color': 'yellow' });
+const childInstance = confidence.withContext({ 'pants-color': 'blue', 'pants-fit': 'slim' });
+```
+
+> [!IMPORTANT]
+> When using the SDK in a server environment, you should call `withContext` rather than `setContext`. This will give you a new instance scoped to the request and prevent context from leaking between requests.
+
+### Accessing flags
+
+The flag value API returns the Confidence assigned flag value or the passed in default value if no value was returned.
+The API supports dot notation, meaning that if the Confidence flag has a property `enabled` on the flag, you can access it directly.
+
+```ts
+const flag = await confidence.getFlag('tutorial-feature', {});
+if (flag.enabled) {
+  // ship it!
+}
+// or
+const enabled = await confidence.getFlag('tutorial-feature.enabled', false);
+if (enabled) {
+  // ship it!
+}
+```
+
+> [!TIP]
+> If you are troubleshooting flag values, the flag evaluation API can be really useful since it returns a `FlagEvaluation` type that contain information about `variant`, `reason` and possible error details.
+
+```ts
+const flagEvaluation = await confidence.evaluateFlag('tutorial-feature', {});
+```
+
+# Contributions and Development
+
+We'd love to get patches from you! See [Contributing](CONTRIBUTING.md) for details.
 
 ## Setup
 
@@ -52,7 +120,7 @@ Before release the sources (and types) are bundled. This process also includes g
 If you intend to change the public API you need to run the bundle command locally and commit the changed API report files, otherwise the commit will fail in CI. To update the API report run:
 
 ```sh
-yarn bundle
+yarn bundle --local
 ```
 
 ## Example apps
