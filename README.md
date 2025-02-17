@@ -56,24 +56,26 @@ const childInstance = confidence.withContext({ 'pants-color': 'blue', 'pants-fit
 
 ### Accessing flags
 
-Flags can be accessed with two different API's.
-
 The flag value API returns the Confidence assigned flag value or the passed in default value if no value was returned.
-The evaluate API returns a `FlagEvaluation` type that also contain information about `variant`, `reason` and possible error details.
+The API supports dot notation, meaning that if the Confidence flag has a property `enabled` on the flag, you can access it directly.
 
 ```ts
 const flag = await confidence.getFlag('tutorial-feature', {});
-const flagEvaluation = await confidence.evaluateFlag('tutorial-feature', {});
+if (flag.enabled) {
+  // ship it!
+}
+// or
+const enabled = await confidence.getFlag('tutorial-feature.enabled', false);
+if (enabled) {
+  // ship it!
+}
 ```
 
-#### Dot notation
-
-Both the "flag value", and the "evaluate" API's support dot notation, meaning that if the Confidence flag has a property `enabled` or `title` on the flag, you can access them directly:
+> [!TIP]
+> If you are troubleshooting flag values, the flag evaluation API can be really useful since it returns a `FlagEvaluation` type that contain information about `variant`, `reason` and possible error details.
 
 ```ts
-const enabled = await confidence.getFlag('tutorial-feature.enabled', false);
-const messageEvaluation = await confidence.evaluateFlag('tutorial-feature.message', 'default message');
-const message = messageEvaluation.value;
+const flagEvaluation = await confidence.evaluateFlag('tutorial-feature', {});
 ```
 
 # Contributions and Development
