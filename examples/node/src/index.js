@@ -5,18 +5,14 @@ if (!process.env.CLIENT_SECRET) {
 }
 const confidence = Confidence.create({
   clientSecret: process.env.CLIENT_SECRET,
-  fetchImplementation: fetch,
   timeout: 1000,
   logger: console,
 });
 main();
 
 async function main() {
-  confidence.subscribe(state => console.log('state:', state));
-  confidence.setContext({ targeting_key: 'user-a' });
-  const fe = confidence.evaluateFlag('tutorial-feature.title', 'Default');
-
+  console.log('Starting example');
+  const fe = confidence.withContext({ targeting_key: 'user-a' }).evaluateFlag('tutorial-flag', {});
   console.log(fe);
-
   console.log(await fe);
 }
