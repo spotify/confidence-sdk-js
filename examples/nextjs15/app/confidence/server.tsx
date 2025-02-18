@@ -35,21 +35,38 @@ addConfigurationMiddleware(next => options => {
   };
 });
 
-export const ConfidenceProvider: FC<{ value: Confidence; children?: ReactNode }> = ({ value, children }) => {
-  console.log('ConfidenceProvider', value);
+type Mode = 'server' | 'client' | 'isomorphic';
+
+export const ConfidenceProvider: FC<{ value: Confidence; children?: ReactNode; mode?: Mode }> = ({
+  value,
+  children,
+  mode = 'isomorphic',
+}) => {
   const cache = getCache();
   const configuration = {
     ...value.configuration,
     flagResolver: flagResolver.bind(null, value.configuration.id!),
     cache,
   };
-  return (
-    <ServerContext.Provider value={value}>
-      <ServerToClientProvider configuration={configuration} context={value.getContext()}>
-        {children}
-      </ServerToClientProvider>
-    </ServerContext.Provider>
-  );
+  switch (mode) {
+    case 'server':
+      return <ServerContext.Provider value={value}>{children}</ServerContext.Provider>;
+    case 'client':
+      return (
+        <ServerToClientProvider configuration={configuration} context={value.getContext()}>
+          {children}
+        </ServerToClientProvider>
+      );
+    case 'isomorphic':
+      return (
+        <ServerContext.Provider value={value}>
+          <ServerToClientProvider configuration={configuration} context={value.getContext()}>
+            {children}
+          </ServerToClientProvider>
+        </ServerContext.Provider>
+      );
+  }
+  throw new Error(`Invalid mode: '${mode}'`);
 };
 
 export const useConfidence = (): Confidence => {

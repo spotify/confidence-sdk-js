@@ -3,15 +3,10 @@ import getServerContext from '@nimpl/context/get-server-context';
 
 import { FC, ReactNode } from 'react';
 
-const ExampleContext = createServerContext<string>();
-
-export default function Page() {
-  console.log('Test page render', someServerfn.toString());
+export default async function Page() {
+  console.log('Test render');
   return (
     <div>
-      <ExampleContext.Provider value={'right'}>
-        <Test />
-      </ExampleContext.Provider>
       <Test />
     </div>
   );
@@ -19,7 +14,6 @@ export default function Page() {
 
 const Test: FC<{ children?: ReactNode }> = async ({ children }) => {
   // debugger;
-  console.log('Test render', getServerContext(ExampleContext));
   return (
     <fieldset>
       <legend>Test</legend>

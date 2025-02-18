@@ -1,50 +1,21 @@
-import React, { cache, FC, ReactNode, Suspense, use } from 'react';
-import { ClientComponent } from './ClientComponent';
-import { ConfidenceProvider, getCache } from './confidence/server';
-import { ServerComponent } from './ServerComponent';
-import { Confidence, Context } from './confidence';
-import { useConfidence } from './confidence/server';
-import { revalidatePath } from 'next/cache';
-
-export const dynamic = 'force-dynamic';
-
-// const confidence = new Confidence();
-const db = new Map<string, string>();
-
-db.set('andreas', 'admin');
-
-const confidence = Confidence.create({ clientSecret: 'xyz' });
+import React from 'react';
 
 export default function Page() {
-  console.log('Page render');
-  const userId = 'andreas';
   return (
-    <>
-      <ConfidenceProvider value={confidence.withContext({ userId, role: db.get(userId) })}>
-        <ServerComponent />
-        <Suspense fallback="Loading...">
-          <ClientComponent setRole={setRole.bind(null, userId)} />
-        </Suspense>
-        {/* <Test /> */}
-      </ConfidenceProvider>
-      {/* <Test /> */}
-    </>
+    <div>
+      <h1>NextJS demo</h1>
+      <ul>
+        <li>We've created a POC for the different ways of integrating with NextJS rendering modes</li>
+        <li>
+          We're using a mocked version of the SDK itself, cause it would be to cumbersome to refactor the SDK while
+          experimenting
+        </li>
+        <li>
+          Not sure if I'll have time to show code.. but the whole point is that the code is identical to how our React
+          SDK functions today. You wrap your component tree in ConfidenceProvider and then you can request flag values
+          in any component below
+        </li>
+      </ul>
+    </div>
   );
-}
-
-const Test: FC<{ children?: ReactNode }> = ({ children }) => {
-  // debugger;
-  console.log('Test render', useConfidence());
-  return (
-    <fieldset>
-      <legend>Test</legend>
-      {children}
-    </fieldset>
-  );
-};
-
-async function setRole(userId: string, role: string) {
-  'use server';
-  db.set(userId, role);
-  revalidatePath('/');
 }
