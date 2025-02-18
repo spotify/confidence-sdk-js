@@ -112,8 +112,8 @@ async function fetchFlags(ctx: Context): Promise<Flags> {
   console.log('fetchFlags', ctx);
   // debugger;
   await sleep(1000);
-  if (typeof ctx.role === 'string') {
-    if (ctx.role === 'admin') {
+  if (typeof ctx.visitorId === 'string') {
+    if (ctx.visitorId.startsWith('a')) {
       return {
         pantsColor: 'blue',
       };

@@ -1,13 +1,10 @@
 'use client';
 
-import { createContext, ReactNode, use, useContext, useEffect, useMemo, useState } from 'react';
+import { createContext, ReactNode, use, useEffect, useMemo, useState } from 'react';
 import { Cache, Confidence, Configuration, Context, Flags, getConfiguration, isServer } from './confidence';
 import { AccessiblePromise } from './AccessiblePromise';
 
 const reactContext = createContext<Confidence | null>(null);
-
-const clientCache: Cache = {};
-const seenPromises = new WeakSet<object>();
 
 export const ConfidenceProvider = reactContext.Provider;
 
@@ -16,17 +13,17 @@ export const ServerToClientProvider: React.FC<{
   context: Context;
   children?: ReactNode;
 }> = ({ configuration, context, children }) => {
-  console.log('got configuration', configuration);
+  // console.log('got configuration', configuration);
   const confidence = new Confidence(
     isServer() ? getConfiguration(configuration.id!)! : clientConfiguration(configuration),
     context,
   );
-  console.log('ServerToClientProvider', context);
+  // console.log('ServerToClientProvider', context);
   return <ConfidenceProvider value={confidence}>{children}</ConfidenceProvider>;
 };
 
 export function useConfidence(): Confidence {
-  const confidence = useContext(reactContext);
+  const confidence = use(reactContext);
   if (!confidence) {
     throw new Error('ConfidenceProvider is missing');
   }
@@ -39,12 +36,24 @@ export function useFlag<T>(name: string, defaultValue: T): T {
   const [value, setValue] = useState<T>(() => confidence.getFlag(name, defaultValue).orSuspend());
   useEffect(() => {
     confidence.subscribe(() => {
-      setValue(confidence.getFlag(name, defaultValue).orThrow());
+      const value = confidence.getFlag(name, defaultValue);
+      if (value.status === 'resolved') {
+        setValue(confidence.getFlag(name, defaultValue).orThrow());
+      }
     });
   }, [confidence]);
   return value;
 }
-
+export function useContext(): Context {
+  const confidence = useConfidence();
+  const [value, setValue] = useState<Context>(() => confidence.getContext());
+  useEffect(() => {
+    confidence.subscribe(() => {
+      setValue(confidence.getContext());
+    });
+  }, [confidence]);
+  return value;
+}
 function fixReactPromise(promise: any): AccessiblePromise<Flags> {
   switch (promise.status) {
     case 'fulfilled':
