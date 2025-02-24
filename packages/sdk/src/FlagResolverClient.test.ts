@@ -62,7 +62,7 @@ describe('Client environment Evaluation', () => {
     instanceUnderTest = new FetchingFlagResolverClient({
       fetchImplementation,
       clientSecret: 'secret',
-      applyTimeout: 10,
+      applyDebounce: 10,
       sdk: {
         id: SdkId.SDK_ID_JS_CONFIDENCE,
         version: 'test',
@@ -139,6 +139,7 @@ describe('Backend environment Evaluation', () => {
     },
     environment: 'backend',
     resolveTimeout: 10,
+    applyDebounce: 0,
     telemetry: new Telemetry({ disabled: true, logger: { warn: jest.fn() }, environment: 'backend' }),
   });
 

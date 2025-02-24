@@ -22,7 +22,10 @@ import { SimpleFetch } from './types';
 const FLAG_PREFIX = 'flags/';
 
 export class ResolveError extends Error {
-  constructor(public readonly code: FlagEvaluation.ErrorCode, message: string) {
+  constructor(
+    public readonly code: FlagEvaluation.ErrorCode,
+    message: string,
+  ) {
     super(message);
   }
 }
@@ -86,7 +89,7 @@ export type FlagResolverClientOptions = {
   fetchImplementation: SimpleFetch;
   clientSecret: string;
   sdk: Sdk;
-  applyTimeout?: number;
+  applyDebounce: number;
   resolveTimeout: number;
   environment: 'client' | 'backend';
   region?: 'eu' | 'us';
@@ -98,7 +101,7 @@ export class FetchingFlagResolverClient implements FlagResolverClient {
   private readonly fetchImplementation: SimpleFetch;
   private readonly clientSecret: string;
   private readonly sdk: Sdk;
-  private readonly applyTimeout?: number;
+  private readonly applyDebounce: number;
   private readonly resolveTimeout: number;
   private readonly baseUrl: string;
   private readonly markLatency: Meter;
@@ -107,7 +110,7 @@ export class FetchingFlagResolverClient implements FlagResolverClient {
     fetchImplementation,
     clientSecret,
     sdk,
-    applyTimeout,
+    applyDebounce,
     resolveTimeout,
     // todo refactor to move out environment
     environment,
@@ -127,7 +130,7 @@ export class FetchingFlagResolverClient implements FlagResolverClient {
 
     this.clientSecret = clientSecret;
     this.sdk = sdk;
-    this.applyTimeout = applyTimeout;
+    this.applyDebounce = applyDebounce;
     if (resolveBaseUrl) {
       this.baseUrl = `${resolveBaseUrl}/v1`;
     } else {
@@ -190,7 +193,11 @@ export class FetchingFlagResolverClient implements FlagResolverClient {
       if (timeoutId) {
         clearTimeout(timeoutId);
       }
-      timeoutId = Number(setTimeout(flush, this.applyTimeout));
+      if (this.applyDebounce === 0) {
+        flush();
+      } else {
+        timeoutId = Number(setTimeout(flush, this.applyDebounce));
+      }
     };
   }
 
