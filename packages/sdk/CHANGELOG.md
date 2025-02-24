@@ -1,5 +1,18 @@
 # Changelog
 
+## [0.2.3](https://github.com/spotify/confidence-sdk-js/compare/sdk-v0.2.2...sdk-v0.2.3) (2025-02-24)
+
+
+### ✨ New Features
+
+* base apply functionality on backend response ([#216](https://github.com/spotify/confidence-sdk-js/issues/216)) ([a190086](https://github.com/spotify/confidence-sdk-js/commit/a1900862c3879e40e6baa87c27b604ba03245c9d))
+* configurable apply debounce ([#220](https://github.com/spotify/confidence-sdk-js/issues/220)) ([502c994](https://github.com/spotify/confidence-sdk-js/commit/502c9946eda0bc463b1f082a8989424ec86ad61e))
+
+
+### 📚 Documentation
+
+* Revamp readme ([#219](https://github.com/spotify/confidence-sdk-js/issues/219)) ([489bd02](https://github.com/spotify/confidence-sdk-js/commit/489bd02445f918e99305ebfef7184214c8af2fb6))
+
 ## [0.2.2](https://github.com/spotify/confidence-sdk-js/compare/sdk-v0.2.1...sdk-v0.2.2) (2025-01-10)
 
 
