@@ -22,7 +22,7 @@ export class Confidence implements EventSender, Trackable, FlagResolver {
     //
     // @internal
     readonly contextChanges: Subscribe<string[]>;
-    static create({ clientSecret, region, timeout, environment, fetchImplementation, logger, resolveBaseUrl, disableTelemetry, }: ConfidenceOptions): Confidence;
+    static create({ clientSecret, region, timeout, environment, fetchImplementation, logger, resolveBaseUrl, disableTelemetry, applyDebounce, }: ConfidenceOptions): Confidence;
     get environment(): string;
     evaluateFlag(path: string, defaultValue: string): FlagEvaluation<string>;
     // (undocumented)
@@ -51,6 +51,7 @@ export class Confidence implements EventSender, Trackable, FlagResolver {
 
 // @public
 export interface ConfidenceOptions {
+    applyDebounce?: number;
     clientSecret: string;
     disableTelemetry?: boolean;
     environment: 'client' | 'backend';

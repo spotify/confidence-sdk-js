@@ -40,6 +40,8 @@ export interface ConfidenceOptions {
   resolveBaseUrl?: string;
   /** Disable telemetry */
   disableTelemetry?: boolean;
+  /** Allows you to debounce the apply message. Set in ms. 0 is treated as synchronous */
+  applyDebounce?: number;
 }
 
 /**
@@ -348,6 +350,7 @@ export class Confidence implements EventSender, Trackable, FlagResolver {
     logger = defaultLogger(),
     resolveBaseUrl,
     disableTelemetry = false,
+    applyDebounce = 10,
   }: ConfidenceOptions): Confidence {
     const sdk = {
       id: SdkId.SDK_ID_JS_CONFIDENCE,
@@ -367,6 +370,7 @@ export class Confidence implements EventSender, Trackable, FlagResolver {
       region,
       resolveBaseUrl,
       telemetry,
+      applyDebounce: applyDebounce,
     });
     if (environment === 'client') {
       flagResolverClient = new CachingFlagResolverClient(flagResolverClient, Number.POSITIVE_INFINITY);
