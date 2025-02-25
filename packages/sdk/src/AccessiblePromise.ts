@@ -112,7 +112,12 @@ export class AccessiblePromise<T> {
     return this.orSupply(() => value);
   }
 
+  readonly [Symbol.toStringTag] = 'AccessiblePromise';
+
   static resolve<T = void>(value?: T | PromiseLike<T>): AccessiblePromise<T> {
+    if (value instanceof AccessiblePromise) {
+      return value;
+    }
     return new AccessiblePromise(value);
   }
 

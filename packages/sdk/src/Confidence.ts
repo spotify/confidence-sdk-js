@@ -23,6 +23,7 @@ import { Telemetry } from './Telemetry';
  * Confidence options, to be used for easier initialization of Confidence
  * @public
  *  */
+
 export interface ConfidenceOptions {
   /** Client secret, to be found in Confidence console*/
   clientSecret: string;

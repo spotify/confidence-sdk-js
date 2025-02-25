@@ -41,7 +41,7 @@ type ResolvedFlag = {
 export type Applier = (flagName: string) => void;
 
 export class ReadyFlagResolution implements FlagResolution {
-  private readonly flags: Map<string, ResolvedFlag> = new Map();
+  private readonly flags: Record<string, ResolvedFlag | undefined>;
   readonly resolveToken: string;
   declare state: 'READY';
 
@@ -50,24 +50,29 @@ export class ReadyFlagResolution implements FlagResolution {
     resolveResponse: ResolveFlagsResponse,
     private readonly applier?: Applier,
   ) {
-    for (const { flag, variant, value, reason, flagSchema } of resolveResponse.resolvedFlags) {
-      const name = flag.slice(FLAG_PREFIX.length);
+    this.flags = Object.fromEntries(
+      resolveResponse.resolvedFlags.map(({ flag, variant, value, reason, flagSchema }) => {
+        const name = flag.slice(FLAG_PREFIX.length);
 
-      const schema = flagSchema ? Schema.parse({ structSchema: flagSchema }) : Schema.ANY;
-      this.flags.set(name, {
-        schema,
-        value: value! as Value.Struct,
-        variant,
-        reason: toEvaluationReason(reason),
-      });
-    }
+        const schema = flagSchema ? Schema.parse({ structSchema: flagSchema }) : Schema.ANY;
+        return [
+          name,
+          {
+            schema,
+            value: value! as Value.Struct,
+            variant,
+            reason: toEvaluationReason(reason),
+          },
+        ];
+      }),
+    );
     this.resolveToken = base64FromBytes(resolveResponse.resolveToken);
   }
 
   evaluate<T extends Value>(path: string, defaultValue: T): FlagEvaluation.Resolved<T> {
     try {
       const [name, ...steps] = path.split('.');
-      const flag = this.flags.get(name);
+      const flag = this.flags[name];
       if (!flag) {
         return {
           reason: 'ERROR',
@@ -116,7 +121,11 @@ ReadyFlagResolution.prototype.state = 'READY';
 
 export class FailedFlagResolution implements FlagResolution {
   declare state: 'ERROR';
-  constructor(readonly context: Value.Struct, readonly code: FlagEvaluation.ErrorCode, readonly message: string) {}
+  constructor(
+    readonly context: Value.Struct,
+    readonly code: FlagEvaluation.ErrorCode,
+    readonly message: string,
+  ) {}
 
   evaluate<T extends Value>(_path: string, defaultValue: T): FlagEvaluation.Resolved<T> {
     return {
