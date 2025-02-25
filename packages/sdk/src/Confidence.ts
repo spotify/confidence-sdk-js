@@ -221,6 +221,20 @@ export class Confidence implements EventSender, Trackable, FlagResolver {
     return undefined;
   }
 
+    /** Resolves flag in cache */
+    protected resolveFlag(flagName: string): AccessiblePromise<FlagResolution> {
+      const context = this.getContext();
+      return this.config.flagResolverClient
+      .resolve(context, [flagName])
+      .catch(e => {
+        // TODO fix sloppy handling of error
+        if (e.name !== 'AbortError') {
+        this.config.logger.info?.('Resolve failed.', e);
+        }
+        throw e;
+      });
+    }
+
   /** Resolves all flags in cache */
   protected resolveFlags(): AccessiblePromise<void> {
     const context = this.getContext();
@@ -287,9 +301,12 @@ export class Confidence implements EventSender, Trackable, FlagResolver {
   evaluateFlag(path: string, defaultValue: number): FlagEvaluation<number>;
   evaluateFlag<T extends Value>(path: string, defaultValue: T): FlagEvaluation<T>;
   evaluateFlag<T extends Value>(path: string, defaultValue: T): FlagEvaluation<T> {
+    if (this.environment === 'ephemeral-backend') {
+      this.resolveFlag(path);
+    } else {
+      if (!this.currentFlags && !this.pendingFlags) this.resolveFlags();
+    }
     let evaluation: FlagEvaluation<T>;
-    // resolveFlags might update state synchronously
-    if (!this.currentFlags && !this.pendingFlags) this.resolveFlags();
     if (!this.currentFlags) {
       evaluation = {
         reason: 'ERROR',

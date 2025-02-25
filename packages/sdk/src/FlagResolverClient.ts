@@ -140,7 +140,7 @@ export class FetchingFlagResolverClient implements FlagResolverClient {
     const request: ResolveFlagsRequest = {
       clientSecret: this.clientSecret,
       evaluationContext: context,
-      apply: false,
+      apply: flags.length > 0,
       sdk: this.sdk,
       flags: flags.map(name => FLAG_PREFIX + name),
     };
