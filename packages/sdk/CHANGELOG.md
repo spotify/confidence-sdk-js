@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.2.4](https://github.com/spotify/confidence-sdk-js/compare/sdk-v0.2.3...sdk-v0.2.4) (2025-02-26)
+
+
+### ✨ New Features
+
+* waitUntil option to register async side-effects ([#222](https://github.com/spotify/confidence-sdk-js/issues/222)) ([0e035e8](https://github.com/spotify/confidence-sdk-js/commit/0e035e888144ab1c6224318bfd6d995f7589934b))
+
 ## [0.2.3](https://github.com/spotify/confidence-sdk-js/compare/sdk-v0.2.2...sdk-v0.2.3) (2025-02-24)
 
 

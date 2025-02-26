@@ -24,6 +24,12 @@
   * devDependencies
     * @spotify-confidence/sdk bumped to 0.2.3
 
+### Dependencies
+
+* The following workspace dependencies were updated
+  * devDependencies
+    * @spotify-confidence/sdk bumped to 0.2.4
+
 ## [0.0.10](https://github.com/spotify/confidence-sdk-js/compare/react-v0.0.9...react-v0.0.10) (2025-01-29)
 
 
