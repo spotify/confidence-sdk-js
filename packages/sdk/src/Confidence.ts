@@ -358,6 +358,9 @@ export class Confidence implements EventSender, Trackable, FlagResolver {
     applyDebounce = 10,
     waitUntil,
   }: ConfidenceOptions): Confidence {
+    if (environment !== 'client' && environment !== 'backend') {
+      throw new Error(`Invalid environment: ${environment}. Must be 'client' or 'backend'.`);
+    }
     const sdk = {
       id: SdkId.SDK_ID_JS_CONFIDENCE,
       version: '0.2.4', // x-release-please-version

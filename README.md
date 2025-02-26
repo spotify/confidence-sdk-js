@@ -37,7 +37,7 @@ import { Confidence } from '@spotify-confidence/sdk';
 const confidence = Confidence.create({
   clientSecret: 'mysecret',
   region: 'eu', // or 'us'
-  environment: 'client', // or 'server'
+  environment: 'client', // or 'backend'
   timeout: 1000,
 });
 ```
