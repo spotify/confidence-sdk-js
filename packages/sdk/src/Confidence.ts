@@ -14,7 +14,7 @@ import { SdkId } from './generated/confidence/flags/resolver/v1/types';
 import { Trackable } from './Trackable';
 import { Closer } from './Closer';
 import { Subscribe, Observer, subject, changeObserver } from './observing';
-import { SimpleFetch } from './types';
+import { SimpleFetch, WaitUntil } from './types';
 import { FlagResolution } from './FlagResolution';
 import { AccessiblePromise } from './AccessiblePromise';
 import { Telemetry } from './Telemetry';
@@ -42,6 +42,11 @@ export interface ConfidenceOptions {
   disableTelemetry?: boolean;
   /** Allows you to debounce the apply message. Set in ms. 0 is treated as synchronous */
   applyDebounce?: number;
+  /**
+   * A function that, if supplied, will be used by Confidence to register asynchronous side-effects, such as logging exposure.
+   * This is particularly useful in serverless environments where you need to ensure certain operations complete before the environment is reclaimed.
+   */
+  waitUntil?: WaitUntil;
 }
 
 /**
@@ -351,6 +356,7 @@ export class Confidence implements EventSender, Trackable, FlagResolver {
     resolveBaseUrl,
     disableTelemetry = false,
     applyDebounce = 10,
+    waitUntil,
   }: ConfidenceOptions): Confidence {
     const sdk = {
       id: SdkId.SDK_ID_JS_CONFIDENCE,
@@ -370,7 +376,8 @@ export class Confidence implements EventSender, Trackable, FlagResolver {
       region,
       resolveBaseUrl,
       telemetry,
-      applyDebounce: applyDebounce,
+      applyDebounce,
+      waitUntil,
     });
     if (environment === 'client') {
       flagResolverClient = new CachingFlagResolverClient(flagResolverClient, Number.POSITIVE_INFINITY);

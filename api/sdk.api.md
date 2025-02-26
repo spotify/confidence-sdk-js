@@ -22,7 +22,7 @@ export class Confidence implements EventSender, Trackable, FlagResolver {
     //
     // @internal
     readonly contextChanges: Subscribe<string[]>;
-    static create({ clientSecret, region, timeout, environment, fetchImplementation, logger, resolveBaseUrl, disableTelemetry, applyDebounce, }: ConfidenceOptions): Confidence;
+    static create({ clientSecret, region, timeout, environment, fetchImplementation, logger, resolveBaseUrl, disableTelemetry, applyDebounce, waitUntil, }: ConfidenceOptions): Confidence;
     get environment(): string;
     evaluateFlag(path: string, defaultValue: string): FlagEvaluation<string>;
     // (undocumented)
@@ -55,13 +55,13 @@ export interface ConfidenceOptions {
     clientSecret: string;
     disableTelemetry?: boolean;
     environment: 'client' | 'backend';
-    // Warning: (ae-forgotten-export) The symbol "SimpleFetch" needs to be exported by the entry point index.d.ts
     fetchImplementation?: SimpleFetch;
     // Warning: (ae-forgotten-export) The symbol "Logger" needs to be exported by the entry point index.d.ts
     logger?: Logger;
     region?: 'eu' | 'us';
     resolveBaseUrl?: string;
     timeout: number;
+    waitUntil?: WaitUntil;
 }
 
 // @public
@@ -155,6 +155,11 @@ export interface FlagResolver extends Contextual<FlagResolver> {
 // @public
 export function pageViews(): Trackable.Manager;
 
+// Warning: (ae-missing-release-tag) "SimpleFetch" is part of the package's API, but it is missing a release tag (@alpha, @beta, @public, or @internal)
+//
+// @public (undocumented)
+export type SimpleFetch = (request: Request) => Promise<Response>;
+
 // @public
 export type State = 'NOT_READY' | 'READY' | 'STALE' | 'ERROR';
 
@@ -207,6 +212,11 @@ export type Value = Value.Primitive | Value.Struct | Value.List | undefined;
 
 // @public
 export const visitorIdentity: () => Trackable.Manager;
+
+// Warning: (ae-missing-release-tag) "WaitUntil" is part of the package's API, but it is missing a release tag (@alpha, @beta, @public, or @internal)
+//
+// @public (undocumented)
+export type WaitUntil = (promise: Promise<void>) => void;
 
 // @public
 export function webVitals({ lcp, inp, cls, ttfb, }?: WebVitalsOptions): Trackable.Manager;
