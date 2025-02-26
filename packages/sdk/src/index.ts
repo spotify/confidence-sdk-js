@@ -6,3 +6,4 @@ export * from './Value';
 export * from './trackers';
 export * from './Trackable';
 export * from './Closer';
+export * from './types';

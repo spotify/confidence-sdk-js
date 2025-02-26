@@ -14,7 +14,7 @@ import { SdkId } from './generated/confidence/flags/resolver/v1/types';
 import { Trackable } from './Trackable';
 import { Closer } from './Closer';
 import { Subscribe, Observer, subject, changeObserver } from './observing';
-import { SimpleFetch } from './types';
+import { SimpleFetch, WaitUntil } from './types';
 import { FlagResolution } from './FlagResolution';
 import { AccessiblePromise } from './AccessiblePromise';
 import { Telemetry } from './Telemetry';
@@ -42,8 +42,11 @@ export interface ConfidenceOptions {
   disableTelemetry?: boolean;
   /** Allows you to debounce the apply message. Set in ms. 0 is treated as synchronous */
   applyDebounce?: number;
-  /** A function, that if supplied, will be used by Confidence to register async side-effects like logging exposure. (Useful in serverless environments) */
-  waitUntil?: (promise: Promise<void>) => void;
+  /**
+   * A function that, if supplied, will be used by Confidence to register asynchronous side-effects, such as logging exposure.
+   * This is particularly useful in serverless environments where you need to ensure certain operations complete before the environment is reclaimed.
+   */
+  waitUntil?: WaitUntil;
 }
 
 /**
