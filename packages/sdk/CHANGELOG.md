@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.2.5](https://github.com/spotify/confidence-sdk-js/compare/sdk-v0.2.4...sdk-v0.2.5) (2025-02-26)
+
+
+### 🐛 Bug Fixes
+
+* create a safe environment ([#224](https://github.com/spotify/confidence-sdk-js/issues/224)) ([664741c](https://github.com/spotify/confidence-sdk-js/commit/664741cb0b62a81da35d1e4dd77587d39e808099))
+
 ## [0.2.4](https://github.com/spotify/confidence-sdk-js/compare/sdk-v0.2.3...sdk-v0.2.4) (2025-02-26)
 
 
