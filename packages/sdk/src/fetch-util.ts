@@ -78,7 +78,7 @@ export class FetchBuilder {
    * @param inner - the primitive to add to the chain
    * @returns the builder itself
    */
-  private compose(inner: FetchPrimitive): this {
+  compose(inner: FetchPrimitive): this {
     const outer = this.impl;
     if (outer) {
       this.impl = next => outer(inner(next));
@@ -266,7 +266,7 @@ export class FetchBuilder {
    * @returns the builder itself
    */
   route(match: (url: string) => boolean, fetch: SimpleFetch) {
-    return this.compose(next => request => match(request.url) ? fetch(request) : next(request));
+    return this.compose(next => request => (match(request.url) ? fetch(request) : next(request)));
   }
 
   /**

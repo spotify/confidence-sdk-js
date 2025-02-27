@@ -17,12 +17,16 @@ import {
   LibraryTraces_TraceId,
   Monitoring,
 } from './generated/confidence/telemetry/v1/telemetry';
+import { Logger } from './logger';
 import { SimpleFetch } from './types';
 
 const FLAG_PREFIX = 'flags/';
 
 export class ResolveError extends Error {
-  constructor(public readonly code: FlagEvaluation.ErrorCode, message: string) {
+  constructor(
+    public readonly code: FlagEvaluation.ErrorCode,
+    message: string,
+  ) {
     super(message);
   }
 }
@@ -92,6 +96,7 @@ export type FlagResolverClientOptions = {
   region?: 'eu' | 'us';
   resolveBaseUrl?: string;
   telemetry: Telemetry;
+  logger: Logger;
 };
 
 export class FetchingFlagResolverClient implements FlagResolverClient {
@@ -114,6 +119,7 @@ export class FetchingFlagResolverClient implements FlagResolverClient {
     region,
     resolveBaseUrl,
     telemetry,
+    logger,
   }: FlagResolverClientOptions) {
     this.markLatency = telemetry.registerMeter({
       library: LibraryTraces_Library.LIBRARY_CONFIDENCE,
@@ -123,7 +129,8 @@ export class FetchingFlagResolverClient implements FlagResolverClient {
     const fetchBuilderWithTelemetry = withTelemetryData(new FetchBuilder(), telemetry);
     // TODO think about both resolve and apply request logic for backends
     const fetchWithTelemetry = fetchBuilderWithTelemetry.build(fetchImplementation);
-    this.fetchImplementation = environment === 'backend' ? fetchWithTelemetry : withRequestLogic(fetchWithTelemetry);
+    this.fetchImplementation =
+      environment === 'backend' ? fetchWithTelemetry : withRequestLogic(fetchWithTelemetry, logger);
 
     this.clientSecret = clientSecret;
     this.sdk = sdk;
@@ -314,19 +321,35 @@ export function withTelemetryData(fetchBuilder: FetchBuilder, telemetry: Telemet
   });
 }
 
-export function withRequestLogic(fetchImplementation: (request: Request) => Promise<Response>): typeof fetch {
+export function withRequestLogic(
+  fetchImplementation: (request: Request) => Promise<Response>,
+  logger: Logger,
+): typeof fetch {
   const fetchResolve = new FetchBuilder()
     // infinite retries without delay until aborted by timeout
+    .compose(next => async request => {
+      try {
+        const response = await next(request);
+        return response;
+      } catch (error) {
+        logger.error?.(`Confidence: ${error}`);
+        throw error;
+      }
+    })
     .retry()
     .rejectNotOk()
+    .rejectOn(response => response.status >= 500)
     .rateLimit(1, { initialTokens: 3, maxTokens: 2 })
+    .compose(next => request => {
+      return next(request);
+    })
     .build(fetchImplementation);
 
   const fetchApply = new FetchBuilder()
     .limitPending(1000)
     .timeout(30 * TimeUnit.MINUTE)
     .retry({ delay: 5 * TimeUnit.SECOND, backoff: 2, maxDelay: 5 * TimeUnit.MINUTE, jitter: 0.2 })
-    .rejectNotOk()
+    .rejectOn(response => Math.floor(response.status / 100) === 4)
     .rateLimit(2)
     // update send-time before sending
     .modifyRequest(async request => {
