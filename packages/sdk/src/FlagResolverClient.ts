@@ -21,6 +21,7 @@ import { Logger } from './logger';
 import { SimpleFetch, WaitUntil } from './types';
 
 const FLAG_PREFIX = 'flags/';
+const retryCodes = new Set([408, 502, 503, 504]);
 
 export class ResolveError extends Error {
   constructor(public readonly code: FlagEvaluation.ErrorCode, message: string) {
@@ -343,9 +344,9 @@ export function withRequestLogic(
         throw error;
       }
     })
-    .retry()
     .rejectNotOk()
-    .rejectOn(response => response.status >= 500)
+    .retry()
+    .rejectOn(response => retryCodes.has(response.status))
     .rateLimit(1, { initialTokens: 3, maxTokens: 2 })
     .compose(next => request => {
       return next(request);
@@ -355,8 +356,9 @@ export function withRequestLogic(
   const fetchApply = new FetchBuilder()
     .limitPending(1000)
     .timeout(30 * TimeUnit.MINUTE)
+    .rejectNotOk()
     .retry({ delay: 5 * TimeUnit.SECOND, backoff: 2, maxDelay: 5 * TimeUnit.MINUTE, jitter: 0.2 })
-    .rejectOn(response => Math.floor(response.status / 100) === 4)
+    .rejectOn(response => retryCodes.has(response.status))
     .rateLimit(2)
     // update send-time before sending
     .modifyRequest(async request => {
