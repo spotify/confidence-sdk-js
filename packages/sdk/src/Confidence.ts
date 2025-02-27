@@ -384,7 +384,7 @@ export class Confidence implements EventSender, Trackable, FlagResolver {
       telemetry,
       logger,
       applyDebounce,
-      waitUntil
+      waitUntil,
     });
     if (environment === 'client') {
       flagResolverClient = new CachingFlagResolverClient(flagResolverClient, Number.POSITIVE_INFINITY);

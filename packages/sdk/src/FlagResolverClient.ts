@@ -23,10 +23,7 @@ import { SimpleFetch, WaitUntil } from './types';
 const FLAG_PREFIX = 'flags/';
 
 export class ResolveError extends Error {
-  constructor(
-    public readonly code: FlagEvaluation.ErrorCode,
-    message: string,
-  ) {
+  constructor(public readonly code: FlagEvaluation.ErrorCode, message: string) {
     super(message);
   }
 }
