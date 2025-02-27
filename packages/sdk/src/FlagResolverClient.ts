@@ -18,7 +18,7 @@ import {
   Monitoring,
 } from './generated/confidence/telemetry/v1/telemetry';
 import { Logger } from './logger';
-import { SimpleFetch } from './types';
+import { SimpleFetch, WaitUntil } from './types';
 
 const FLAG_PREFIX = 'flags/';
 
@@ -97,6 +97,7 @@ export type FlagResolverClientOptions = {
   resolveBaseUrl?: string;
   telemetry: Telemetry;
   logger: Logger;
+  waitUntil?: WaitUntil;
 };
 
 export class FetchingFlagResolverClient implements FlagResolverClient {
@@ -107,6 +108,7 @@ export class FetchingFlagResolverClient implements FlagResolverClient {
   private readonly resolveTimeout: number;
   private readonly baseUrl: string;
   private readonly markLatency: Meter;
+  private readonly waitUntil: WaitUntil | undefined;
 
   constructor({
     fetchImplementation,
@@ -120,6 +122,7 @@ export class FetchingFlagResolverClient implements FlagResolverClient {
     resolveBaseUrl,
     telemetry,
     logger,
+    waitUntil,
   }: FlagResolverClientOptions) {
     this.markLatency = telemetry.registerMeter({
       library: LibraryTraces_Library.LIBRARY_CONFIDENCE,
@@ -141,6 +144,7 @@ export class FetchingFlagResolverClient implements FlagResolverClient {
       this.baseUrl = region ? `https://resolver.${region}.confidence.dev/v1` : 'https://resolver.confidence.dev/v1';
     }
     this.resolveTimeout = resolveTimeout;
+    this.waitUntil = waitUntil;
   }
 
   resolve(context: Context, flags: string[]): PendingResolution {
@@ -176,7 +180,11 @@ export class FetchingFlagResolverClient implements FlagResolverClient {
   createApplier(resolveToken: Uint8Array): Applier {
     const applied = new Set<string>();
     const pending: AppliedFlag[] = [];
+    let [nextFlush, resolveNextFlush] = resolvablePromise();
+
     const flush = () => {
+      const resolveCurrentFlush = resolveNextFlush;
+      [nextFlush, resolveNextFlush] = resolvablePromise();
       timeoutId = 0;
       this.apply({
         flags: pending.splice(0, pending.length),
@@ -184,11 +192,13 @@ export class FetchingFlagResolverClient implements FlagResolverClient {
         resolveToken,
         sdk: this.sdk,
         sendTime: new Date(),
-      });
+      }).finally(resolveCurrentFlush);
     };
+
     let timeoutId = 0;
     return (flagName: string) => {
       if (applied.has(flagName)) return;
+      this.waitUntil?.(nextFlush);
       applied.add(flagName);
       pending.push({
         flag: FLAG_PREFIX + flagName,
@@ -380,4 +390,18 @@ function withTimeout(signal: AbortSignal, timeout: number, reason?: any): AbortS
     controller.abort(signal.reason);
   });
   return controller.signal;
+}
+
+function resolvablePromise<T = void>(): [
+  promise: Promise<T>,
+  resolve: (value: T) => void,
+  reject: (reason: any) => void,
+] {
+  let resolve: (value: T) => void;
+  let reject: (reason: any) => void;
+  const promise = new Promise<T>((_resolve, _reject) => {
+    resolve = _resolve;
+    reject = _reject;
+  });
+  return [promise, resolve!, reject!];
 }

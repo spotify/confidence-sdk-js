@@ -13,6 +13,7 @@ import { ApplyFlagsRequest, ResolveFlagsRequest } from './generated/confidence/f
 import { FailedFlagResolution, FlagResolution } from './FlagResolution';
 import { Telemetry } from './Telemetry';
 import { LibraryTraces_Library, LibraryTraces_TraceId, Platform } from './generated/confidence/telemetry/v1/telemetry';
+import { WaitUntil } from './types';
 const RESOLVE_ENDPOINT = 'https://resolver.confidence.dev/v1/flags:resolve';
 const APPLY_ENDPOINT = 'https://resolver.confidence.dev/v1/flags:apply';
 
@@ -58,6 +59,8 @@ describe('Client environment Evaluation', () => {
   // const flagResolutionResponseJson = JSON.stringify(createFlagResolutionResponse());
   let instanceUnderTest: FetchingFlagResolverClient;
 
+  const waitUntilMock: jest.MockedFn<WaitUntil> = jest.fn();
+
   beforeEach(() => {
     instanceUnderTest = new FetchingFlagResolverClient({
       fetchImplementation,
@@ -70,6 +73,7 @@ describe('Client environment Evaluation', () => {
       environment: 'client',
       resolveTimeout: 10,
       telemetry: new Telemetry({ disabled: true, logger: { warn: jest.fn() }, environment: 'client' }),
+      waitUntil: waitUntilMock,
     });
   });
 
@@ -125,6 +129,14 @@ describe('Client environment Evaluation', () => {
       expect(applyHandlerMock).toHaveBeenCalledTimes(1);
       flagResolution.evaluate('no-flag-apply-flag.str', 'default');
       expect(applyHandlerMock).toHaveBeenCalledTimes(1);
+    });
+
+    it('should register with waitUntil', async () => {
+      const flagResolution = await instanceUnderTest.resolve({}, []);
+      flagResolution.evaluate('no-seg-flag.enabled', false);
+      expect(waitUntilMock).toHaveBeenCalledTimes(1);
+      const registeredPromise = waitUntilMock.mock.calls[0][0];
+      await orTimeout(registeredPromise, 15);
     });
   });
 });
@@ -608,4 +620,11 @@ function nextMockArgs<A extends any[]>(mock: jest.Mock<any, A>): Promise<A> {
       }
     });
   });
+}
+
+function orTimeout<T>(promise: Promise<T>, timeout: number): Promise<T> {
+  const timeoutPromise = new Promise<T>((_, reject) => {
+    setTimeout(() => reject(new Error('Timeout')), timeout);
+  });
+  return Promise.race([promise, timeoutPromise]);
 }
