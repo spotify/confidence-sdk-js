@@ -370,6 +370,9 @@ export class Confidence implements EventSender, Trackable, FlagResolver {
       logger,
       environment,
     });
+    if (!clientSecret) {
+      logger.error?.(`Confidence: confidence cannot be instantiated without a client secret`);
+    }
     let flagResolverClient: FlagResolverClient = new FetchingFlagResolverClient({
       clientSecret,
       fetchImplementation,
@@ -379,6 +382,7 @@ export class Confidence implements EventSender, Trackable, FlagResolver {
       region,
       resolveBaseUrl,
       telemetry,
+      logger,
       applyDebounce,
       waitUntil,
     });
