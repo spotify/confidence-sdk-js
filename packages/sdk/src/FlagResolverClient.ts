@@ -348,9 +348,6 @@ export function withRequestLogic(
     .retry()
     .rejectOn(response => retryCodes.has(response.status))
     .rateLimit(1, { initialTokens: 3, maxTokens: 2 })
-    .compose(next => request => {
-      return next(request);
-    })
     .build(fetchImplementation);
 
   const fetchApply = new FetchBuilder()

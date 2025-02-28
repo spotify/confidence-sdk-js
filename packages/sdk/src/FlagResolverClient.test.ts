@@ -406,6 +406,21 @@ describe('intercept', () => {
       // the rate limiting allows three initial requests, then one per second
       expect(attempts).toEqual([0, 0, 0, 1000, 2000]);
     });
+
+    it('should abort right away on unauthorized', async () => {
+      const attempts: number[] = [];
+
+      fetchMock.mockImplementation(async ({ signal }) => {
+        signal.throwIfAborted();
+        attempts.push(Date.now());
+        return new Response(null, { status: 501 });
+      });
+
+      expect(makeResolveRequest(10000)).rejects.toThrow('501');
+
+      await jest.runAllTimersAsync();
+      expect(attempts).toEqual([0]);
+    });
   });
 
   describe('apply', () => {
