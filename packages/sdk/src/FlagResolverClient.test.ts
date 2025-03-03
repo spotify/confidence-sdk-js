@@ -42,7 +42,7 @@ const fetchImplementation = async (request: Request): Promise<Response> => {
     const result = await handler(await request.json());
     return new Response(JSON.stringify(result));
   } catch (e: any) {
-    return new Response(null, { status: 500, statusText: e.message });
+    return new Response(null, { status: 503, statusText: e.message });
   }
 };
 
@@ -74,6 +74,7 @@ describe('Client environment Evaluation', () => {
       resolveTimeout: 10,
       telemetry: new Telemetry({ disabled: true, logger: { warn: jest.fn() }, environment: 'client' }),
       waitUntil: waitUntilMock,
+      logger: console,
     });
   });
 
@@ -153,6 +154,7 @@ describe('Backend environment Evaluation', () => {
     resolveTimeout: 10,
     applyDebounce: 0,
     telemetry: new Telemetry({ disabled: true, logger: { warn: jest.fn() }, environment: 'backend' }),
+    logger: console,
   });
 
   it('should resolve a full flag object', async () => {
@@ -317,7 +319,7 @@ describe('Backend environment Evaluation', () => {
     expect(flagResolution).toBeInstanceOf(FailedFlagResolution);
     expect(flagResolution.evaluate('testflag', {})).toEqual({
       errorCode: 'GENERAL',
-      errorMessage: '500: Test error',
+      errorMessage: '503: Test error',
       reason: 'ERROR',
       value: {},
     });
@@ -332,7 +334,7 @@ describe('intercept', () => {
   beforeEach(() => {
     jest.useFakeTimers();
     jest.setSystemTime(0);
-    underTest = withRequestLogic(fetchMock);
+    underTest = withRequestLogic(fetchMock, console);
   });
   afterEach(() => {
     if (jest.getTimerCount() !== 0) throw new Error('test finished with remaining timers');
@@ -393,7 +395,7 @@ describe('intercept', () => {
       fetchMock.mockImplementation(async ({ signal }) => {
         signal.throwIfAborted();
         attempts.push(Date.now());
-        return new Response(null, { status: 500 });
+        return new Response(null, { status: 503 });
       });
 
       expect(makeResolveRequest(3000)).rejects.toThrow('This operation was aborted');
@@ -403,6 +405,21 @@ describe('intercept', () => {
       expect(Date.now()).toBe(3000);
       // the rate limiting allows three initial requests, then one per second
       expect(attempts).toEqual([0, 0, 0, 1000, 2000]);
+    });
+
+    it('should abort right away on unauthorized', async () => {
+      const attempts: number[] = [];
+
+      fetchMock.mockImplementation(async ({ signal }) => {
+        signal.throwIfAborted();
+        attempts.push(Date.now());
+        return new Response(null, { status: 401 });
+      });
+
+      expect(makeResolveRequest(10000)).rejects.toThrow('401');
+
+      await jest.runAllTimersAsync();
+      expect(attempts).toEqual([0]);
     });
   });
 
@@ -425,7 +442,7 @@ describe('intercept', () => {
           delays.push((currentTime - previousAttemptTime) / 1000);
         }
         previousAttemptTime = currentTime;
-        return new Response(null, { status: 500 });
+        return new Response(null, { status: 503 });
       });
 
       const doneTime = expect(makeApplyRequest())
