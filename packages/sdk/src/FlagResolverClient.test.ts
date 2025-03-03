@@ -413,10 +413,10 @@ describe('intercept', () => {
       fetchMock.mockImplementation(async ({ signal }) => {
         signal.throwIfAborted();
         attempts.push(Date.now());
-        return new Response(null, { status: 501 });
+        return new Response(null, { status: 401 });
       });
 
-      expect(makeResolveRequest(10000)).rejects.toThrow('501');
+      expect(makeResolveRequest(10000)).rejects.toThrow('401');
 
       await jest.runAllTimersAsync();
       expect(attempts).toEqual([0]);
