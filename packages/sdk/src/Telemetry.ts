@@ -8,7 +8,7 @@ import {
 } from './generated/confidence/telemetry/v1/telemetry';
 import { Logger } from './logger';
 
-export type TelemetryOptions = { disabled: boolean; logger: Logger; environment: 'backend' | 'client' };
+export type TelemetryOptions = { disabled: boolean; logger?: Logger; environment: 'backend' | 'client' };
 
 export type Tag = {
   library: LibraryTraces_Library;
@@ -21,7 +21,7 @@ export type Meter = (value: number) => void;
 export type TraceConsumer = (trace: Omit<LibraryTraces_Trace, 'id'>) => void;
 export class Telemetry {
   private readonly disabled: boolean;
-  private readonly logger: Logger;
+  private readonly logger?: Logger;
   private readonly libraryTraces: LibraryTraces[] = [];
   private readonly platform: Platform;
 
@@ -42,7 +42,7 @@ export class Telemetry {
       traces,
     });
     return data => {
-      this.logger.debug?.(LibraryTraces_TraceId[id], data);
+      this.logger?.debug?.(LibraryTraces_TraceId[id], data);
       traces.push({
         id,
         ...data,
