@@ -157,7 +157,7 @@ export function pageViews(): Trackable.Manager;
 
 // Warning: (ae-missing-release-tag) "SimpleFetch" is part of the package's API, but it is missing a release tag (@alpha, @beta, @public, or @internal)
 //
-// @public (undocumented)
+// @public
 export type SimpleFetch = (request: Request) => Promise<Response>;
 
 // @public

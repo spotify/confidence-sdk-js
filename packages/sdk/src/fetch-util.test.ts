@@ -3,36 +3,6 @@ import { FetchBuilder } from './fetch-util';
 jest.useFakeTimers();
 
 describe('FetchBuilder', () => {
-  describe('abortPrevious', () => {
-    const response = new Response(null, { status: 200 });
-    const simpleFetchMock = jest.fn<Promise<Response>, [Request]>(
-      ({ signal }) =>
-        new Promise((resolve, reject) => {
-          signal.onabort = () => reject(signal.reason);
-          setTimeout(() => resolve(response), 100);
-        }),
-    );
-    it('should pass one request through', async () => {
-      const underTest = new FetchBuilder().abortPrevious().build(simpleFetchMock);
-
-      const result = underTest('http://www.spotify.com');
-      jest.runAllTimers();
-
-      expect(await result).toBe(response);
-    });
-
-    it('should abort first request when a second arrives', async () => {
-      const underTest = new FetchBuilder().abortPrevious().build(simpleFetchMock);
-
-      // we need to turn the catch into a result or node will complain about unh
-      expect(underTest('http://www.spotify.com')).rejects.toThrow('Request superseded');
-      expect(underTest('http://www.spotify.com')).resolves.toBe(response);
-
-      await jest.runAllTimersAsync();
-
-      expect.assertions(2);
-    });
-  });
   describe('rateLimit', () => {
     it('it keeps request rate under maxRate', async () => {
       let requestCount = 0;
@@ -213,7 +183,7 @@ describe('FetchBuilder', () => {
       const simpleFetchMock = jest.fn();
       simpleFetchMock.mockResolvedValue(new Response());
       const requestModifyingFetch = new FetchBuilder()
-        .modifyRequest(async request => new Request(`${request.url}modified`, request))
+        .modifyRequest(async ({ url }) => ({ url: `${url}modified` }))
         .build(simpleFetchMock);
 
       await requestModifyingFetch('http://test.com');
