@@ -1,8 +1,3 @@
-/**
- * Convenient type alias for the full fetch API
- */
-type Fetch = typeof fetch;
-
 export const enum TimeUnit {
   SECOND = 1000,
   MINUTE = 60 * TimeUnit.SECOND,
@@ -23,13 +18,7 @@ export const enum TimeUnit {
  * const fullFetch:Fetch = (input, init) => simple(new Request(input, init))
  * ```
  */
-type SimpleFetch = (request: Request) => Promise<Response>;
-
-/**
- * A function that takes a SimpleFetch and returns a new SimpleFetch
- * with some desired behavior applied.
- */
-type FetchPrimitive = (next: SimpleFetch) => SimpleFetch;
+export type SimpleFetch = (request: Request) => Promise<Response>;
 
 export class RequestError extends Error {}
 export class TimeoutError extends RequestError {
@@ -37,6 +26,18 @@ export class TimeoutError extends RequestError {
     super('Request timed out');
   }
 }
+
+type Context = Readonly<{
+  url: string;
+  method?: RequestInit['method'];
+  headers?: Record<string, string>;
+  body?: string;
+  signal?: AbortSignal;
+}>;
+type ContextFetch = (ctx: Context) => Promise<Response>;
+type FetchPrimitive = (next: ContextFetch) => ContextFetch;
+
+export type InternalFetch = (url: string, init?: Omit<Context, 'url'>) => Promise<Response>;
 
 /**
  * Build a fetch function by adding "primitives" such as retry, rateLimit and timeout.
@@ -102,24 +103,9 @@ export class FetchBuilder {
       const timeoutId = setTimeout(() => {
         abort(new TimeoutError());
       }, duration);
-      return next(new Request(request, { signal })).finally(() => {
+      return next({ ...request, signal }).finally(() => {
         clearTimeout(timeoutId);
       });
-    });
-  }
-
-  /**
-   * Only allow one outstanding request. If a new request is made, the existing request it aborted with {@link RequestError}
-   *
-   * @returns the builder itself
-   */
-  abortPrevious(): this {
-    let abortPrevious: (() => void) | undefined;
-    return this.compose(next => request => {
-      abortPrevious?.();
-      const [abortableRequest, abort] = makeAbortable(request);
-      abortPrevious = () => abort(new RequestError('Request superseded'));
-      return next(abortableRequest);
     });
   }
 
@@ -233,17 +219,17 @@ export class FetchBuilder {
       let retryCount = 0;
 
       const doRetry = async (e: unknown): Promise<Response> => {
-        if (request.signal?.aborted ?? false) throw request.signal.reason;
+        if (request.signal?.aborted) throw request.signal.reason;
         // if there are no more attempts we throw the last error
         if (retryCount >= maxRetries) throw e;
 
         const jitterFactor = 1 + 2 * Math.random() * jitter - jitter;
         await abortableSleep(jitterFactor * Math.min(maxDelay, delay * Math.pow(backoff, retryCount)), request.signal);
         retryCount++;
-        return next(request.clone()).catch(doRetry);
+        return next(request).catch(doRetry);
       };
 
-      return next(request.clone()).catch(doRetry);
+      return next(request).catch(doRetry);
     });
   }
 
@@ -253,8 +239,8 @@ export class FetchBuilder {
    * @param mod - a (possibly async) function to transform the request
    * @returns the builder itself
    */
-  modifyRequest(mod: (request: Request) => Promise<Request> | Request): this {
-    return this.compose(next => async request => next(await mod(request)));
+  modifyRequest(mod: (request: Context) => Promise<Partial<Context>> | Partial<Context> | void): this {
+    return this.compose(next => async request => next({ ...request, ...(await mod(request)) }));
   }
 
   /**
@@ -265,8 +251,9 @@ export class FetchBuilder {
    * @param fetch - the fetch implementation to receive matching requests
    * @returns the builder itself
    */
-  route(match: (url: string) => boolean, fetch: SimpleFetch) {
-    return this.compose(next => request => match(request.url) ? fetch(request) : next(request));
+  route(match: (url: string) => boolean, fetchBuilder: FetchBuilder) {
+    const primitive = fetchBuilder.impl;
+    return this.compose(next => ctx => primitive && match(ctx.url) ? primitive(next)(ctx) : next(ctx));
   }
 
   /**
@@ -275,24 +262,11 @@ export class FetchBuilder {
    * @param sink - the fetch implementation to send the actual request
    * @returns the built fetch implementation
    */
-  build(sink: SimpleFetch): Fetch {
+  build(fetch: SimpleFetch): InternalFetch {
+    const sink: ContextFetch = ({ url: input, ...init }) => fetch(new Request(input, init));
     const impl = this.impl ? this.impl(sink) : sink;
-    return (input, init) => impl(new Request(input, init));
+    return (input, init) => impl({ url: new URL(input).toString(), ...init });
   }
-}
-
-/**
- * Simplifies the common task of making a request abortable, while also respecting an existing abort signal
- * ```
- * const [myRequest, abort] = makeAbortable(request);
- * // myRequest is identical to request but can be aborted by calling abort(reason)
- * ```
- * @param request - the request to clone
- * @returns tuple of the cloned request and its abort function
- */
-function makeAbortable(request: Request): [request: Request, abort: (reason: unknown) => void] {
-  const [signal, abort] = abortController(request.signal);
-  return [new Request(request, { signal }), abort];
 }
 
 /**
@@ -304,7 +278,9 @@ function makeAbortable(request: Request): [request: Request, abort: (reason: unk
  * @param follow - optional AbortSignals that should be followed
  * @returns tuple of signal and corresponding abort function
  */
-function abortController(...follow: AbortSignal[]): [signal: AbortSignal, abort: (reason: unknown) => void] {
+function abortController(
+  ...follow: (AbortSignal | null | undefined)[]
+): [signal: AbortSignal, abort: (reason: unknown) => void] {
   const controller = new AbortController();
 
   function listener(this: AbortSignal) {

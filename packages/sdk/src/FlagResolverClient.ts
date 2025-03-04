@@ -4,7 +4,7 @@ import { Applier, FlagResolution } from './FlagResolution';
 import { Telemetry, Meter } from './Telemetry';
 import { Value } from './Value';
 import { Context } from './context';
-import { FetchBuilder, TimeUnit } from './fetch-util';
+import { FetchBuilder, InternalFetch, SimpleFetch, TimeUnit } from './fetch-util';
 import {
   ResolveFlagsRequest,
   ResolveFlagsResponse,
@@ -18,7 +18,7 @@ import {
   Monitoring,
 } from './generated/confidence/telemetry/v1/telemetry';
 import { Logger } from './logger';
-import { SimpleFetch, WaitUntil } from './types';
+import { WaitUntil } from './types';
 
 const FLAG_PREFIX = 'flags/';
 const retryCodes = new Set([408, 502, 503, 504]);
@@ -99,7 +99,7 @@ export type FlagResolverClientOptions = {
 };
 
 export class FetchingFlagResolverClient implements FlagResolverClient {
-  private readonly fetchImplementation: SimpleFetch;
+  private readonly fetchImplementation: InternalFetch;
   private readonly clientSecret: string;
   private readonly sdk: Sdk;
   private readonly applyDebounce: number;
@@ -127,11 +127,14 @@ export class FetchingFlagResolverClient implements FlagResolverClient {
       version: sdk.version,
       id: LibraryTraces_TraceId.TRACE_ID_RESOLVE_LATENCY,
     });
-    const fetchBuilderWithTelemetry = withTelemetryData(new FetchBuilder(), telemetry);
-    // TODO think about both resolve and apply request logic for backends
-    const fetchWithTelemetry = fetchBuilderWithTelemetry.build(fetchImplementation);
-    this.fetchImplementation =
-      environment === 'backend' ? fetchWithTelemetry : withRequestLogic(fetchWithTelemetry, logger);
+
+    const fetchBuilder = new FetchBuilder();
+    withTelemetryData(fetchBuilder, telemetry);
+    if (environment === 'client') {
+      withRequestLogic(fetchBuilder, logger);
+    }
+
+    this.fetchImplementation = fetchBuilder.build(fetchImplementation);
 
     this.clientSecret = clientSecret;
     this.sdk = sdk;
@@ -214,31 +217,27 @@ export class FetchingFlagResolverClient implements FlagResolverClient {
   }
 
   async apply(request: ApplyFlagsRequest): Promise<void> {
-    const resp = await this.fetchImplementation(
-      new Request(`${this.baseUrl}/flags:apply`, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify(ApplyFlagsRequest.toJSON(request)),
-      }),
-    );
+    const resp = await this.fetchImplementation(`${this.baseUrl}/flags:apply`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify(ApplyFlagsRequest.toJSON(request)),
+    });
     if (!resp.ok) {
       throw new Error(`${resp.status}: ${resp.statusText}`);
     }
   }
 
   async resolveFlagsJson(request: ResolveFlagsRequest, signal: AbortSignal): Promise<ResolveFlagsResponse> {
-    const resp = await this.fetchImplementation(
-      new Request(`${this.baseUrl}/flags:resolve`, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify(ResolveFlagsRequest.toJSON(request)),
-        signal,
-      }),
-    );
+    const resp = await this.fetchImplementation(`${this.baseUrl}/flags:resolve`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify(ResolveFlagsRequest.toJSON(request)),
+      signal,
+    });
     if (!resp.ok) {
       throw new Error(`${resp.status}: ${resp.statusText}`);
     }
@@ -315,24 +314,19 @@ export class CachingFlagResolverClient implements FlagResolverClient {
   }
 }
 
-export function withTelemetryData(fetchBuilder: FetchBuilder, telemetry: Telemetry): FetchBuilder {
-  return fetchBuilder.modifyRequest(async request => {
+export function withTelemetryData(fetchBuilder: FetchBuilder, telemetry: Telemetry) {
+  fetchBuilder.modifyRequest(({ headers }) => {
     const monitoring = telemetry.getSnapshot();
     if (monitoring.libraryTraces.length > 0) {
-      const headers = new Headers(request.headers);
       const base64Message = btoa(String.fromCharCode(...Monitoring.encode(monitoring).finish()));
 
-      headers.set('X-CONFIDENCE-TELEMETRY', base64Message);
-      return new Request(request, { headers });
+      return { headers: { ...headers, ['X-CONFIDENCE-TELEMETRY']: base64Message } };
     }
-    return request;
+    return {};
   });
 }
 
-export function withRequestLogic(
-  fetchImplementation: (request: Request) => Promise<Response>,
-  logger: Logger,
-): typeof fetch {
+export function withRequestLogic(fetchBuilder: FetchBuilder, logger: Logger) {
   const fetchResolve = new FetchBuilder()
     // infinite retries without delay until aborted by timeout
     .compose(next => async request => {
@@ -347,8 +341,7 @@ export function withRequestLogic(
     .rejectNotOk()
     .retry()
     .rejectOn(response => retryCodes.has(response.status))
-    .rateLimit(1, { initialTokens: 3, maxTokens: 2 })
-    .build(fetchImplementation);
+    .rateLimit(1, { initialTokens: 3, maxTokens: 2 });
 
   const fetchApply = new FetchBuilder()
     .limitPending(1000)
@@ -358,22 +351,17 @@ export function withRequestLogic(
     .rejectOn(response => retryCodes.has(response.status))
     .rateLimit(2)
     // update send-time before sending
-    .modifyRequest(async request => {
-      if (request.method === 'POST') {
-        const body = JSON.stringify({ ...(await request.clone().json()), sendTime: new Date().toISOString() });
-        return new Request(request, { body });
+    .modifyRequest(({ method, body }) => {
+      if (method === 'POST' && body) {
+        body = JSON.stringify({ ...JSON.parse(body), sendTime: new Date().toISOString() });
+        return { body };
       }
-      return request;
-    })
-    .build(fetchImplementation);
+      return {};
+    });
 
-  return (
-    new FetchBuilder()
-      .route(url => url.endsWith('flags:resolve'), fetchResolve)
-      .route(url => url.endsWith('flags:apply'), fetchApply)
-      // throw so we notice changes in endpoints that should be handled here
-      .build(request => Promise.reject(new Error(`Unexpected url: ${request.url}`)))
-  );
+  fetchBuilder
+    .route(url => url.endsWith('flags:resolve'), fetchResolve)
+    .route(url => url.endsWith('flags:apply'), fetchApply);
 }
 
 function withTimeout(signal: AbortSignal, timeout: number, reason?: any): AbortSignal {

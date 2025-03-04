@@ -1,7 +1,6 @@
 import { Value } from './Value';
 import { Logger } from './logger';
-import { FetchBuilder, TimeUnit } from './fetch-util';
-import { SimpleFetch } from './types';
+import { FetchBuilder, InternalFetch, SimpleFetch, TimeUnit } from './fetch-util';
 import { EventData } from './events';
 interface Event {
   eventDefinition: string;
@@ -36,7 +35,7 @@ export class EventSenderEngine {
   private readonly flushTimeoutMilliseconds: number;
   private readonly clientSecret: string;
   private readonly maxBatchSize: number;
-  private readonly fetchImplementation: SimpleFetch;
+  private readonly fetchImplementation: InternalFetch;
   private readonly publishUrl: string;
   private readonly logger: Logger;
   private pendingFlush: undefined | ReturnType<typeof setTimeout>;
@@ -70,12 +69,12 @@ export class EventSenderEngine {
     }
     this.fetchImplementation = fetchBuilder
       // update send-time before sending
-      .modifyRequest(async request => {
-        if (request.method === 'POST') {
-          const body = JSON.stringify({ ...(await request.json()), sendTime: new Date().toISOString() });
-          return new Request(request, { body });
+      .modifyRequest(({ method, body }) => {
+        if (method === 'POST' && body) {
+          body = JSON.stringify({ ...JSON.parse(body), sendTime: new Date().toISOString() });
+          return { body };
         }
-        return request;
+        return {};
       })
       .build(fetchImplementation);
   }
@@ -141,15 +140,15 @@ export class EventSenderEngine {
 
   // Made public for unit testing
   public upload(batch: EventBatch): Promise<PublishError[]> {
-    const request = new Request(this.publishUrl, {
+    const request = {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({
         ...batch,
         events: batch.events.map(e => ({ ...e, eventDefinition: `eventDefinitions/${e.eventDefinition}` })),
       }),
-    });
-    return this.fetchImplementation(request)
+    };
+    return this.fetchImplementation(this.publishUrl, request)
       .then(resp => resp.json())
       .then(({ errors }) => errors);
   }
