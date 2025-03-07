@@ -14,10 +14,11 @@ import { SdkId } from './generated/confidence/flags/resolver/v1/types';
 import { Trackable } from './Trackable';
 import { Closer } from './Closer';
 import { Subscribe, Observer, subject, changeObserver } from './observing';
-import { SimpleFetch, WaitUntil } from './types';
+import { WaitUntil } from './types';
 import { FlagResolution } from './FlagResolution';
 import { AccessiblePromise } from './AccessiblePromise';
 import { Telemetry } from './Telemetry';
+import { SimpleFetch } from './fetch-util';
 
 /**
  * Confidence options, to be used for easier initialization of Confidence

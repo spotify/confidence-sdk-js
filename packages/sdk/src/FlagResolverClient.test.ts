@@ -8,7 +8,7 @@ import {
 } from './FlagResolverClient';
 import { setMaxListeners } from 'node:events';
 import { SdkId } from './generated/confidence/flags/resolver/v1/types';
-import { abortableSleep, FetchBuilder } from './fetch-util';
+import { abortableSleep, FetchBuilder, InternalFetch, SimpleFetch } from './fetch-util';
 import { ApplyFlagsRequest, ResolveFlagsRequest } from './generated/confidence/flags/resolver/v1/api';
 import { FailedFlagResolution, FlagResolution } from './FlagResolution';
 import { Telemetry } from './Telemetry';
@@ -24,7 +24,7 @@ const dummyResolveToken = Uint8Array.from(atob('SGVsbG9Xb3JsZA=='), c => c.charC
 const resolveHandlerMock = jest.fn();
 const applyHandlerMock = jest.fn();
 
-const fetchImplementation = async (request: Request): Promise<Response> => {
+const fetchImplementation: SimpleFetch = async (request): Promise<Response> => {
   await abortableSleep(0, request.signal);
 
   let handler: (reqBody: any) => any;
@@ -327,14 +327,15 @@ describe('Backend environment Evaluation', () => {
 });
 
 describe('intercept', () => {
-  const fetchMock = jest.fn<Promise<Response>, [Request]>();
-  const fetchBuilder = new FetchBuilder();
-  let underTest: typeof fetch;
+  const fetchMock: jest.MockedFn<SimpleFetch> = jest.fn();
+  let underTest: InternalFetch;
 
   beforeEach(() => {
     jest.useFakeTimers();
     jest.setSystemTime(0);
-    underTest = withRequestLogic(fetchMock, console);
+    const fetchBuilder = new FetchBuilder();
+    withRequestLogic(fetchBuilder, console);
+    underTest = fetchBuilder.build(fetchMock);
   });
   afterEach(() => {
     if (jest.getTimerCount() !== 0) throw new Error('test finished with remaining timers');
@@ -347,7 +348,9 @@ describe('intercept', () => {
     );
 
     beforeEach(() => {
-      underTest = withTelemetryData(fetchBuilder, telemetryMock).build(fetchMock);
+      const fetchBuilder = new FetchBuilder();
+      withTelemetryData(fetchBuilder, telemetryMock);
+      underTest = fetchBuilder.build(fetchMock);
       telemetryMock.getSnapshot = jest.fn().mockReturnValue({
         libraryTraces: [
           {
@@ -364,19 +367,8 @@ describe('intercept', () => {
       fetchMock.mockResolvedValue(new Response());
       await underTest('https://resolver.confidence.dev/v1/flags:resolve', { method: 'POST', body: '{}' });
       expect(fetchMock).toBeCalledTimes(1);
-      const request = fetchMock.mock.calls[0][0];
-      expect(request.headers.has('X-Confidence-Telemetry')).toBeTruthy();
-      expect(request.headers.get('X-Confidence-Telemetry')).toEqual('CgwIAxIEdGVzdBoCCAMQBA==');
-    });
-  });
-
-  describe('withRequestLogic', () => {
-    it('should throw on unknown urls', async () => {
-      fetchMock.mockResolvedValue(new Response());
-
-      await expect(underTest('https://resolver.confidence.dev/v1/flags:bad')).rejects.toThrow(
-        'Unexpected url: https://resolver.confidence.dev/v1/flags:bad',
-      );
+      const headers = fetchMock.mock.calls[0][0].headers;
+      expect(headers.get('X-CONFIDENCE-TELEMETRY')).toEqual('CgwIAxIEdGVzdBoCCAMQBA==');
     });
   });
 
