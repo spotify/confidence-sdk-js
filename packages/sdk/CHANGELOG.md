@@ -1,5 +1,19 @@
 # Changelog
 
+## [0.2.5](https://github.com/spotify/confidence-sdk-js/compare/sdk-v0.2.4...sdk-v0.2.5) (2025-03-07)
+
+
+### 🐛 Bug Fixes
+
+* avoid cloning requests in FetchBuilder ([#228](https://github.com/spotify/confidence-sdk-js/issues/228)) ([5f4cceb](https://github.com/spotify/confidence-sdk-js/commit/5f4cceb2bb1b21271472597cc85a2a5e645c09cd))
+* create a safe environment ([#224](https://github.com/spotify/confidence-sdk-js/issues/224)) ([664741c](https://github.com/spotify/confidence-sdk-js/commit/664741cb0b62a81da35d1e4dd77587d39e808099))
+* make telemetry Logger optional (and don't pass it) ([#227](https://github.com/spotify/confidence-sdk-js/issues/227)) ([7145f2e](https://github.com/spotify/confidence-sdk-js/commit/7145f2ebde455864b9f7d0ab54c04662c5deeaf4))
+
+
+### 🔄 Refactoring
+
+* add better logging for invalid or missing client key ([#226](https://github.com/spotify/confidence-sdk-js/issues/226)) ([794cf8f](https://github.com/spotify/confidence-sdk-js/commit/794cf8f42f97e5995deaea6e95411798a96e15ca))
+
 ## [0.2.4](https://github.com/spotify/confidence-sdk-js/compare/sdk-v0.2.3...sdk-v0.2.4) (2025-02-26)
 
 
