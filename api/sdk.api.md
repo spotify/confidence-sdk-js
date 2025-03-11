@@ -4,6 +4,9 @@
 
 ```ts
 
+import { BinaryReader } from '@bufbuild/protobuf/wire';
+import { BinaryWriter } from '@bufbuild/protobuf/wire';
+
 // @public
 export namespace Closer {
     export function combine(...closers: Closer[]): Closer;
@@ -22,7 +25,7 @@ export class Confidence implements EventSender, Trackable, FlagResolver {
     //
     // @internal
     readonly contextChanges: Subscribe<string[]>;
-    static create({ clientSecret, region, timeout, environment, fetchImplementation, logger, resolveBaseUrl, disableTelemetry, applyDebounce, waitUntil, }: ConfidenceOptions): Confidence;
+    static create({ clientSecret, region, timeout, environment, fetchImplementation, logger, resolveBaseUrl, disableTelemetry, applyDebounce, waitUntil, cache, }: ConfidenceOptions): Confidence;
     get environment(): string;
     evaluateFlag(path: string, defaultValue: string): FlagEvaluation<string>;
     // (undocumented)
@@ -52,6 +55,10 @@ export class Confidence implements EventSender, Trackable, FlagResolver {
 // @public
 export interface ConfidenceOptions {
     applyDebounce?: number;
+    // Warning: (ae-forgotten-export) The symbol "CacheOptions" needs to be exported by the entry point index.d.ts
+    //
+    // (undocumented)
+    cache?: CacheOptions;
     clientSecret: string;
     disableTelemetry?: boolean;
     environment: 'client' | 'backend';
@@ -66,6 +73,10 @@ export interface ConfidenceOptions {
 
 // @public
 export interface Configuration {
+    // Warning: (ae-forgotten-export) The symbol "FlagCache" needs to be exported by the entry point index.d.ts
+    //
+    // (undocumented)
+    readonly cacheProvider?: () => FlagCache;
     // (undocumented)
     readonly clientSecret: string;
     readonly environment: 'client' | 'backend';

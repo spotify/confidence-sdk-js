@@ -1,9 +1,4 @@
-import {
-  CachingFlagResolverClient,
-  FetchingFlagResolverClient,
-  FlagResolverClient,
-  PendingResolution,
-} from './FlagResolverClient';
+import { FetchingFlagResolverClient, FlagResolverClient, PendingResolution } from './FlagResolverClient';
 import { EventSenderEngine } from './EventSenderEngine';
 import { Value } from './Value';
 import { EventData, EventSender } from './events';
@@ -19,7 +14,13 @@ import { FlagResolution } from './FlagResolution';
 import { AccessiblePromise } from './AccessiblePromise';
 import { Telemetry } from './Telemetry';
 import { SimpleFetch } from './fetch-util';
+import { CacheEntry, FlagCache } from './cache';
 
+type CacheOptions = {
+  scope?: <T>(fn: () => T) => () => T;
+  entries?: Iterable<CacheEntry>;
+  ttl?: number;
+};
 /**
  * Confidence options, to be used for easier initialization of Confidence
  * @public
@@ -48,6 +49,7 @@ export interface ConfidenceOptions {
    * This is particularly useful in serverless environments where you need to ensure certain operations complete before the environment is reclaimed.
    */
   waitUntil?: WaitUntil;
+  cache?: CacheOptions;
 }
 
 /**
@@ -69,6 +71,7 @@ export interface Configuration {
   readonly flagResolverClient: FlagResolverClient;
   /* @internal */
   readonly clientSecret: string;
+  readonly cacheProvider?: () => FlagCache;
 }
 
 /**
@@ -358,6 +361,7 @@ export class Confidence implements EventSender, Trackable, FlagResolver {
     disableTelemetry = false,
     applyDebounce = 10,
     waitUntil,
+    cache = {},
   }: ConfidenceOptions): Confidence {
     if (environment !== 'client' && environment !== 'backend') {
       throw new Error(`Invalid environment: ${environment}. Must be 'client' or 'backend'.`);
@@ -373,7 +377,13 @@ export class Confidence implements EventSender, Trackable, FlagResolver {
     if (!clientSecret) {
       logger.error?.(`Confidence: confidence cannot be instantiated without a client secret`);
     }
-    let flagResolverClient: FlagResolverClient = new FetchingFlagResolverClient({
+    let cacheProvider: (() => FlagCache) | undefined;
+    if (cache.scope) {
+      cacheProvider = cache.scope(() => new FlagCache(cache.ttl || Number.POSITIVE_INFINITY, cache.entries));
+    } else if (environment === 'client') {
+      cacheProvider = () => new FlagCache(cache.ttl || Number.POSITIVE_INFINITY, cache.entries);
+    }
+    const flagResolverClient: FlagResolverClient = new FetchingFlagResolverClient({
       clientSecret,
       fetchImplementation,
       sdk,
@@ -385,10 +395,8 @@ export class Confidence implements EventSender, Trackable, FlagResolver {
       logger,
       applyDebounce,
       waitUntil,
+      cacheProvider,
     });
-    if (environment === 'client') {
-      flagResolverClient = new CachingFlagResolverClient(flagResolverClient, Number.POSITIVE_INFINITY);
-    }
     const estEventSizeKb = 1;
     const flushTimeoutMilliseconds = 500;
     // default grpc payload limit is 4MB, so we aim for a 1MB batch-size
