@@ -332,8 +332,10 @@ export class Confidence implements EventSender, Trackable, FlagResolver {
     );
   }
 
-  toOptions(): ConfidenceOptions {
-    const cache = this.config.cacheProvider?.().toOptions();
+  async toOptions(): Promise<ConfidenceOptions> {
+    // TODO this resolve shouldn't really be here...
+    await this.resolveFlags();
+    const cache = await this.config.cacheProvider?.().toOptions();
     return {
       clientSecret: this.config.clientSecret,
       region: this.config.region,
@@ -383,10 +385,7 @@ export class Confidence implements EventSender, Trackable, FlagResolver {
     if (!clientSecret) {
       logger.error?.(`Confidence: confidence cannot be instantiated without a client secret`);
     }
-    let cacheProvider: (() => FlagCache) | undefined;
-    if (cache.scope || environment === 'client') {
-      cacheProvider = FlagCache.provider(cache);
-    }
+    const cacheProvider = FlagCache.provider(cache);
     const flagResolverClient: FlagResolverClient = new FetchingFlagResolverClient({
       clientSecret,
       fetchImplementation,

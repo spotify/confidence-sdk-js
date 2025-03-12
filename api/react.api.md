@@ -33,7 +33,7 @@ export const ConfidenceProvider: ConfidenceProvider;
 //
 // @public (undocumented)
 export const ManagedConfidenceProvider: FC<PropsWithChildren<{
-    options: Omit<ConfidenceOptions, 'environment'>;
+    options: ConfidenceOptions;
 }>>;
 
 // @public

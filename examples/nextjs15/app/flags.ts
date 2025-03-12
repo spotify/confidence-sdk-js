@@ -13,7 +13,7 @@ export const confidence = Confidence.create({
   logger: console,
   fetchImplementation,
   cache: { scope: React.cache },
-  applyDebounce: 300,
+  applyDebounce: 301,
 });
 
 export const getConfidence = (context: Context): Confidence => {

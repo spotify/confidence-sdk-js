@@ -12,10 +12,11 @@ export default async function Page() {
   const cookieStore = await cookies();
   let visitorId = cookieStore.get('visitor.id')?.value ?? 'unknown';
   const confidence = getConfidence({ targeting_key: visitorId });
+  console.log('details', await confidence.evaluateFlag('web-sdk-e2e-flag.str', 'red'));
   return (
     <div>
       <pre>{getNumber()}</pre>
-      <ManagedConfidenceProvider options={confidence.toOptions()}>
+      <ManagedConfidenceProvider options={await confidence.toOptions()}>
         <Suspense fallback={<fieldset>Loading...</fieldset>}>
           <ClientComponent name={visitorId}>
             <ServerComponent>

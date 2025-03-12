@@ -25,7 +25,7 @@ const WithContext: FC<PropsWithChildren<{ context: Context }>> = ({ context, chi
 
 declare function assertNever<T extends never>(): void;
 
-export const ManagedConfidenceProvider: FC<PropsWithChildren<{ options: Omit<ConfidenceOptions, 'environment'> }>> = ({
+export const ManagedConfidenceProvider: FC<PropsWithChildren<{ options: ConfidenceOptions }>> = ({
   options,
   children,
 }) => {

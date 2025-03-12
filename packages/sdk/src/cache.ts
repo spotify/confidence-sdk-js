@@ -4,36 +4,39 @@ import { ResolveFlagsResponse } from './generated/confidence/flags/resolver/v1/a
 import { Value } from './Value';
 
 export type CacheEntry = [string, number, Uint8Array];
-export type CacheScope = <T>(fn: () => T) => () => T;
+export type CacheScope = (provider: CacheProvider) => CacheProvider;
+// TODO make CacheProvider take the clientKey
+export type CacheProvider = () => FlagCache;
 export interface CacheOptions {
   ttl?: number;
   scope?: CacheScope;
-  entries?: AsyncIterable<CacheEntry>;
+  entries?: Iterable<CacheEntry>;
 }
 
 type CacheValue = { timestamp: number; response: Promise<ResolveFlagsResponse> };
 export class FlagCache {
+  private readonly data: Map<string, CacheValue> = new Map();
   private constructor(
     private ttl: number,
-    private data: AccessiblePromise<Map<string, CacheValue>>,
-  ) {}
+    entries: Iterable<CacheEntry> = [],
+  ) {
+    for (const [key, timestamp, data] of entries) {
+      this.data.set(key, { timestamp, response: AccessiblePromise.resolve(ResolveFlagsResponse.decode(data)) });
+    }
+  }
 
   get(context: Context, supplier: (context: Context) => Promise<ResolveFlagsResponse>): Promise<ResolveFlagsResponse> {
-    return this.data.then(data => {
-      const key = Value.serialize(context);
-      let entry = data.get(key);
-      if (!entry) {
-        entry = { timestamp: Date.now(), response: supplier(context) };
-        data.set(key, entry);
-      }
-      return entry.response;
-    });
-    // this.evict();
+    const key = Value.serialize(context);
+    let entry = this.data.get(key);
+    if (!entry) {
+      entry = { timestamp: Date.now(), response: supplier(context) };
+      this.data.set(key, entry);
+    }
+    return entry.response;
   }
 
   async *[Symbol.asyncIterator](): AsyncIterator<CacheEntry> {
-    const data = await this.data;
-    for (const [key, { timestamp, response }] of data) {
+    for (const [key, { timestamp, response }] of this.data) {
       yield [key, timestamp, ResolveFlagsResponse.encode(await response).finish()];
     }
   }
@@ -46,30 +49,39 @@ export class FlagCache {
   //   }
   // }
 
-  toOptions(): CacheOptions {
+  async toOptions(): Promise<CacheOptions> {
     return {
       ttl: this.ttl,
-      entries: this,
+      entries: await arrayFromAsync(this),
     };
   }
 
-  static provider({ scope, ttl = Infinity, entries }: CacheOptions): () => FlagCache {
-    const data = AccessiblePromise.resolve(entries ? FlagCache.unmarshalEntries(entries) : new Map());
-    if (scope) {
-      const provider = () => new FlagCache(ttl, data);
-      return scope(provider);
-    } else {
-      const cache = new FlagCache(ttl, data);
-      return () => cache;
-    }
+  static provider({ scope = defaultScope(), ttl = Infinity, entries }: CacheOptions): CacheProvider | undefined {
+    const provider = () => new FlagCache(ttl, entries);
+    return scope(provider);
   }
+}
 
-  private static async unmarshalEntries(entries: AsyncIterable<CacheEntry>): Promise<Map<string, CacheValue>> {
-    const map = new Map<string, CacheValue>();
-    for await (const [key, timestamp, data] of entries) {
-      map.set(key, { timestamp, response: AccessiblePromise.resolve(ResolveFlagsResponse.decode(data)) });
-      // yield [key, { timestamp, response: promise.then(ResolveFlagsResponse.decode) }];
+export const singletonScope: CacheScope = provider => {
+  let cache: FlagCache | undefined;
+  return () => {
+    if (!cache) {
+      cache = provider();
     }
-    return map;
+    return cache;
+  };
+};
+
+export const noScope = (provider: CacheProvider) => provider;
+
+function defaultScope(): CacheScope {
+  return typeof window === 'undefined' ? noScope : singletonScope;
+}
+
+async function arrayFromAsync<T>(iterable: AsyncIterable<T>): Promise<T[]> {
+  const result = [];
+  for await (const value of iterable) {
+    result.push(value);
   }
+  return result;
 }

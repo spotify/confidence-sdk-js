@@ -1,4 +1,4 @@
-import React, { FC, ReactNode, Suspense, use } from 'react';
+import React, { FC, ReactNode, Suspense } from 'react';
 import { cookies } from 'next/headers';
 import { getConfidence } from 'flags';
 
@@ -8,7 +8,7 @@ export const ServerComponent: FC<{ children?: ReactNode }> = async ({ children }
   const targeting_key = cookieStore.get('visitor.id')?.value;
   const confidence = getConfidence({ targeting_key });
   const details = await confidence.evaluateFlag('web-sdk-e2e-flag.str', 'red');
-  console.log('ServerComponent details', details);
+  // console.log('ServerComponent details', details);
   return (
     <fieldset>
       <legend>ServerComponent</legend>

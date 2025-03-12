@@ -48,7 +48,7 @@ export class Confidence implements EventSender, Trackable, FlagResolver {
     setContext(context: Context): boolean;
     subscribe(onStateChange?: StateObserver): () => void;
     // (undocumented)
-    toOptions(): ConfidenceOptions;
+    toOptions(): Promise<ConfidenceOptions>;
     track(name: string, data?: EventData): void;
     track(manager: Trackable.Manager): Closer;
     withContext(context: Context): Confidence;
