@@ -14,13 +14,8 @@ import { FlagResolution } from './FlagResolution';
 import { AccessiblePromise } from './AccessiblePromise';
 import { Telemetry } from './Telemetry';
 import { SimpleFetch } from './fetch-util';
-import { CacheEntry, FlagCache } from './cache';
+import { CacheOptions, FlagCache } from './cache';
 
-type CacheOptions = {
-  scope?: <T>(fn: () => T) => () => T;
-  entries?: Iterable<CacheEntry>;
-  ttl?: number;
-};
 /**
  * Confidence options, to be used for easier initialization of Confidence
  * @public
@@ -50,19 +45,16 @@ export interface ConfidenceOptions {
    */
   waitUntil?: WaitUntil;
   cache?: CacheOptions;
+  context?: Context;
 }
 
 /**
  * Confidence configuration
  * @public
  */
-export interface Configuration {
-  /** Environment: can be either client of backend */
-  readonly environment: 'client' | 'backend';
+export interface Configuration extends ConfidenceOptions {
   /** Debug logger */
   readonly logger: Logger;
-  /** Resolve timeout */
-  readonly timeout: number;
   /** Event Sender Engine
    * @internal */
   readonly eventSenderEngine: EventSenderEngine;
@@ -82,7 +74,7 @@ export class Confidence implements EventSender, Trackable, FlagResolver {
   /** Internal Confidence configurations */
   readonly config: Configuration;
   private readonly parent?: Confidence;
-  private _context: Map<string, Value> = new Map();
+  private _context: Map<string, Value>;
   private contextChanged?: Observer<string[]>;
 
   /**
@@ -96,9 +88,10 @@ export class Confidence implements EventSender, Trackable, FlagResolver {
   private readonly flagStateSubject: Subscribe<State>;
 
   /** @internal */
-  constructor(config: Configuration, parent?: Confidence) {
+  constructor({ context = {}, ...config }: Configuration, parent?: Confidence) {
     this.config = config;
     this.parent = parent;
+    this._context = new Map(Object.entries(context));
     this.contextChanges = subject(observer => {
       let parentSubscription: Closer | void;
       if (parent) {
@@ -339,6 +332,18 @@ export class Confidence implements EventSender, Trackable, FlagResolver {
     );
   }
 
+  toOptions(): ConfidenceOptions {
+    const cache = this.config.cacheProvider?.().toOptions();
+    return {
+      clientSecret: this.config.clientSecret,
+      region: this.config.region,
+      timeout: this.config.timeout,
+      environment: this.config.environment,
+      cache,
+      context: this.getContext(),
+    };
+  }
+
   /**
    * Creates a Confidence instance
    * @param clientSecret - clientSecret found on the Confidence console
@@ -350,19 +355,20 @@ export class Confidence implements EventSender, Trackable, FlagResolver {
    * @param resolveBaseUrl - custom backend resolve URL
    * @returns
    */
-  static create({
-    clientSecret,
-    region,
-    timeout,
-    environment,
-    fetchImplementation = defaultFetchImplementation(),
-    logger = defaultLogger(),
-    resolveBaseUrl,
-    disableTelemetry = false,
-    applyDebounce = 10,
-    waitUntil,
-    cache = {},
-  }: ConfidenceOptions): Confidence {
+  static create(options: ConfidenceOptions): Confidence {
+    const {
+      clientSecret,
+      region,
+      timeout,
+      environment,
+      fetchImplementation = defaultFetchImplementation(),
+      logger = defaultLogger(),
+      resolveBaseUrl,
+      disableTelemetry = false,
+      applyDebounce = 10,
+      waitUntil,
+      cache = {},
+    } = options;
     if (environment !== 'client' && environment !== 'backend') {
       throw new Error(`Invalid environment: ${environment}. Must be 'client' or 'backend'.`);
     }
@@ -378,10 +384,8 @@ export class Confidence implements EventSender, Trackable, FlagResolver {
       logger.error?.(`Confidence: confidence cannot be instantiated without a client secret`);
     }
     let cacheProvider: (() => FlagCache) | undefined;
-    if (cache.scope) {
-      cacheProvider = cache.scope(() => new FlagCache(cache.ttl || Number.POSITIVE_INFINITY, cache.entries));
-    } else if (environment === 'client') {
-      cacheProvider = () => new FlagCache(cache.ttl || Number.POSITIVE_INFINITY, cache.entries);
+    if (cache.scope || environment === 'client') {
+      cacheProvider = FlagCache.provider(cache);
     }
     const flagResolverClient: FlagResolverClient = new FetchingFlagResolverClient({
       clientSecret,
@@ -416,12 +420,11 @@ export class Confidence implements EventSender, Trackable, FlagResolver {
       logger,
     });
     return new Confidence({
-      environment: environment,
+      ...options,
       flagResolverClient,
       eventSenderEngine,
-      timeout,
       logger,
-      clientSecret,
+      cacheProvider,
     });
   }
 }

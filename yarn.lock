@@ -3485,17 +3485,6 @@ __metadata:
   languageName: node
   linkType: hard
 
-"@nimpl/context@npm:^0.1.0":
-  version: 0.1.0
-  resolution: "@nimpl/context@npm:0.1.0"
-  peerDependencies:
-    next: ">= 14.0.0"
-    react: ">= 18.2.0"
-    react-dom: ">= 18.2.0"
-  checksum: 10c0/2d174cf8dd3c34b395fde60fc8a7882a6e60a255be1947ba1b7488d0679d544faf94aaa03a86d2ad7dc6caeb22010ffdfbb6fe4936ccef0d13236fb377291f8c
-  languageName: node
-  linkType: hard
-
 "@nodelib/fs.scandir@npm:2.1.5":
   version: 2.1.5
   resolution: "@nodelib/fs.scandir@npm:2.1.5"
@@ -13323,7 +13312,7 @@ __metadata:
   languageName: node
   linkType: hard
 
-"next@npm:^15.1.6":
+"next@npm:^15.2.1":
   version: 15.2.1
   resolution: "next@npm:15.2.1"
   dependencies:
@@ -13388,12 +13377,13 @@ __metadata:
   version: 0.0.0-use.local
   resolution: "nextjs15@workspace:examples/nextjs15"
   dependencies:
-    "@nimpl/context": "npm:^0.1.0"
+    "@spotify-confidence/react": "workspace:*"
+    "@spotify-confidence/sdk": "workspace:*"
     "@types/react": "npm:^19"
     "@types/react-dom": "npm:^19"
-    next: "npm:^15.1.6"
-    react: "npm:^19.0.0"
-    react-dom: "npm:^19.0.0"
+    next: "npm:^15.2.1"
+    react: "npm:^19"
+    react-dom: "npm:^19"
   languageName: unknown
   linkType: soft
 
@@ -15257,7 +15247,7 @@ __metadata:
   languageName: node
   linkType: hard
 
-"react-dom@npm:^19.0.0":
+"react-dom@npm:^19":
   version: 19.0.0
   resolution: "react-dom@npm:19.0.0"
   dependencies:
@@ -15403,7 +15393,7 @@ __metadata:
   languageName: node
   linkType: hard
 
-"react@npm:^19.0.0":
+"react@npm:^19":
   version: 19.0.0
   resolution: "react@npm:19.0.0"
   checksum: 10c0/9cad8f103e8e3a16d15cb18a0d8115d8bd9f9e1ce3420310aea381eb42aa0a4f812cf047bb5441349257a05fba8a291515691e3cb51267279b2d2c3253f38471

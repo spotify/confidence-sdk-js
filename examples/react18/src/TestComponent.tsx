@@ -7,8 +7,7 @@ const TestComponent = () => {
   const [clickCount, setClickCount] = useState(0);
   const confidence = useConfidence();
   // const details = useFlagEvaluation('web-sdk-e2e-flag.str', 'default');
-  // const details = confidence.evaluateFlag('web-sdk-e2e-flag.str', 'default');
-  const details = confidence.useFlag('web-sdk-e2e-flag.str', 'default');
+  const details = confidence.evaluateFlag('web-sdk-e2e-flag.str', 'default');
   // const details = useFlagValue('web-sdk-e2e-flag.str', 'default');
   return (
     <>

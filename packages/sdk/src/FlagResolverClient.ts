@@ -25,7 +25,10 @@ const retryCodes = new Set([408, 502, 503, 504]);
 
 export type CacheProvider = () => FlagCache;
 export class ResolveError extends Error {
-  constructor(public readonly code: FlagEvaluation.ErrorCode, message: string) {
+  constructor(
+    public readonly code: FlagEvaluation.ErrorCode,
+    message: string,
+  ) {
     super(message);
   }
 }
@@ -155,6 +158,7 @@ export class FetchingFlagResolverClient implements FlagResolverClient {
     this.waitUntil = waitUntil;
     if (cacheProvider) {
       this.cacheReadThrough = (context, supplier) => {
+        logger.debug?.('Using cache');
         const cache = cacheProvider();
         return cache.get(context, supplier);
       };

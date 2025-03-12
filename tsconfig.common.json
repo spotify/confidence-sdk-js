@@ -1,7 +1,7 @@
 {
   "extends": "@spotify/tsconfig/tsconfig.json",
   "compilerOptions": {
-    "target": "ESNext",
+    "target": "ES2018",
     "lib": ["ES2015", "DOM"],
     "skipLibCheck": true,
     "composite": true,

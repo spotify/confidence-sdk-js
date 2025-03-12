@@ -44,13 +44,13 @@ export default {
   plugins: [
     nodeResolve(),
     commonjs(),
-    swc({
-      swc: {
-        jsc: {
-          target: 'es2015',
-        },
-      },
-    }),
+    // swc({
+    //   swc: {
+    //     jsc: {
+    //       target: 'es2018',
+    //     },
+    //   },
+    // }),
   ],
 };
 

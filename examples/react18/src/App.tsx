@@ -1,6 +1,6 @@
 import React, { Suspense, createContext, useCallback, useContext, useEffect, useState } from 'react';
 import { Confidence, pageViews } from '@spotify-confidence/sdk';
-import { ConfidenceProvider, ConfidenceReact, useConfidence } from '@spotify-confidence/react';
+import { ConfidenceProvider, useConfidence, useConfidenceContext, useEvaluateFlag } from '@spotify-confidence/react';
 
 const state = {
   get failRequests(): boolean {
@@ -94,7 +94,7 @@ function Level({ name, children }: { name: string; children?: React.ReactNode })
 
 function Flags() {
   const confidence = useConfidence();
-  const flagData = JSON.stringify(confidence.useEvaluateFlag('tutorial-feature.title', 'Default'), null, '  ');
+  const flagData = JSON.stringify(useEvaluateFlag('tutorial-feature.title', 'Default'), null, '  ');
   // const flagData = useDeferredValue(confidence.useFlag('web-sdk-e2e-flag.str', 'default'));
   return (
     <fieldset>
@@ -123,7 +123,7 @@ function ContextControl() {
   return (
     <fieldset>
       <legend>Context</legend>
-      <pre>{JSON.stringify(confidence.useContext())}</pre>
+      <pre>{JSON.stringify(useConfidenceContext())}</pre>
       <button onClick={() => confidence.setContext({ targeting_key: Math.floor(2e6 * Math.random()).toString(16) })}>
         Randomize
       </button>
