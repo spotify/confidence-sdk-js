@@ -5,6 +5,7 @@ import { ClientComponent } from '@/components/ClientComponent';
 // import { getConfidence } from 'flags-client';
 import { ConfidenceProvider, ManagedConfidenceProvider } from '@spotify-confidence/react';
 import { Confidence } from '@spotify-confidence/sdk';
+import { doc } from 'prettier';
 
 const isServer = typeof window === 'undefined';
 
@@ -24,6 +25,7 @@ const confidence = Confidence.create({
 export default function Page() {
   console.log('render Page', isServer ? 'server' : 'client', Date.now() / 1000);
   // const confidence = getConfidence();
+  console.log('do we have cookies?', typeof document !== 'undefined');
   const myConfidence = confidence.withContext({ targeting_key: 'test-b' });
   let visitorId = myConfidence.getContext().targeting_key!;
   return (
@@ -42,6 +44,13 @@ export default function Page() {
       <h2>Cons</h2>
       <ul>
         <li>Flags can't be resolved in server components</li>
+      </ul>
+      <h2>What's missing</h2>
+      <ul>
+        <li>
+          It would be nice to be able to use context providers so that you could for instance read a browser cookie,
+          cause we won't try to gather the context in SSR anyways.
+        </li>
       </ul>
     </div>
   );

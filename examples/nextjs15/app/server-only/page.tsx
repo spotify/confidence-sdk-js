@@ -8,7 +8,7 @@ const randomNumber = React.cache(() => Math.random());
 
 export default async function Page() {
   const confidence = getConfidence({ targeting_key: 'andreas' });
-  // console.log('details', await confidence.evaluateFlag('web-sdk-e2e-flag.str', 'red'));
+  console.log('details', await confidence.evaluateFlag('web-sdk-e2e-flag.str', 'red'));
   return (
     <div>
       <pre>{randomNumber()}</pre>
