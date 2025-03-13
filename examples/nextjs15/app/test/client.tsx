@@ -2,7 +2,7 @@
 
 import React, { ReactNode, use } from 'react';
 
-export function Wrapper(props: { things: Promise<string[]>; children: ReactNode }) {
+export function Wrapper(props: { things: PromiseLike<string[]>; children: ReactNode }) {
   console.log('render wrapper');
   const things = use(props.things);
   return (

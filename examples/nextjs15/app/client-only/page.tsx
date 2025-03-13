@@ -5,7 +5,6 @@ import { ClientComponent } from '@/components/ClientComponent';
 // import { getConfidence } from 'flags-client';
 import { ConfidenceProvider, ManagedConfidenceProvider } from '@spotify-confidence/react';
 import { Confidence } from '@spotify-confidence/sdk';
-import { doc } from 'prettier';
 
 const isServer = typeof window === 'undefined';
 
@@ -26,7 +25,7 @@ export default function Page() {
   console.log('render Page', isServer ? 'server' : 'client', Date.now() / 1000);
   // const confidence = getConfidence();
   console.log('do we have cookies?', typeof document !== 'undefined');
-  const myConfidence = confidence.withContext({ targeting_key: 'test-b' });
+  const myConfidence = confidence.withContext({ targeting_key: getCookie('visitor.id') ?? 'unknown' });
   let visitorId = myConfidence.getContext().targeting_key!;
   return (
     <div>
@@ -58,4 +57,16 @@ export default function Page() {
 
 function sleep(ms: number) {
   return new Promise(resolve => setTimeout(resolve, ms));
+}
+
+function getCookie(name: string): string | undefined {
+  if (typeof document === 'undefined') return;
+  const cookies = document.cookie.split('; ');
+  for (const cookie of cookies) {
+    const [key, value] = cookie.split('=');
+    if (key === name) {
+      return decodeURIComponent(value);
+    }
+  }
+  return;
 }

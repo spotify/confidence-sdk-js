@@ -1,17 +1,19 @@
 export class Things implements AsyncIterable<string> {
+  refCount = 0;
   nextThings: Promise<string>[] = [];
-  resolveNextThing?: (thing: string) => void;
+  resolveNextThing?: (thing: string | Promise<string>) => void;
 
-  put(thing: string) {
+  put<T extends string | Promise<string>>(thing: T): T {
     if (this.resolveNextThing) {
       this.resolveNextThing(thing);
       this.resolveNextThing = undefined;
     } else {
       this.nextThings.push(Promise.resolve(thing));
     }
+    return thing;
   }
 
-  async getNextThing(): Promise<string> {
+  private async getNextThing(): Promise<string> {
     if (this.nextThings.length) {
       return this.nextThings.shift()!;
     }
@@ -23,13 +25,21 @@ export class Things implements AsyncIterable<string> {
     });
   }
 
-  close() {
-    this.put('__done');
+  ref() {
+    this.refCount++;
+  }
+
+  unref() {
+    this.refCount--;
+    if (this.refCount === 0) {
+      this.put('');
+    }
   }
 
   async *[Symbol.asyncIterator]() {
+    if (this.refCount === 0) return;
     let thing = await this.getNextThing();
-    while (thing !== '__done') {
+    while (thing) {
       yield thing;
       thing = await this.getNextThing();
     }
@@ -42,11 +52,4 @@ export class Things implements AsyncIterable<string> {
     }
     return things;
   }
-}
-
-type Resolvable<T> = { resolve: (value: T) => void; promise: Promise<T> };
-function resolvable<T>(): Resolvable<T> {
-  let resolve: (value: T) => void;
-  const promise = new Promise<T>(r => (resolve = r));
-  return { resolve: resolve!, promise };
 }

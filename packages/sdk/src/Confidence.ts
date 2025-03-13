@@ -63,7 +63,7 @@ export interface Configuration extends ConfidenceOptions {
   readonly flagResolverClient: FlagResolverClient;
   /* @internal */
   readonly clientSecret: string;
-  readonly cacheProvider?: () => FlagCache;
+  readonly cacheProvider: () => FlagCache;
 }
 
 /**

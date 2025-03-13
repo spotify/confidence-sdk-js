@@ -22,12 +22,14 @@ export default async function Page() {
 
 const Trailer: FC = () => {
   console.log('render trailer');
-  getThings().close();
+  getThings().unref();
   return undefined;
 };
 
 const Outer: FC<{ children?: ReactNode }> = async ({ children }) => {
+  console.log('render outer');
   const things = getThings();
+  things.ref();
   return (
     <Wrapper things={Things.collect(things)}>
       {children}
@@ -41,7 +43,8 @@ const Deep: FC = () => {
 };
 const Test: FC<{ name: string; children?: ReactNode }> = async ({ name, children }) => {
   console.log('render', name);
-  getThings().put(name);
+  const thing = sleep(1000).then(() => name); //Promise.resolve(name);
+  await getThings().put(thing);
   // await sleep(1000);
   return (
     <fieldset>
