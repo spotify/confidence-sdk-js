@@ -5,6 +5,7 @@
 // source: confidence/flags/resolver/v1/types.proto
 
 /* eslint-disable */
+import { BinaryReader, BinaryWriter } from '@bufbuild/protobuf/wire';
 
 export const protobufPackage = 'confidence.flags.resolver.v1';
 
@@ -19,7 +20,6 @@ export enum ResolveReason {
    * RESOLVE_REASON_NO_TREATMENT_MATCH - The flag could not be resolved because the matching rule had no variant
    * that could be assigned.
    *
-   * @deprecated use RESOLVE_REASON_NO_SEGMENT_MATCH instead
    */
   RESOLVE_REASON_NO_TREATMENT_MATCH = 3,
   /** RESOLVE_REASON_FLAG_ARCHIVED - The flag could not be resolved because it was archived. */
@@ -225,7 +225,64 @@ export interface Sdk {
   version: string;
 }
 
+function createBaseSdk(): Sdk {
+  return { id: undefined, customId: undefined, version: '' };
+}
+
 export const Sdk: MessageFns<Sdk> = {
+  encode(message: Sdk, writer: BinaryWriter = new BinaryWriter()): BinaryWriter {
+    if (message.id !== undefined) {
+      writer.uint32(8).int32(message.id);
+    }
+    if (message.customId !== undefined) {
+      writer.uint32(18).string(message.customId);
+    }
+    if (message.version !== '') {
+      writer.uint32(26).string(message.version);
+    }
+    return writer;
+  },
+
+  decode(input: BinaryReader | Uint8Array, length?: number): Sdk {
+    const reader = input instanceof BinaryReader ? input : new BinaryReader(input);
+    let end = length === undefined ? reader.len : reader.pos + length;
+    const message = createBaseSdk();
+    while (reader.pos < end) {
+      const tag = reader.uint32();
+      switch (tag >>> 3) {
+        case 1: {
+          if (tag !== 8) {
+            break;
+          }
+
+          message.id = reader.int32() as any;
+          continue;
+        }
+        case 2: {
+          if (tag !== 18) {
+            break;
+          }
+
+          message.customId = reader.string();
+          continue;
+        }
+        case 3: {
+          if (tag !== 26) {
+            break;
+          }
+
+          message.version = reader.string();
+          continue;
+        }
+      }
+      if ((tag & 7) === 4 || tag === 0) {
+        break;
+      }
+      reader.skip(tag & 7);
+    }
+    return message;
+  },
+
   fromJSON(object: any): Sdk {
     return {
       id: isSet(object.id) ? sdkIdFromJSON(object.id) : undefined,
@@ -254,6 +311,8 @@ function isSet(value: any): boolean {
 }
 
 export interface MessageFns<T> {
+  encode(message: T, writer?: BinaryWriter): BinaryWriter;
+  decode(input: BinaryReader | Uint8Array, length?: number): T;
   fromJSON(object: any): T;
   toJSON(message: T): unknown;
 }

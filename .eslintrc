@@ -4,7 +4,7 @@
     "@spotify/eslint-config-typescript",
     "@spotify/eslint-config-react",
     "prettier",
-    "plugin:es/restrict-to-es2015"
+    "plugin:es/restrict-to-es2018"
   ],
   "plugins": ["@spotify/eslint-plugin"],
   "settings": {
@@ -13,13 +13,12 @@
     }
   },
   "rules": {
-    "es/no-async-functions": "off",
-    "es/no-trailing-function-commas": "off",
     "es/no-rest-spread-properties": "off",
     "es/no-optional-chaining": "off",
     "es/no-nullish-coalescing-operators": "off",
     "no-inner-declarations": "off",
     "@typescript-eslint/no-use-before-define": "off",
-    "no-param-reassign": "off"
+    "no-param-reassign": "off",
+    "@typescript-eslint/no-shadow": "off"
   }
 }
