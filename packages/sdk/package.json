@@ -41,8 +41,7 @@
   "type": "module",
   "exports": {
     ".": {
-      "import": "./build/index.mjs",
-      "require": "./build/index.cjs",
+      "import": "./build/index.js",
       "types": "./build/index.d.ts"
     }
   }
