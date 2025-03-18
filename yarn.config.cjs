@@ -1,6 +1,6 @@
-/** @type {import('@yarnpkg/types')} */
-const { defineConfig } = require('@yarnpkg/types');
-// const defineConfig = config => config;
+// /** @type {import('@yarnpkg/types')} */
+// const { defineConfig } = require('@yarnpkg/types');
+const defineConfig = config => config;
 
 module.exports = defineConfig({
   async constraints({ Yarn }) {
