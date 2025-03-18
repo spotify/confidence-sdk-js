@@ -2,36 +2,46 @@
   "name": "@spotify-confidence/react",
   "license": "Apache-2.0",
   "version": "0.0.13",
-  "types": "build/types/index.d.ts",
   "files": [
     "dist/index.*"
   ],
   "scripts": {
-    "bundle": "rollup -c && api-extractor run",
-    "build": "tsc -b",
-    "prepack": "yarn build && yarn bundle"
+    "bundle": "rollup -c && ../../validate-api.sh",
+    "build": "tsc",
+    "prepack": "yarn build && yarn bundle",
+    "clean": "rm -rf {build,dist}"
   },
   "engineStrict": true,
   "engines": {
     "node": ">=18.17.0"
-  },
-  "publishConfig": {
-    "registry": "https://registry.npmjs.org/",
-    "access": "public",
-    "types": "dist/index.d.ts",
-    "main": "dist/index.cjs.js",
-    "module": "dist/index.esm.js"
   },
   "peerDependencies": {
     "@spotify-confidence/sdk": ">=0.1.4 <=0.2.2",
     "react": "^18.2.0"
   },
   "devDependencies": {
-    "@microsoft/api-extractor": "7.43.1",
     "@spotify-confidence/sdk": "workspace:*",
     "react": "^18.2.0",
-    "rollup": "4.24.0"
+    "rollup": "4.24.0",
+    "typescript": "5.1.6"
   },
-  "main": "dist/index.cjs.js",
-  "module": "dist/index.esm.js"
+  "exports": {
+    ".": {
+      "import": "./build/index.mjs",
+      "require": "./build/index.cjs",
+      "types": "./build/index.d.ts"
+    }
+  },
+  "type": "module",
+  "publishConfig": {
+    "registry": "https://registry.npmjs.org/",
+    "access": "public",
+    "exports": {
+      ".": {
+        "import": "./dist/index.mjs",
+        "require": "./dist/index.cjs",
+        "types": "./dist/index.d.ts"
+      }
+    }
+  }
 }
