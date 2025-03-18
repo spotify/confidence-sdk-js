@@ -2,8 +2,7 @@
   "extends": "../../tsconfig.common.json",
   "compilerOptions": {
     "rootDir": "src",
-    "outDir": "build/esm",
-    "declarationDir": "build/types",
+    "outDir": "build",
     "tsBuildInfoFile": "build/tsconfig.tsbuildinfo"
   },
   "references": [{ "path": "../sdk" }],

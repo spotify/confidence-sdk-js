@@ -2,23 +2,16 @@
   "name": "@spotify-confidence/sdk",
   "license": "Apache-2.0",
   "version": "0.2.5",
-  "types": "build/types/index.d.ts",
   "engineStrict": true,
   "engines": {
     "node": ">=18.17.0"
   },
   "scripts": {
     "gen:proto": "protoc --plugin=$(yarn bin protoc-gen-ts_proto) --ts_proto_out=src/generated -I proto proto/confidence/flags/resolver/v1/api.proto proto/confidence/telemetry/v1/telemetry.proto --ts_proto_opt=outputEncodeMethods=true --ts_proto_opt=outputPartialMethods=false && prettier --config ../../prettier.config.js -w src/generated",
-    "build": "tsc -b",
+    "build": "tsc",
     "bundle": "rollup -c && api-extractor run",
-    "prepack": "yarn build && yarn bundle"
-  },
-  "publishConfig": {
-    "registry": "https://registry.npmjs.org/",
-    "access": "public",
-    "types": "dist/index.d.ts",
-    "main": "dist/index.cjs.js",
-    "module": "dist/index.esm.js"
+    "prepack": "yarn build && yarn bundle",
+    "clean": "rm -rf {build,dist}"
   },
   "dependencies": {
     "@bufbuild/protobuf": "^2.0.0",
@@ -31,8 +24,28 @@
     "@microsoft/api-extractor": "7.43.1",
     "prettier": "*",
     "rollup": "4.24.0",
-    "ts-proto": "^2.3.0"
+    "ts-proto": "^2.3.0",
+    "typescript": "5.1.6"
   },
-  "main": "dist/index.cjs.js",
-  "module": "dist/index.esm.js"
+  "publishConfig": {
+    "registry": "https://registry.npmjs.org/",
+    "access": "public",
+    "exports": {
+      ".": {
+        "import": "./dist/index.mjs",
+        "require": "./dist/index.cjs",
+        "types": "./dist/index.d.ts"
+      }
+    }
+  },
+  "type": "module",
+  "exports": {
+    ".": {
+      "import": "./build/index.js",
+      "types": "./build/index.d.ts"
+    }
+  },
+  "main": "dist/index.cjs",
+  "module": "dist/index.mjs",
+  "types": "dist/index.d.ts"
 }

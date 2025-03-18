@@ -22,7 +22,6 @@
     "@commitlint/config-conventional": "^17.6.7",
     "@commitlint/cz-commitlint": "^17.6.7",
     "@commitlint/prompt-cli": "^17.6.7",
-    "@microsoft/api-extractor": "^7.43.1",
     "@rollup/plugin-commonjs": "^26.0.1",
     "@rollup/plugin-node-resolve": "^15.2.3",
     "@rollup/plugin-swc": "^0.3.0",
@@ -53,6 +52,7 @@
     "jest-extended": "^4.0.0",
     "prettier": "^2.8.8",
     "rollup": "^4.22.4",
+    "rollup-plugin-dts": "^6.1.1",
     "ts-jest": "^29.1.0",
     "typescript": "^5.1.3"
   },
