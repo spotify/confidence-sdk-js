@@ -4,6 +4,9 @@
 
 ```ts
 
+import { BinaryReader } from '@bufbuild/protobuf/wire';
+import { BinaryWriter } from '@bufbuild/protobuf/wire';
+
 // @public
 export namespace Closer {
     export function combine(...closers: Closer[]): Closer;
@@ -15,14 +18,14 @@ export type Closer = () => void;
 // @public
 export class Confidence implements EventSender, Trackable, FlagResolver {
     // @internal
-    constructor(config: Configuration, parent?: Confidence);
+    constructor({ context, ...config }: Configuration, parent?: Confidence);
     clearContext(): void;
     readonly config: Configuration;
     // Warning: (ae-forgotten-export) The symbol "Subscribe" needs to be exported by the entry point index.d.ts
     //
     // @internal
     readonly contextChanges: Subscribe<string[]>;
-    static create({ clientSecret, region, timeout, environment, fetchImplementation, logger, resolveBaseUrl, disableTelemetry, applyDebounce, waitUntil, }: ConfidenceOptions): Confidence;
+    static create(options: ConfidenceOptions): Confidence;
     get environment(): string;
     evaluateFlag(path: string, defaultValue: string): FlagEvaluation<string>;
     // (undocumented)
@@ -44,6 +47,8 @@ export class Confidence implements EventSender, Trackable, FlagResolver {
     protected resolveFlags(): AccessiblePromise<void>;
     setContext(context: Context): boolean;
     subscribe(onStateChange?: StateObserver): () => void;
+    // (undocumented)
+    toOptions(signal?: AbortSignal): ConfidenceOptions;
     track(name: string, data?: EventData): void;
     track(manager: Trackable.Manager): Closer;
     withContext(context: Context): Confidence;
@@ -52,7 +57,13 @@ export class Confidence implements EventSender, Trackable, FlagResolver {
 // @public
 export interface ConfidenceOptions {
     applyDebounce?: number;
+    // Warning: (ae-forgotten-export) The symbol "FlagCache" needs to be exported by the entry point index.d.ts
+    //
+    // (undocumented)
+    cache?: FlagCache.Options;
     clientSecret: string;
+    // (undocumented)
+    context?: Context;
     disableTelemetry?: boolean;
     environment: 'client' | 'backend';
     fetchImplementation?: SimpleFetch;
@@ -65,10 +76,11 @@ export interface ConfidenceOptions {
 }
 
 // @public
-export interface Configuration {
+export interface Configuration extends ConfidenceOptions {
+    // (undocumented)
+    readonly cacheProvider: FlagCache.Provider;
     // (undocumented)
     readonly clientSecret: string;
-    readonly environment: 'client' | 'backend';
     // Warning: (ae-forgotten-export) The symbol "EventSenderEngine" needs to be exported by the entry point index.d.ts
     //
     // @internal
@@ -78,7 +90,6 @@ export interface Configuration {
     // @internal
     readonly flagResolverClient: FlagResolverClient;
     readonly logger: Logger;
-    readonly timeout: number;
 }
 
 // @public
