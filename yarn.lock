@@ -4901,7 +4901,7 @@ __metadata:
   languageName: node
   linkType: hard
 
-"@types/react@npm:*, @types/react@npm:^18.2.17":
+"@types/react@npm:*":
   version: 18.2.17
   resolution: "@types/react@npm:18.2.17"
   dependencies:
@@ -16024,7 +16024,6 @@ __metadata:
     "@spotify/tsconfig": "npm:^15.0.0"
     "@swc/core": "npm:^1.4.13"
     "@types/jest": "npm:^29.5.3"
-    "@types/react": "npm:^18.2.17"
     "@typescript-eslint/eslint-plugin": "npm:^5.62.0"
     "@typescript-eslint/parser": "npm:^5.62.0"
     "@yarnpkg/types": "npm:^4.0.0"
