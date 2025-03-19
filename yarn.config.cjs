@@ -47,7 +47,14 @@ module.exports = defineConfig({
       // package.json invariants
       workspace.set('type', 'module');
 
-      configureExports(workspace, { '.': 'index' });
+      if (workspace.cwd === 'packages/react') {
+        configureExports(workspace, {
+          './client': 'client',
+          './server': 'server',
+        });
+      } else {
+        configureExports(workspace, { '.': 'index' });
+      }
 
       if (workspace.cwd === 'packages/sdk') {
         workspace.set('scripts.bundle', 'rollup -c && api-extractor run');
