@@ -17,18 +17,23 @@
   },
   "peerDependencies": {
     "@spotify-confidence/sdk": ">=0.1.4 <=0.2.2",
-    "react": "^18.2.0"
+    "react": "^19.0.0"
   },
   "devDependencies": {
     "@spotify-confidence/sdk": "workspace:*",
-    "react": "^18.2.0",
+    "@types/react": "^19.0.0",
+    "react": "^19.0.0",
     "rollup": "4.24.0",
     "typescript": "5.1.6"
   },
   "exports": {
-    ".": {
-      "import": "./build/index.js",
-      "types": "./build/index.d.ts"
+    "./client": {
+      "import": "./build/client.js",
+      "types": "./build/client.d.ts"
+    },
+    "./server": {
+      "import": "./build/server.js",
+      "types": "./build/server.d.ts"
     }
   },
   "type": "module",
@@ -36,11 +41,19 @@
     "registry": "https://registry.npmjs.org/",
     "access": "public",
     "exports": {
-      ".": {
-        "import": "./dist/index.mjs",
-        "require": "./dist/index.cjs",
-        "types": "./dist/index.d.ts"
+      "./client": {
+        "import": "./dist/client.mjs",
+        "require": "./dist/client.cjs",
+        "types": "./dist/client.d.ts"
+      },
+      "./server": {
+        "import": "./dist/server.mjs",
+        "require": "./dist/server.cjs",
+        "types": "./dist/server.d.ts"
       }
     }
+  },
+  "dependencies": {
+    "server-only": "^0.0.1"
   }
 }
