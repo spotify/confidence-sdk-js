@@ -1,0 +1,23 @@
+{
+  "name": "nextjs15",
+  "packageManager": "yarn@4.1.0",
+  "type": "module",
+  "scripts": {
+    "dev": "next dev",
+    "build": "next build",
+    "start": "next start",
+    "lint": "next lint"
+  },
+  "dependencies": {
+    "@spotify-confidence/react": "workspace:*",
+    "@spotify-confidence/sdk": "workspace:*",
+    "next": "^15.2.1",
+    "react": "^19",
+    "react-dom": "^19"
+  },
+  "devDependencies": {
+    "@types/react": "^19",
+    "@types/react-dom": "^19"
+  },
+  "private": true
+}
