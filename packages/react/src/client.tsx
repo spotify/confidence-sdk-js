@@ -9,10 +9,10 @@ import React, {
   useEffect,
   useMemo,
   useState,
-  use as react19Use,
+  FunctionComponent,
 } from 'react';
 
-const use = react19Use || (React as any).__CLIENT_INTERNALS_DO_NOT_USE_OR_WARN_USERS_THEY_CANNOT_UPGRADE.H.use;
+const use = (React as any).use || (React as any).__CLIENT_INTERNALS_DO_NOT_USE_OR_WARN_USERS_THEY_CANNOT_UPGRADE.H.use;
 
 const isServer = typeof window === 'undefined';
 const ConfidenceContext = createContext<Confidence | null>(null);
@@ -46,8 +46,7 @@ export const ManagedConfidenceProvider: FC<
  * Confidence Provider for React
  * @public
  */
-export interface ConfidenceProvider {
-  (props: { confidence: Confidence; children?: ReactNode }): ReactNode;
+export interface ConfidenceProvider extends FunctionComponent<{ confidence: Confidence; children?: ReactNode }> {
   WithContext: FC<PropsWithChildren<{ context: Context }>>;
 }
 /**

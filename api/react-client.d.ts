@@ -1,5 +1,5 @@
 import { ConfidenceOptions, Confidence, Context, FlagEvaluation, Value } from '@spotify-confidence/sdk';
-import { FC, PropsWithChildren, ReactNode } from 'react';
+import { FC, PropsWithChildren, FunctionComponent, ReactNode } from 'react';
 
 declare const ManagedConfidenceProvider: FC<PropsWithChildren<{
     options: ConfidenceOptions | PromiseLike<ConfidenceOptions>;
@@ -8,11 +8,10 @@ declare const ManagedConfidenceProvider: FC<PropsWithChildren<{
  * Confidence Provider for React
  * @public
  */
-interface ConfidenceProvider {
-    (props: {
-        confidence: Confidence;
-        children?: ReactNode;
-    }): ReactNode;
+interface ConfidenceProvider extends FunctionComponent<{
+    confidence: Confidence;
+    children?: ReactNode;
+}> {
     WithContext: FC<PropsWithChildren<{
         context: Context;
     }>>;

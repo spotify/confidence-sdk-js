@@ -4012,7 +4012,7 @@ __metadata:
   resolution: "@spotify-confidence/react@workspace:packages/react"
   dependencies:
     "@spotify-confidence/sdk": "workspace:*"
-    "@types/react": "npm:^19"
+    "@types/react": "npm:^18"
     react: "npm:^19"
     rollup: "npm:4.24.0"
     server-only: "npm:^0.0.1"
@@ -4883,12 +4883,12 @@ __metadata:
   languageName: node
   linkType: hard
 
-"@types/react-dom@npm:18.2.0":
-  version: 18.2.0
-  resolution: "@types/react-dom@npm:18.2.0"
-  dependencies:
-    "@types/react": "npm:*"
-  checksum: 10c0/f9f7a396c5499a6fb97e31ef9b050cf9ec5f61e6ec4040badb53428f9e73258c95e5b3dd8233541631b0461d623739b3f6348a4130359c92ce0a69d74a5e9176
+"@types/react-dom@npm:^18":
+  version: 18.3.5
+  resolution: "@types/react-dom@npm:18.3.5"
+  peerDependencies:
+    "@types/react": ^18.0.0
+  checksum: 10c0/b163d35a6b32a79f5782574a7aeb12a31a647e248792bf437e6d596e2676961c394c5e3c6e91d1ce44ae90441dbaf93158efb4f051c0d61e2612f1cb04ce4faa
   languageName: node
   linkType: hard
 
@@ -4912,23 +4912,13 @@ __metadata:
   languageName: node
   linkType: hard
 
-"@types/react@npm:18.2.0":
-  version: 18.2.0
-  resolution: "@types/react@npm:18.2.0"
+"@types/react@npm:^18":
+  version: 18.3.19
+  resolution: "@types/react@npm:18.3.19"
   dependencies:
     "@types/prop-types": "npm:*"
-    "@types/scheduler": "npm:*"
     csstype: "npm:^3.0.2"
-  checksum: 10c0/e38f98b7524817459bb1214d39f4cfcb1dd7ffb31992a427b4494f3988aa6195dc349dfb66b299270b399b34568d045bf1cb6230349a6d343e183052ee486eaa
-  languageName: node
-  linkType: hard
-
-"@types/react@npm:^19":
-  version: 19.0.12
-  resolution: "@types/react@npm:19.0.12"
-  dependencies:
-    csstype: "npm:^3.0.2"
-  checksum: 10c0/c814b6af5c0fbcf5c65d031b1c9bf98c5b857e015254d95811f2851b27b869c3d31c6f35dab127dc6921a3dbda0b0622c6323d493a14b31b231a6a58c41c5e84
+  checksum: 10c0/236bfe0c4748ada1a640f13573eca3e0fc7c9d847b442947adb352b0718d6d285357fd84c33336c8ffb8cbfabc0d58a43a647c7fd79857fecd61fb58ab6f7918
   languageName: node
   linkType: hard
 
@@ -13420,8 +13410,8 @@ __metadata:
   dependencies:
     "@spotify-confidence/react": "workspace:*"
     "@spotify-confidence/sdk": "workspace:*"
-    "@types/react": "npm:18.2.0"
-    "@types/react-dom": "npm:18.2.0"
+    "@types/react": "npm:^18"
+    "@types/react-dom": "npm:^18"
     next: "npm:^15.2.1"
     react: "npm:18.2.0"
     react-dom: "npm:18.2.0"
