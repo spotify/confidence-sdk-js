@@ -244,7 +244,7 @@ export class Confidence implements EventSender, Trackable, FlagResolver {
           this.pendingFlags = undefined;
         });
     }
-    if (this.pendingFlags.state !== 'PENDING') {
+    if (this.pendingFlags.status !== 'pending') {
       this.pendingFlags = undefined;
       return AccessiblePromise.resolve();
     }
