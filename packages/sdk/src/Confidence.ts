@@ -304,7 +304,8 @@ export class Confidence implements EventSender, Trackable, FlagResolver {
         value: defaultValue,
       };
     } else {
-      this.showLoggerLink(path, this.getContext());
+      const [flagName] = path.split('.');
+      this.showLoggerLink(flagName, this.getContext());
       evaluation = this.currentFlags.evaluate(path, defaultValue);
     }
     if (!this.currentFlags || !Value.equal(this.currentFlags.context, this.getContext())) {
@@ -328,11 +329,11 @@ export class Confidence implements EventSender, Trackable, FlagResolver {
     return (await this.evaluateFlag(path, defaultValue)).value;
   }
 
-  private showLoggerLink(flag: string, context: Context) {
+  private showLoggerLink(flagName: string, context: Context) {
     this.config.logger.info?.(
-      `See resolves for '${flag}' in Confidence: https://app.confidence.spotify.com/flags/resolver-test?client-key=${
+      `See resolves for '${flagName}' in Confidence: https://app.confidence.spotify.com/flags/resolver-test?client-key=${
         this.config.clientSecret
-      }&flag=flags/${flag}&context=${encodeURIComponent(JSON.stringify(context))}`,
+      }&flag=flags/${flagName}&context=${encodeURIComponent(JSON.stringify(context))}`,
     );
   }
 
