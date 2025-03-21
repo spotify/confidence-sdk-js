@@ -9,8 +9,10 @@ import React, {
   useEffect,
   useMemo,
   useState,
-  use,
+  use as react19Use,
 } from 'react';
+
+const use = react19Use || (React as any).__CLIENT_INTERNALS_DO_NOT_USE_OR_WARN_USERS_THEY_CANNOT_UPGRADE.H.use;
 
 const isServer = typeof window === 'undefined';
 const ConfidenceContext = createContext<Confidence | null>(null);
@@ -140,6 +142,8 @@ export function useFlag<T extends Value>(path: string, defaultValue: T, confiden
   return useEvaluateFlag(path, defaultValue, confidence).value;
 }
 
-function isPromiseLike<T>(value: T | PromiseLike<T>): value is PromiseLike<T> {
-  return value && typeof (value as any).then === 'function';
+function isPromiseLike<T>(value: unknown | PromiseLike<T>): value is PromiseLike<T> {
+  if (typeof value !== 'object' || value === null) return false;
+  if (typeof (value as any).then !== 'function') return false;
+  return true;
 }
