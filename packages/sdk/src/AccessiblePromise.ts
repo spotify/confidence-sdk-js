@@ -2,37 +2,61 @@ function isPromiseLike(value: unknown): value is PromiseLike<unknown> {
   return typeof value === 'object' && value !== null && 'then' in value && typeof value.then === 'function';
 }
 
-export class AccessiblePromise<T> {
-  #state: 'PENDING' | 'RESOLVED' | 'REJECTED';
+export class AccessiblePromise<T> implements Promise<T> {
+  #status: 'pending' | 'fulfilled' | 'rejected';
   #value: any;
 
   protected constructor(value: any, rejected?: boolean) {
     this.#value = value;
     if (isPromiseLike(value)) {
       // both value and reason can be promise like in which case we are still pending
-      this.#state = 'PENDING';
+      this.#status = 'pending';
       value.then(
         v => {
-          this.#state = 'RESOLVED';
+          this.#status = 'fulfilled';
           this.#value = v;
         },
         reason => {
-          this.#state = 'REJECTED';
+          this.#status = 'rejected';
           this.#value = reason;
         },
       );
     } else {
-      this.#state = rejected ? 'REJECTED' : 'RESOLVED';
+      this.#status = rejected ? 'rejected' : 'fulfilled';
     }
   }
 
   protected chain<S>(value: any, rejected?: boolean): AccessiblePromise<S> {
+    if (value instanceof AccessiblePromise) return value;
     return new AccessiblePromise(value, rejected);
   }
 
-  get state(): 'PENDING' | 'RESOLVED' | 'REJECTED' {
-    return this.#state;
+  get status(): 'pending' | 'fulfilled' | 'rejected' {
+    return this.#status;
   }
+
+  get value(): T {
+    switch (this.#status) {
+      case 'fulfilled':
+        return this.#value;
+      case 'rejected':
+        throw this.#value;
+      case 'pending':
+        throw Object.assign(new Error('Promise is pending.'), { then: this.then.bind(this) });
+    }
+  }
+
+  get reason(): unknown {
+    switch (this.#status) {
+      case 'fulfilled':
+        return undefined;
+      case 'rejected':
+        throw this.#value;
+      case 'pending':
+        throw Object.assign(new Error('Promise is pending.'), { then: this.then.bind(this) });
+    }
+  }
+
   then<TResult1 = T, TResult2 = never>(
     onfulfilled?: ((value: T) => TResult1 | PromiseLike<TResult1>) | null | undefined,
     onrejected?: ((reason: any) => TResult2 | PromiseLike<TResult2>) | null | undefined,
@@ -40,11 +64,11 @@ export class AccessiblePromise<T> {
     let value = this.#value;
     let rejected = false;
     // eslint-disable-next-line default-case
-    switch (this.#state) {
-      case 'PENDING':
+    switch (this.#status) {
+      case 'pending':
         value = value.then(onfulfilled, onrejected);
         break;
-      case 'RESOLVED':
+      case 'fulfilled':
         if (onfulfilled) {
           try {
             value = onfulfilled(value);
@@ -54,7 +78,7 @@ export class AccessiblePromise<T> {
           }
         }
         break;
-      case 'REJECTED':
+      case 'rejected':
         if (onrejected) {
           try {
             value = onrejected(value);
@@ -88,10 +112,10 @@ export class AccessiblePromise<T> {
   }
 
   orSupply(supplier: () => T): T {
-    if (this.#state === 'RESOLVED') {
+    if (this.#status === 'fulfilled') {
       return this.#value as T;
     }
-    if (this.#state === 'REJECTED') {
+    if (this.#status === 'rejected') {
       throw this.#value;
     }
     return supplier();
@@ -112,7 +136,12 @@ export class AccessiblePromise<T> {
     return this.orSupply(() => value);
   }
 
-  static resolve<T = void>(value?: T | PromiseLike<T>): AccessiblePromise<T> {
+  get [Symbol.toStringTag]() {
+    return 'AccessiblePromise';
+  }
+
+  static resolve<T = void>(value?: T | PromiseLike<T>): AccessiblePromise<Awaited<T>> {
+    if (value instanceof AccessiblePromise) return value;
     return new AccessiblePromise(value);
   }
 
