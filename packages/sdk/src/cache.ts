@@ -38,13 +38,13 @@ export class FlagCache extends Cache<Context, ResolveFlagsResponse, Uint8Array> 
   }
 }
 
+let singletonCache: FlagCache | undefined;
 export const singletonScope: CacheScope = provider => {
-  let cache: FlagCache | undefined;
   return () => {
-    if (!cache) {
-      cache = provider();
+    if (!singletonCache) {
+      singletonCache = provider();
     }
-    return cache;
+    return singletonCache;
   };
 };
 

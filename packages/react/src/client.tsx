@@ -30,14 +30,14 @@ export const ManagedConfidenceProvider: FC<PropsWithChildren<{ options: Confiden
   options,
   children,
 }) => {
-  const { cache, ...optionsDeluxe } = options;
-  const confidence = useMemo(() => {
-    console.log('Creating confidence with options', options);
-    return Confidence.create({
-      ...options,
-      environment: 'client',
-    });
-  }, Object.values(optionsDeluxe));
+  const confidence = useMemo(
+    () =>
+      Confidence.create({
+        ...options,
+        environment: 'client',
+      }),
+    Object.values(options),
+  );
   return _ConfidenceProvider({ confidence, children });
 };
 /**

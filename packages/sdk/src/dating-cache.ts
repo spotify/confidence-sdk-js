@@ -66,7 +66,6 @@ export abstract class Cache<K, T, S = T> implements AsyncIterable<[string, S]> {
         cacheValue.resolve(this.deserialize(value));
         delete cacheValue.resolve;
       } else {
-        console.log('cache load', key);
         this.put(key, AccessiblePromise.resolve(this.deserialize(value)));
       }
     }
@@ -84,7 +83,6 @@ export abstract class Cache<K, T, S = T> implements AsyncIterable<[string, S]> {
     let cacheValue = this.data.get(serializedKey);
     if (!cacheValue) {
       if (this.loading) {
-        console.log('cache wait for loading', serializedKey);
         let resolve!: (value?: T) => void;
         const pending = AccessiblePromise.resolve(
           new Promise<T>(res => {
@@ -100,14 +98,12 @@ export abstract class Cache<K, T, S = T> implements AsyncIterable<[string, S]> {
       }
       this.put(serializedKey, cacheValue.pending, cacheValue.resolve);
     }
-    debugger;
     return cacheValue.pending;
   }
 
   private async put(serializedKey: string, pending: Promise<T>, resolve?: (value?: T) => void) {
     this.pendingUpdates++;
     let cacheValue = this.data.get(serializedKey);
-    //debugger;
     if (!cacheValue) {
       cacheValue = { pending, resolve };
       this.data.set(serializedKey, cacheValue);
@@ -118,7 +114,6 @@ export abstract class Cache<K, T, S = T> implements AsyncIterable<[string, S]> {
     let oldNode = cacheValue.node;
     try {
       const value = await pending;
-      console.log('cache resolved', serializedKey);
       if (cacheValue.pending !== pending) {
         // we're not the latest value
         oldNode = undefined;
