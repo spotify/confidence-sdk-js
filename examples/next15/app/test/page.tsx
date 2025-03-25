@@ -1,17 +1,47 @@
-import { cache, FC, ReactNode, Suspense } from 'react';
-import { DeepClient, Wrapper } from './client';
-import { Things } from './thing';
+import { cache, FC, ReactElement, ReactNode, Suspense } from 'react';
+import { DeepClient, TestClient, Wrapper } from './client';
+import { Cache } from './dating-cache';
+import { OnceRendered, render } from './util';
 
-const getThings: () => Things = cache(() => new Things());
+const JsonCache = Cache.forCodec(JSON);
 
+const getCache = cache(() => new JsonCache());
+
+const supplier = async (key: string) => {
+  await sleep(key.length * 1000);
+  return key.length;
+};
+
+const registry = new FinalizationRegistry(() => {
+  console.log('finalized cache!!!');
+});
 export default async function Page() {
   console.log('Test render');
+  const cache = getCache();
+  registry.register(cache, undefined);
+
   return (
     <Outer>
+      <div>Some unsuspended stuff</div>
+      <Suspense fallback={<fieldset>Loading...</fieldset>}>
+        <TestClient name="one" />
+      </Suspense>
+      <Suspense fallback={<fieldset>Loading...</fieldset>}>
+        <TestClient name="deep" />
+      </Suspense>
       <Suspense fallback={<fieldset>Loading...</fieldset>}>
         <Test name="one" />
+      </Suspense>
+      <Suspense fallback={<fieldset>Loading...</fieldset>}>
         <Deep />
+      </Suspense>
+      <Suspense fallback={<fieldset>Loading...</fieldset>}>
         <Test name="two" />
+      </Suspense>
+      <Suspense fallback={<fieldset>Loading...</fieldset>}>
+        <Test name="sloooow" />
+      </Suspense>
+      <Suspense fallback={<fieldset>Loading...</fieldset>}>
         <DeepClient>
           <Test name="three" />
         </DeepClient>
@@ -20,35 +50,39 @@ export default async function Page() {
   );
 }
 
-const Trailer: FC = () => {
-  console.log('render trailer');
-  getThings().unref();
-  return undefined;
-};
-
 const Outer: FC<{ children?: ReactNode }> = async ({ children }) => {
   console.log('render outer');
-  const things = getThings();
-  things.ref();
+  const cache = getCache();
+  cache.ref();
+
+  const Trailer = () => {
+    cache.unref();
+    return undefined;
+  };
   return (
-    <Wrapper things={Things.collect(things)}>
+    <Wrapper data={cache}>
       {children}
       <Trailer />
     </Wrapper>
+    // <OnceRendered callback={() => cache.unref()}>
+    // </OnceRendered>
   );
 };
 
-const Deep: FC = () => {
+const Deep: FC = async () => {
+  console.log('render deep wrapper');
+  await sleep(1000);
+  console.log('deep wrapper move on');
   return <Test name="deep" />;
 };
 const Test: FC<{ name: string; children?: ReactNode }> = async ({ name, children }) => {
   console.log('render', name);
-  const thing = sleep(1000).then(() => name); //Promise.resolve(name);
-  await getThings().put(thing);
+  const cache = getCache();
+  const v = await cache.get(name, supplier);
   // await sleep(1000);
   return (
     <fieldset>
-      <legend>Test</legend>
+      <legend>Test ({`${name}:${v}`})</legend>
       {children}
     </fieldset>
   );
