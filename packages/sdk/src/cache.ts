@@ -33,8 +33,11 @@ export class FlagCache extends Cache<Context, ResolveFlagsResponse, Uint8Array> 
   }
 
   static provider({ scope = defaultScope(), entries }: CacheOptions): CacheProvider {
-    const provider = () => new FlagCache(entries);
-    return scope(provider);
+    const provider = scope(() => new FlagCache());
+    if (entries) {
+      provider().load(entries);
+    }
+    return provider;
   }
 }
 

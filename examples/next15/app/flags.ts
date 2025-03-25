@@ -12,7 +12,7 @@ const fetchImplementation = (req: Request) => {
 export const confidence = Confidence.create({
   clientSecret: 'RxDVTrXvc6op1XxiQ4OaR31dKbJ39aYV',
   environment: 'backend',
-  timeout: 1000000,
+  timeout: 1000,
   logger: console,
   fetchImplementation,
   cache: { scope: React.cache },

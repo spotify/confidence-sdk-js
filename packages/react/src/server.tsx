@@ -5,7 +5,7 @@ import 'server-only';
 
 export async function ConfidenceProvider(props: { confidence: Confidence; children?: ReactNode }) {
   const controller = new AbortController();
-  const options = props.confidence.toOptions();
+  const options = props.confidence.toOptions(controller.signal);
   return (
     <ManagedConfidenceProvider options={options}>
       {props.children}

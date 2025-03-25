@@ -25,14 +25,12 @@ export abstract class Cache<K, T, S = T> implements AsyncIterable<[string, S]> {
   private pendingUpdates = 0;
   private loading: boolean = false;
 
-  constructor(entries?: AsyncIterable<[string, S]>) {
+  protected constructor(entries?: AsyncIterable<[string, S]>) {
     console.log('cache constructor');
     this.head = new Promise(resolve => {
       this.resolveNext = resolve;
     });
-    if (entries) {
-      this.load(entries);
-    }
+    this.load(entries);
   }
 
   ref() {
@@ -58,7 +56,9 @@ export abstract class Cache<K, T, S = T> implements AsyncIterable<[string, S]> {
     }
   }
 
-  private async load(entries: AsyncIterable<[string, S]>) {
+  async load(entries?: AsyncIterable<[string, S]>) {
+    if (!entries) return;
+
     this.loading = true;
     for await (const [key, value] of entries) {
       let cacheValue = this.data.get(key);
