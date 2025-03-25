@@ -332,10 +332,8 @@ export class Confidence implements EventSender, Trackable, FlagResolver {
     );
   }
 
-  async toOptions(signal?: AbortSignal): Promise<ConfidenceOptions> {
-    // TODO this resolve shouldn't really be here...
-    // await this.resolveFlags();
-    const cache = await this.config.cacheProvider().toOptions(signal);
+  toOptions(signal?: AbortSignal): ConfidenceOptions {
+    const cache = this.config.cacheProvider().toOptions(signal);
     return {
       clientSecret: this.config.clientSecret,
       region: this.config.region,
