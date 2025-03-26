@@ -47,7 +47,49 @@ module.exports = defineConfig({
       // package.json invariants
       workspace.set('type', 'module');
 
-      configureExports(workspace, { '.': 'index' });
+      if (workspace.cwd === 'packages/react') {
+        workspace.set('main', 'index.cjs');
+        workspace.set('module', 'index.mjs');
+        workspace.set('types', 'index.d.ts');
+        workspace.set('files', ['./index.*', './server.*']);
+        workspace.set('scripts.prepack', 'yarn build && yarn bundle && cp dist/* .');
+        workspace.set('scripts.postpack', 'rm server.* & rm index.*');
+        workspace.set(
+          'exports',
+          buildExports({
+            '.': 'index',
+            './server': 'server',
+          }),
+        );
+        workspace.set('publishConfig', {
+          registry: 'https://registry.npmjs.org/',
+          access: 'public',
+          exports: {
+            '.': {
+              import: './index.mjs',
+              require: './index.cjs',
+              types: './index.d.ts',
+            },
+            './server': {
+              import: './server.mjs',
+              require: './server.cjs',
+              types: './server.d.ts',
+            },
+          },
+        });
+      } else {
+        workspace.set('main', 'dist/index.cjs');
+        workspace.set('module', 'dist/index.mjs');
+        workspace.set('types', 'dist/index.d.ts');
+        workspace.set('files', ['dist/*']);
+        workspace.set('scripts.prepack', 'yarn build && yarn bundle');
+        workspace.set('exports', buildExports({ '.': 'index' }));
+        workspace.set('publishConfig', {
+          registry: 'https://registry.npmjs.org/',
+          access: 'public',
+          exports: distExports({ '.': 'index' }),
+        });
+      }
 
       if (workspace.cwd === 'packages/sdk') {
         workspace.set('scripts.bundle', 'rollup -c && api-extractor run');
@@ -55,14 +97,8 @@ module.exports = defineConfig({
         workspace.set('scripts.bundle', 'rollup -c && ../../validate-api.sh');
       }
 
-      workspace.set('files', ['dist/index.*']);
       workspace.set('scripts.build', 'tsc');
       workspace.set('scripts.clean', 'rm -rf {build,dist}');
-      workspace.set('scripts.prepack', 'yarn build && yarn bundle');
-
-      workspace.set('main', 'dist/index.cjs');
-      workspace.set('module', 'dist/index.mjs');
-      workspace.set('types', 'dist/index.d.ts');
 
       // dev deps that should all share the same version (from root package.json)
       for (const id of ['rollup', 'typescript']) {
@@ -79,15 +115,6 @@ module.exports = defineConfig({
     }
   },
 });
-
-function configureExports(workspace, map) {
-  workspace.set('exports', buildExports(map));
-  workspace.set('publishConfig', {
-    registry: 'https://registry.npmjs.org/',
-    access: 'public',
-    exports: distExports(map),
-  });
-}
 
 function buildExports(map) {
   return Object.fromEntries(
