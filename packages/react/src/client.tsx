@@ -26,22 +26,10 @@ const WithContext: FC<PropsWithChildren<{ context: Context }>> = ({ context, chi
 
 declare function assertNever<T extends never>(): void;
 
-async function collectStream<T>(iter: AsyncIterable<T>): Promise<T[]> {
-  const result: T[] = [];
-  for await (const item of iter) {
-    result.push(item);
-  }
-  return result;
-}
-
 export const ManagedConfidenceProvider: FC<PropsWithChildren<{ options: ConfidenceOptions }>> = ({
   options,
   children,
 }) => {
-  collectStream(options.cache!.entries!).then(entries => {
-    console.log('ManagedConfidenceProvider: entries', entries);
-  });
-
   const confidence = useMemo(
     () =>
       Confidence.create({

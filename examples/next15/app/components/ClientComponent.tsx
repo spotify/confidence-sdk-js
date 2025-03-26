@@ -21,6 +21,7 @@ export const ClientComponent: FC<{ name: string; children?: ReactNode; setRole?:
       <button onClick={() => confidence.setContext({ targeting_key: 'andreas' })}>
         Set context visitorId to andreas
       </button>
+      <button onClick={() => confidence.setContext({ targeting_key: 'nicky' })}>Set context visitorId to nicky</button>
       {children}
     </fieldset>
   );

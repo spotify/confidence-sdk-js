@@ -1,5 +1,9 @@
 import { AccessiblePromise } from './AccessiblePromise';
 
+export interface Codec<T, S> {
+  stringify(value: T): S;
+  parse(value: S): T;
+}
 interface CacheValue<T> {
   pending: Promise<T>;
   resolve?: (value?: T) => void;
@@ -11,22 +15,15 @@ interface LinkNode<T> {
   prev: LinkNode<T> | undefined;
   next: Promise<LinkNode<T>> | LinkNode<T>;
 }
-
-export interface Codec<T, S> {
-  stringify(value: T): S;
-  parse(value: S): T;
-}
-
-export abstract class Cache<K, T, S = T> implements AsyncIterable<[string, S]> {
-  private data = new Map<string, CacheValue<T>>();
+export abstract class AbstractCache<K, T, S = unknown> implements AsyncIterable<[string, S]> {
+  private readonly data = new Map<string, CacheValue<T>>();
   private head: Promise<LinkNode<T>> | LinkNode<T>;
   private tail: LinkNode<T> | undefined;
   private resolveNext!: (node: LinkNode<T>) => void;
   private pendingUpdates = 0;
   private loading: boolean = false;
 
-  protected constructor(entries?: AsyncIterable<[string, S]>) {
-    console.log('cache constructor');
+  constructor(entries?: AsyncIterable<[string, S]>) {
     this.head = new Promise(resolve => {
       this.resolveNext = resolve;
     });
@@ -43,7 +40,7 @@ export abstract class Cache<K, T, S = T> implements AsyncIterable<[string, S]> {
 
   protected abstract serialize(value: T): S;
 
-  protected abstract deserialize(value: S): T;
+  protected abstract deserialize(data: S): T;
 
   protected abstract serializeKey(key: K): string;
 
@@ -58,24 +55,26 @@ export abstract class Cache<K, T, S = T> implements AsyncIterable<[string, S]> {
 
   async load(entries?: AsyncIterable<[string, S]>) {
     if (!entries) return;
-
     this.loading = true;
-    for await (const [key, value] of entries) {
-      let cacheValue = this.data.get(key);
-      if (cacheValue && cacheValue.resolve) {
-        cacheValue.resolve(this.deserialize(value));
-        delete cacheValue.resolve;
-      } else {
-        this.put(key, AccessiblePromise.resolve(this.deserialize(value)));
+    try {
+      for await (const [key, value] of entries) {
+        let cacheValue = this.data.get(key);
+        if (cacheValue && cacheValue.resolve) {
+          cacheValue.resolve(this.deserialize(value));
+          delete cacheValue.resolve;
+        } else {
+          this.put(key, AccessiblePromise.resolve(this.deserialize(value)));
+        }
       }
-    }
-    for (const cacheValue of this.data.values()) {
-      if (cacheValue.resolve) {
-        cacheValue.resolve();
-        delete cacheValue.resolve;
+      for (const cacheValue of this.data.values()) {
+        if (cacheValue.resolve) {
+          cacheValue.resolve();
+          delete cacheValue.resolve;
+        }
       }
+    } finally {
+      this.loading = false;
     }
-    this.loading = false;
   }
 
   get(key: K, supplier: (key: K) => Promise<T>): Promise<T> {
@@ -103,35 +102,41 @@ export abstract class Cache<K, T, S = T> implements AsyncIterable<[string, S]> {
 
   private async put(serializedKey: string, pending: Promise<T>, resolve?: (value?: T) => void) {
     this.pendingUpdates++;
-    let cacheValue = this.data.get(serializedKey);
-    if (!cacheValue) {
-      cacheValue = { pending, resolve };
-      this.data.set(serializedKey, cacheValue);
-    } else {
-      cacheValue.pending = pending;
-      cacheValue.resolve = resolve;
-    }
-    let oldNode = cacheValue.node;
     try {
-      const value = await pending;
-      if (cacheValue.pending !== pending) {
-        // we're not the latest value
-        oldNode = undefined;
-        return;
+      let cacheValue = this.data.get(serializedKey);
+      if (!cacheValue) {
+        cacheValue = { pending, resolve };
+        this.data.set(serializedKey, cacheValue);
+      } else {
+        cacheValue.pending = pending;
+        cacheValue.resolve = resolve;
       }
-      // add the node last
-      const resolveNext = this.resolveNext;
-      const next = new Promise<LinkNode<T>>(resolve => {
-        this.resolveNext = resolve;
-      });
-      const node = { key: serializedKey, value, prev: this.tail, next };
-      if (this.tail) {
-        this.tail.next = node;
+      let oldNode = cacheValue.node;
+      try {
+        const value = await pending;
+        if (cacheValue.pending !== pending) {
+          // we're not the latest value, do nothing
+          return;
+        }
+        // add the node last
+        const resolveNext = this.resolveNext;
+        const next = new Promise<LinkNode<T>>(resolve => {
+          this.resolveNext = resolve;
+        });
+        const node = { key: serializedKey, value, prev: this.tail, next };
+        if (this.tail) {
+          this.tail.next = node;
+        } else {
+          this.head = node;
+        }
+        this.tail = cacheValue.node = node;
+        resolveNext(node);
+      } catch (e) {
+        if (cacheValue.pending !== pending) {
+          // we're not the latest value, do nothing
+          return;
+        }
       }
-      this.tail = cacheValue.node = node;
-      resolveNext(node);
-    } finally {
-      this.pendingUpdates--;
       if (oldNode) {
         // remove old node
         if (oldNode.prev) {
@@ -140,18 +145,22 @@ export abstract class Cache<K, T, S = T> implements AsyncIterable<[string, S]> {
           this.head = oldNode.next;
         }
         if ('then' in oldNode.next) {
-          // oldNode can't be last since we've just added a new node
-          throw new Error('Assertion error. Next node should be resolved.');
+          if (oldNode !== this.tail)
+            throw new Error('Assertion error. LinkNode.next should be resolved unless the node is the last one');
+          this.tail = undefined;
+        } else {
+          oldNode.next.prev = oldNode.prev;
         }
-        oldNode.next.prev = oldNode.prev;
       }
+    } finally {
+      this.pendingUpdates--;
     }
   }
 
   static forCodec<T, S extends string>(
     codec: Codec<T, S>,
-  ): new (entries?: AsyncIterable<[string, S]>) => Cache<T, T, S> {
-    return class extends Cache<T, T, S> {
+  ): new (entries?: AsyncIterable<[string, S]>) => AbstractCache<T, T, S> {
+    return class extends AbstractCache<T, T, S> {
       constructor(entries?: AsyncIterable<[string, S]>) {
         super(entries);
       }

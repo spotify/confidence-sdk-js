@@ -1,17 +1,9 @@
 import { Context } from './context';
-import { Cache } from './dating-cache';
+import { AbstractCache } from './dating-cache';
 import { ResolveFlagsResponse } from './generated/confidence/flags/resolver/v1/api';
 import { Value } from './Value';
 
-export type CacheEntry = [string, Uint8Array];
-export type CacheScope = (provider: CacheProvider) => CacheProvider;
-// TODO make CacheProvider take the clientKey
-export type CacheProvider = () => FlagCache;
-export interface CacheOptions {
-  scope?: CacheScope;
-  entries?: AsyncIterable<CacheEntry>;
-}
-export class FlagCache extends Cache<Context, ResolveFlagsResponse, Uint8Array> {
+export class FlagCache extends AbstractCache<Context, ResolveFlagsResponse, Uint8Array> {
   protected serialize(value: ResolveFlagsResponse): Uint8Array {
     return ResolveFlagsResponse.encode(value).finish();
   }
@@ -22,7 +14,7 @@ export class FlagCache extends Cache<Context, ResolveFlagsResponse, Uint8Array> 
     return Value.serialize(key);
   }
 
-  toOptions(signal?: AbortSignal): CacheOptions {
+  toOptions(signal?: AbortSignal): FlagCache.Options {
     if (signal && !signal.aborted) {
       this.ref();
       signal.addEventListener('abort', () => {
@@ -31,28 +23,41 @@ export class FlagCache extends Cache<Context, ResolveFlagsResponse, Uint8Array> 
     }
     return { entries: this };
   }
+}
 
-  static provider({ scope = defaultScope(), entries }: CacheOptions): CacheProvider {
+export namespace FlagCache {
+  // TODO make Provider take the clientKey
+  export type Provider = () => FlagCache;
+
+  export type Scope = (provider: Provider) => Provider;
+
+  let singletonCache: FlagCache | undefined;
+  export const singletonScope: Scope = provider => {
+    return () => {
+      if (!singletonCache) {
+        singletonCache = provider();
+      }
+      return singletonCache;
+    };
+  };
+
+  export const noScope: Scope = (provider: Provider) => provider;
+
+  function defaultScope(): Scope {
+    return typeof window === 'undefined' ? noScope : singletonScope;
+  }
+
+  export type Entry = [string, Uint8Array];
+  export interface Options {
+    scope?: Scope;
+    entries?: AsyncIterable<Entry>;
+  }
+
+  export function provider({ scope = defaultScope(), entries }: FlagCache.Options): FlagCache.Provider {
     const provider = scope(() => new FlagCache());
     if (entries) {
       provider().load(entries);
     }
     return provider;
   }
-}
-
-let singletonCache: FlagCache | undefined;
-export const singletonScope: CacheScope = provider => {
-  return () => {
-    if (!singletonCache) {
-      singletonCache = provider();
-    }
-    return singletonCache;
-  };
-};
-
-export const noScope = (provider: CacheProvider) => provider;
-
-function defaultScope(): CacheScope {
-  return typeof window === 'undefined' ? noScope : singletonScope;
 }

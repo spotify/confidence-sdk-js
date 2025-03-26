@@ -14,7 +14,7 @@ import { FlagResolution } from './FlagResolution';
 import { AccessiblePromise } from './AccessiblePromise';
 import { Telemetry } from './Telemetry';
 import { SimpleFetch } from './fetch-util';
-import { CacheOptions, FlagCache } from './cache';
+import { FlagCache } from './cache';
 
 /**
  * Confidence options, to be used for easier initialization of Confidence
@@ -44,7 +44,7 @@ export interface ConfidenceOptions {
    * This is particularly useful in serverless environments where you need to ensure certain operations complete before the environment is reclaimed.
    */
   waitUntil?: WaitUntil;
-  cache?: CacheOptions;
+  cache?: FlagCache.Options;
   context?: Context;
 }
 
