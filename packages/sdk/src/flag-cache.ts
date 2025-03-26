@@ -37,16 +37,17 @@ export class FlagCache extends AbstractCache<Context, ResolveFlagsResponse, Uint
 }
 
 export namespace FlagCache {
-  // TODO make Provider take the clientKey
-  export type Provider = () => FlagCache;
+  export type Provider = (clientKey:string) => FlagCache;
 
   export type Scope = (provider: Provider) => Provider;
 
-  let singletonCache: FlagCache | undefined;
+  const singletonCaches = new Map<string, FlagCache>();
   export const singletonScope: Scope = provider => {
-    return () => {
+    return (clientKey) => {
+      let singletonCache = singletonCaches.get(clientKey);
       if (!singletonCache) {
-        singletonCache = provider();
+        singletonCache = provider(clientKey);
+        singletonCaches.set(clientKey, singletonCache);
       }
       return singletonCache;
     };
@@ -64,10 +65,10 @@ export namespace FlagCache {
     entries?: AsyncIterable<Entry>;
   }
 
-  export function provider({ scope = defaultScope(), entries }: FlagCache.Options): FlagCache.Provider {
+  export function provider(clientKey:string, { scope = defaultScope(), entries }: FlagCache.Options): FlagCache.Provider {
     const provider = scope(() => new FlagCache());
     if (entries) {
-      provider().load(entries);
+      provider(clientKey).load(entries);
     }
     return provider;
   }

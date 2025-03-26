@@ -63,7 +63,7 @@ export interface Configuration extends ConfidenceOptions {
   readonly flagResolverClient: FlagResolverClient;
   /* @internal */
   readonly clientSecret: string;
-  readonly cacheProvider: () => FlagCache;
+  readonly cacheProvider: FlagCache.Provider;
 }
 
 /**
@@ -333,7 +333,7 @@ export class Confidence implements EventSender, Trackable, FlagResolver {
   }
 
   toOptions(signal?: AbortSignal): ConfidenceOptions {
-    const cache = this.config.cacheProvider().toOptions(signal);
+    const cache = this.config.cacheProvider(this.config.clientSecret).toOptions(signal);
     return {
       clientSecret: this.config.clientSecret,
       region: this.config.region,
@@ -383,7 +383,7 @@ export class Confidence implements EventSender, Trackable, FlagResolver {
     if (!clientSecret) {
       logger.error?.(`Confidence: confidence cannot be instantiated without a client secret`);
     }
-    const cacheProvider = FlagCache.provider(cache);
+    const cacheProvider = FlagCache.provider(clientSecret, cache);
     const flagResolverClient: FlagResolverClient = new FetchingFlagResolverClient({
       clientSecret,
       fetchImplementation,

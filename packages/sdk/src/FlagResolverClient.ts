@@ -23,9 +23,11 @@ import { WaitUntil } from './types';
 const FLAG_PREFIX = 'flags/';
 const retryCodes = new Set([408, 502, 503, 504]);
 
-export type CacheProvider = () => FlagCache;
 export class ResolveError extends Error {
-  constructor(public readonly code: FlagEvaluation.ErrorCode, message: string) {
+  constructor(
+    public readonly code: FlagEvaluation.ErrorCode,
+    message: string,
+  ) {
     super(message);
   }
 }
@@ -97,7 +99,7 @@ export type FlagResolverClientOptions = {
   telemetry: Telemetry;
   logger: Logger;
   waitUntil?: WaitUntil;
-  cacheProvider?: CacheProvider;
+  cacheProvider?: FlagCache.Provider;
 };
 
 export class FetchingFlagResolverClient implements FlagResolverClient {
@@ -155,7 +157,7 @@ export class FetchingFlagResolverClient implements FlagResolverClient {
     this.waitUntil = waitUntil;
     if (cacheProvider) {
       this.cacheReadThrough = (context, supplier) => {
-        const cache = cacheProvider();
+        const cache = cacheProvider(this.clientSecret);
         return cache.get(context, supplier);
       };
     } else {
