@@ -3,25 +3,31 @@
   "license": "Apache-2.0",
   "version": "0.1.1",
   "files": [
-    "dist/index.*"
+    "./index.*",
+    "./server.*"
   ],
   "scripts": {
     "bundle": "rollup -c && ../../validate-api.sh",
     "build": "tsc",
-    "prepack": "yarn build && yarn bundle",
-    "clean": "rm -rf {build,dist}"
+    "prepack": "yarn build && yarn bundle && cp dist/* .",
+    "clean": "rm -rf {build,dist}",
+    "postpack": "rm server.* & rm index.*"
   },
   "engineStrict": true,
   "engines": {
     "node": ">=18.17.0"
   },
+  "dependencies": {
+    "server-only": "^0.0.1"
+  },
   "peerDependencies": {
-    "@spotify-confidence/sdk": ">=0.1.4 <0.4.0",
-    "react": "^18.2.0"
+    "@spotify-confidence/sdk": ">=0.3.1 <0.4.0",
+    "react": "^18 || ^19"
   },
   "devDependencies": {
     "@spotify-confidence/sdk": "workspace:*",
-    "react": "^18.2.0",
+    "@types/react": "^18",
+    "react": "^19",
     "rollup": "4.24.0",
     "typescript": "5.1.6"
   },
@@ -29,21 +35,30 @@
     ".": {
       "import": "./build/index.js",
       "types": "./build/index.d.ts"
+    },
+    "./server": {
+      "import": "./build/server.js",
+      "types": "./build/server.d.ts"
     }
   },
   "type": "module",
   "publishConfig": {
     "registry": "https://registry.npmjs.org/",
     "access": "public",
+    "main": "index.cjs",
+    "module": "index.mjs",
+    "types": "index.d.ts",
     "exports": {
       ".": {
-        "import": "./dist/index.mjs",
-        "require": "./dist/index.cjs",
-        "types": "./dist/index.d.ts"
+        "import": "./index.mjs",
+        "require": "./index.cjs",
+        "types": "./index.d.ts"
+      },
+      "./server": {
+        "import": "./server.mjs",
+        "require": "./server.cjs",
+        "types": "./server.d.ts"
       }
-    },
-    "main": "dist/index.cjs",
-    "module": "dist/index.mjs",
-    "types": "dist/index.d.ts"
+    }
   }
 }
