@@ -1,5 +1,5 @@
 import { Context } from './context';
-import { AbstractCache } from './dating-cache';
+import { AbstractCache } from './abstract-cache';
 import { ResolveFlagsResponse } from './generated/confidence/flags/resolver/v1/api';
 import { Value } from './Value';
 

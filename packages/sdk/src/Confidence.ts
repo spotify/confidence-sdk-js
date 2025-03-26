@@ -14,7 +14,7 @@ import { FlagResolution } from './FlagResolution';
 import { AccessiblePromise } from './AccessiblePromise';
 import { Telemetry } from './Telemetry';
 import { SimpleFetch } from './fetch-util';
-import { FlagCache } from './cache';
+import { FlagCache } from './flag-cache';
 
 /**
  * Confidence options, to be used for easier initialization of Confidence
