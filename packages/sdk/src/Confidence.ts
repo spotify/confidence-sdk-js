@@ -374,7 +374,7 @@ export class Confidence implements EventSender, Trackable, FlagResolver {
     }
     const sdk = {
       id: SdkId.SDK_ID_JS_CONFIDENCE,
-      version: '0.2.4', // x-release-please-version
+      version: '0.2.5', // x-release-please-version
     } as const;
     const telemetry = new Telemetry({
       disabled: disableTelemetry,
