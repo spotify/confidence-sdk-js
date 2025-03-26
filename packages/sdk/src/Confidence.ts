@@ -449,34 +449,3 @@ function defaultLogger(): Logger {
   }
   return Logger.noOp();
 }
-
-/**
- * Configuration options for the Confidence SDK's flag caching system.
- * @property {FlagCache.Options} cache - Optional configuration for how feature flags should be cached
- *   @property {FlagCache.Scope} [cache.scope] - Determines the caching scope strategy:
- *     - In browser environments, defaults to singleton scope (shared cache across instances)
- *     - In non-browser environments, defaults to no scope (independent cache per instance)
- *   @property {AsyncIterable<[string, Uint8Array]>} [cache.entries] - Initial cache entries to preload
- *
- * The cache system helps optimize flag resolution by:
- * - Reducing unnecessary network requests for flag evaluations
- * - Maintaining flag state between evaluations
- * - Preserving flag values across context changes
- * - Supporting different caching strategies for browser vs server environments
- *
- * @example
- * ```typescript
- * const confidence = Confidence.create({
- *   clientSecret: 'your-secret',
- *   environment: 'client',
- *   timeout: 1000,
- *   // Configure caching behavior
- *   cache: {
- *     // Optional: Override default scoping behavior
- *     scope: FlagCache.singletonScope,
- *     // Optional: Provide initial cache entries
- *     entries: existingCacheEntries
- *   }
- * });
- * ```
- */
