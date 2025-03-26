@@ -12,8 +12,6 @@ import React, {
   FunctionComponent,
 } from 'react';
 
-const use = (React as any).use || (React as any).__CLIENT_INTERNALS_DO_NOT_USE_OR_WARN_USERS_THEY_CANNOT_UPGRADE.H.use;
-
 const isServer = typeof window === 'undefined';
 const ConfidenceContext = createContext<Confidence | null>(null);
 
@@ -28,17 +26,17 @@ const WithContext: FC<PropsWithChildren<{ context: Context }>> = ({ context, chi
 
 declare function assertNever<T extends never>(): void;
 
-export const ManagedConfidenceProvider: FC<
-  PropsWithChildren<{ options: ConfidenceOptions | PromiseLike<ConfidenceOptions> }>
-> = ({ options: optOrPromise, children }) => {
-  const options = isPromiseLike(optOrPromise) ? use(optOrPromise) : optOrPromise;
+export const ManagedConfidenceProvider: FC<PropsWithChildren<{ options: ConfidenceOptions }>> = ({
+  options,
+  children,
+}) => {
   const confidence = useMemo(
     () =>
       Confidence.create({
         ...options,
         environment: 'client',
       }),
-    [options],
+    Object.values(options),
   );
   return _ConfidenceProvider({ confidence, children });
 };
@@ -139,10 +137,4 @@ export function useFlag<T extends Value>(path: string, defaultValue: T, confiden
 // eslint-disable-next-line react-hooks/rules-of-hooks
 export function useFlag<T extends Value>(path: string, defaultValue: T, confidence = useConfidence()): T {
   return useEvaluateFlag(path, defaultValue, confidence).value;
-}
-
-function isPromiseLike<T>(value: unknown | PromiseLike<T>): value is PromiseLike<T> {
-  if (typeof value !== 'object' || value === null) return false;
-  if (typeof (value as any).then !== 'function') return false;
-  return true;
 }

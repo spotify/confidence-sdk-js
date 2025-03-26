@@ -12,11 +12,9 @@ export default async function Page() {
   return (
     <div>
       <pre>{randomNumber()}</pre>
-      <Suspense fallback={<fieldset>Loading...</fieldset>}>
-        <ServerComponent>
-          <ServerComponent />
-        </ServerComponent>
-      </Suspense>
+      <ServerComponent>
+        <ServerComponent />
+      </ServerComponent>
       <CookieControls />
       <h2>Pros</h2>
       <ul>

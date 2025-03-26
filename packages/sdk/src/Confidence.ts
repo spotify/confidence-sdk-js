@@ -14,7 +14,7 @@ import { FlagResolution } from './FlagResolution';
 import { AccessiblePromise } from './AccessiblePromise';
 import { Telemetry } from './Telemetry';
 import { SimpleFetch } from './fetch-util';
-import { CacheOptions, FlagCache } from './cache';
+import { FlagCache } from './flag-cache';
 
 /**
  * Confidence options, to be used for easier initialization of Confidence
@@ -44,7 +44,7 @@ export interface ConfidenceOptions {
    * This is particularly useful in serverless environments where you need to ensure certain operations complete before the environment is reclaimed.
    */
   waitUntil?: WaitUntil;
-  cache?: CacheOptions;
+  cache?: FlagCache.Options;
   context?: Context;
 }
 
@@ -332,10 +332,8 @@ export class Confidence implements EventSender, Trackable, FlagResolver {
     );
   }
 
-  async toOptions(signal?: AbortSignal): Promise<ConfidenceOptions> {
-    // TODO this resolve shouldn't really be here...
-    // await this.resolveFlags();
-    const cache = await this.config.cacheProvider().toOptions(signal);
+  toOptions(signal?: AbortSignal): ConfidenceOptions {
+    const cache = this.config.cacheProvider().toOptions(signal);
     return {
       clientSecret: this.config.clientSecret,
       region: this.config.region,
