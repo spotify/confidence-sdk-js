@@ -1,9 +1,4 @@
-import {
-  CachingFlagResolverClient,
-  FetchingFlagResolverClient,
-  FlagResolverClient,
-  PendingResolution,
-} from './FlagResolverClient';
+import { FetchingFlagResolverClient, FlagResolverClient, PendingResolution } from './FlagResolverClient';
 import { EventSenderEngine } from './EventSenderEngine';
 import { Value } from './Value';
 import { EventData, EventSender } from './events';
@@ -19,6 +14,7 @@ import { FlagResolution } from './FlagResolution';
 import { AccessiblePromise } from './AccessiblePromise';
 import { Telemetry } from './Telemetry';
 import { SimpleFetch } from './fetch-util';
+import { CacheOptions, CacheProvider, FlagCache } from './flag-cache';
 
 /**
  * Confidence options, to be used for easier initialization of Confidence
@@ -48,19 +44,21 @@ export interface ConfidenceOptions {
    * This is particularly useful in serverless environments where you need to ensure certain operations complete before the environment is reclaimed.
    */
   waitUntil?: WaitUntil;
+  /**
+   * Configuration options for the Confidence SDK's flag caching system.
+   * @see {@link CacheOptions}
+   */
+  cache?: CacheOptions;
+  context?: Context;
 }
 
 /**
  * Confidence configuration
- * @public
+ * @internal
  */
-export interface Configuration {
-  /** Environment: can be either client of backend */
-  readonly environment: 'client' | 'backend';
+export interface Configuration extends ConfidenceOptions {
   /** Debug logger */
   readonly logger: Logger;
-  /** Resolve timeout */
-  readonly timeout: number;
   /** Event Sender Engine
    * @internal */
   readonly eventSenderEngine: EventSenderEngine;
@@ -69,6 +67,7 @@ export interface Configuration {
   readonly flagResolverClient: FlagResolverClient;
   /* @internal */
   readonly clientSecret: string;
+  readonly cacheProvider: CacheProvider;
 }
 
 /**
@@ -79,7 +78,7 @@ export class Confidence implements EventSender, Trackable, FlagResolver {
   /** Internal Confidence configurations */
   readonly config: Configuration;
   private readonly parent?: Confidence;
-  private _context: Map<string, Value> = new Map();
+  private _context: Map<string, Value>;
   private contextChanged?: Observer<string[]>;
 
   /**
@@ -93,9 +92,10 @@ export class Confidence implements EventSender, Trackable, FlagResolver {
   private readonly flagStateSubject: Subscribe<State>;
 
   /** @internal */
-  constructor(config: Configuration, parent?: Confidence) {
+  constructor({ context = {}, ...config }: Configuration, parent?: Confidence) {
     this.config = config;
     this.parent = parent;
+    this._context = new Map(Object.entries(context));
     this.contextChanges = subject(observer => {
       let parentSubscription: Closer | void;
       if (parent) {
@@ -336,6 +336,18 @@ export class Confidence implements EventSender, Trackable, FlagResolver {
     );
   }
 
+  toOptions(signal?: AbortSignal): ConfidenceOptions {
+    const cache = this.config.cacheProvider(this.config.clientSecret).toOptions(signal);
+    return {
+      clientSecret: this.config.clientSecret,
+      region: this.config.region,
+      timeout: this.config.timeout,
+      environment: this.config.environment,
+      cache,
+      context: this.getContext(),
+    };
+  }
+
   /**
    * Creates a Confidence instance
    * @param clientSecret - clientSecret found on the Confidence console
@@ -347,18 +359,20 @@ export class Confidence implements EventSender, Trackable, FlagResolver {
    * @param resolveBaseUrl - custom backend resolve URL
    * @returns
    */
-  static create({
-    clientSecret,
-    region,
-    timeout,
-    environment,
-    fetchImplementation = defaultFetchImplementation(),
-    logger = defaultLogger(),
-    resolveBaseUrl,
-    disableTelemetry = false,
-    applyDebounce = 10,
-    waitUntil,
-  }: ConfidenceOptions): Confidence {
+  static create(options: ConfidenceOptions): Confidence {
+    const {
+      clientSecret,
+      region,
+      timeout,
+      environment,
+      fetchImplementation = defaultFetchImplementation(),
+      logger = defaultLogger(),
+      resolveBaseUrl,
+      disableTelemetry = false,
+      applyDebounce = 10,
+      waitUntil,
+      cache = {},
+    } = options;
     if (environment !== 'client' && environment !== 'backend') {
       throw new Error(`Invalid environment: ${environment}. Must be 'client' or 'backend'.`);
     }
@@ -373,7 +387,8 @@ export class Confidence implements EventSender, Trackable, FlagResolver {
     if (!clientSecret) {
       logger.error?.(`Confidence: confidence cannot be instantiated without a client secret`);
     }
-    let flagResolverClient: FlagResolverClient = new FetchingFlagResolverClient({
+    const cacheProvider = FlagCache.provider(clientSecret, cache);
+    const flagResolverClient: FlagResolverClient = new FetchingFlagResolverClient({
       clientSecret,
       fetchImplementation,
       sdk,
@@ -385,10 +400,8 @@ export class Confidence implements EventSender, Trackable, FlagResolver {
       logger,
       applyDebounce,
       waitUntil,
+      cacheProvider,
     });
-    if (environment === 'client') {
-      flagResolverClient = new CachingFlagResolverClient(flagResolverClient, Number.POSITIVE_INFINITY);
-    }
     const estEventSizeKb = 1;
     const flushTimeoutMilliseconds = 500;
     // default grpc payload limit is 4MB, so we aim for a 1MB batch-size
@@ -408,12 +421,11 @@ export class Confidence implements EventSender, Trackable, FlagResolver {
       logger,
     });
     return new Confidence({
-      environment: environment,
+      ...options,
       flagResolverClient,
       eventSenderEngine,
-      timeout,
       logger,
-      clientSecret,
+      cacheProvider,
     });
   }
 }

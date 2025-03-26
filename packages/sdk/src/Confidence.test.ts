@@ -29,6 +29,9 @@ describe('Confidence', () => {
       logger: {},
       eventSenderEngine: eventSenderEngineMock,
       flagResolverClient: flagResolverClientMock,
+      cacheProvider: () => {
+        throw new Error('Not implemented');
+      },
     });
     flagResolverClientMock.resolve.mockImplementation((context, _flags) => {
       const flagResolution = new Promise<FlagResolution>(resolve => {

@@ -4,6 +4,24 @@
 
 ```ts
 
+import { BinaryReader } from '@bufbuild/protobuf/wire';
+import { BinaryWriter } from '@bufbuild/protobuf/wire';
+
+// @public
+export interface CacheOptions {
+    // Warning: (ae-forgotten-export) The symbol "CacheEntry" needs to be exported by the entry point index.d.ts
+    //
+    // @internal (undocumented)
+    entries?: AsyncIterable<CacheEntry>;
+    scope?: CacheScope;
+}
+
+// Warning: (ae-forgotten-export) The symbol "CacheProvider" needs to be exported by the entry point index.d.ts
+// Warning: (ae-missing-release-tag) "CacheScope" is part of the package's API, but it is missing a release tag (@alpha, @beta, @public, or @internal)
+//
+// @public
+export type CacheScope = (provider: CacheProvider) => CacheProvider;
+
 // @public
 export namespace Closer {
     export function combine(...closers: Closer[]): Closer;
@@ -15,14 +33,15 @@ export type Closer = () => void;
 // @public
 export class Confidence implements EventSender, Trackable, FlagResolver {
     // @internal
-    constructor(config: Configuration, parent?: Confidence);
+    constructor({ context, ...config }: Configuration, parent?: Confidence);
     clearContext(): void;
+    // Warning: (ae-incompatible-release-tags) The symbol "config" is marked as @public, but its signature references "Configuration" which is marked as @internal
     readonly config: Configuration;
     // Warning: (ae-forgotten-export) The symbol "Subscribe" needs to be exported by the entry point index.d.ts
     //
     // @internal
     readonly contextChanges: Subscribe<string[]>;
-    static create({ clientSecret, region, timeout, environment, fetchImplementation, logger, resolveBaseUrl, disableTelemetry, applyDebounce, waitUntil, }: ConfidenceOptions): Confidence;
+    static create(options: ConfidenceOptions): Confidence;
     get environment(): string;
     evaluateFlag(path: string, defaultValue: string): FlagEvaluation<string>;
     // (undocumented)
@@ -44,6 +63,8 @@ export class Confidence implements EventSender, Trackable, FlagResolver {
     protected resolveFlags(): AccessiblePromise<void>;
     setContext(context: Context): boolean;
     subscribe(onStateChange?: StateObserver): () => void;
+    // (undocumented)
+    toOptions(signal?: AbortSignal): ConfidenceOptions;
     track(name: string, data?: EventData): void;
     track(manager: Trackable.Manager): Closer;
     withContext(context: Context): Confidence;
@@ -52,7 +73,10 @@ export class Confidence implements EventSender, Trackable, FlagResolver {
 // @public
 export interface ConfidenceOptions {
     applyDebounce?: number;
+    cache?: CacheOptions;
     clientSecret: string;
+    // (undocumented)
+    context?: Context;
     disableTelemetry?: boolean;
     environment: 'client' | 'backend';
     fetchImplementation?: SimpleFetch;
@@ -64,21 +88,19 @@ export interface ConfidenceOptions {
     waitUntil?: WaitUntil;
 }
 
-// @public
-export interface Configuration {
+// Warning: (ae-internal-missing-underscore) The name "Configuration" should be prefixed with an underscore because the declaration is marked as @internal
+//
+// @internal
+export interface Configuration extends ConfidenceOptions {
+    // (undocumented)
+    readonly cacheProvider: CacheProvider;
     // (undocumented)
     readonly clientSecret: string;
-    readonly environment: 'client' | 'backend';
     // Warning: (ae-forgotten-export) The symbol "EventSenderEngine" needs to be exported by the entry point index.d.ts
-    //
-    // @internal
     readonly eventSenderEngine: EventSenderEngine;
     // Warning: (ae-forgotten-export) The symbol "FlagResolverClient" needs to be exported by the entry point index.d.ts
-    //
-    // @internal
     readonly flagResolverClient: FlagResolverClient;
     readonly logger: Logger;
-    readonly timeout: number;
 }
 
 // @public
