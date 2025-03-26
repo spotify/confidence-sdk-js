@@ -14,7 +14,7 @@ import { FlagResolution } from './FlagResolution';
 import { AccessiblePromise } from './AccessiblePromise';
 import { Telemetry } from './Telemetry';
 import { SimpleFetch } from './fetch-util';
-import { FlagCache } from './flag-cache';
+import { CacheOptions, CacheProvider, FlagCache } from './flag-cache';
 
 /**
  * Confidence options, to be used for easier initialization of Confidence
@@ -44,13 +44,17 @@ export interface ConfidenceOptions {
    * This is particularly useful in serverless environments where you need to ensure certain operations complete before the environment is reclaimed.
    */
   waitUntil?: WaitUntil;
-  cache?: FlagCache.Options;
+  /**
+   * Configuration options for the Confidence SDK's flag caching system.
+   * @see {@link CacheOptions}
+   */
+  cache?: CacheOptions;
   context?: Context;
 }
 
 /**
  * Confidence configuration
- * @public
+ * @internal
  */
 export interface Configuration extends ConfidenceOptions {
   /** Debug logger */
@@ -63,7 +67,7 @@ export interface Configuration extends ConfidenceOptions {
   readonly flagResolverClient: FlagResolverClient;
   /* @internal */
   readonly clientSecret: string;
-  readonly cacheProvider: FlagCache.Provider;
+  readonly cacheProvider: CacheProvider;
 }
 
 /**
@@ -445,3 +449,34 @@ function defaultLogger(): Logger {
   }
   return Logger.noOp();
 }
+
+/**
+ * Configuration options for the Confidence SDK's flag caching system.
+ * @property {FlagCache.Options} cache - Optional configuration for how feature flags should be cached
+ *   @property {FlagCache.Scope} [cache.scope] - Determines the caching scope strategy:
+ *     - In browser environments, defaults to singleton scope (shared cache across instances)
+ *     - In non-browser environments, defaults to no scope (independent cache per instance)
+ *   @property {AsyncIterable<[string, Uint8Array]>} [cache.entries] - Initial cache entries to preload
+ *
+ * The cache system helps optimize flag resolution by:
+ * - Reducing unnecessary network requests for flag evaluations
+ * - Maintaining flag state between evaluations
+ * - Preserving flag values across context changes
+ * - Supporting different caching strategies for browser vs server environments
+ *
+ * @example
+ * ```typescript
+ * const confidence = Confidence.create({
+ *   clientSecret: 'your-secret',
+ *   environment: 'client',
+ *   timeout: 1000,
+ *   // Configure caching behavior
+ *   cache: {
+ *     // Optional: Override default scoping behavior
+ *     scope: FlagCache.singletonScope,
+ *     // Optional: Provide initial cache entries
+ *     entries: existingCacheEntries
+ *   }
+ * });
+ * ```
+ */

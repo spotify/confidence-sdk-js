@@ -3,6 +3,40 @@ import { AbstractCache } from './abstract-cache';
 import { ResolveFlagsResponse } from './generated/confidence/flags/resolver/v1/api';
 import { Value } from './Value';
 
+/**
+ * A function that creates a new flag cache instance for a given client key.
+ * @param clientKey - The unique identifier for the client.
+ * @returns A new flag cache instance.
+ */
+export type CacheProvider = (clientKey: string) => FlagCache;
+
+/**
+ * Wraps a CacheProvider in a scope.
+ *
+ * In a React server environment we recommend to use React.cache.
+ *
+ * @param provider - The provider function to create a new flag cache instance.
+ * @returns A scoped flag cache provider.
+ */
+export type CacheScope = (provider: CacheProvider) => CacheProvider;
+
+/**
+ * A cache entry is a tuple of a string key and a Uint8Array value.
+ */
+export type CacheEntry = [string, Uint8Array];
+
+/**
+ * Options for the flag cache.
+ * @public
+ */
+export interface CacheOptions {
+  /**
+   * The scope of the flag cache.
+   */
+  scope?: CacheScope;
+  /** @internal */
+  entries?: AsyncIterable<CacheEntry>;
+}
 export class FlagCache extends AbstractCache<Context, ResolveFlagsResponse, Uint8Array> {
   protected serialize(value: ResolveFlagsResponse): Uint8Array {
     return ResolveFlagsResponse.encode(value).finish();
@@ -25,7 +59,7 @@ export class FlagCache extends AbstractCache<Context, ResolveFlagsResponse, Uint
     return newValue;
   }
 
-  toOptions(signal?: AbortSignal): FlagCache.Options {
+  toOptions(signal?: AbortSignal): CacheOptions {
     if (signal && !signal.aborted) {
       this.ref();
       signal.addEventListener('abort', () => {
@@ -37,12 +71,8 @@ export class FlagCache extends AbstractCache<Context, ResolveFlagsResponse, Uint
 }
 
 export namespace FlagCache {
-  export type Provider = (clientKey: string) => FlagCache;
-
-  export type Scope = (provider: Provider) => Provider;
-
   const singletonCaches = new Map<string, FlagCache>();
-  export const singletonScope: Scope = provider => {
+  export const singletonScope: CacheScope = provider => {
     return clientKey => {
       let singletonCache = singletonCaches.get(clientKey);
       if (!singletonCache) {
@@ -53,22 +83,13 @@ export namespace FlagCache {
     };
   };
 
-  export const noScope: Scope = (provider: Provider) => provider;
+  export const noScope: CacheScope = (provider: CacheProvider) => provider;
 
-  function defaultScope(): Scope {
+  function defaultScope(): CacheScope {
     return typeof window === 'undefined' ? noScope : singletonScope;
   }
 
-  export type Entry = [string, Uint8Array];
-  export interface Options {
-    scope?: Scope;
-    entries?: AsyncIterable<Entry>;
-  }
-
-  export function provider(
-    clientKey: string,
-    { scope = defaultScope(), entries }: FlagCache.Options,
-  ): FlagCache.Provider {
+  export function provider(clientKey: string, { scope = defaultScope(), entries }: CacheOptions): CacheProvider {
     const provider = scope(() => new FlagCache());
     if (entries) {
       provider(clientKey).load(entries);

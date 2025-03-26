@@ -8,6 +8,21 @@ import { BinaryReader } from '@bufbuild/protobuf/wire';
 import { BinaryWriter } from '@bufbuild/protobuf/wire';
 
 // @public
+export interface CacheOptions {
+    // Warning: (ae-forgotten-export) The symbol "CacheEntry" needs to be exported by the entry point index.d.ts
+    //
+    // @internal (undocumented)
+    entries?: AsyncIterable<CacheEntry>;
+    scope?: CacheScope;
+}
+
+// Warning: (ae-forgotten-export) The symbol "CacheProvider" needs to be exported by the entry point index.d.ts
+// Warning: (ae-missing-release-tag) "CacheScope" is part of the package's API, but it is missing a release tag (@alpha, @beta, @public, or @internal)
+//
+// @public
+export type CacheScope = (provider: CacheProvider) => CacheProvider;
+
+// @public
 export namespace Closer {
     export function combine(...closers: Closer[]): Closer;
 }
@@ -20,6 +35,7 @@ export class Confidence implements EventSender, Trackable, FlagResolver {
     // @internal
     constructor({ context, ...config }: Configuration, parent?: Confidence);
     clearContext(): void;
+    // Warning: (ae-incompatible-release-tags) The symbol "config" is marked as @public, but its signature references "Configuration" which is marked as @internal
     readonly config: Configuration;
     // Warning: (ae-forgotten-export) The symbol "Subscribe" needs to be exported by the entry point index.d.ts
     //
@@ -57,10 +73,7 @@ export class Confidence implements EventSender, Trackable, FlagResolver {
 // @public
 export interface ConfidenceOptions {
     applyDebounce?: number;
-    // Warning: (ae-forgotten-export) The symbol "FlagCache" needs to be exported by the entry point index.d.ts
-    //
-    // (undocumented)
-    cache?: FlagCache.Options;
+    cache?: CacheOptions;
     clientSecret: string;
     // (undocumented)
     context?: Context;
@@ -75,19 +88,17 @@ export interface ConfidenceOptions {
     waitUntil?: WaitUntil;
 }
 
-// @public
+// Warning: (ae-internal-missing-underscore) The name "Configuration" should be prefixed with an underscore because the declaration is marked as @internal
+//
+// @internal
 export interface Configuration extends ConfidenceOptions {
     // (undocumented)
-    readonly cacheProvider: FlagCache.Provider;
+    readonly cacheProvider: CacheProvider;
     // (undocumented)
     readonly clientSecret: string;
     // Warning: (ae-forgotten-export) The symbol "EventSenderEngine" needs to be exported by the entry point index.d.ts
-    //
-    // @internal
     readonly eventSenderEngine: EventSenderEngine;
     // Warning: (ae-forgotten-export) The symbol "FlagResolverClient" needs to be exported by the entry point index.d.ts
-    //
-    // @internal
     readonly flagResolverClient: FlagResolverClient;
     readonly logger: Logger;
 }

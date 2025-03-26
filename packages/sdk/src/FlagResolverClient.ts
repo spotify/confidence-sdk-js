@@ -2,7 +2,7 @@ import { FlagEvaluation } from '.';
 import { AccessiblePromise } from './AccessiblePromise';
 import { Applier, FlagResolution } from './FlagResolution';
 import { Telemetry, Meter } from './Telemetry';
-import { FlagCache } from './flag-cache';
+import { CacheProvider } from './flag-cache';
 import { Context } from './context';
 import { FetchBuilder, InternalFetch, SimpleFetch, TimeUnit } from './fetch-util';
 import {
@@ -96,7 +96,7 @@ export type FlagResolverClientOptions = {
   telemetry: Telemetry;
   logger: Logger;
   waitUntil?: WaitUntil;
-  cacheProvider?: FlagCache.Provider;
+  cacheProvider?: CacheProvider;
 };
 
 export class FetchingFlagResolverClient implements FlagResolverClient {
