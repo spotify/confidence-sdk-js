@@ -51,7 +51,8 @@ export class ReadyFlagResolution implements FlagResolution {
     resolveResponse: ResolveFlagsResponse,
     private readonly applier?: Applier,
   ) {
-    for (const { flag, variant, value, reason, flagSchema, shouldApply } of resolveResponse.resolvedFlags) {
+    for (const resolvedFlag of resolveResponse.resolvedFlags) {
+      const { flag, variant, value, reason, flagSchema } = resolvedFlag;
       const name = flag.slice(FLAG_PREFIX.length);
 
       const schema = flagSchema ? Schema.parse({ structSchema: flagSchema }) : Schema.ANY;
@@ -60,7 +61,12 @@ export class ReadyFlagResolution implements FlagResolution {
         value: value! as Value.Struct,
         variant,
         reason: toEvaluationReason(reason),
-        shouldApply,
+        set shouldApply(value) {
+          resolvedFlag.shouldApply = value;
+        },
+        get shouldApply() {
+          return resolvedFlag.shouldApply;
+        },
       });
     }
     this.resolveToken = base64FromBytes(resolveResponse.resolveToken);
@@ -83,6 +89,7 @@ export class ReadyFlagResolution implements FlagResolution {
 
       if (flag.shouldApply && this.applier) {
         this.applier?.(name);
+        flag.shouldApply = false;
       }
 
       if (reason !== 'MATCH') {
