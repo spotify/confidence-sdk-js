@@ -14,6 +14,17 @@ export class FlagCache extends AbstractCache<Context, ResolveFlagsResponse, Uint
     return Value.serialize(key);
   }
 
+  protected merge(newValue: ResolveFlagsResponse, oldValue: ResolveFlagsResponse): ResolveFlagsResponse {
+    if (newValue.resolveId === oldValue.resolveId) {
+      for (let i = 0; i < newValue.resolvedFlags.length; i++) {
+        const newFlag = newValue.resolvedFlags[i];
+        const oldFlag = oldValue.resolvedFlags[i];
+        newFlag.shouldApply = oldFlag.shouldApply;
+      }
+    }
+    return newValue;
+  }
+
   toOptions(signal?: AbortSignal): FlagCache.Options {
     if (signal && !signal.aborted) {
       this.ref();

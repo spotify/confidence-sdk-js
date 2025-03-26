@@ -44,6 +44,10 @@ export abstract class AbstractCache<K, T, S = unknown> implements AsyncIterable<
 
   protected abstract serializeKey(key: K): string;
 
+  protected merge(newValue: T, _oldValue: T): T {
+    return newValue;
+  }
+
   async *[Symbol.asyncIterator](): AsyncIterator<[string, S]> {
     let cursor = this.head;
     while (!('then' in cursor) || this.pendingUpdates) {
@@ -113,7 +117,7 @@ export abstract class AbstractCache<K, T, S = unknown> implements AsyncIterable<
       }
       let oldNode = cacheValue.node;
       try {
-        const value = await pending;
+        let value: T = await pending;
         if (cacheValue.pending !== pending) {
           // we're not the latest value, do nothing
           return;
@@ -123,6 +127,9 @@ export abstract class AbstractCache<K, T, S = unknown> implements AsyncIterable<
         const next = new Promise<LinkNode<T>>(resolve => {
           this.resolveNext = resolve;
         });
+        if (oldNode) {
+          value = this.merge(value, oldNode.value);
+        }
         const node = { key: serializedKey, value, prev: this.tail, next };
         if (this.tail) {
           this.tail.next = node;
