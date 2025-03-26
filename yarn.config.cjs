@@ -81,22 +81,35 @@ module.exports = defineConfig({
 });
 
 function configureExports(workspace, map) {
-  workspace.set('exports', buildExports(map, 'build'));
+  workspace.set('exports', buildExports(map));
   workspace.set('publishConfig', {
     registry: 'https://registry.npmjs.org/',
     access: 'public',
-    exports: buildExports(map, 'dist'),
+    exports: distExports(map),
   });
 }
 
-function buildExports(map, prefix) {
+function buildExports(map) {
   return Object.fromEntries(
     Object.entries(map).map(([key, value]) => {
       if (typeof value === 'string') {
         value = {
-          import: `./${prefix}/${value}.mjs`,
-          require: `./${prefix}/${value}.cjs`,
-          types: `./${prefix}/${value}.d.ts`,
+          import: `./build/${value}.js`,
+          types: `./build/${value}.d.ts`,
+        };
+      }
+      return [key, value];
+    }),
+  );
+}
+function distExports(map) {
+  return Object.fromEntries(
+    Object.entries(map).map(([key, value]) => {
+      if (typeof value === 'string') {
+        value = {
+          import: `./dist/${value}.mjs`,
+          require: `./dist/${value}.cjs`,
+          types: `./dist/${value}.d.ts`,
         };
       }
       return [key, value];
