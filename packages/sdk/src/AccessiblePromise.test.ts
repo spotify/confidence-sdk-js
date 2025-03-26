@@ -1,11 +1,11 @@
 import { AccessiblePromise } from './AccessiblePromise';
 
 describe('AccessiblePromise', () => {
-  describe('resolved', () => {
+  describe('fulfilled', () => {
     const resolved = AccessiblePromise.resolve(237);
 
     it('has state resolved', () => {
-      expect(resolved.state).toBe('RESOLVED');
+      expect(resolved.status).toBe('fulfilled');
     });
 
     it('can be awaited', async () => {
@@ -14,7 +14,7 @@ describe('AccessiblePromise', () => {
 
     it('synchronously returns a new AccessiblePromise on then', () => {
       const other = resolved.then(value => value + 1);
-      expect(other.state).toBe('RESOLVED');
+      expect(other.status).toBe('fulfilled');
       expect(other.or(0)).toBe(238);
     });
 
@@ -22,7 +22,7 @@ describe('AccessiblePromise', () => {
       const other = resolved.then<number>(() => {
         throw new Error('error');
       });
-      expect(other.state).toBe('REJECTED');
+      expect(other.status).toBe('rejected');
       expect(() => other.or(0)).toThrow('error');
     });
   });
@@ -34,12 +34,12 @@ describe('AccessiblePromise', () => {
       pending = AccessiblePromise.resolve(tick().then(() => 237));
     });
     it('has state pending', () => {
-      expect(pending.state).toBe('PENDING');
+      expect(pending.status).toBe('pending');
     });
 
     it('can be awaited', async () => {
       expect(await pending).toBe(237);
-      expect(pending.state).toBe('RESOLVED');
+      expect(pending.status).toBe('fulfilled');
     });
 
     it('returns the alternative value', () => {
