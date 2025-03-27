@@ -36,8 +36,26 @@ export interface CacheOptions {
   scope?: CacheScope;
   /** @internal */
   entries?: AsyncIterable<CacheEntry>;
+  /**
+   * Flags that have been logged using the showLoggerLink method.
+   * @internal
+   */
+  loggedFlags?: Set<string>;
 }
+
+type FlagCacheOptions = {
+  loggedFlags?: Set<string>;
+};
 export class FlagCache extends AbstractCache<Context, ResolveFlagsResponse, Uint8Array> {
+  /**
+   * Flags that have been logged using the showLoggerLink method.
+   * @internal
+   */
+  private readonly logs: Set<string>;
+  constructor(options: FlagCacheOptions) {
+    super();
+    this.logs = options.loggedFlags ?? new Set();
+  }
   protected serialize(value: ResolveFlagsResponse): Uint8Array {
     return ResolveFlagsResponse.encode(value).finish();
   }
@@ -62,6 +80,7 @@ export class FlagCache extends AbstractCache<Context, ResolveFlagsResponse, Uint
   toOptions(): CacheOptions {
     return {
       entries: this,
+      loggedFlags: this.logs,
     };
   }
 }
@@ -85,8 +104,11 @@ export namespace FlagCache {
     return typeof window === 'undefined' ? noScope : singletonScope;
   }
 
-  export function provider(clientKey: string, { scope = defaultScope(), entries }: CacheOptions): CacheProvider {
-    const provider = scope(() => new FlagCache());
+  export function provider(
+    clientKey: string,
+    { scope = defaultScope(), entries, loggedFlags }: CacheOptions,
+  ): CacheProvider {
+    const provider = scope(() => new FlagCache({ loggedFlags }));
     if (entries) {
       provider(clientKey).load(entries);
     }

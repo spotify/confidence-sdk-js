@@ -21,16 +21,27 @@ describe('Confidence', () => {
     variant: 'mockVariant',
   };
 
+  const loggerSpy = {
+    infoLogs: [] as string[],
+    info: (input: string) => {
+      loggerSpy.infoLogs.push(input);
+    },
+  };
+
   beforeEach(() => {
+    loggerSpy.infoLogs = [];
     confidence = new Confidence({
       clientSecret: 'secret',
       timeout: 10,
       environment: 'client',
-      logger: {},
+      logger: loggerSpy,
       eventSenderEngine: eventSenderEngineMock,
       flagResolverClient: flagResolverClientMock,
       cacheProvider: () => {
         throw new Error('Not implemented');
+      },
+      cache: {
+        loggedFlags: new Set(),
       },
     });
     flagResolverClientMock.resolve.mockImplementation((context, _flags) => {
@@ -376,6 +387,33 @@ describe('Confidence', () => {
         value: 'mockValue',
         variant: 'mockVariant',
       });
+    });
+
+    it('should log the flag resolve hint once per and context and flag', async () => {
+      const ctx = { targeting_key: 'default', pantsOn: true, pantsColor: 'blue' };
+      const c = confidence.withContext(ctx);
+      await c.evaluateFlag('flag1', 'default');
+      c.getFlag('flag1', 'default');
+
+      expect(loggerSpy.infoLogs.length).toEqual(1);
+      expect(loggerSpy.infoLogs[0]).toEqual(
+        "See resolves for 'flag1' in Confidence: https://app.confidence.spotify.com/flags/resolver-test?client-key=secret&flag=flags/flag1&context=%7B%22targeting_key%22%3A%22default%22%2C%22pantsOn%22%3Atrue%2C%22pantsColor%22%3A%22blue%22%7D",
+      );
+      c.getFlag('flag1', 'default');
+      expect(loggerSpy.infoLogs.length).toEqual(1);
+
+      await c.evaluateFlag('flag2', 'default');
+      expect(loggerSpy.infoLogs.length).toEqual(2);
+      expect(loggerSpy.infoLogs[1]).toEqual(
+        "See resolves for 'flag2' in Confidence: https://app.confidence.spotify.com/flags/resolver-test?client-key=secret&flag=flags/flag2&context=%7B%22targeting_key%22%3A%22default%22%2C%22pantsOn%22%3Atrue%2C%22pantsColor%22%3A%22blue%22%7D",
+      );
+      const c2 = c.withContext({ pantsOn: false });
+      await c2.evaluateFlag('flag2', 'default');
+      c2.getFlag('flag2', 'default');
+      expect(loggerSpy.infoLogs.length).toEqual(3);
+      expect(loggerSpy.infoLogs[2]).toEqual(
+        "See resolves for 'flag2' in Confidence: https://app.confidence.spotify.com/flags/resolver-test?client-key=secret&flag=flags/flag2&context=%7B%22targeting_key%22%3A%22default%22%2C%22pantsColor%22%3A%22blue%22%2C%22pantsOn%22%3Afalse%7D",
+      );
     });
   });
 });

@@ -13,6 +13,8 @@ export interface CacheOptions {
     //
     // @internal (undocumented)
     entries?: AsyncIterable<CacheEntry>;
+    // @internal
+    loggedFlags?: Set<string>;
     scope?: CacheScope;
 }
 
