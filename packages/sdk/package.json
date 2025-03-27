@@ -18,7 +18,7 @@
     "web-vitals": "^3.5.2"
   },
   "files": [
-    "dist/index.*"
+    "dist/*"
   ],
   "devDependencies": {
     "@microsoft/api-extractor": "7.43.1",
