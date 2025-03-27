@@ -1,5 +1,29 @@
 # Changelog
 
+## [0.3.0](https://github.com/spotify/confidence-sdk-js/compare/sdk-v0.2.5...sdk-v0.3.0) (2025-03-27)
+
+
+### ⚠ BREAKING CHANGES
+
+* **react:** react server support ([#235](https://github.com/spotify/confidence-sdk-js/issues/235))
+* The SDK now requires a runtime compatible with es2018.
+
+### 🐛 Bug Fixes
+
+* export correct build files ([#232](https://github.com/spotify/confidence-sdk-js/issues/232)) ([4eae451](https://github.com/spotify/confidence-sdk-js/commit/4eae4519e2606fc270a6e0c0cef16c6354555f09))
+* include correct dist files ([#236](https://github.com/spotify/confidence-sdk-js/issues/236)) ([c6e971f](https://github.com/spotify/confidence-sdk-js/commit/c6e971ffc6e4a70a05e198b0fdebe4cec3f62d10))
+
+
+### ✨ New Features
+
+* **react:** react server support ([#235](https://github.com/spotify/confidence-sdk-js/issues/235)) ([aaa92b9](https://github.com/spotify/confidence-sdk-js/commit/aaa92b9b02829f661d7dbd01aafacf5e83d72970))
+* scoped caching support ([#234](https://github.com/spotify/confidence-sdk-js/issues/234)) ([d940aa5](https://github.com/spotify/confidence-sdk-js/commit/d940aa501caf891e2f034e34f8ebac6eace09f71))
+
+
+### 🛠️ Build
+
+* prepare for multiple exports ([#230](https://github.com/spotify/confidence-sdk-js/issues/230)) ([00e6b7a](https://github.com/spotify/confidence-sdk-js/commit/00e6b7af4433af3327f2ee59bdc698bf49798d9f))
+
 ## [0.2.5](https://github.com/spotify/confidence-sdk-js/compare/sdk-v0.2.4...sdk-v0.2.5) (2025-03-07)
 
 
