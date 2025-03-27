@@ -328,11 +328,10 @@ export class Confidence implements EventSender, Trackable, FlagResolver {
     return (await this.evaluateFlag(path, defaultValue)).value;
   }
 
-  private loggedFlags: Set<string> = new Set();
   private showLoggerLink(flag: string, context: Context) {
     const logKey = `${flag}:${Value.serialize(context)}`;
-    if (!this.loggedFlags.has(logKey)) {
-      this.loggedFlags.add(logKey);
+    if (!this.config.cache?.loggedFlags?.has(logKey)) {
+      this.config.cache?.loggedFlags?.add(logKey);
       this.config.logger.info?.(
         `See resolves for '${flag}' in Confidence: https://app.confidence.spotify.com/flags/resolver-test?client-key=${
           this.config.clientSecret
@@ -376,7 +375,9 @@ export class Confidence implements EventSender, Trackable, FlagResolver {
       disableTelemetry = false,
       applyDebounce = 10,
       waitUntil,
-      cache = {},
+      cache = {
+        loggedFlags: new Set(),
+      },
     } = options;
     if (environment !== 'client' && environment !== 'backend') {
       throw new Error(`Invalid environment: ${environment}. Must be 'client' or 'backend'.`);

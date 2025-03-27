@@ -40,6 +40,9 @@ describe('Confidence', () => {
       cacheProvider: () => {
         throw new Error('Not implemented');
       },
+      cache: {
+        loggedFlags: new Set(),
+      },
     });
     flagResolverClientMock.resolve.mockImplementation((context, _flags) => {
       const flagResolution = new Promise<FlagResolution>(resolve => {
