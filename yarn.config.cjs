@@ -62,7 +62,7 @@ module.exports = defineConfig({
         workspace.set('scripts.bundle', 'rollup -c && ../../validate-api.sh');
       }
 
-      workspace.set('files', ['dist/index.*']);
+      workspace.set('files', ['dist/*']);
       workspace.set('scripts.build', 'tsc');
       workspace.set('scripts.clean', 'rm -rf {build,dist}');
       workspace.set('scripts.prepack', 'yarn build && yarn bundle');

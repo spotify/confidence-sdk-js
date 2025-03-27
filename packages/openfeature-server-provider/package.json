@@ -20,7 +20,7 @@
     "clean": "rm -rf {build,dist}"
   },
   "files": [
-    "dist/index.*"
+    "dist/*"
   ],
   "type": "module",
   "publishConfig": {
