@@ -48,6 +48,30 @@
   * devDependencies
     * @spotify-confidence/sdk bumped to 0.2.5
 
+## [0.3.0](https://github.com/spotify/confidence-sdk-js/compare/openfeature-web-provider-v0.2.18...openfeature-web-provider-v0.3.0) (2025-03-27)
+
+
+### ⚠ BREAKING CHANGES
+
+* The SDK now requires a runtime compatible with es2018.
+
+### 🐛 Bug Fixes
+
+* export correct build files ([#232](https://github.com/spotify/confidence-sdk-js/issues/232)) ([4eae451](https://github.com/spotify/confidence-sdk-js/commit/4eae4519e2606fc270a6e0c0cef16c6354555f09))
+* include correct dist files ([#236](https://github.com/spotify/confidence-sdk-js/issues/236)) ([c6e971f](https://github.com/spotify/confidence-sdk-js/commit/c6e971ffc6e4a70a05e198b0fdebe4cec3f62d10))
+
+
+### 🛠️ Build
+
+* prepare for multiple exports ([#230](https://github.com/spotify/confidence-sdk-js/issues/230)) ([00e6b7a](https://github.com/spotify/confidence-sdk-js/commit/00e6b7af4433af3327f2ee59bdc698bf49798d9f))
+
+
+### Dependencies
+
+* The following workspace dependencies were updated
+  * devDependencies
+    * @spotify-confidence/sdk bumped to 0.3.0
+
 ## [0.2.15](https://github.com/spotify/confidence-sdk-js/compare/openfeature-web-provider-v0.2.14...openfeature-web-provider-v0.2.15) (2025-01-29)
 
 
