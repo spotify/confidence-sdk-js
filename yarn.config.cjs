@@ -120,10 +120,11 @@ function distExports(map) {
   return Object.fromEntries(
     Object.entries(map).map(([key, value]) => {
       if (typeof value === 'string') {
+        const prefix = value.startsWith('server') ? './server' : './dist';
         value = {
-          import: `./dist/${value}.mjs`,
-          require: `./dist/${value}.cjs`,
-          types: `./dist/${value}.d.ts`,
+          import: `${prefix}/${value}.mjs`,
+          require: `${prefix}/${value}.cjs`,
+          types: `${prefix}/${value}.d.ts`,
         };
       }
       return [key, value];
