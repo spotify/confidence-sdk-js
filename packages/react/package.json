@@ -3,13 +3,25 @@
   "license": "Apache-2.0",
   "version": "0.0.13",
   "files": [
-    "dist/*"
+    "client.cjs",
+    "client.cjs.map",
+    "client.mjs",
+    "client.mjs.map",
+    "client.d.ts",
+    "server/server.cjs",
+    "server/server.cjs.map",
+    "server/server.mjs",
+    "server/server.mjs.map",
+    "server/server.d.ts",
+    "CHANGELOG.md",
+    "README.md",
+    "package.json"
   ],
   "scripts": {
     "bundle": "rollup -c && ../../validate-api.sh",
     "build": "tsc",
-    "prepack": "yarn build && yarn bundle && mv dist/client.* . && mkdir ./server && mv dist/server.* ./server/ && pwd && ls -la",
-    "postpack": "rm -rf ./server && rm -rf client.*",
+    "prepack": "yarn build && yarn bundle && mv dist/client.* . && mkdir -p ./server && mv dist/server.* ./server/",
+    "postpack": "rm -rf ./server client.*",
     "clean": "rm -rf {build,dist}"
   },
   "engineStrict": true,

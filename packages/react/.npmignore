@@ -1,0 +1,22 @@
+# Source files
+src/
+
+# Build files
+build/
+
+# Development files
+*.config.js
+*.config.ts
+tsconfig.json
+rollup.config.js
+
+# Test files
+__tests__/
+*.test.*
+*.spec.*
+
+# Development tools
+.eslintrc
+.prettierrc
+.editorconfig
+.gitignore 
