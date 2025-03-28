@@ -3,25 +3,14 @@
   "license": "Apache-2.0",
   "version": "0.0.13",
   "files": [
-    "client.cjs",
-    "client.cjs.map",
-    "client.mjs",
-    "client.mjs.map",
-    "client.d.ts",
-    "server/server.cjs",
-    "server/server.cjs.map",
-    "server/server.mjs",
-    "server/server.mjs.map",
-    "server/server.d.ts",
-    "CHANGELOG.md",
-    "README.md",
-    "package.json"
+    "dist/*",
+    "server/*"
   ],
   "scripts": {
     "bundle": "rollup -c && ../../validate-api.sh",
     "build": "tsc",
-    "prepack": "yarn build && yarn bundle && mv dist/client.* . && mkdir -p ./server && mv dist/server.* ./server/",
-    "postpack": "rm -rf ./server client.*",
+    "prepack": "yarn build && yarn bundle && mkdir -p ./server && mv dist/server.* ./server/",
+    "postpack": "rm -rf ./server",
     "clean": "rm -rf {build,dist}"
   },
   "engineStrict": true,
@@ -40,7 +29,7 @@
     "typescript": "5.1.6"
   },
   "exports": {
-    "./client": {
+    ".": {
       "import": "./build/client.js",
       "types": "./build/client.d.ts"
     },
@@ -55,9 +44,9 @@
     "access": "public",
     "exports": {
       ".": {
-        "import": "./client.mjs",
-        "require": "./client.cjs",
-        "types": "./client.d.ts"
+        "import": "./dist/client.mjs",
+        "require": "./dist/client.cjs",
+        "types": "./dist/client.d.ts"
       },
       "./server": {
         "import": "./server/server.mjs",
@@ -69,7 +58,7 @@
   "dependencies": {
     "server-only": "^0.0.1"
   },
-  "main": "client.cjs",
-  "module": "client.mjs",
-  "types": "client.d.ts"
+  "main": "dist/client.cjs",
+  "module": "dist/client.mjs",
+  "types": "dist/client.d.ts"
 }
