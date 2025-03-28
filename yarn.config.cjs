@@ -52,8 +52,14 @@ module.exports = defineConfig({
           './client': 'client',
           './server': 'server',
         });
+        workspace.set('main', 'index.cjs');
+        workspace.set('module', 'index.mjs');
+        workspace.set('types', 'index.d.ts');
       } else {
         configureExports(workspace, { '.': 'index' });
+        workspace.set('main', 'dist/index.cjs');
+        workspace.set('module', 'dist/index.mjs');
+        workspace.set('types', 'dist/index.d.ts');
       }
 
       if (workspace.cwd === 'packages/sdk') {
@@ -66,10 +72,6 @@ module.exports = defineConfig({
       workspace.set('scripts.build', 'tsc');
       workspace.set('scripts.clean', 'rm -rf {build,dist}');
       workspace.set('scripts.prepack', 'yarn build && yarn bundle');
-
-      workspace.unset('main');
-      workspace.unset('module');
-      workspace.unset('types');
 
       // dev deps that should all share the same version (from root package.json)
       for (const id of ['rollup', 'typescript']) {

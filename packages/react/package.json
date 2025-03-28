@@ -8,7 +8,8 @@
   "scripts": {
     "bundle": "rollup -c && ../../validate-api.sh",
     "build": "tsc",
-    "prepack": "yarn build && yarn bundle",
+    "prepack": "yarn build && yarn bundle && mv dist/client.* . && mkdir ./server && mv dist/server.* ./server/ && pwd && ls -la",
+    "postpack": "rm -rf ./server && rm -rf client.*",
     "clean": "rm -rf {build,dist}"
   },
   "engineStrict": true,
@@ -41,19 +42,22 @@
     "registry": "https://registry.npmjs.org/",
     "access": "public",
     "exports": {
-      "./client": {
-        "import": "./dist/client.mjs",
-        "require": "./dist/client.cjs",
-        "types": "./dist/client.d.ts"
+      ".": {
+        "import": "./client.mjs",
+        "require": "./client.cjs",
+        "types": "./client.d.ts"
       },
       "./server": {
-        "import": "./dist/server.mjs",
-        "require": "./dist/server.cjs",
-        "types": "./dist/server.d.ts"
+        "import": "./server/server.mjs",
+        "require": "./server/server.cjs",
+        "types": "./server/server.d.ts"
       }
     }
   },
   "dependencies": {
     "server-only": "^0.0.1"
-  }
+  },
+  "main": "client.cjs",
+  "module": "client.mjs",
+  "types": "client.d.ts"
 }
