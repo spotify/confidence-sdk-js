@@ -49,11 +49,24 @@ module.exports = defineConfig({
 
       if (workspace.cwd === 'packages/react') {
         configureExports(workspace, {
-          './client': 'client',
+          '.': 'client',
           './server': 'server',
         });
+        workspace.set('main', 'dist/client.cjs');
+        workspace.set('module', 'dist/client.mjs');
+        workspace.set('types', 'dist/client.d.ts');
+        workspace.set('files', ['dist/*', 'server/*']);
+        workspace.set(
+          'scripts.prepack',
+          'yarn build && yarn bundle && mkdir -p ./server && mv dist/server.* ./server/',
+        );
       } else {
         configureExports(workspace, { '.': 'index' });
+        workspace.set('main', 'dist/index.cjs');
+        workspace.set('module', 'dist/index.mjs');
+        workspace.set('types', 'dist/index.d.ts');
+        workspace.set('files', ['dist/*']);
+        workspace.set('scripts.prepack', 'yarn build && yarn bundle');
       }
 
       if (workspace.cwd === 'packages/sdk') {
@@ -62,14 +75,8 @@ module.exports = defineConfig({
         workspace.set('scripts.bundle', 'rollup -c && ../../validate-api.sh');
       }
 
-      workspace.set('files', ['dist/*']);
       workspace.set('scripts.build', 'tsc');
       workspace.set('scripts.clean', 'rm -rf {build,dist}');
-      workspace.set('scripts.prepack', 'yarn build && yarn bundle');
-
-      workspace.unset('main');
-      workspace.unset('module');
-      workspace.unset('types');
 
       // dev deps that should all share the same version (from root package.json)
       for (const id of ['rollup', 'typescript']) {
@@ -113,10 +120,11 @@ function distExports(map) {
   return Object.fromEntries(
     Object.entries(map).map(([key, value]) => {
       if (typeof value === 'string') {
+        const prefix = value.startsWith('server') ? './server' : './dist';
         value = {
-          import: `./dist/${value}.mjs`,
-          require: `./dist/${value}.cjs`,
-          types: `./dist/${value}.d.ts`,
+          import: `${prefix}/${value}.mjs`,
+          require: `${prefix}/${value}.cjs`,
+          types: `${prefix}/${value}.d.ts`,
         };
       }
       return [key, value];

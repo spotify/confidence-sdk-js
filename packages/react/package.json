@@ -3,12 +3,14 @@
   "license": "Apache-2.0",
   "version": "0.0.13",
   "files": [
-    "dist/*"
+    "dist/*",
+    "server/*"
   ],
   "scripts": {
     "bundle": "rollup -c && ../../validate-api.sh",
     "build": "tsc",
-    "prepack": "yarn build && yarn bundle",
+    "prepack": "yarn build && yarn bundle && mkdir -p ./server && mv dist/server.* ./server/",
+    "postpack": "rm -rf ./server",
     "clean": "rm -rf {build,dist}"
   },
   "engineStrict": true,
@@ -27,7 +29,7 @@
     "typescript": "5.1.6"
   },
   "exports": {
-    "./client": {
+    ".": {
       "import": "./build/client.js",
       "types": "./build/client.d.ts"
     },
@@ -41,19 +43,22 @@
     "registry": "https://registry.npmjs.org/",
     "access": "public",
     "exports": {
-      "./client": {
+      ".": {
         "import": "./dist/client.mjs",
         "require": "./dist/client.cjs",
         "types": "./dist/client.d.ts"
       },
       "./server": {
-        "import": "./dist/server.mjs",
-        "require": "./dist/server.cjs",
-        "types": "./dist/server.d.ts"
+        "import": "./server/server.mjs",
+        "require": "./server/server.cjs",
+        "types": "./server/server.d.ts"
       }
     }
   },
   "dependencies": {
     "server-only": "^0.0.1"
-  }
+  },
+  "main": "dist/client.cjs",
+  "module": "dist/client.mjs",
+  "types": "dist/client.d.ts"
 }

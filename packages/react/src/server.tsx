@@ -1,6 +1,6 @@
 import { Confidence } from '@spotify-confidence/sdk';
 import React, { ReactNode } from 'react';
-import { ManagedConfidenceProvider } from '@spotify-confidence/react/client';
+import { ManagedConfidenceProvider } from '@spotify-confidence/react';
 import 'server-only';
 
 export async function ConfidenceProvider(props: { confidence: Confidence; children?: ReactNode }) {
