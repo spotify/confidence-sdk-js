@@ -1,29 +1,35 @@
 import { getConfidence } from '@/lib/confidence';
-import { cookies } from 'next/headers';
 
-export async function Footer() {
-  const cookieStore = await cookies();
-  const targeting_key = cookieStore.get('cnfdVisitorId')?.value || 'default-user';
-  const confidence = getConfidence({ targeting_key });
+interface FooterProps {
+  inverted: boolean;
+}
 
-  // Server-side flag resolution
-  const footerText = await confidence.getFlag('example.footer.text', '© 2024 Confidence Demo');
-  const showSocialLinks = await confidence.getFlag('example.footer.show-social', true);
-
+export function Footer({ inverted }: FooterProps) {
   return (
-    <footer className="bg-gray-800 text-white p-4 mt-auto">
-      <div className="container mx-auto">
-        <div className="flex flex-col md:flex-row justify-between items-center">
-          <div className="text-sm mb-4 md:mb-0">
-            {footerText}
-          </div>
-          {showSocialLinks && (
-            <div className="flex space-x-4">
-              <a href="#" className="hover:text-blue-400">Twitter</a>
-              <a href="#" className="hover:text-blue-400">GitHub</a>
-              <a href="#" className="hover:text-blue-400">LinkedIn</a>
-            </div>
-          )}
+    <footer className={`py-8 ${
+      inverted 
+        ? 'bg-gray-100' 
+        : 'bg-gradient-to-r from-blue-600 to-blue-800'
+    }`}>
+      <div className="container mx-auto px-4">
+        <div className="flex flex-col items-center space-y-4">
+          <p className={`text-center ${
+            inverted ? 'text-gray-800' : 'text-white'
+          }`}>
+            Built with Confidence SDK
+          </p>
+          <a
+            href="https://github.com/spotify/confidence-sdk-js"
+            target="_blank"
+            rel="noopener noreferrer"
+            className={`px-6 py-2 rounded-full transition-all duration-300 ${
+              inverted 
+                ? 'bg-white text-blue-500 border border-blue-500 hover:bg-blue-50' 
+                : 'bg-blue-500 text-white hover:bg-blue-600'
+            }`}
+          >
+            View on GitHub
+          </a>
         </div>
       </div>
     </footer>
