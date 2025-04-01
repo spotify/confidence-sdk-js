@@ -3,14 +3,14 @@
   "license": "Apache-2.0",
   "version": "0.0.13",
   "files": [
-    "dist/*",
-    "server/*"
+    "./index.*",
+    "./server.*"
   ],
   "scripts": {
     "bundle": "rollup -c && ../../validate-api.sh",
     "build": "tsc",
-    "prepack": "yarn build && yarn bundle && ./scripts/prepack-server.sh",
-    "postpack": "rm -rf ./server",
+    "prepack": "yarn build && yarn bundle && cp dist/* .",
+    "postpack": "rm server.* & rm index.*",
     "clean": "rm -rf {build,dist}"
   },
   "engineStrict": true,
@@ -30,8 +30,8 @@
   },
   "exports": {
     ".": {
-      "import": "./build/client.js",
-      "types": "./build/client.d.ts"
+      "import": "./build/index.js",
+      "types": "./build/index.d.ts"
     },
     "./server": {
       "import": "./build/server.js",
@@ -44,21 +44,21 @@
     "access": "public",
     "exports": {
       ".": {
-        "import": "./dist/client.mjs",
-        "require": "./dist/client.cjs",
-        "types": "./dist/client.d.ts"
+        "import": "./index.mjs",
+        "require": "./index.cjs",
+        "types": "./index.d.ts"
       },
       "./server": {
-        "import": "./server/index.mjs",
-        "require": "./server/index.cjs",
-        "types": "./server/index.d.ts"
+        "import": "./server.mjs",
+        "require": "./server.cjs",
+        "types": "./server.d.ts"
       }
     }
   },
   "dependencies": {
     "server-only": "^0.0.1"
   },
-  "main": "dist/client.cjs",
-  "module": "dist/client.mjs",
-  "types": "dist/client.d.ts"
+  "main": "index.cjs",
+  "module": "index.mjs",
+  "types": "index.d.ts"
 }

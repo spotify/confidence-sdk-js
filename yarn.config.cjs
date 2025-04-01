@@ -48,22 +48,47 @@ module.exports = defineConfig({
       workspace.set('type', 'module');
 
       if (workspace.cwd === 'packages/react') {
-        configureExports(workspace, {
-          '.': 'client',
-          './server': 'server',
+        workspace.set('main', 'index.cjs');
+        workspace.set('module', 'index.mjs');
+        workspace.set('types', 'index.d.ts');
+        workspace.set('files', ['./index.*', './server.*']);
+        workspace.set('scripts.prepack', 'yarn build && yarn bundle && cp dist/* .');
+        workspace.set('scripts.postpack', 'rm server.* & rm index.*');
+        workspace.set(
+          'exports',
+          buildExports({
+            '.': 'index',
+            './server': 'server',
+          }),
+        );
+        workspace.set('publishConfig', {
+          registry: 'https://registry.npmjs.org/',
+          access: 'public',
+          exports: {
+            '.': {
+              import: './index.mjs',
+              require: './index.cjs',
+              types: './index.d.ts',
+            },
+            './server': {
+              import: './server.mjs',
+              require: './server.cjs',
+              types: './server.d.ts',
+            },
+          },
         });
-        workspace.set('main', 'dist/client.cjs');
-        workspace.set('module', 'dist/client.mjs');
-        workspace.set('types', 'dist/client.d.ts');
-        workspace.set('files', ['dist/*', 'server/*']);
-        workspace.set('scripts.prepack', 'yarn build && yarn bundle && ./scripts/prepack-server.sh');
       } else {
-        configureExports(workspace, { '.': 'index' });
         workspace.set('main', 'dist/index.cjs');
         workspace.set('module', 'dist/index.mjs');
         workspace.set('types', 'dist/index.d.ts');
         workspace.set('files', ['dist/*']);
         workspace.set('scripts.prepack', 'yarn build && yarn bundle');
+        workspace.set('exports', buildExports({ '.': 'index' }));
+        workspace.set('publishConfig', {
+          registry: 'https://registry.npmjs.org/',
+          access: 'public',
+          exports: distExports({ '.': 'index' }),
+        });
       }
 
       if (workspace.cwd === 'packages/sdk') {
@@ -91,15 +116,6 @@ module.exports = defineConfig({
   },
 });
 
-function configureExports(workspace, map) {
-  workspace.set('exports', buildExports(map));
-  workspace.set('publishConfig', {
-    registry: 'https://registry.npmjs.org/',
-    access: 'public',
-    exports: distExports(map),
-  });
-}
-
 function buildExports(map) {
   return Object.fromEntries(
     Object.entries(map).map(([key, value]) => {
@@ -117,12 +133,10 @@ function distExports(map) {
   return Object.fromEntries(
     Object.entries(map).map(([key, value]) => {
       if (typeof value === 'string') {
-        const prefix = value.startsWith('server') ? './server' : './dist';
-        const name = value.startsWith('server') ? 'index' : value;
         value = {
-          import: `${prefix}/${name}.mjs`,
-          require: `${prefix}/${name}.cjs`,
-          types: `${prefix}/${name}.d.ts`,
+          import: `./dist/${value}.mjs`,
+          require: `./dist/${value}.cjs`,
+          types: `./dist/${value}.d.ts`,
         };
       }
       return [key, value];
