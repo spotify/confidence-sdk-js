@@ -1,7 +1,7 @@
 'use client';
 
 import React, { useState, useEffect } from 'react';
-import { useConfidence } from '@spotify-confidence/react/client';
+import { useConfidence, useFlag } from '@spotify-confidence/react/client';
 import Cookies from 'js-cookie';
 
 const AI_MODELS = [
@@ -16,14 +16,24 @@ const COOKIE_OPTIONS = { expires: 7 }; // Cookies expire in 7 days
 
 export default function Content() {
   const [mounted, setMounted] = useState(false);
+  const [windowWidth, setWindowWidth] = useState(0);
   const [selectedModel, setSelectedModel] = useState(() => Cookies.get('aiModel') || AI_MODELS[0].id);
   const [targetingKey, setTargetingKey] = useState(() => Cookies.get('cnfdVisitorId') || '');
   const [counterValue, setCounterValue] = useState(() => Cookies.get('counterValue') || 0);
-  //const confidence = useConfidence();
+  const confidence = useConfidence();
 
   useEffect(() => {
     console.log('🌐 Content: Client-side mounted');
     setMounted(true);
+    // Set initial window width
+    setWindowWidth(window.innerWidth);
+
+    // Add resize event listener
+    const handleResize = () => setWindowWidth(window.innerWidth);
+    window.addEventListener('resize', handleResize);
+
+    // Cleanup
+    return () => window.removeEventListener('resize', handleResize);
   }, []);
 
   const handleTargetingKeyChange = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -34,32 +44,36 @@ export default function Content() {
 
   const handleUpdateTargetingKey = () => {
     Cookies.set('cnfdVisitorId', targetingKey, COOKIE_OPTIONS);
-    //confidence.setContext({ targeting_key: targetingKey });
+    confidence.setContext({ targeting_key: targetingKey });
   };
 
   const handleClearTargetingKey = () => {
     setTargetingKey('');
     Cookies.remove('cnfdVisitorId');
-    //confidence.setContext({ targeting_key: '' });
+    confidence.setContext({ targeting_key: '' });
   };
 
   const handleModelChange = (e: React.ChangeEvent<HTMLSelectElement>) => {
     const newValue = e.target.value;
     setSelectedModel(newValue);
+    confidence.setContext({ aiModel: newValue });
     Cookies.set('aiModel', newValue, COOKIE_OPTIONS);
   };
 
   const handleCounterIncrement = () => {
     const newCounterValue = parseInt(counterValue) + 1;
     setCounterValue(newCounterValue);
+    confidence.setContext({ counterValue: newCounterValue });
     Cookies.set('counterValue', newCounterValue.toString(), COOKIE_OPTIONS);
   };
 
   const handleCounterDecrement = () => {
     const newCounterValue = parseInt(counterValue) - 1;
     setCounterValue(newCounterValue);
+    confidence.setContext({ counterValue: newCounterValue });
     Cookies.set('counterValue', newCounterValue.toString(), COOKIE_OPTIONS);
   };
+  const showCounter = useFlag('nextjs-example.show-counter', false);
 
   if (!mounted) {
     console.log('⏳ Content: Initial server render');
@@ -74,30 +88,32 @@ export default function Content() {
           This is a client-side rendered component that demonstrates some client-only features:
         </p>
         <div className="space-y-4">
-          <div>
-            <p className="text-gray-700">Counter: {counterValue}</p>
-            <button
-              onClick={() => {
-                console.log('🖱️ Content: Button clicked, count:', counterValue + 1);
-                handleCounterIncrement();
-              }}
-              className="mt-2 bg-blue-500 text-white px-4 py-2 rounded hover:bg-blue-600 transition-colors"
-            >
-              Increment
-            </button>
+          {showCounter && (
+            <div>
+              <p className="text-gray-700">Counter: {counterValue}</p>
+              <button
+                onClick={() => {
+                  console.log('🖱️ Content: Button clicked, count:', counterValue + 1);
+                  handleCounterIncrement();
+                }}
+                className="mt-2 bg-blue-500 text-white px-4 py-2 rounded hover:bg-blue-600 transition-colors"
+              >
+                Increment
+              </button>
 
-            <button
-              onClick={() => {
-                console.log('🖱️ Content: Button clicked, count:', counterValue - 1);
-                handleCounterDecrement();
-              }}
-              className="mt-2 bg-blue-500 text-white px-4 py-2 rounded hover:bg-blue-600 transition-colors"
-            >
-              Decrement
-            </button>
-          </div>
+              <button
+                onClick={() => {
+                  console.log('🖱️ Content: Button clicked, count:', counterValue - 1);
+                  handleCounterDecrement();
+                }}
+                className="mt-2 bg-blue-500 text-white px-4 py-2 rounded hover:bg-blue-600 transition-colors"
+              >
+                Decrement
+              </button>
+            </div>
+          )}
           <div>
-            <p className="text-gray-700">Window Width: {typeof window !== 'undefined' ? window.innerWidth : 'N/A'}px</p>
+            <p className="text-gray-700">Window Width: {windowWidth}px</p>
           </div>
           <div className="mt-6">
             <label htmlFor="ai-model" className="block text-sm font-medium text-gray-700 mb-2">

@@ -37,18 +37,18 @@ export default async function RootLayout({
 }: Readonly<{
   children: React.ReactNode;
 }>) {
-  // const confidence = await getConfidenceWithTargetingKey();
+  const confidence = await getConfidenceWithCookieContextAdded();
 
   return (
     <html lang="en">
       <body className={`${geistSans.variable} ${geistMono.variable} antialiased min-h-screen flex flex-col`}>
-        <React.Suspense fallback={<div>Loading...</div>}>
+        <ConfidenceProvider confidence={confidence}>
           <Header />
-          <div className="flex-grow">
-            <Content />
-          </div>
+          <React.Suspense fallback={<div>Loading...</div>}>
+            <div className="flex-grow">{children}</div>
+          </React.Suspense>
           <Footer />
-        </React.Suspense>
+        </ConfidenceProvider>
       </body>
     </html>
   );
