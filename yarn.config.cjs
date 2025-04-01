@@ -56,10 +56,7 @@ module.exports = defineConfig({
         workspace.set('module', 'dist/client.mjs');
         workspace.set('types', 'dist/client.d.ts');
         workspace.set('files', ['dist/*', 'server/*']);
-        workspace.set(
-          'scripts.prepack',
-          'yarn build && yarn bundle && mkdir -p ./server && mv dist/server.* ./server/',
-        );
+        workspace.set('scripts.prepack', 'yarn build && yarn bundle && ./scripts/prepack-server.sh');
       } else {
         configureExports(workspace, { '.': 'index' });
         workspace.set('main', 'dist/index.cjs');
@@ -121,10 +118,11 @@ function distExports(map) {
     Object.entries(map).map(([key, value]) => {
       if (typeof value === 'string') {
         const prefix = value.startsWith('server') ? './server' : './dist';
+        const name = value.startsWith('server') ? 'index' : value;
         value = {
-          import: `${prefix}/${value}.mjs`,
-          require: `${prefix}/${value}.cjs`,
-          types: `${prefix}/${value}.d.ts`,
+          import: `${prefix}/${name}.mjs`,
+          require: `${prefix}/${name}.cjs`,
+          types: `${prefix}/${name}.d.ts`,
         };
       }
       return [key, value];

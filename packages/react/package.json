@@ -9,7 +9,7 @@
   "scripts": {
     "bundle": "rollup -c && ../../validate-api.sh",
     "build": "tsc",
-    "prepack": "yarn build && yarn bundle && mkdir -p ./server && mv dist/server.* ./server/",
+    "prepack": "yarn build && yarn bundle && ./scripts/prepack-server.sh",
     "postpack": "rm -rf ./server",
     "clean": "rm -rf {build,dist}"
   },
@@ -49,9 +49,9 @@
         "types": "./dist/client.d.ts"
       },
       "./server": {
-        "import": "./server/server.mjs",
-        "require": "./server/server.cjs",
-        "types": "./server/server.d.ts"
+        "import": "./server/index.mjs",
+        "require": "./server/index.cjs",
+        "types": "./server/index.d.ts"
       }
     }
   },
