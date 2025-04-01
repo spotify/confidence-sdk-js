@@ -336,8 +336,8 @@ export class Confidence implements EventSender, Trackable, FlagResolver {
     );
   }
 
-  toOptions(signal?: AbortSignal): ConfidenceOptions {
-    const cache = this.config.cacheProvider(this.config.clientSecret).toOptions(signal);
+  toOptions(keepOpen?: Promise<void>): ConfidenceOptions {
+    const cache = this.config.cacheProvider(this.config.clientSecret).toOptions(keepOpen);
     return {
       clientSecret: this.config.clientSecret,
       region: this.config.region,

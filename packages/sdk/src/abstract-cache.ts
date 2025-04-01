@@ -30,14 +30,6 @@ export abstract class AbstractCache<K, T, S = unknown> implements AsyncIterable<
     this.load(entries);
   }
 
-  ref() {
-    this.pendingUpdates++;
-  }
-
-  unref() {
-    this.pendingUpdates--;
-  }
-
   protected abstract serialize(value: T): S;
 
   protected abstract deserialize(data: S): T;
@@ -48,13 +40,22 @@ export abstract class AbstractCache<K, T, S = unknown> implements AsyncIterable<
     return newValue;
   }
 
-  async *[Symbol.asyncIterator](): AsyncIterator<[string, S]> {
+  async *entries(keepOpen?: Promise<void>): AsyncIterator<[string, S]> {
+    keepOpen = keepOpen?.then(() => {
+      keepOpen = undefined;
+    });
     let cursor = this.head;
-    while (!('then' in cursor) || this.pendingUpdates) {
-      const node = await cursor;
-      yield [node.key, this.serialize(node.value)];
-      cursor = node.next;
+    while (!('then' in cursor) || this.pendingUpdates || keepOpen) {
+      const node = await (keepOpen ? Promise.race([cursor, keepOpen]) : cursor);
+      if (node) {
+        yield [node.key, this.serialize(node.value)];
+        cursor = node.next;
+      }
     }
+  }
+
+  [Symbol.asyncIterator](): AsyncIterator<[string, S]> {
+    return this.entries();
   }
 
   async load(entries?: AsyncIterable<[string, S]>) {
