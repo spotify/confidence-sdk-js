@@ -1,10 +1,12 @@
 'use client';
 
 import React, { useState, useEffect } from 'react';
+import { useFlag } from '@spotify-confidence/react/client';
 
 export default function BrowserFeatures() {
   const [mounted, setMounted] = useState(false);
   const [windowSize, setWindowSize] = useState({ width: 0, height: 0 });
+  const message = useFlag('nextjs-example.message', 'default');
 
   useEffect(() => {
     setMounted(true);
@@ -34,7 +36,7 @@ export default function BrowserFeatures() {
   console.log('[BrowserFeatures] Mounted');
   return (
     <div className="bg-white rounded-lg shadow-lg p-6">
-      <h2 className="text-xl font-semibold text-gray-900 mb-4">Browser Features</h2>
+      <h2 className="text-xl font-semibold text-gray-900 mb-4">Browser Features {message}</h2>
       <div className="space-y-4">
         <div className="grid grid-cols-2 gap-4">
           <div className="bg-gray-50 p-4 rounded-lg">

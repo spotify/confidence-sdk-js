@@ -2,7 +2,7 @@ import { Confidence, Context } from '@spotify-confidence/sdk';
 import React from 'react';
 
 if (!process.env.CONFIDENCE_CLIENT_SECRET) {
-  console.warn('⚠️  No CONFIDENCE_CLIENT_SECRET found in environment variables. Using dummy secret for development.');
+  console.warn('⚠️  No CONFIDENCE_CLIENT_SECRET found in environment variables.');
 }
 
 // Server-side Confidence instance

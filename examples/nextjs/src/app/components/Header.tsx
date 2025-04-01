@@ -1,13 +1,12 @@
 import React from 'react';
 import Link from 'next/link';
-import { cookies } from 'next/headers';
 import { getConfidence } from '@/lib/confidence';
+import { getVisitorId } from '@/lib/storage';
 
 export default async function Header() {
   console.log('[Header] Starting Header component render');
-  const cookieStore = await cookies();
-  const visitorId = cookieStore.get('cnfdVisitorId')?.value;
-  console.log('[Header] Cookie value:', visitorId || 'not set');
+  const visitorId = getVisitorId() || 'not set';
+  console.log('[Header] Visitor ID:', visitorId);
   const confidence = getConfidence({ visitor_id: visitorId });
   const showHeaders = await confidence.getFlag('nextjs-example.show-headers', false);
   console.log('[Header] showHeaders:', showHeaders);
