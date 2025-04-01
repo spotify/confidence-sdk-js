@@ -59,14 +59,10 @@ export class FlagCache extends AbstractCache<Context, ResolveFlagsResponse, Uint
     return newValue;
   }
 
-  toOptions(signal?: AbortSignal): CacheOptions {
-    if (signal && !signal.aborted) {
-      this.ref();
-      signal.addEventListener('abort', () => {
-        this.unref();
-      });
-    }
-    return { entries: this };
+  toOptions(): CacheOptions {
+    return {
+      entries: this,
+    };
   }
 }
 

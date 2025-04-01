@@ -30,14 +30,6 @@ export abstract class AbstractCache<K, T, S = unknown> implements AsyncIterable<
     this.load(entries);
   }
 
-  ref() {
-    this.pendingUpdates++;
-  }
-
-  unref() {
-    this.pendingUpdates--;
-  }
-
   protected abstract serialize(value: T): S;
 
   protected abstract deserialize(data: S): T;

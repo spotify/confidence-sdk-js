@@ -4,17 +4,28 @@ import { ManagedConfidenceProvider } from '@spotify-confidence/react/client';
 import 'server-only';
 
 export async function ConfidenceProvider(props: { confidence: Confidence; children?: ReactNode }) {
-  const controller = new AbortController();
-  const options = props.confidence.toOptions(controller.signal);
+  let close: (() => void) | undefined;
+  const options = props.confidence.toOptions();
+  if (options.cache && options.cache.entries) {
+    const entries = options.cache.entries;
+    const keepOpen = new Promise<void>(resolve => {
+      close = resolve;
+    });
+    options.cache.entries = {
+      async *[Symbol.asyncIterator]() {
+        await keepOpen;
+        yield* entries;
+      },
+    };
+  }
+  const Trailer = () => {
+    close?.();
+    return null;
+  };
   return (
     <ManagedConfidenceProvider options={options}>
       {props.children}
-      <Trailer controller={controller} />
+      <Trailer />
     </ManagedConfidenceProvider>
   );
-}
-
-function Trailer(props: { controller: AbortController }) {
-  props.controller.abort();
-  return undefined;
 }
