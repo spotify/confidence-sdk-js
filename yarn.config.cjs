@@ -60,9 +60,9 @@ module.exports = defineConfig({
       workspace.set('scripts.clean', 'rm -rf {build,dist}');
       workspace.set('scripts.prepack', 'yarn build && yarn bundle');
 
-      workspace.set('main', 'dist/index.cjs');
-      workspace.set('module', 'dist/index.mjs');
-      workspace.set('types', 'dist/index.d.ts');
+      workspace.unset('main');
+      workspace.unset('module');
+      workspace.unset('types');
 
       // dev deps that should all share the same version (from root package.json)
       for (const id of ['rollup', 'typescript']) {
@@ -86,6 +86,9 @@ function configureExports(workspace, map) {
     registry: 'https://registry.npmjs.org/',
     access: 'public',
     exports: distExports(map),
+    main: 'dist/index.cjs',
+    module: 'dist/index.mjs',
+    types: 'dist/index.d.ts',
   });
 }
 
