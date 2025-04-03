@@ -36,6 +36,29 @@
   * devDependencies
     * @spotify-confidence/sdk bumped to 0.2.5
 
+## [0.1.0](https://github.com/spotify/confidence-sdk-js/compare/react-v0.0.13...react-v0.1.0) (2025-04-03)
+
+
+### ⚠ BREAKING CHANGES
+
+* The SDK now requires a runtime compatible with es2018. ---------
+
+### 🐛 Bug Fixes
+
+* set correct peer deps ([#243](https://github.com/spotify/confidence-sdk-js/issues/243)) ([8a36269](https://github.com/spotify/confidence-sdk-js/commit/8a36269fd5cf6a5b95cf675617c186c122844810))
+
+
+### 🛠️ Build
+
+* prepare for multiple exports ([#241](https://github.com/spotify/confidence-sdk-js/issues/241)) ([c63ea46](https://github.com/spotify/confidence-sdk-js/commit/c63ea460fa04acf7ca8e57ce41c91970145f03e0))
+
+
+### Dependencies
+
+* The following workspace dependencies were updated
+  * devDependencies
+    * @spotify-confidence/sdk bumped to 0.3.0
+
 ## [0.0.10](https://github.com/spotify/confidence-sdk-js/compare/react-v0.0.9...react-v0.0.10) (2025-01-29)
 
 
