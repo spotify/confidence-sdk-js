@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.3.1](https://github.com/spotify/confidence-sdk-js/compare/sdk-v0.3.0...sdk-v0.3.1) (2025-04-03)
+
+
+### 🔄 Refactoring
+
+* make AccessiblePromise react compatible ([#244](https://github.com/spotify/confidence-sdk-js/issues/244)) ([1eec775](https://github.com/spotify/confidence-sdk-js/commit/1eec7758831a33cfa27b2bfcaaea045c0d55d382))
+
 ## [0.3.0](https://github.com/spotify/confidence-sdk-js/compare/sdk-v0.2.5...sdk-v0.3.0) (2025-04-03)
 
 
