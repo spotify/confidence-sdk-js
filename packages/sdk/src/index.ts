@@ -8,3 +8,4 @@ export * from './Trackable';
 export * from './Closer';
 export * from './types';
 export { SimpleFetch } from './fetch-util';
+export { CacheOptions, CacheScope } from './flag-cache';

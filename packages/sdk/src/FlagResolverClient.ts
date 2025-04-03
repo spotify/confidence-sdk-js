@@ -2,7 +2,7 @@ import { FlagEvaluation } from '.';
 import { AccessiblePromise } from './AccessiblePromise';
 import { Applier, FlagResolution } from './FlagResolution';
 import { Telemetry, Meter } from './Telemetry';
-import { Value } from './Value';
+import { CacheProvider } from './flag-cache';
 import { Context } from './context';
 import { FetchBuilder, InternalFetch, SimpleFetch, TimeUnit } from './fetch-util';
 import {
@@ -96,6 +96,7 @@ export type FlagResolverClientOptions = {
   telemetry: Telemetry;
   logger: Logger;
   waitUntil?: WaitUntil;
+  cacheProvider?: CacheProvider;
 };
 
 export class FetchingFlagResolverClient implements FlagResolverClient {
@@ -107,6 +108,10 @@ export class FetchingFlagResolverClient implements FlagResolverClient {
   private readonly baseUrl: string;
   private readonly markLatency: Meter;
   private readonly waitUntil: WaitUntil | undefined;
+  private readonly cacheReadThrough: (
+    context: Context,
+    supplier: () => Promise<ResolveFlagsResponse>,
+  ) => Promise<ResolveFlagsResponse>;
 
   constructor({
     fetchImplementation,
@@ -121,6 +126,7 @@ export class FetchingFlagResolverClient implements FlagResolverClient {
     telemetry,
     logger,
     waitUntil,
+    cacheProvider,
   }: FlagResolverClientOptions) {
     this.markLatency = telemetry.registerMeter({
       library: LibraryTraces_Library.LIBRARY_CONFIDENCE,
@@ -146,15 +152,23 @@ export class FetchingFlagResolverClient implements FlagResolverClient {
     }
     this.resolveTimeout = resolveTimeout;
     this.waitUntil = waitUntil;
+    if (cacheProvider) {
+      this.cacheReadThrough = (context, supplier) => {
+        const cache = cacheProvider(this.clientSecret);
+        return cache.get(context, supplier);
+      };
+    } else {
+      this.cacheReadThrough = (_context, supplier) => supplier();
+    }
   }
 
-  resolve(context: Context, flags: string[]): PendingResolution {
+  resolve(context: Context): PendingResolution {
     const request: ResolveFlagsRequest = {
       clientSecret: this.clientSecret,
       evaluationContext: context,
       apply: false,
       sdk: this.sdk,
-      flags: flags.map(name => FLAG_PREFIX + name),
+      flags: [],
     };
 
     return PendingResolution.create(context, signal => {
@@ -164,7 +178,8 @@ export class FetchingFlagResolverClient implements FlagResolverClient {
         new ResolveError('TIMEOUT', 'Resolve timeout'),
       );
       const start = Date.now();
-      return this.resolveFlagsJson(request, signalWithTimeout)
+
+      return this.cacheReadThrough(context, () => this.resolveFlagsJson(request, signalWithTimeout))
         .then(response => FlagResolution.ready(context, response, this.createApplier(response.resolveToken)))
         .catch(error => {
           if (error instanceof ResolveError) {
@@ -259,59 +274,6 @@ export class FetchingFlagResolverClient implements FlagResolverClient {
   //   }
   //   return ResolveFlagsResponse.decode(new Uint8Array(await resp.arrayBuffer()));
   // }
-}
-
-export class CachingFlagResolverClient implements FlagResolverClient {
-  readonly #cache: Map<string, { timestamp: number; value: PendingResolution; refCount: number }> = new Map();
-  readonly #source: FlagResolverClient;
-  readonly #ttl: number;
-
-  constructor(source: FlagResolverClient, ttlMs: number) {
-    this.#source = source;
-    this.#ttl = ttlMs;
-  }
-
-  resolve(context: Context, flags: string[]): PendingResolution {
-    this.evict();
-    const key = Value.serialize(context);
-    let entry = this.#cache.get(key);
-    if (!entry) {
-      const value = this.#source.resolve(context, flags);
-      entry = { refCount: 1, timestamp: Date.now(), value };
-      this.#cache.set(key, entry);
-
-      value.signal.addEventListener(
-        'abort',
-        () => {
-          this.#cache.delete(key);
-        },
-        { once: true },
-      );
-    } else {
-      entry.refCount++;
-    }
-    return PendingResolution.create(context, signal => {
-      signal.addEventListener(
-        'abort',
-        () => {
-          if (--entry!.refCount === 0) {
-            entry!.value.abort();
-          }
-        },
-        { once: true },
-      );
-      return entry!.value;
-    });
-  }
-
-  evict() {
-    const now = Date.now();
-    for (const [key, { timestamp }] of this.#cache) {
-      const age = now - timestamp;
-      if (age < this.#ttl) return;
-      this.#cache.delete(key);
-    }
-  }
 }
 
 export function withTelemetryData(fetchBuilder: FetchBuilder, telemetry: Telemetry) {

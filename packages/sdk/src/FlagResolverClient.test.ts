@@ -1,16 +1,9 @@
-import {
-  CachingFlagResolverClient,
-  FetchingFlagResolverClient,
-  FlagResolverClient,
-  PendingResolution,
-  withRequestLogic,
-  withTelemetryData,
-} from './FlagResolverClient';
+import { FetchingFlagResolverClient, withRequestLogic, withTelemetryData } from './FlagResolverClient';
 import { setMaxListeners } from 'node:events';
 import { SdkId } from './generated/confidence/flags/resolver/v1/types';
 import { abortableSleep, FetchBuilder, InternalFetch, SimpleFetch } from './fetch-util';
 import { ApplyFlagsRequest, ResolveFlagsRequest } from './generated/confidence/flags/resolver/v1/api';
-import { FailedFlagResolution, FlagResolution } from './FlagResolution';
+import { FailedFlagResolution } from './FlagResolution';
 import { Telemetry } from './Telemetry';
 import { LibraryTraces_Library, LibraryTraces_TraceId, Platform } from './generated/confidence/telemetry/v1/telemetry';
 import { WaitUntil } from './types';
@@ -80,7 +73,7 @@ describe('Client environment Evaluation', () => {
 
   it('should resolve a FailedFlagResolution on fetch errors', async () => {
     resolveHandlerMock.mockRejectedValue(new Error('Test error'));
-    const flagResolution = await instanceUnderTest.resolve({}, []);
+    const flagResolution = await instanceUnderTest.resolve({});
     expect(flagResolution).toBeInstanceOf(FailedFlagResolution);
     // Expect this error to log as a Resolve timeout in the client environment
     // This is due the request logic that's only used in the client environment
@@ -94,7 +87,7 @@ describe('Client environment Evaluation', () => {
 
   describe('apply', () => {
     it('should send an apply event', async () => {
-      const flagResolution = await instanceUnderTest.resolve({}, []);
+      const flagResolution = await instanceUnderTest.resolve({});
       flagResolution.evaluate('testflag.bool', false);
       const [applyRequest] = await nextMockArgs(applyHandlerMock);
       expect(applyRequest).toMatchObject({
@@ -112,7 +105,7 @@ describe('Client environment Evaluation', () => {
     });
 
     it('should apply based on shouldApply', async () => {
-      const flagResolution = await instanceUnderTest.resolve({}, []);
+      const flagResolution = await instanceUnderTest.resolve({});
       flagResolution.evaluate('no-seg-flag.enabled', false);
       const [applyRequest] = await nextMockArgs(applyHandlerMock);
       expect(applyRequest).toMatchObject({
@@ -133,7 +126,7 @@ describe('Client environment Evaluation', () => {
     });
 
     it('should register with waitUntil', async () => {
-      const flagResolution = await instanceUnderTest.resolve({}, []);
+      const flagResolution = await instanceUnderTest.resolve({});
       flagResolution.evaluate('no-seg-flag.enabled', false);
       expect(waitUntilMock).toHaveBeenCalledTimes(1);
       const registeredPromise = waitUntilMock.mock.calls[0][0];
@@ -158,7 +151,7 @@ describe('Backend environment Evaluation', () => {
   });
 
   it('should resolve a full flag object', async () => {
-    const flagResolution = await instanceUnderTest.resolve({}, ['testflag']);
+    const flagResolution = await instanceUnderTest.resolve({});
     expect(flagResolution.evaluate('testflag', {})).toEqual({
       variant: 'flags/testflag/variants/control',
       reason: 'MATCH',
@@ -179,7 +172,7 @@ describe('Backend environment Evaluation', () => {
   });
 
   it('should resolve a full object with partial default', async () => {
-    const flagResolution = await instanceUnderTest.resolve({}, ['testflag']);
+    const flagResolution = await instanceUnderTest.resolve({});
     expect(
       flagResolution.evaluate('testflag.obj', {
         bool: false,
@@ -198,7 +191,7 @@ describe('Backend environment Evaluation', () => {
   });
 
   it('should resolve a full object with type mismatch default', async () => {
-    const flagResolution = await instanceUnderTest.resolve({}, ['testflag']);
+    const flagResolution = await instanceUnderTest.resolve({});
     expect(
       flagResolution.evaluate('testflag.obj', {
         testBool: false,
@@ -221,7 +214,7 @@ describe('Backend environment Evaluation', () => {
     ${'Integer'} | ${'.int'}    | ${'.bool'}    | ${typeof false}   | ${4}         | ${3}
   `(`resolve $type Evaluation`, ({ path, incorrectPath, incorrectPathType, defaultValue, expectedValue }) => {
     it('should resolve a match', async () => {
-      const flagResolution = await instanceUnderTest.resolve({}, ['testflag']);
+      const flagResolution = await instanceUnderTest.resolve({});
       expect(flagResolution.evaluate(`testflag${path}`, defaultValue)).toEqual({
         variant: 'flags/testflag/variants/control',
         reason: 'MATCH',
@@ -230,7 +223,7 @@ describe('Backend environment Evaluation', () => {
     });
 
     it('should resolve NO_SEGMENT_MATCH when accessing a flag with no segment match', async () => {
-      const flagResolution = await instanceUnderTest.resolve({}, ['no-seg-flag']);
+      const flagResolution = await instanceUnderTest.resolve({});
       expect(flagResolution.evaluate(`no-seg-flag${path}`, defaultValue)).toEqual({
         reason: 'NO_SEGMENT_MATCH',
         value: defaultValue,
@@ -239,7 +232,7 @@ describe('Backend environment Evaluation', () => {
 
     it('should resolve from a nested struct', async () => {
       // path, defaultValue, value
-      const flagResolution = await instanceUnderTest.resolve({}, ['testflag']);
+      const flagResolution = await instanceUnderTest.resolve({});
       expect(flagResolution.evaluate(`testflag.obj${path}`, defaultValue)).toEqual({
         variant: 'flags/testflag/variants/control',
         reason: 'MATCH',
@@ -249,7 +242,7 @@ describe('Backend environment Evaluation', () => {
 
     it('should return default if the flag is not found', async () => {
       // path, defaultValue, value
-      const flagResolution = await instanceUnderTest.resolve({}, ['notARealFlag']);
+      const flagResolution = await instanceUnderTest.resolve({});
       const actual = flagResolution.evaluate(`notARealFlag${path}`, defaultValue);
 
       expect(actual).toEqual({
@@ -262,7 +255,7 @@ describe('Backend environment Evaluation', () => {
 
     it('should return default if the flag requested is the wrong type', async () => {
       // path, defaultValue, value, incorrectTypePath
-      const flagResolution = await instanceUnderTest.resolve({}, ['testflag']);
+      const flagResolution = await instanceUnderTest.resolve({});
       const actual = flagResolution.evaluate(`testflag${incorrectPath}`, defaultValue);
 
       expect(actual).toEqual({
@@ -275,7 +268,7 @@ describe('Backend environment Evaluation', () => {
 
     it('should return default if the value requested is not in the flag schema', async () => {
       // path, defaultValue, value
-      const flagResolution = await instanceUnderTest.resolve({}, ['testflag']);
+      const flagResolution = await instanceUnderTest.resolve({});
       const actual = flagResolution.evaluate('testflag.404', defaultValue);
 
       expect(actual).toEqual({
@@ -288,7 +281,7 @@ describe('Backend environment Evaluation', () => {
 
     it('should return default if the nested flag requested is the wrong type', async () => {
       // path, defaultValue, value, incorrectTypePath
-      const flagResolution = await instanceUnderTest.resolve({}, ['testflag']);
+      const flagResolution = await instanceUnderTest.resolve({});
       const actual = flagResolution.evaluate(`testflag.obj${incorrectPath}`, defaultValue);
 
       expect(actual).toEqual({
@@ -301,7 +294,7 @@ describe('Backend environment Evaluation', () => {
 
     it('should return default if the nested value requested is not in the flag schema', async () => {
       // path, defaultValue, value
-      const flagResolution = await instanceUnderTest.resolve({}, ['testflag']);
+      const flagResolution = await instanceUnderTest.resolve({});
       const actual = flagResolution.evaluate('testflag.obj.404', defaultValue);
 
       expect(actual).toEqual({
@@ -315,7 +308,7 @@ describe('Backend environment Evaluation', () => {
 
   it('should resolve a FailedFlagResolution on fetch errors', async () => {
     resolveHandlerMock.mockRejectedValue(new Error('Test error'));
-    const flagResolution = await instanceUnderTest.resolve({}, ['testflag']);
+    const flagResolution = await instanceUnderTest.resolve({});
     expect(flagResolution).toBeInstanceOf(FailedFlagResolution);
     expect(flagResolution.evaluate('testflag', {})).toEqual({
       errorCode: 'GENERAL',
@@ -479,39 +472,39 @@ describe('intercept', () => {
   });
 });
 
-describe('CachingFlagResolverClient', () => {
-  const flagResolverClientMock = jest.mocked<FlagResolverClient>({
-    resolve: jest.fn(),
-  });
-  it('should cache flag resolution', async () => {
-    const context = { a: 0 };
-    const mockResolution = jest.mocked<FlagResolution>({
-      evaluate: jest.fn(),
-      state: 'READY',
-      context,
-    });
-    const pendingResolution = PendingResolution.create(context, () => Promise.resolve(mockResolution));
-    const cachingClient = new CachingFlagResolverClient(flagResolverClientMock, 1000);
-    flagResolverClientMock.resolve.mockReturnValue(pendingResolution);
-    const first = await cachingClient.resolve(context, []);
-    const second = await cachingClient.resolve(context, []);
-    expect(first).toBe(second);
-    expect(flagResolverClientMock.resolve).toHaveBeenCalledTimes(1);
-  });
+// describe('CachingFlagResolverClient', () => {
+//   const flagResolverClientMock = jest.mocked<FlagResolverClient>({
+//     resolve: jest.fn(),
+//   });
+//   it('should cache flag resolution', async () => {
+//     const context = { a: 0 };
+//     const mockResolution = jest.mocked<FlagResolution>({
+//       evaluate: jest.fn(),
+//       state: 'READY',
+//       context,
+//     });
+//     const pendingResolution = PendingResolution.create(context, () => Promise.resolve(mockResolution));
+//     const cachingClient = new FlagResolverClient(flagResolverClientMock, 1000);
+//     flagResolverClientMock.resolve.mockReturnValue(pendingResolution);
+//     const first = await cachingClient.resolve(context, []);
+//     const second = await cachingClient.resolve(context, []);
+//     expect(first).toBe(second);
+//     expect(flagResolverClientMock.resolve).toHaveBeenCalledTimes(1);
+//   });
 
-  it('should abort the original resolution when all references are aborted', () => {
-    const context = { a: 0 };
-    const pendingResolution = PendingResolution.create(context, () => new Promise(() => {}));
-    const cachingClient = new CachingFlagResolverClient(flagResolverClientMock, 1000);
-    flagResolverClientMock.resolve.mockReturnValue(pendingResolution);
-    const firstResolution = cachingClient.resolve(context, []);
-    const secondResolution = cachingClient.resolve(context, []);
-    firstResolution.abort();
-    expect(pendingResolution.signal.aborted).toBe(false);
-    secondResolution.abort();
-    expect(pendingResolution.signal.aborted).toBe(true);
-  });
-});
+//   it('should abort the original resolution when all references are aborted', () => {
+//     const context = { a: 0 };
+//     const pendingResolution = PendingResolution.create(context, () => new Promise(() => {}));
+//     const cachingClient = new FlagResolverClient(flagResolverClientMock, 1000);
+//     flagResolverClientMock.resolve.mockReturnValue(pendingResolution);
+//     const firstResolution = cachingClient.resolve(context, []);
+//     const secondResolution = cachingClient.resolve(context, []);
+//     firstResolution.abort();
+//     expect(pendingResolution.signal.aborted).toBe(false);
+//     secondResolution.abort();
+//     expect(pendingResolution.signal.aborted).toBe(true);
+//   });
+// });
 
 function nextCall(mock: jest.Mock): Promise<void> {
   return new Promise(resolve => {
