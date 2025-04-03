@@ -121,7 +121,10 @@ export const ServerComponent = async () => {
 };
 ```
 
-#### Server and Client
+> [!IMPORTANT]
+> Be aware that if you are constructing the Confidence instance using a custom `fetchImplementation` this will only be used on the server side.
+
+#### Server and Client (experimental)
 
 If you also have interactive (client side) components that benefit from feature flagging support.
 Using the pattern below in addition to the above server side example will allow you to have the flag evaluations
@@ -132,8 +135,12 @@ Please note:
 - Server components use direct flag evaluation with `evaluateFlag` or `getFlag`
 - Client components use hooks (`useFlag`, `useConfidence`) for interactive features
 - Use React.cache for efficient server-side caching
-- The SDK automatically handles synchronization between server and client
+- The SDK automatically handles synchronization from server to client
 - Mutating the context in a client side component does not affect the server side confidence instance.
+
+> [!IMPORTANT]
+> If your development environment uses TurboPack (e.g., Next.js with Turbopack enabled), please note that the
+> Confidence React SDK (server and client) is **not currently supported** with TurboPack. You'll need to use the standard webpack-based build system instead.
 
 ```tsx
 // app/layout.tsx
