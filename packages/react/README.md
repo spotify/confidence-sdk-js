@@ -20,7 +20,7 @@ The Confidence React integration has a Provider that needs to be initialized. It
 
 ```ts
 import { Confidence } from '@spotify-confidence/sdk/';
-import { ConfidenceProvider } from '@spotify-confidence/sdk/react/client';
+import { ConfidenceProvider } from '@spotify-confidence/sdk/react';
 
 // Client-side initialization
 const confidence = Confidence.create({
@@ -72,9 +72,9 @@ If the hooks can't resolve the flag values withing the timeout specified on the 
 
 ### Server-Side Rendering Support (experimental)
 
-The Confidence React SDK now supports server-side rendering (SSR) and React Server Components (RSC) for instance in Next.js. The SDK provides separate entry points for client and server components:
+The Confidence React SDK now supports server-side rendering (SSR) and React Server Components (RSC) for instance in Next.js. The SDK provides a separate entry point for server components:
 
-- `@spotify-confidence/react/client` - For client components
+- `@spotify-confidence/react` - For client components
 - `@spotify-confidence/react/server` - For server components
 
 When using the SDK in a server environment:
