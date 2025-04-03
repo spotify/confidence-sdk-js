@@ -51,16 +51,82 @@ The `ConfidenceProvider` API supports a `useWithContext()` hook to achieve the [
 
 ### Accessing flags
 
-Flags are accessed with a set of hooks exported from `@spotify-confidence/react`
+Flags are accessed with a set of hooks exported from `@spotify-confidence/react`:
 
-- `useFlag(flagName, defaultValue)` will return the flag value or default.
-- `useEvaluateFlag(flagName, defaultValue)` will return more details about the flag evaluation, together with the value.
+```ts
+import { useFlag, useEvaluateFlag } from '@spotify-confidence/react';
 
-Both of the flag hooks integrate with the React Suspense API so that the suspense fallback will be shown until flag values are available. It is therefore important to wrap any component using the above hooks in a suspense boundary.
+function MyComponent() {
+  // Simple flag access - returns the flag value or default
+  const color = useFlag('my-feature-flag.color', 'blue');
 
-The hooks are also reactive so that if the context changes, any components using the hooks will be re-rendered. As dependent components are re-rendered as soon as the context changes, one might expect that would again trigger the suspense boundary while the flag values are resolved.
+  // Detailed flag evaluation - returns evaluation details
+  const { value, reason, context } = useEvaluateFlag('my-feature-flag.size', 12);
 
-If the hooks can't resolve the flag values withing the timeout specified on the Confidence instance, they will instead return the default value.
+  return (
+    <div style={{ color, fontSize: value }}>
+      <p>Color: {color}</p>
+      <p>Size: {value}</p>
+      <p>Reason: {reason}</p>
+    </div>
+  );
+}
+```
+
+#### Hook Behavior
+
+- `useFlag(flagName, defaultValue)`
+
+  - Returns the flag value or default
+  - Simplest way to access flag values
+  - Type-safe with TypeScript
+  - Example: `const isEnabled = useFlag('feature.enabled', false)`
+
+- `useEvaluateFlag(flagName, defaultValue)`
+  - Returns an object with:
+    - `value`: The flag value or default
+    - `reason`: The evaluation reason (e.g., "DEFAULT", "TARGETING_MATCH")
+    - `variant`: The variant assigned
+  - Useful for debugging or when you need evaluation details
+  - Example: `const { value, reason } = useEvaluateFlag('feature.color', 'blue')`
+
+#### Important Notes
+
+1. **Suspense Integration**
+
+   - Both hooks integrate with React Suspense
+   - Wrap components using these hooks in a Suspense boundary
+   - Example:
+
+   ```tsx
+   <Suspense fallback={<LoadingSpinner />}>
+     <MyComponent />
+   </Suspense>
+   ```
+
+2. **Reactivity**
+
+   - Hooks automatically re-render when context changes
+   - No need to manually trigger updates
+   - Example:
+
+   ```tsx
+   function MyComponent() {
+     const confidence = useConfidence();
+     const theme = useFlag('app.theme', 'light');
+
+     return <button onClick={() => confidence.setContext({ user_type: 'premium' })}>Switch to Premium</button>;
+   }
+   ```
+
+3. **Type Safety**
+   - Both hooks are fully typed with TypeScript
+   - The return type matches the default value type
+   - Example:
+   ```ts
+   const count: number = useFlag('counter.value', 0);
+   const name: string = useFlag('user.name', '');
+   ```
 
 ### Server-Side Rendering Support (experimental)
 
