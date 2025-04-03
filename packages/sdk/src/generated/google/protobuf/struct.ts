@@ -5,6 +5,7 @@
 // source: google/protobuf/struct.proto
 
 /* eslint-disable */
+import { BinaryReader, BinaryWriter } from '@bufbuild/protobuf/wire';
 
 export const protobufPackage = 'google.protobuf';
 
@@ -100,6 +101,42 @@ function createBaseStruct(): Struct {
 }
 
 export const Struct: MessageFns<Struct> & StructWrapperFns = {
+  encode(message: Struct, writer: BinaryWriter = new BinaryWriter()): BinaryWriter {
+    Object.entries(message.fields).forEach(([key, value]) => {
+      if (value !== undefined) {
+        Struct_FieldsEntry.encode({ key: key as any, value }, writer.uint32(10).fork()).join();
+      }
+    });
+    return writer;
+  },
+
+  decode(input: BinaryReader | Uint8Array, length?: number): Struct {
+    const reader = input instanceof BinaryReader ? input : new BinaryReader(input);
+    let end = length === undefined ? reader.len : reader.pos + length;
+    const message = createBaseStruct();
+    while (reader.pos < end) {
+      const tag = reader.uint32();
+      switch (tag >>> 3) {
+        case 1: {
+          if (tag !== 10) {
+            break;
+          }
+
+          const entry1 = Struct_FieldsEntry.decode(reader, reader.uint32());
+          if (entry1.value !== undefined) {
+            message.fields[entry1.key] = entry1.value;
+          }
+          continue;
+        }
+      }
+      if ((tag & 7) === 4 || tag === 0) {
+        break;
+      }
+      reader.skip(tag & 7);
+    }
+    return message;
+  },
+
   fromJSON(object: any): Struct {
     return {
       fields: isObject(object.fields)
@@ -147,7 +184,53 @@ export const Struct: MessageFns<Struct> & StructWrapperFns = {
   },
 };
 
+function createBaseStruct_FieldsEntry(): Struct_FieldsEntry {
+  return { key: '', value: undefined };
+}
+
 export const Struct_FieldsEntry: MessageFns<Struct_FieldsEntry> = {
+  encode(message: Struct_FieldsEntry, writer: BinaryWriter = new BinaryWriter()): BinaryWriter {
+    if (message.key !== '') {
+      writer.uint32(10).string(message.key);
+    }
+    if (message.value !== undefined) {
+      Value.encode(Value.wrap(message.value), writer.uint32(18).fork()).join();
+    }
+    return writer;
+  },
+
+  decode(input: BinaryReader | Uint8Array, length?: number): Struct_FieldsEntry {
+    const reader = input instanceof BinaryReader ? input : new BinaryReader(input);
+    let end = length === undefined ? reader.len : reader.pos + length;
+    const message = createBaseStruct_FieldsEntry();
+    while (reader.pos < end) {
+      const tag = reader.uint32();
+      switch (tag >>> 3) {
+        case 1: {
+          if (tag !== 10) {
+            break;
+          }
+
+          message.key = reader.string();
+          continue;
+        }
+        case 2: {
+          if (tag !== 18) {
+            break;
+          }
+
+          message.value = Value.unwrap(Value.decode(reader, reader.uint32()));
+          continue;
+        }
+      }
+      if ((tag & 7) === 4 || tag === 0) {
+        break;
+      }
+      reader.skip(tag & 7);
+    }
+    return message;
+  },
+
   fromJSON(object: any): Struct_FieldsEntry {
     return {
       key: isSet(object.key) ? globalThis.String(object.key) : '',
@@ -179,6 +262,92 @@ function createBaseValue(): Value {
 }
 
 export const Value: MessageFns<Value> & AnyValueWrapperFns = {
+  encode(message: Value, writer: BinaryWriter = new BinaryWriter()): BinaryWriter {
+    if (message.nullValue !== undefined) {
+      writer.uint32(8).int32(message.nullValue);
+    }
+    if (message.numberValue !== undefined) {
+      writer.uint32(17).double(message.numberValue);
+    }
+    if (message.stringValue !== undefined) {
+      writer.uint32(26).string(message.stringValue);
+    }
+    if (message.boolValue !== undefined) {
+      writer.uint32(32).bool(message.boolValue);
+    }
+    if (message.structValue !== undefined) {
+      Struct.encode(Struct.wrap(message.structValue), writer.uint32(42).fork()).join();
+    }
+    if (message.listValue !== undefined) {
+      ListValue.encode(ListValue.wrap(message.listValue), writer.uint32(50).fork()).join();
+    }
+    return writer;
+  },
+
+  decode(input: BinaryReader | Uint8Array, length?: number): Value {
+    const reader = input instanceof BinaryReader ? input : new BinaryReader(input);
+    let end = length === undefined ? reader.len : reader.pos + length;
+    const message = createBaseValue();
+    while (reader.pos < end) {
+      const tag = reader.uint32();
+      switch (tag >>> 3) {
+        case 1: {
+          if (tag !== 8) {
+            break;
+          }
+
+          message.nullValue = reader.int32() as any;
+          continue;
+        }
+        case 2: {
+          if (tag !== 17) {
+            break;
+          }
+
+          message.numberValue = reader.double();
+          continue;
+        }
+        case 3: {
+          if (tag !== 26) {
+            break;
+          }
+
+          message.stringValue = reader.string();
+          continue;
+        }
+        case 4: {
+          if (tag !== 32) {
+            break;
+          }
+
+          message.boolValue = reader.bool();
+          continue;
+        }
+        case 5: {
+          if (tag !== 42) {
+            break;
+          }
+
+          message.structValue = Struct.unwrap(Struct.decode(reader, reader.uint32()));
+          continue;
+        }
+        case 6: {
+          if (tag !== 50) {
+            break;
+          }
+
+          message.listValue = ListValue.unwrap(ListValue.decode(reader, reader.uint32()));
+          continue;
+        }
+      }
+      if ((tag & 7) === 4 || tag === 0) {
+        break;
+      }
+      reader.skip(tag & 7);
+    }
+    return message;
+  },
+
   fromJSON(object: any): Value {
     return {
       nullValue: isSet(object.nullValue) ? nullValueFromJSON(object.nullValue) : undefined,
@@ -256,6 +425,37 @@ function createBaseListValue(): ListValue {
 }
 
 export const ListValue: MessageFns<ListValue> & ListValueWrapperFns = {
+  encode(message: ListValue, writer: BinaryWriter = new BinaryWriter()): BinaryWriter {
+    for (const v of message.values) {
+      Value.encode(Value.wrap(v!), writer.uint32(10).fork()).join();
+    }
+    return writer;
+  },
+
+  decode(input: BinaryReader | Uint8Array, length?: number): ListValue {
+    const reader = input instanceof BinaryReader ? input : new BinaryReader(input);
+    let end = length === undefined ? reader.len : reader.pos + length;
+    const message = createBaseListValue();
+    while (reader.pos < end) {
+      const tag = reader.uint32();
+      switch (tag >>> 3) {
+        case 1: {
+          if (tag !== 10) {
+            break;
+          }
+
+          message.values.push(Value.unwrap(Value.decode(reader, reader.uint32())));
+          continue;
+        }
+      }
+      if ((tag & 7) === 4 || tag === 0) {
+        break;
+      }
+      reader.skip(tag & 7);
+    }
+    return message;
+  },
+
   fromJSON(object: any): ListValue {
     return { values: globalThis.Array.isArray(object?.values) ? [...object.values] : [] };
   },
@@ -292,6 +492,8 @@ function isSet(value: any): boolean {
 }
 
 export interface MessageFns<T> {
+  encode(message: T, writer?: BinaryWriter): BinaryWriter;
+  decode(input: BinaryReader | Uint8Array, length?: number): T;
   fromJSON(object: any): T;
   toJSON(message: T): unknown;
 }

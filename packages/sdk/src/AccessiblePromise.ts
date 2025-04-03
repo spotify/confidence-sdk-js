@@ -2,7 +2,7 @@ function isPromiseLike(value: unknown): value is PromiseLike<unknown> {
   return typeof value === 'object' && value !== null && 'then' in value && typeof value.then === 'function';
 }
 
-export class AccessiblePromise<T> {
+export class AccessiblePromise<T> implements Promise<T> {
   #state: 'PENDING' | 'RESOLVED' | 'REJECTED';
   #value: any;
 
@@ -27,6 +27,7 @@ export class AccessiblePromise<T> {
   }
 
   protected chain<S>(value: any, rejected?: boolean): AccessiblePromise<S> {
+    if (value instanceof AccessiblePromise) return value;
     return new AccessiblePromise(value, rejected);
   }
 
@@ -112,7 +113,12 @@ export class AccessiblePromise<T> {
     return this.orSupply(() => value);
   }
 
-  static resolve<T = void>(value?: T | PromiseLike<T>): AccessiblePromise<T> {
+  get [Symbol.toStringTag]() {
+    return 'AccessiblePromise';
+  }
+
+  static resolve<T = void>(value?: T | PromiseLike<T>): AccessiblePromise<Awaited<T>> {
+    if (value instanceof AccessiblePromise) return value;
     return new AccessiblePromise(value);
   }
 
