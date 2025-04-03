@@ -2,33 +2,45 @@
   "name": "@spotify-confidence/openfeature-server-provider",
   "license": "Apache-2.0",
   "version": "0.2.18",
-  "types": "build/types/index.d.ts",
   "devDependencies": {
-    "@microsoft/api-extractor": "7.43.1",
     "@openfeature/core": "^1.1.0",
     "@openfeature/server-sdk": "^1.13.5",
     "@spotify-confidence/sdk": "workspace:*",
-    "rollup": "4.24.0"
+    "rollup": "4.24.0",
+    "typescript": "5.1.6"
   },
   "peerDependencies": {
     "@openfeature/server-sdk": "^1.13.5",
     "@spotify-confidence/sdk": ">=0.1.4 <=0.2.2"
   },
-  "publishConfig": {
-    "registry": "https://registry.npmjs.org/",
-    "access": "public",
-    "types": "dist/index.d.ts",
-    "main": "dist/index.cjs.js",
-    "module": "dist/index.esm.js"
-  },
   "scripts": {
-    "build": "tsc -b",
-    "bundle": "rollup -c && api-extractor run",
-    "prepack": "yarn build && yarn bundle"
+    "build": "tsc",
+    "bundle": "rollup -c && ../../validate-api.sh",
+    "prepack": "yarn build && yarn bundle",
+    "clean": "rm -rf {build,dist}"
   },
   "files": [
     "dist/index.*"
   ],
-  "main": "dist/index.cjs.js",
-  "module": "dist/index.esm.js"
+  "type": "module",
+  "publishConfig": {
+    "registry": "https://registry.npmjs.org/",
+    "access": "public",
+    "exports": {
+      ".": {
+        "import": "./dist/index.mjs",
+        "require": "./dist/index.cjs",
+        "types": "./dist/index.d.ts"
+      }
+    },
+    "main": "dist/index.cjs",
+    "module": "dist/index.mjs",
+    "types": "dist/index.d.ts"
+  },
+  "exports": {
+    ".": {
+      "import": "./build/index.js",
+      "types": "./build/index.d.ts"
+    }
+  }
 }

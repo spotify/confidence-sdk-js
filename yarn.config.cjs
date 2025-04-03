@@ -45,24 +45,27 @@ module.exports = defineConfig({
       }
 
       // package.json invariants
-      workspace.set('main', 'dist/index.cjs.js');
-      workspace.set('module', 'dist/index.esm.js');
-      workspace.unset('type');
-      workspace.set('types', 'build/types/index.d.ts');
+      workspace.set('type', 'module');
+
+      configureExports(workspace, { '.': 'index' });
+
+      if (workspace.cwd === 'packages/sdk') {
+        workspace.set('scripts.bundle', 'rollup -c && api-extractor run');
+      } else {
+        workspace.set('scripts.bundle', 'rollup -c && ../../validate-api.sh');
+      }
+
       workspace.set('files', ['dist/index.*']);
-      workspace.set('scripts.build', 'tsc -b');
-      workspace.set('scripts.bundle', 'rollup -c && api-extractor run');
+      workspace.set('scripts.build', 'tsc');
+      workspace.set('scripts.clean', 'rm -rf {build,dist}');
       workspace.set('scripts.prepack', 'yarn build && yarn bundle');
-      workspace.unset('exports');
-      workspace.set('publishConfig', {
-        registry: 'https://registry.npmjs.org/',
-        access: 'public',
-        types: 'dist/index.d.ts',
-        main: 'dist/index.cjs.js',
-        module: 'dist/index.esm.js',
-      });
+
+      workspace.unset('main');
+      workspace.unset('module');
+      workspace.unset('types');
+
       // dev deps that should all share the same version (from root package.json)
-      for (const id of ['@microsoft/api-extractor', 'rollup']) {
+      for (const id of ['rollup', 'typescript']) {
         workspace.set(['devDependencies', id], getRootVersion(id));
       }
     }
@@ -76,3 +79,43 @@ module.exports = defineConfig({
     }
   },
 });
+
+function configureExports(workspace, map) {
+  workspace.set('exports', buildExports(map));
+  workspace.set('publishConfig', {
+    registry: 'https://registry.npmjs.org/',
+    access: 'public',
+    exports: distExports(map),
+    main: 'dist/index.cjs',
+    module: 'dist/index.mjs',
+    types: 'dist/index.d.ts',
+  });
+}
+
+function buildExports(map) {
+  return Object.fromEntries(
+    Object.entries(map).map(([key, value]) => {
+      if (typeof value === 'string') {
+        value = {
+          import: `./build/${value}.js`,
+          types: `./build/${value}.d.ts`,
+        };
+      }
+      return [key, value];
+    }),
+  );
+}
+function distExports(map) {
+  return Object.fromEntries(
+    Object.entries(map).map(([key, value]) => {
+      if (typeof value === 'string') {
+        value = {
+          import: `./dist/${value}.mjs`,
+          require: `./dist/${value}.cjs`,
+          types: `./dist/${value}.d.ts`,
+        };
+      }
+      return [key, value];
+    }),
+  );
+}
