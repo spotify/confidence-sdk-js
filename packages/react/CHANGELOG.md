@@ -42,6 +42,17 @@
   * devDependencies
     * @spotify-confidence/sdk bumped to 0.3.1
 
+## [0.2.0](https://github.com/spotify/confidence-sdk-js/compare/react-v0.1.1...react-v0.2.0) (2025-04-04)
+
+
+### ⚠ BREAKING CHANGES
+
+* **react:** Previously, when you did `useConfidence`, the returned instance would be augmented with extra hook-like functions such as `useFlag`. These have been removed and you should just use the exported top level hooks.
+
+### ✨ New Features
+
+* **react:** react server support ([#246](https://github.com/spotify/confidence-sdk-js/issues/246)) ([24cebb2](https://github.com/spotify/confidence-sdk-js/commit/24cebb23159c9bfef123e33b79e57c81f9ecd777))
+
 ## [0.1.0](https://github.com/spotify/confidence-sdk-js/compare/react-v0.0.13...react-v0.1.0) (2025-04-03)
 
 
