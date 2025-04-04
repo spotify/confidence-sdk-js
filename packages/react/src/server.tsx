@@ -19,7 +19,9 @@ export async function ConfidenceProvider(props: { confidence: Confidence; childr
     };
   }
   const Trailer = () => {
-    close?.();
+    if (close) {
+      queueMicrotask(close);
+    }
     return null;
   };
   return (
