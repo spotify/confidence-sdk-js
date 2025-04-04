@@ -61,7 +61,7 @@ function MyComponent() {
   const color = useFlag('my-feature-flag.color', 'blue');
 
   // Detailed flag evaluation - returns evaluation details
-  const { value, reason, context } = useEvaluateFlag('my-feature-flag.size', 12);
+  const { value, reason } = useEvaluateFlag('my-feature-flag.size', 12);
 
   return (
     <div style={{ color, fontSize: value }}>
