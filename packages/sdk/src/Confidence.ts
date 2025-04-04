@@ -345,6 +345,7 @@ export class Confidence implements EventSender, Trackable, FlagResolver {
       environment: this.config.environment,
       cache,
       context: this.getContext(),
+      logger: this.config.logger,
     };
   }
 
