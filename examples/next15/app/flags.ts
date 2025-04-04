@@ -19,21 +19,9 @@ export const confidence = Confidence.create({
   applyDebounce: 301,
 });
 
-export const getConfidence = (context: Context): Confidence => {
-  return confidence.withContext(context);
+export const getConfidence = async (): Promise<Confidence> => {
+  const cookieStore = await cookies();
+  const targeting_key = cookieStore.get('visitor.id')?.value;
+  console.log('getConfidence', targeting_key);
+  return confidence.withContext({ targeting_key });
 };
-
-type ConcentProvider = () => boolean | Promise<boolean>;
-type FetchImpl = (request: Request) => Promise<Response>;
-function applyIfConsented(consentProvider: ConcentProvider, fetchImpl: FetchImpl = fetch): FetchImpl {
-  return async (request: Request) => {
-    if (request.url.endsWith('/flags:apply')) {
-      const hasConsent = await consentProvider();
-      if (!hasConsent) {
-        console.log('consent not given, apply blocked');
-        return new Response(null, { status: 200 });
-      }
-    }
-    return fetchImpl(request);
-  };
-}

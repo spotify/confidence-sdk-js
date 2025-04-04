@@ -1,13 +1,12 @@
-import React, { Suspense } from 'react';
+import React from 'react';
 import { ServerComponent } from '@/components/ServerComponent';
 import { CookieControls } from '@/components/CookieControls';
-import { after } from 'next/server';
 import { getConfidence } from 'flags';
 
 const randomNumber = React.cache(() => Math.random());
 
 export default async function Page() {
-  const confidence = getConfidence({ targeting_key: 'andreas' });
+  const confidence = await getConfidence();
   console.log('details', await confidence.evaluateFlag('web-sdk-e2e-flag.str', 'red'));
   return (
     <div>

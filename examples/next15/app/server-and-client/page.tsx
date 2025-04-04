@@ -1,17 +1,14 @@
 import { ServerComponent } from '@/components/ServerComponent';
-import { cookies } from 'next/headers';
 import { CookieControls } from '@/components/CookieControls';
 import { ClientComponent } from '@/components/ClientComponent';
-// import { ConfidenceProvider } from '@spotify-confidence/react/server';
 import { getNumber } from 'flags-client';
 import { getConfidence } from 'flags';
 import { ConfidenceProvider } from '@spotify-confidence/react/server';
 import { Suspense } from 'react';
 
 export default async function Page() {
-  const cookieStore = await cookies();
-  let visitorId = cookieStore.get('visitor.id')?.value ?? 'unknown';
-  const confidence = getConfidence({ targeting_key: visitorId });
+  const confidence = await getConfidence();
+  let visitorId = confidence.getContext().targeting_key!;
   // console.log('details', await confidence.evaluateFlag('web-sdk-e2e-flag.str', 'red'));
   return (
     <div>
