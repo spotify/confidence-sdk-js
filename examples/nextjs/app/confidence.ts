@@ -9,4 +9,11 @@ export const confidence = Confidence.create({
   cache: {
     scope: React.cache, // Use React.cache for server-side caching
   },
+}).withContext({
+  visitor_id: 'nick las',
+  options: {
+    quantum_computing: false,
+    neural_networks: false,
+    predictive_analytics: false,
+  },
 });
