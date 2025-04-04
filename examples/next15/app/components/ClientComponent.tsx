@@ -1,7 +1,7 @@
 'use client';
 
 import React, { FC, ReactNode } from 'react';
-import { useConfidence, useFlag } from '@spotify-confidence/react/client';
+import { useConfidence, useFlag } from '@spotify-confidence/react';
 import { getNumber, isServer } from 'flags-client';
 
 export const ClientComponent: FC<{ name: string; children?: ReactNode; setRole?: (role: string) => void }> = ({
