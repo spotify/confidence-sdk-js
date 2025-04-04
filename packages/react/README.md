@@ -137,18 +137,20 @@ The Confidence React SDK now supports server-side rendering (SSR) and React Serv
 
 When using the SDK in a server environment:
 
-1. Create a Confidence instance for server using the React.cache as the scope in CacheOptions.
-2. Optionally provide an accessor for the Confidence instance using `withContext` so you don't need to do that in every place.
-3. Use direct flag evaluation in server components.
+1. Create a global Confidence instance for the server using React.cache as the scope in CacheOptions.
+2. Whenever accessing flags in server components, use `withContext` to provide the context for the flag evaluation. Like shown in the example below you can simplify this by using a `getConfidence` helper function exported from the same file where you configure the Confidence instance.
+3. Use direct flag evaluation with `await` in server components.
 
 Here's an example of how to use Confidence in a Next.js application:
 
 ```ts
 // app/confidence.ts (Server-side configuration)
 import { Confidence } from '@spotify-confidence/sdk';
+import { cookies } from 'next/headers';
+
 import React from 'react';
 
-export const confidence = Confidence.create({
+const confidence = Confidence.create({
   clientSecret: process.env.CONFIDENCE_CLIENT_SECRET!,
   environment: 'backend',
   timeout: 1000,
@@ -158,23 +160,25 @@ export const confidence = Confidence.create({
   },
 });
 
+export async function getConfidence() {
+  const cookieStore = await cookies();
+  const targeting_key = cookieStore.get('visitorId')?.value; // a unique targeting value of your choice
+
+  return confidence.withContext({ targeting_key });
+}
+
 // app/components/ServerComponent.tsx
-import { cookies } from 'next/headers';
-import { confidence } from '../confidence';
+import { getConfidence } from '../confidence';
 
 export const ServerComponent = async () => {
-  const cookieStore = await cookies();
-  const targeting_key = cookieStore.get('cnfdVisitorId')?.value; // or a unique targeting value of your choice
+  const confidence = await getConfidence();
 
   // Direct flag evaluation in server components
-  const color = await confidence.withContext({ targeting_key }).getFlag('my-feature-flag.color', 'blue');
+  const color = await confidence.getFlag('my-feature-flag.color', 'blue');
 
   return <div style={{ color }}>Server rendered content</div>;
 };
 ```
-
-> [!IMPORTANT]
-> Be aware that if you are constructing the Confidence instance using a custom `fetchImplementation` this will only be used on the server side.
 
 #### Server and Client (experimental)
 
@@ -191,8 +195,12 @@ Please note:
 - Mutating the context in a client side component does not affect the server side confidence instance.
 
 > [!IMPORTANT]
-> If your development environment uses TurboPack (e.g., Next.js with Turbopack enabled), please note that the
-> Confidence React SDK (server and client) is **not currently supported** with TurboPack. You'll need to use the standard webpack-based build system instead.
+> Be aware that if you are constructing the Confidence instance using a custom `fetchImplementation` this will only be used on the server side. Client side the SDK will use the default `fetch` implementation.
+
+> [!IMPORTANT]
+> Combined server and client support currently doesn't work well in Next.js dev mode with Turbopack enabled.
+> This is due to a number of open bugs in Turbopack. We'll soon provide a list with the specific issues to track progress.
+> In the meantime you can opt out of using Turbopack by making sure the `dev` script in your `package.json` is just `next dev`, and not `next dev --turbopack`.
 
 ```tsx
 // app/layout.tsx
@@ -202,9 +210,7 @@ import { ClientComponent } from 'components/ClientComponent';
 import { ServerComponent } from 'components/ServerComponent';
 
 export default async function Layout() {
-  const cookieStore = await cookies();
-  const targeting_key = cookieStore.get('cnfdVisitorId')?.value;
-  const confidence = getConfidence({ targeting_key });
+  const confidence = await getConfidence();
 
   return (
     <div>
@@ -228,7 +234,7 @@ import { useConfidence, useFlag } from '@spotify-confidence/react/client';
 export const ClientComponent = () => {
   // Use hooks in client components
   const confidence = useConfidence();
-  const fontSize = useFlag('my-feature-flag.size', 12);
+  const fontSize = useFlag('my-feature-flag.size', '12pt');
 
   return (
     <div>
