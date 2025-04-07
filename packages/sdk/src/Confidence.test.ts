@@ -139,7 +139,7 @@ describe('Confidence', () => {
       closer();
       closer();
 
-      expect(mockCloser).toHaveBeenCalledOnce();
+      expect(mockCloser).toHaveBeenCalledTimes(1);
     });
   });
 
