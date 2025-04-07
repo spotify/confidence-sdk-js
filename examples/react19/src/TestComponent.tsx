@@ -1,4 +1,4 @@
-import { useConfidence } from '@spotify-confidence/react';
+import { useConfidence, useFlag } from '@spotify-confidence/react';
 import { createContext, useContext, useState } from 'react';
 
 const fakeContext = createContext(undefined);
@@ -8,7 +8,7 @@ const TestComponent = () => {
   const confidence = useConfidence();
   // const details = useFlagEvaluation('web-sdk-e2e-flag.str', 'default');
   // const details = confidence.evaluateFlag('web-sdk-e2e-flag.str', 'default');
-  const details = confidence.useFlag('web-sdk-e2e-flag.str', 'default');
+  const details = useFlag('web-sdk-e2e-flag.str', 'default');
   // const details = useFlagValue('web-sdk-e2e-flag.str', 'default');
   return (
     <>

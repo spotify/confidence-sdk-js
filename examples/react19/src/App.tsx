@@ -1,6 +1,6 @@
 import React, { Suspense, createContext, useCallback, useContext, useEffect, useState } from 'react';
-import { Confidence, pageViews } from '@spotify-confidence/sdk';
-import { ConfidenceProvider, ConfidenceReact, useConfidence } from '@spotify-confidence/react';
+import { Confidence } from '@spotify-confidence/sdk';
+import { ConfidenceProvider, useConfidence, useConfidenceContext, useFlag } from '@spotify-confidence/react';
 
 const state = {
   get failRequests(): boolean {
@@ -15,13 +15,12 @@ const handleFailRequestsOnChange = (e: React.ChangeEvent<HTMLInputElement>) => {
   state.failRequests = e.target.checked;
 };
 
-if (!process.env.REACT_APP_CLIENT_SECRET) {
-  console.error('REACT_APP_CLIENT_SECRET not set in .env');
-  process.exit(1);
+if (!import.meta.env.VITE_CLIENT_SECRET) {
+  console.error('VITE_CLIENT_SECRET not set in .env');
 }
 
 const confidence = Confidence.create({
-  clientSecret: process.env.REACT_APP_CLIENT_SECRET,
+  clientSecret: import.meta.env.VITE_CLIENT_SECRET,
   environment: 'client',
   timeout: 3000,
   logger: console,
@@ -42,7 +41,7 @@ function App() {
   };
   return (
     <ConfidenceProvider confidence={confidence}>
-      <h1>React 18 Example</h1>
+      <h1>React 19 Example</h1>
       <label>
         <input type="checkbox" defaultChecked={state.failRequests} onChange={handleFailRequestsOnChange} /> Fail
         requests.
@@ -77,7 +76,7 @@ function Boundary({ children }: { children?: React.ReactNode }) {
 function Level({ name, children }: { name: string; children?: React.ReactNode }) {
   const [count, setCount] = React.useState(0);
   console.log('render', name, count);
-  const confidence = useConfidence();
+
   return (
     <fieldset>
       <legend>Level {name}</legend>
@@ -93,9 +92,8 @@ function Level({ name, children }: { name: string; children?: React.ReactNode })
 }
 
 function Flags() {
-  const confidence = useConfidence();
-  const flagData = JSON.stringify(confidence.useEvaluateFlag('tutorial-feature.title', 'Default'), null, '  ');
-  // const flagData = useDeferredValue(confidence.useFlag('web-sdk-e2e-flag.str', 'default'));
+  const flagValue = useFlag('web-sdk-e2e-flag.str', 'default');
+  const flagData = JSON.stringify(flagValue, null, '  ');
   return (
     <fieldset>
       <legend>Flags</legend>
@@ -106,10 +104,7 @@ function Flags() {
 }
 
 function ContextControl() {
-  // const name = String(confidence.getContext().level ?? '');
   const confidence = useConfidence();
-  // const [isPending, startTransition] = useTransition();
-  // const setContext = (value: Context) => startTransition(() => confidence.setContext(value));
   const toggleTargetingKey = useCallback(() => {
     let { targeting_key } = confidence.getContext();
     if (targeting_key === 'user-a') {
@@ -123,7 +118,7 @@ function ContextControl() {
   return (
     <fieldset>
       <legend>Context</legend>
-      <pre>{JSON.stringify(confidence.useContext())}</pre>
+      <pre>{JSON.stringify(useConfidenceContext())}</pre>
       <button onClick={() => confidence.setContext({ targeting_key: Math.floor(2e6 * Math.random()).toString(16) })}>
         Randomize
       </button>
