@@ -15,6 +15,7 @@ import { AccessiblePromise } from './AccessiblePromise';
 import { Telemetry } from './Telemetry';
 import { SimpleFetch } from './fetch-util';
 import { CacheOptions, CacheProvider, FlagCache } from './flag-cache';
+import { utf8ToBase64 } from './utils';
 
 /**
  * Confidence options, to be used for easier initialization of Confidence
@@ -329,11 +330,15 @@ export class Confidence implements EventSender, Trackable, FlagResolver {
   }
 
   private showLoggerLink(flag: string, context: Context) {
-    this.config.logger.info?.(
-      `See resolves for '${flag}' in Confidence: https://app.confidence.spotify.com/flags/resolver-test?client-key=${
-        this.config.clientSecret
-      }&flag=flags/${flag}&context=${encodeURIComponent(JSON.stringify(context))}`,
-    );
+    const data = {
+      clientKey: this.config.clientSecret,
+      flag,
+      context,
+    };
+    const jsonString = JSON.stringify(data);
+    const base64 =
+      typeof window !== 'undefined' ? utf8ToBase64(jsonString) : Buffer.from(jsonString).toString('base64');
+    this.config.logger.info?.(`Use Confidence Flags resolve tester for more information about '${flag}': ${base64}`);
   }
 
   toOptions(): ConfidenceOptions {
