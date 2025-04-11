@@ -19,7 +19,6 @@ jobs:
 
       - name: Bundle all packages
         run: |
-          yarn clean
           yarn bundle
 
       - name: Create consumer folder
