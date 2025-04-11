@@ -80,7 +80,6 @@ export interface ConfidenceOptions {
     disableTelemetry?: boolean;
     environment: 'client' | 'backend';
     fetchImplementation?: SimpleFetch;
-    // Warning: (ae-forgotten-export) The symbol "Logger" needs to be exported by the entry point index.d.ts
     logger?: Logger;
     region?: 'eu' | 'us';
     resolveBaseUrl?: string;
@@ -172,6 +171,37 @@ export interface FlagResolver extends Contextual<FlagResolver> {
     getFlag(path: string, defaultValue: number): Promise<number>;
     getFlag<T extends Value>(path: string, defaultValue: T): Promise<T>;
     subscribe(onStateChange?: StateObserver): () => void;
+}
+
+// Warning: (ae-missing-release-tag) "Logger" is part of the package's API, but it is missing a release tag (@alpha, @beta, @public, or @internal)
+// Warning: (ae-missing-release-tag) "Logger" is part of the package's API, but it is missing a release tag (@alpha, @beta, @public, or @internal)
+//
+// @public (undocumented)
+export namespace Logger {
+    const // (undocumented)
+    LEVELS: readonly ["trace", "debug", "info", "warn", "error"];
+    // (undocumented)
+    export type Fn = (message: string, ...optionalParams: any[]) => void;
+    // (undocumented)
+    export type Level = (typeof LEVELS)[number];
+    // (undocumented)
+    export function noOp(): Logger;
+    // (undocumented)
+    export function withLevel(delegate: Logger, level: Level): Logger;
+}
+
+// @public (undocumented)
+export interface Logger {
+    // (undocumented)
+    readonly debug?: Logger.Fn;
+    // (undocumented)
+    readonly error?: Logger.Fn;
+    // (undocumented)
+    readonly info?: Logger.Fn;
+    // (undocumented)
+    readonly trace?: Logger.Fn;
+    // (undocumented)
+    readonly warn?: Logger.Fn;
 }
 
 // @public

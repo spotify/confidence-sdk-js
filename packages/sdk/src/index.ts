@@ -7,5 +7,6 @@ export * from './trackers';
 export * from './Trackable';
 export * from './Closer';
 export * from './types';
+export * from './logger';
 export { SimpleFetch } from './fetch-util';
 export { CacheOptions, CacheScope } from './flag-cache';
