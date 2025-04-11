@@ -17,9 +17,9 @@ jobs:
         with:
           node-version: 'lts/*'
 
-      - name: Install dependencies and build all packages
+      - name: Bundle all packages
         run: |
-          yarn install
+          yarn clean
           yarn bundle
 
       - name: Create consumer folder
