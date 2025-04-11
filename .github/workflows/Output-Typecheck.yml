@@ -1,0 +1,62 @@
+name: Validate Output Types
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+
+jobs:
+  Build-And-Test:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v3
+      - id: setup-environment
+        uses: ./.github/actions/setup
+        with:
+          node-version: 'lts/*'
+
+      - name: Install dependencies and build all packages
+        run: |
+          yarn install
+          yarn bundle
+
+      - name: Create consumer folder
+        run: mkdir test-consumer
+
+      - name: Package all packages
+        run: |
+          cd packages/sdk && yarn pack && cd ../..
+          cd packages/react && yarn pack && cd ../..
+          cd packages/openfeature-server-provider && yarn pack && cd ../..
+          cd packages/openfeature-web-provider && yarn pack && cd ../..
+
+      - name: Copy generated tarball to the test consumer directory
+        run: |
+          mv packages/sdk/package.tgz test-consumer/sdk.tgz
+          mv packages/react/package.tgz test-consumer/react.tgz
+          mv packages/openfeature-server-provider/package.tgz test-consumer/openfeature-server-provider.tgz
+          mv packages/openfeature-web-provider/package.tgz test-consumer/openfeature-web-provider.tgz
+
+      - name: Set up test consumer project
+        run: |
+          cd test-consumer
+          npm init -y
+          echo '{ "compilerOptions": { "skipLibCheck": false } }' > tsconfig.json
+          mkdir src
+          echo 'import { Confidence } from "@spotify-confidence/sdk";' > src/index.ts
+          echo 'import { ConfidenceProvider as ReactClientProvider } from "@spotify-confidence/react";' >> src/index.ts
+          echo 'import { ConfidenceProvider as ReactServerProvider } from "@spotify-confidence/react/server";' >> src/index.ts
+          echo 'import { createConfidenceWebProvider as createWebProvider } from "@spotify-confidence/openfeature-web-provider";' >> src/index.ts
+          echo 'import { createConfidenceServerProvider as createServerProvider } from "@spotify-confidence/openfeature-server-provider";' >> src/index.ts
+
+      - name: Install all packages from tarballs in test consumer
+        working-directory: ./test-consumer
+        run: |
+          npm install sdk.tgz react.tgz openfeature-server-provider.tgz openfeature-web-provider.tgz
+
+      - name: Validate all packages output types in test consumer
+        working-directory: ./test-consumer
+        run: |
+          npx tsc --noEmit
