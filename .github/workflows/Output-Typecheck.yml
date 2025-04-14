@@ -42,7 +42,7 @@ jobs:
         run: |
           cd test-consumer
           npm init -y
-          echo '{ "compilerOptions": { "skipLibCheck": false } }' > tsconfig.json
+          echo '{ "compilerOptions": { "skipLibCheck": false, "typeRoots": ["./node_modules/@types"] } }' > tsconfig.json
           mkdir src
           echo 'import { Confidence } from "@spotify-confidence/sdk";' > src/index.ts
           echo 'import { ConfidenceProvider as ReactClientProvider } from "@spotify-confidence/react";' >> src/index.ts
