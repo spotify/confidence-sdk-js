@@ -49,6 +49,9 @@ jobs:
           echo 'import { ConfidenceProvider as ReactServerProvider } from "@spotify-confidence/react/server";' >> src/index.ts
           echo 'import { createConfidenceWebProvider as createWebProvider } from "@spotify-confidence/openfeature-web-provider";' >> src/index.ts
           echo 'import { createConfidenceServerProvider as createServerProvider } from "@spotify-confidence/openfeature-server-provider";' >> src/index.ts
+          echo 'const confidence = Confidence.create({ clientSecret: "mysecret", region: "eu", environment: "client", timeout: 1000 });' >> src/index.ts
+          echo 'createServerProvider(confidence);' >> src/index.ts
+          echo 'createWebProvider(confidence);' >> src/index.ts
 
       - name: Install all packages from tarballs in test consumer
         working-directory: ./test-consumer
