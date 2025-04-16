@@ -180,15 +180,15 @@ export class FetchingFlagResolverClient implements FlagResolverClient {
       const start = Date.now();
 
       return this.cacheReadThrough(context, () => this.resolveFlagsJson(request, signalWithTimeout))
-        .then(response => FlagResolution.ready(context, response, this.createApplier(response.resolveToken)))
+        .then(response => {
+          this.markLatency(Date.now() - start);
+          return FlagResolution.ready(context, response, this.createApplier(response.resolveToken));
+        })
         .catch(error => {
           if (error instanceof ResolveError) {
             return FlagResolution.failed(context, error.code, error.message);
           }
           return FlagResolution.failed(context, 'GENERAL', error.message);
-        })
-        .finally(() => {
-          this.markLatency(Date.now() - start);
         });
     });
   }
