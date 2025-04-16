@@ -178,17 +178,25 @@ export class FetchingFlagResolverClient implements FlagResolverClient {
         new ResolveError('TIMEOUT', 'Resolve timeout'),
       );
       const start = Date.now();
+      let status = 'UNKNOWN';
 
       return this.cacheReadThrough(context, () => this.resolveFlagsJson(request, signalWithTimeout))
         .then(response => {
-          this.markLatency(Date.now() - start);
+          status = 'SUCCESS';
           return FlagResolution.ready(context, response, this.createApplier(response.resolveToken));
         })
         .catch(error => {
           if (error instanceof ResolveError) {
+            status = error.code;
             return FlagResolution.failed(context, error.code, error.message);
           }
+          status = 'GENERAL';
           return FlagResolution.failed(context, 'GENERAL', error.message);
+        })
+        .finally(() => {
+          // Log latency with response status
+          const latency = Date.now() - start;
+          this.markLatency(latency, status);
         });
     });
   }

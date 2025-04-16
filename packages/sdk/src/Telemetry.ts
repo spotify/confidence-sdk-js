@@ -17,7 +17,7 @@ export type Tag = {
 };
 
 export type Counter = () => void;
-export type Meter = (value: number) => void;
+export type Meter = (value: number, responseStatus?: string) => void;
 export type TraceConsumer = (trace: Omit<LibraryTraces_Trace, 'id'>) => void;
 export class Telemetry {
   private readonly disabled: boolean;
@@ -57,7 +57,8 @@ export class Telemetry {
 
   registerMeter(tag: Tag): Meter {
     const traceConsumer = this.registerLibraryTraces(tag);
-    return (millisecondDuration: number) => traceConsumer({ millisecondDuration });
+    return (millisecondDuration: number, status?: string) =>
+      traceConsumer({ millisecondDuration, status });
   }
 
   getSnapshot(): Monitoring {

@@ -22,6 +22,8 @@ message LibraryTraces {
     TraceId id = 1;
     // only used for timed events.
     optional uint64 millisecond_duration = 2;
+    // for example the return status of network requests
+    optional string status = 3;
   }
 
   enum Library {
