@@ -159,6 +159,8 @@ export interface LibraryTraces_Trace {
   id: LibraryTraces_TraceId;
   /** only used for timed events. */
   millisecondDuration?: number | undefined;
+  /** for example the return status of network requests */
+  status?: string | undefined;
 }
 
 function createBaseMonitoring(): Monitoring {
@@ -313,7 +315,7 @@ export const LibraryTraces: MessageFns<LibraryTraces> = {
 };
 
 function createBaseLibraryTraces_Trace(): LibraryTraces_Trace {
-  return { id: 0, millisecondDuration: undefined };
+  return { id: 0, millisecondDuration: undefined, status: undefined };
 }
 
 export const LibraryTraces_Trace: MessageFns<LibraryTraces_Trace> = {
@@ -323,6 +325,9 @@ export const LibraryTraces_Trace: MessageFns<LibraryTraces_Trace> = {
     }
     if (message.millisecondDuration !== undefined) {
       writer.uint32(16).uint64(message.millisecondDuration);
+    }
+    if (message.status !== undefined) {
+      writer.uint32(26).string(message.status);
     }
     return writer;
   },
@@ -350,6 +355,14 @@ export const LibraryTraces_Trace: MessageFns<LibraryTraces_Trace> = {
           message.millisecondDuration = longToNumber(reader.uint64());
           continue;
         }
+        case 3: {
+          if (tag !== 26) {
+            break;
+          }
+
+          message.status = reader.string();
+          continue;
+        }
       }
       if ((tag & 7) === 4 || tag === 0) {
         break;
@@ -365,6 +378,7 @@ export const LibraryTraces_Trace: MessageFns<LibraryTraces_Trace> = {
       millisecondDuration: isSet(object.millisecondDuration)
         ? globalThis.Number(object.millisecondDuration)
         : undefined,
+      status: isSet(object.status) ? globalThis.String(object.status) : undefined,
     };
   },
 
@@ -375,6 +389,9 @@ export const LibraryTraces_Trace: MessageFns<LibraryTraces_Trace> = {
     }
     if (message.millisecondDuration !== undefined) {
       obj.millisecondDuration = Math.round(message.millisecondDuration);
+    }
+    if (message.status !== undefined) {
+      obj.status = message.status;
     }
     return obj;
   },
