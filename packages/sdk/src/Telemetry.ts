@@ -57,8 +57,7 @@ export class Telemetry {
 
   registerMeter(tag: Tag): Meter {
     const traceConsumer = this.registerLibraryTraces(tag);
-    return (millisecondDuration: number, status?: string) =>
-      traceConsumer({ millisecondDuration, status });
+    return (millisecondDuration: number, status?: string) => traceConsumer({ millisecondDuration, status });
   }
 
   getSnapshot(): Monitoring {
