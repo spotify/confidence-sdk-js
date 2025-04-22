@@ -183,20 +183,40 @@ export class FetchingFlagResolverClient implements FlagResolverClient {
       return this.cacheReadThrough(context, () => this.resolveFlagsJson(request, signalWithTimeout))
         .then(response => {
           const latency = Date.now() - start;
-          this.traceConsumer({ requestTrace: { millisecondDuration: latency, status: LibraryTraces_Trace_RequestTrace_Status.STATUS_SUCCESS } });
+          this.traceConsumer({
+            requestTrace: {
+              millisecondDuration: latency,
+              status: LibraryTraces_Trace_RequestTrace_Status.STATUS_SUCCESS,
+            },
+          });
           return FlagResolution.ready(context, response, this.createApplier(response.resolveToken));
         })
         .catch(error => {
           const latency = Date.now() - start;
           if (error instanceof ResolveError) {
             if (error.code === 'TIMEOUT') {
-              this.traceConsumer({ requestTrace: { millisecondDuration: latency, status: LibraryTraces_Trace_RequestTrace_Status.STATUS_TIMEOUT } });
+              this.traceConsumer({
+                requestTrace: {
+                  millisecondDuration: latency,
+                  status: LibraryTraces_Trace_RequestTrace_Status.STATUS_TIMEOUT,
+                },
+              });
             } else {
-              this.traceConsumer({ requestTrace: { millisecondDuration: latency, status: LibraryTraces_Trace_RequestTrace_Status.STATUS_ERROR } });
+              this.traceConsumer({
+                requestTrace: {
+                  millisecondDuration: latency,
+                  status: LibraryTraces_Trace_RequestTrace_Status.STATUS_ERROR,
+                },
+              });
             }
             return FlagResolution.failed(context, error.code, error.message);
           }
-          this.traceConsumer({ requestTrace: { millisecondDuration: latency, status: LibraryTraces_Trace_RequestTrace_Status.STATUS_ERROR } });
+          this.traceConsumer({
+            requestTrace: {
+              millisecondDuration: latency,
+              status: LibraryTraces_Trace_RequestTrace_Status.STATUS_ERROR,
+            },
+          });
           return FlagResolution.failed(context, 'GENERAL', error.message);
         });
     });

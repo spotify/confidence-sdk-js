@@ -1,4 +1,8 @@
-import { LibraryTraces_Library, LibraryTraces_TraceId, LibraryTraces_Trace_RequestTrace_Status } from './generated/confidence/telemetry/v1/telemetry';
+import {
+  LibraryTraces_Library,
+  LibraryTraces_TraceId,
+  LibraryTraces_Trace_RequestTrace_Status,
+} from './generated/confidence/telemetry/v1/telemetry';
 import { Telemetry } from './Telemetry';
 
 describe('Telemetry', () => {
@@ -33,18 +37,33 @@ describe('Telemetry', () => {
       id: LibraryTraces_TraceId.TRACE_ID_RESOLVE_LATENCY,
     });
     // measure 3 times with different values
-    traceConsumer({ requestTrace: { millisecondDuration: 10, status: LibraryTraces_Trace_RequestTrace_Status.STATUS_SUCCESS } });
-    traceConsumer({ requestTrace: { millisecondDuration: 20, status: LibraryTraces_Trace_RequestTrace_Status.STATUS_SUCCESS } });
-    traceConsumer({ requestTrace: { millisecondDuration: 30, status: LibraryTraces_Trace_RequestTrace_Status.STATUS_ERROR } });
+    traceConsumer({
+      requestTrace: { millisecondDuration: 10, status: LibraryTraces_Trace_RequestTrace_Status.STATUS_SUCCESS },
+    });
+    traceConsumer({
+      requestTrace: { millisecondDuration: 20, status: LibraryTraces_Trace_RequestTrace_Status.STATUS_SUCCESS },
+    });
+    traceConsumer({
+      requestTrace: { millisecondDuration: 30, status: LibraryTraces_Trace_RequestTrace_Status.STATUS_ERROR },
+    });
     const snapshot = telemetry.getSnapshot();
     expect(snapshot).toBeTruthy();
     expect(snapshot?.libraryTraces.length).toEqual(1);
     expect(snapshot?.libraryTraces[0].library).toEqual(LibraryTraces_Library.LIBRARY_CONFIDENCE);
     expect(snapshot?.libraryTraces[0].libraryVersion).toEqual('9.9.9');
     expect(snapshot?.libraryTraces[0].traces).toEqual([
-      { id: LibraryTraces_TraceId.TRACE_ID_RESOLVE_LATENCY, requestTrace: { millisecondDuration: 10, status: LibraryTraces_Trace_RequestTrace_Status.STATUS_SUCCESS } },
-      { id: LibraryTraces_TraceId.TRACE_ID_RESOLVE_LATENCY, requestTrace: { millisecondDuration: 20, status: LibraryTraces_Trace_RequestTrace_Status.STATUS_SUCCESS } },
-      { id: LibraryTraces_TraceId.TRACE_ID_RESOLVE_LATENCY, requestTrace: { millisecondDuration: 30, status: LibraryTraces_Trace_RequestTrace_Status.STATUS_ERROR } },
+      {
+        id: LibraryTraces_TraceId.TRACE_ID_RESOLVE_LATENCY,
+        requestTrace: { millisecondDuration: 10, status: LibraryTraces_Trace_RequestTrace_Status.STATUS_SUCCESS },
+      },
+      {
+        id: LibraryTraces_TraceId.TRACE_ID_RESOLVE_LATENCY,
+        requestTrace: { millisecondDuration: 20, status: LibraryTraces_Trace_RequestTrace_Status.STATUS_SUCCESS },
+      },
+      {
+        id: LibraryTraces_TraceId.TRACE_ID_RESOLVE_LATENCY,
+        requestTrace: { millisecondDuration: 30, status: LibraryTraces_Trace_RequestTrace_Status.STATUS_ERROR },
+      },
     ]);
   });
 

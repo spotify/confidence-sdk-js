@@ -5,8 +5,6 @@ import {
   LibraryTraces_TraceId,
   Monitoring,
   Platform,
-  LibraryTraces_Trace_RequestTrace,
-  LibraryTraces_Trace_RequestTrace_Status,
 } from './generated/confidence/telemetry/v1/telemetry';
 import { Logger } from './logger';
 
