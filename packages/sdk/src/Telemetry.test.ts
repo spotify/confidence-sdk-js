@@ -29,7 +29,7 @@ describe('Telemetry', () => {
     ]);
   });
 
-  it('registerLibraryTraces and add measurement', () => {
+  it('registerLibraryTraces and add requestTrace', () => {
     const telemetry = new Telemetry({ disabled: false, environment: 'client' });
     const traceConsumer = telemetry.registerLibraryTraces({
       library: LibraryTraces_Library.LIBRARY_CONFIDENCE,
@@ -79,7 +79,7 @@ describe('Telemetry', () => {
     expect(snapshot.libraryTraces.length).toBe(0);
   });
 
-  it('monitoring gets cleared after snapshot is obtained', () => {
+  it('traceConsumer gets cleared after snapshot is obtained', () => {
     const telemetry = new Telemetry({ disabled: false, environment: 'client' });
     const traceConsumer = telemetry.registerLibraryTraces({
       library: LibraryTraces_Library.LIBRARY_CONFIDENCE,
@@ -92,7 +92,37 @@ describe('Telemetry', () => {
     expect(snapshotFirst?.libraryTraces.length).toEqual(1);
     expect(snapshotFirst?.libraryTraces[0].traces).toEqual([{ id: LibraryTraces_TraceId.TRACE_ID_STALE_FLAG }]);
     const snapshotSecond = telemetry.getSnapshot();
-    // the counter is still registered but the traces are cleared
     expect(snapshotSecond?.libraryTraces.length).toBe(0);
+  });
+
+  it('registerLibraryTraces and log cached requestTrace', () => {
+    const telemetry = new Telemetry({ disabled: false, environment: 'client' });
+    const traceConsumer = telemetry.registerLibraryTraces({
+      library: LibraryTraces_Library.LIBRARY_CONFIDENCE,
+      version: '9.9.9',
+      id: LibraryTraces_TraceId.TRACE_ID_RESOLVE_LATENCY,
+    });
+
+    traceConsumer({
+      requestTrace: {
+        millisecondDuration: 5,
+        status: LibraryTraces_Trace_RequestTrace_Status.STATUS_CACHED,
+      },
+    });
+
+    const snapshot = telemetry.getSnapshot();
+    expect(snapshot).toBeTruthy();
+    expect(snapshot?.libraryTraces.length).toEqual(1);
+    expect(snapshot?.libraryTraces[0].library).toEqual(LibraryTraces_Library.LIBRARY_CONFIDENCE);
+    expect(snapshot?.libraryTraces[0].libraryVersion).toEqual('9.9.9');
+    expect(snapshot?.libraryTraces[0].traces).toEqual([
+      {
+        id: LibraryTraces_TraceId.TRACE_ID_RESOLVE_LATENCY,
+        requestTrace: {
+          millisecondDuration: 5,
+          status: LibraryTraces_Trace_RequestTrace_Status.STATUS_CACHED,
+        },
+      },
+    ]);
   });
 });

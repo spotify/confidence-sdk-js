@@ -112,7 +112,7 @@ export class FetchingFlagResolverClient implements FlagResolverClient {
   private readonly cacheReadThrough: (
     context: Context,
     supplier: () => Promise<ResolveFlagsResponse>,
-  ) => Promise<ResolveFlagsResponse>;
+  ) => Promise<{ response: ResolveFlagsResponse; isFromCache: boolean }>;
 
   constructor({
     fetchImplementation,
@@ -156,10 +156,20 @@ export class FetchingFlagResolverClient implements FlagResolverClient {
     if (cacheProvider) {
       this.cacheReadThrough = (context, supplier) => {
         const cache = cacheProvider(this.clientSecret);
-        return cache.get(context, supplier);
+        let isFromCache = true; // Default to true, will be set to false if supplier is called
+
+        // Create a wrapper supplier that sets the flag when called
+        const wrappedSupplier = async () => {
+          isFromCache = false;
+          return supplier();
+        };
+
+        return cache.get(context, wrappedSupplier).then(response => {
+          return { response, isFromCache };
+        });
       };
     } else {
-      this.cacheReadThrough = (_context, supplier) => supplier();
+      this.cacheReadThrough = (_context, supplier) => supplier().then(response => ({ response, isFromCache: false }));
     }
   }
 
@@ -181,15 +191,25 @@ export class FetchingFlagResolverClient implements FlagResolverClient {
       const start = Date.now();
 
       return this.cacheReadThrough(context, () => this.resolveFlagsJson(request, signalWithTimeout))
-        .then(response => {
+        .then(result => {
           const latency = Date.now() - start;
-          this.traceConsumer({
-            requestTrace: {
-              millisecondDuration: latency,
-              status: LibraryTraces_Trace_RequestTrace_Status.STATUS_SUCCESS,
-            },
-          });
-          return FlagResolution.ready(context, response, this.createApplier(response.resolveToken));
+          if (result.isFromCache) {
+            this.traceConsumer({
+              requestTrace: {
+                millisecondDuration: latency,
+                status: LibraryTraces_Trace_RequestTrace_Status.STATUS_CACHED,
+              },
+            });
+          } else {
+            this.traceConsumer({
+              requestTrace: {
+                millisecondDuration: latency,
+                status: LibraryTraces_Trace_RequestTrace_Status.STATUS_SUCCESS,
+              },
+            });
+          }
+
+          return FlagResolution.ready(context, result.response, this.createApplier(result.response.resolveToken));
         })
         .catch(error => {
           const latency = Date.now() - start;
@@ -209,15 +229,15 @@ export class FetchingFlagResolverClient implements FlagResolverClient {
                 },
               });
             }
-            return FlagResolution.failed(context, error.code, error.message);
+          } else {
+            this.traceConsumer({
+              requestTrace: {
+                millisecondDuration: latency,
+                status: LibraryTraces_Trace_RequestTrace_Status.STATUS_ERROR,
+              },
+            });
           }
-          this.traceConsumer({
-            requestTrace: {
-              millisecondDuration: latency,
-              status: LibraryTraces_Trace_RequestTrace_Status.STATUS_ERROR,
-            },
-          });
-          return FlagResolution.failed(context, 'GENERAL', error.message);
+          return FlagResolution.failed(context, error instanceof ResolveError ? error.code : 'GENERAL', error.message);
         });
     });
   }
