@@ -1,7 +1,7 @@
 import { FlagEvaluation } from '.';
 import { AccessiblePromise } from './AccessiblePromise';
 import { Applier, FlagResolution } from './FlagResolution';
-import { Telemetry, Meter, TraceConsumer } from './Telemetry';
+import { Telemetry, TraceConsumer } from './Telemetry';
 import { CacheProvider } from './flag-cache';
 import { Context } from './context';
 import { FetchBuilder, InternalFetch, SimpleFetch, TimeUnit } from './fetch-util';

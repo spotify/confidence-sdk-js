@@ -5,6 +5,8 @@ import {
   LibraryTraces_TraceId,
   Monitoring,
   Platform,
+  LibraryTraces_Trace_RequestTrace,
+  LibraryTraces_Trace_RequestTrace_Status,
 } from './generated/confidence/telemetry/v1/telemetry';
 import { Logger } from './logger';
 
@@ -48,16 +50,6 @@ export class Telemetry {
         ...data,
       });
     };
-  }
-
-  registerCounter(tag: Tag): Counter {
-    const traceConsumer = this.registerLibraryTraces(tag);
-    return () => traceConsumer({});
-  }
-
-  registerMeter(tag: Tag): Meter {
-    const traceConsumer = this.registerLibraryTraces(tag);
-    return (millisecondDuration: number, status?: string) => traceConsumer({ millisecondDuration, status });
   }
 
   getSnapshot(): Monitoring {
