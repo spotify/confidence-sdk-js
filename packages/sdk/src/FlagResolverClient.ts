@@ -1,7 +1,7 @@
 import { FlagEvaluation } from '.';
 import { AccessiblePromise } from './AccessiblePromise';
 import { Applier, FlagResolution } from './FlagResolution';
-import { Telemetry, Meter } from './Telemetry';
+import { Telemetry, Meter, TraceConsumer } from './Telemetry';
 import { CacheProvider } from './flag-cache';
 import { Context } from './context';
 import { FetchBuilder, InternalFetch, SimpleFetch, TimeUnit } from './fetch-util';
@@ -14,6 +14,7 @@ import {
 import { Sdk } from './generated/confidence/flags/resolver/v1/types';
 import {
   LibraryTraces_Library,
+  LibraryTraces_Trace_RequestTrace_Status,
   LibraryTraces_TraceId,
   Monitoring,
 } from './generated/confidence/telemetry/v1/telemetry';
@@ -106,7 +107,7 @@ export class FetchingFlagResolverClient implements FlagResolverClient {
   private readonly applyDebounce: number;
   private readonly resolveTimeout: number;
   private readonly baseUrl: string;
-  private readonly markLatency: Meter;
+  private readonly traceConsumer: TraceConsumer;
   private readonly waitUntil: WaitUntil | undefined;
   private readonly cacheReadThrough: (
     context: Context,
@@ -128,7 +129,7 @@ export class FetchingFlagResolverClient implements FlagResolverClient {
     waitUntil,
     cacheProvider,
   }: FlagResolverClientOptions) {
-    this.markLatency = telemetry.registerMeter({
+    this.traceConsumer = telemetry.registerLibraryTraces({
       library: LibraryTraces_Library.LIBRARY_CONFIDENCE,
       version: sdk.version,
       id: LibraryTraces_TraceId.TRACE_ID_RESOLVE_LATENCY,
@@ -178,25 +179,25 @@ export class FetchingFlagResolverClient implements FlagResolverClient {
         new ResolveError('TIMEOUT', 'Resolve timeout'),
       );
       const start = Date.now();
-      let status = 'UNKNOWN';
 
       return this.cacheReadThrough(context, () => this.resolveFlagsJson(request, signalWithTimeout))
         .then(response => {
-          status = 'SUCCESS';
+          const latency = Date.now() - start;
+          this.traceConsumer({ requestTrace: { millisecondDuration: latency, status: LibraryTraces_Trace_RequestTrace_Status.STATUS_SUCCESS } });
           return FlagResolution.ready(context, response, this.createApplier(response.resolveToken));
         })
         .catch(error => {
+          const latency = Date.now() - start;
           if (error instanceof ResolveError) {
-            status = error.code;
+            if (error.code === 'TIMEOUT') {
+              this.traceConsumer({ requestTrace: { millisecondDuration: latency, status: LibraryTraces_Trace_RequestTrace_Status.STATUS_TIMEOUT } });
+            } else {
+              this.traceConsumer({ requestTrace: { millisecondDuration: latency, status: LibraryTraces_Trace_RequestTrace_Status.STATUS_ERROR } });
+            }
             return FlagResolution.failed(context, error.code, error.message);
           }
-          status = 'GENERAL';
+          this.traceConsumer({ requestTrace: { millisecondDuration: latency, status: LibraryTraces_Trace_RequestTrace_Status.STATUS_ERROR } });
           return FlagResolution.failed(context, 'GENERAL', error.message);
-        })
-        .finally(() => {
-          // Log latency with response status
-          const latency = Date.now() - start;
-          this.markLatency(latency, status);
         });
     });
   }

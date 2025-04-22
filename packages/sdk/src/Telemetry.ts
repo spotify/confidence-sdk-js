@@ -31,7 +31,7 @@ export class Telemetry {
     this.platform = opts.environment === 'client' ? Platform.PLATFORM_JS_WEB : Platform.PLATFORM_JS_SERVER;
   }
 
-  private registerLibraryTraces({ library, version, id }: Tag): TraceConsumer {
+  public registerLibraryTraces({ library, version, id }: Tag): TraceConsumer {
     if (this.disabled) {
       return () => {};
     }
