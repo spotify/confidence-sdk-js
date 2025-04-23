@@ -14,7 +14,7 @@ import {
 import { Sdk } from './generated/confidence/flags/resolver/v1/types';
 import {
   LibraryTraces_Library,
-  LibraryTraces_Trace_RequestTrace_Status,
+  LibraryTraces_Trace_RequestTrace_Status as TraceStatus,
   LibraryTraces_TraceId,
   Monitoring,
 } from './generated/confidence/telemetry/v1/telemetry';
@@ -173,6 +173,15 @@ export class FetchingFlagResolverClient implements FlagResolverClient {
     }
   }
 
+  private markLatency(latency: number, status: TraceStatus): void {
+    this.traceConsumer({
+      requestTrace: {
+        millisecondDuration: latency,
+        status,
+      },
+    });
+  }
+
   resolve(context: Context): PendingResolution {
     const request: ResolveFlagsRequest = {
       clientSecret: this.clientSecret,
@@ -194,19 +203,9 @@ export class FetchingFlagResolverClient implements FlagResolverClient {
         .then(result => {
           const latency = Date.now() - start;
           if (result.isFromCache) {
-            this.traceConsumer({
-              requestTrace: {
-                millisecondDuration: latency,
-                status: LibraryTraces_Trace_RequestTrace_Status.STATUS_CACHED,
-              },
-            });
+            this.markLatency(latency, TraceStatus.STATUS_CACHED);
           } else {
-            this.traceConsumer({
-              requestTrace: {
-                millisecondDuration: latency,
-                status: LibraryTraces_Trace_RequestTrace_Status.STATUS_SUCCESS,
-              },
-            });
+            this.markLatency(latency, TraceStatus.STATUS_SUCCESS);
           }
 
           return FlagResolution.ready(context, result.response, this.createApplier(result.response.resolveToken));
@@ -215,27 +214,12 @@ export class FetchingFlagResolverClient implements FlagResolverClient {
           const latency = Date.now() - start;
           if (error instanceof ResolveError) {
             if (error.code === 'TIMEOUT') {
-              this.traceConsumer({
-                requestTrace: {
-                  millisecondDuration: latency,
-                  status: LibraryTraces_Trace_RequestTrace_Status.STATUS_TIMEOUT,
-                },
-              });
+              this.markLatency(latency, TraceStatus.STATUS_TIMEOUT);
             } else {
-              this.traceConsumer({
-                requestTrace: {
-                  millisecondDuration: latency,
-                  status: LibraryTraces_Trace_RequestTrace_Status.STATUS_ERROR,
-                },
-              });
+              this.markLatency(latency, TraceStatus.STATUS_ERROR);
             }
           } else {
-            this.traceConsumer({
-              requestTrace: {
-                millisecondDuration: latency,
-                status: LibraryTraces_Trace_RequestTrace_Status.STATUS_ERROR,
-              },
-            });
+            this.markLatency(latency, TraceStatus.STATUS_ERROR);
           }
           return FlagResolution.failed(context, error instanceof ResolveError ? error.code : 'GENERAL', error.message);
         });
