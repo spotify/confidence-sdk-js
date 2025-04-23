@@ -37,7 +37,11 @@ OpenFeature.setContext({
   targetingKey: 'myTargetingKey',
 });
 
-await OpenFeature.setProviderAndWait(provider);
+try {
+  await OpenFeature.setProviderAndWait(provider);
+} (error) {
+  console.error('Failed to initialize Confidence provider:', error);
+}
 
 const client = OpenFeature.getClient();
 const result = client.getBooleanValue('flagName.my-boolean', false);
