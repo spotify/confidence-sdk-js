@@ -3,6 +3,7 @@ import {
   LibraryTraces_Library,
   LibraryTraces_Trace,
   LibraryTraces_TraceId,
+  LibraryTraces_Trace_RequestTrace_Status,
   Monitoring,
   Platform,
 } from './generated/confidence/telemetry/v1/telemetry';
@@ -56,6 +57,12 @@ export class Telemetry {
         libraryVersion,
         traces: traces.splice(0, traces.length),
       }));
+    console.log('fdema: Number of library traces:', libraryTraces.length);
+    console.log('fdema', libraryTraces.map(lt => 
+      lt.traces.map(t => 
+        `Trace ${LibraryTraces_TraceId[t.id]}: ${t.requestTrace?.millisecondDuration}ms, Status: ${t.requestTrace ? LibraryTraces_Trace_RequestTrace_Status[t.requestTrace.status] : 'N/A'}`
+      ).join(' - ')
+    ).join(' - '));
     return { libraryTraces, platform: this.platform };
   }
 }

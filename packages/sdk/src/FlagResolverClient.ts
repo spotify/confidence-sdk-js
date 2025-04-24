@@ -203,8 +203,10 @@ export class FetchingFlagResolverClient implements FlagResolverClient {
         .then(result => {
           const latency = Date.now() - start;
           if (result.isFromCache) {
+            console.log(`fdema: Marking latency: ${latency}ms, Status: CACHED`);
             this.markLatency(latency, TraceStatus.STATUS_CACHED);
           } else {
+            console.log(`fdema: Marking latency: ${latency}ms, Status: SUCCESS`);
             this.markLatency(latency, TraceStatus.STATUS_SUCCESS);
           }
 
@@ -214,11 +216,14 @@ export class FetchingFlagResolverClient implements FlagResolverClient {
           const latency = Date.now() - start;
           if (error instanceof ResolveError) {
             if (error.code === 'TIMEOUT') {
+              console.log(`fdema: Marking latency: ${latency}ms, Status: TIMEOUT`);
               this.markLatency(latency, TraceStatus.STATUS_TIMEOUT);
             } else {
+              console.log(`fdema: Marking latency: ${latency}ms, Status: ERROR`);
               this.markLatency(latency, TraceStatus.STATUS_ERROR);
             }
           } else {
+            console.log(`fdema: Marking latency: ${latency}ms, Status: ERROR`);
             this.markLatency(latency, TraceStatus.STATUS_ERROR);
           }
           return FlagResolution.failed(context, error instanceof ResolveError ? error.code : 'GENERAL', error.message);
