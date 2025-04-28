@@ -25,7 +25,10 @@ const FLAG_PREFIX = 'flags/';
 const retryCodes = new Set([408, 502, 503, 504]);
 
 export class ResolveError extends Error {
-  constructor(public readonly code: FlagEvaluation.ErrorCode, message: string) {
+  constructor(
+    public readonly code: FlagEvaluation.ErrorCode,
+    message: string,
+  ) {
     super(message);
   }
 }
@@ -176,7 +179,7 @@ export class FetchingFlagResolverClient implements FlagResolverClient {
   private markLatency(latency: number, status: TraceStatus): void {
     this.traceConsumer({
       requestTrace: {
-        millisecondDuration: latency,
+        millisecondDuration: Math.round(latency),
         status,
       },
     });
@@ -197,31 +200,19 @@ export class FetchingFlagResolverClient implements FlagResolverClient {
         this.resolveTimeout,
         new ResolveError('TIMEOUT', 'Resolve timeout'),
       );
-      const start = Date.now();
+      const start = performance.now();
 
       return this.cacheReadThrough(context, () => this.resolveFlagsJson(request, signalWithTimeout))
-        .then(result => {
-          const latency = Date.now() - start;
-          if (result.isFromCache) {
-            this.markLatency(latency, TraceStatus.STATUS_CACHED);
-          } else {
-            this.markLatency(latency, TraceStatus.STATUS_SUCCESS);
-          }
-
-          return FlagResolution.ready(context, result.response, this.createApplier(result.response.resolveToken));
+        .then(({ response, isFromCache }) => {
+          const latency = performance.now() - start;
+          this.markLatency(latency, isFromCache ? TraceStatus.STATUS_CACHED : TraceStatus.STATUS_SUCCESS);
+          return FlagResolution.ready(context, response, this.createApplier(response.resolveToken));
         })
         .catch(error => {
-          const latency = Date.now() - start;
-          if (error instanceof ResolveError) {
-            if (error.code === 'TIMEOUT') {
-              this.markLatency(latency, TraceStatus.STATUS_TIMEOUT);
-            } else {
-              this.markLatency(latency, TraceStatus.STATUS_ERROR);
-            }
-          } else {
-            this.markLatency(latency, TraceStatus.STATUS_ERROR);
-          }
-          return FlagResolution.failed(context, error instanceof ResolveError ? error.code : 'GENERAL', error.message);
+          const latency = performance.now() - start;
+          const errorCode: FlagEvaluation.ErrorCode = error instanceof ResolveError ? error.code : 'GENERAL';
+          this.markLatency(latency, errorCode === 'TIMEOUT' ? TraceStatus.STATUS_TIMEOUT : TraceStatus.STATUS_ERROR);
+          return FlagResolution.failed(context, errorCode, error.message);
         });
     });
   }
