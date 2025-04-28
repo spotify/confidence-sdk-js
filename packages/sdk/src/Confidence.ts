@@ -332,7 +332,7 @@ export class Confidence implements EventSender, Trackable, FlagResolver {
   private showLoggerLink(flag: string, context: Context) {
     const data = {
       clientKey: this.config.clientSecret,
-      flag,
+      flag: `flags/${flag}`,
       context,
     };
     const jsonString = JSON.stringify(data);
