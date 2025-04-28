@@ -16,8 +16,6 @@ export type Tag = {
   id: LibraryTraces_TraceId;
 };
 
-export type Counter = () => void;
-export type Meter = (value: number) => void;
 export type TraceConsumer = (trace: Omit<LibraryTraces_Trace, 'id'>) => void;
 export class Telemetry {
   private readonly disabled: boolean;
@@ -31,7 +29,7 @@ export class Telemetry {
     this.platform = opts.environment === 'client' ? Platform.PLATFORM_JS_WEB : Platform.PLATFORM_JS_SERVER;
   }
 
-  private registerLibraryTraces({ library, version, id }: Tag): TraceConsumer {
+  public registerLibraryTraces({ library, version, id }: Tag): TraceConsumer {
     if (this.disabled) {
       return () => {};
     }
@@ -48,16 +46,6 @@ export class Telemetry {
         ...data,
       });
     };
-  }
-
-  registerCounter(tag: Tag): Counter {
-    const traceConsumer = this.registerLibraryTraces(tag);
-    return () => traceConsumer({});
-  }
-
-  registerMeter(tag: Tag): Meter {
-    const traceConsumer = this.registerLibraryTraces(tag);
-    return (millisecondDuration: number) => traceConsumer({ millisecondDuration });
   }
 
   getSnapshot(): Monitoring {

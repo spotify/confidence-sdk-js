@@ -20,8 +20,29 @@ message LibraryTraces {
 
   message Trace {
     TraceId id = 1;
-    // only used for timed events.
+
+    // DEPRECATED
     optional uint64 millisecond_duration = 2;
+
+    oneof trace {
+      RequestTrace request_trace = 3;
+      CountTrace count_trace = 4;
+    }
+
+    message CountTrace {}
+
+    message RequestTrace {
+      uint64 millisecond_duration = 1;
+      Status status = 2;
+
+      enum Status {
+        STATUS_UNSPECIFIED = 0;
+        STATUS_SUCCESS = 1;
+        STATUS_ERROR = 2;
+        STATUS_TIMEOUT = 3;
+        STATUS_CACHED = 4;
+      }
+    }
   }
 
   enum Library {
