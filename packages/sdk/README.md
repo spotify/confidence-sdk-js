@@ -38,6 +38,34 @@ The current regions are: `eu` and `us`.
 
 The timeout option is used to set the timeout for the feature flag resolve network request to the Confidence backend. When the timeout is reached, default values will be returned.
 
+### Logging
+
+During your integration and when debugging, you can get helpful logging information by defining a `logger` when creating the Confidence instance. The `Logger` is an interface for you to implement, or you can also pass `console`.
+
+```ts
+import { Confidence } from '@spotify-confidence/sdk';
+
+const myLogger = {
+  info: _ => {
+    // don't log anything
+  },
+  warn: message => {
+    console.log('Confidence warning: ', message);
+  },
+  error: message => {
+    console.log('Confidence error: ', message);
+  },
+};
+
+const confidence = Confidence.create({
+  clientSecret: 'mysecret',
+  region: 'eu',
+  environment: 'client',
+  logger: myLogger, // or console
+  timeout: 1000,
+});
+```
+
 ## Setting the context
 
 You can set the context manually by using `setContext({})`:
