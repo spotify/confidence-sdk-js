@@ -37,6 +37,13 @@ export function uuid(): string {
   return 'xxxxxxxx-xxxx-4xxx-xxxx-xxxxxxxxxxxx'.replace(/x/g, () => HEX_ALPHA[(Math.random() * 16) | 0]);
 }
 
+export function utf8ToBase64(str: string): string {
+  const encoder = new TextEncoder();
+  const bytes = encoder.encode(str);
+  const binary = String.fromCharCode(...bytes);
+  return btoa(binary);
+}
+
 export namespace Cookie {
   type Options = {
     sameSite?: boolean;
