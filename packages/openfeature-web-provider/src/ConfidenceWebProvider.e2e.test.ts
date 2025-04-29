@@ -33,7 +33,7 @@ describe('ConfidenceWebProvider E2E tests', () => {
         errorCode: 'GENERAL',
         flagKey: 'web-sdk-e2e-flag.str',
         flagMetadata: {},
-        errorMessage: 'Resolve timeout',
+        errorMessage: 'The operation was aborted due to timeout',
         reason: 'ERROR',
         value: 'default',
       });

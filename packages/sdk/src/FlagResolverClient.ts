@@ -20,15 +20,11 @@ import {
 } from './generated/confidence/telemetry/v1/telemetry';
 import { Logger } from './logger';
 import { WaitUntil } from './types';
+import { Signals } from './signals';
 
 const FLAG_PREFIX = 'flags/';
 const retryCodes = new Set([408, 502, 503, 504]);
 
-export class ResolveError extends Error {
-  constructor(public readonly code: FlagEvaluation.ErrorCode, message: string) {
-    super(message);
-  }
-}
 export class PendingResolution<T = FlagResolution> extends AccessiblePromise<T> {
   #context: Context;
   #controller: AbortController;
@@ -192,11 +188,7 @@ export class FetchingFlagResolverClient implements FlagResolverClient {
     };
 
     return PendingResolution.create(context, signal => {
-      const signalWithTimeout = withTimeout(
-        signal,
-        this.resolveTimeout,
-        new ResolveError('TIMEOUT', 'Resolve timeout'),
-      );
+      const signalWithTimeout = withTimeout(signal, this.resolveTimeout);
       const start = performance.now();
 
       return this.cacheReadThrough(context, () => this.resolveFlagsJson(request, signalWithTimeout))
@@ -207,7 +199,8 @@ export class FetchingFlagResolverClient implements FlagResolverClient {
         })
         .catch(error => {
           const latency = performance.now() - start;
-          const errorCode: FlagEvaluation.ErrorCode = error instanceof ResolveError ? error.code : 'GENERAL';
+          const errorCode: FlagEvaluation.ErrorCode =
+            error instanceof DOMException && error.name == 'TimeoutError' ? 'TIMEOUT' : 'GENERAL';
           this.markLatency(latency, errorCode === 'TIMEOUT' ? TraceStatus.STATUS_TIMEOUT : TraceStatus.STATUS_ERROR);
           return FlagResolution.failed(context, errorCode, error.message);
         });
@@ -347,16 +340,8 @@ export function withRequestLogic(fetchBuilder: FetchBuilder, logger: Logger) {
     .route(url => url.endsWith('flags:apply'), fetchApply);
 }
 
-function withTimeout(signal: AbortSignal, timeout: number, reason?: any): AbortSignal {
-  const controller = new AbortController();
-  const timeoutId: NodeJS.Timeout | number = setTimeout(() => controller.abort(reason), timeout);
-  // in Node setTimeout returns an object, with an unref function which will prevent the timeout from keeping the process alive
-  if (typeof timeoutId === 'object') timeoutId.unref();
-  signal.addEventListener('abort', () => {
-    clearTimeout(timeoutId);
-    controller.abort(signal.reason);
-  });
-  return controller.signal;
+function withTimeout(signal: AbortSignal, timeout: number): AbortSignal {
+  return Signals.any([Signals.timeout(timeout), signal]);
 }
 
 function resolvablePromise<T = void>(): [
