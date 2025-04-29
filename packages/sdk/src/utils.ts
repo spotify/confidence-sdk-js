@@ -40,10 +40,7 @@ export function uuid(): string {
 export function utf8ToBase64(str: string): string {
   const encoder = new TextEncoder();
   const bytes = encoder.encode(str);
-  let binary = '';
-  for (let i = 0; i < bytes.length; i++) {
-    binary += String.fromCharCode(bytes[i]);
-  }
+  const binary = String.fromCharCode(...bytes);
   return btoa(binary);
 }
 
