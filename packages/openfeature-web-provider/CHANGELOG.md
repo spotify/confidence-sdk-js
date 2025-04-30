@@ -54,6 +54,20 @@
   * devDependencies
     * @spotify-confidence/sdk bumped to 0.3.1
 
+## [0.3.2](https://github.com/spotify/confidence-sdk-js/compare/openfeature-web-provider-v0.3.1...openfeature-web-provider-v0.3.2) (2025-04-29)
+
+
+### 📚 Documentation
+
+* clarify in example that setProviderAndWait may throw ([#259](https://github.com/spotify/confidence-sdk-js/issues/259)) ([3c764d9](https://github.com/spotify/confidence-sdk-js/commit/3c764d902828d9887c08e66a5acae36e4378b174))
+
+
+### Dependencies
+
+* The following workspace dependencies were updated
+  * devDependencies
+    * @spotify-confidence/sdk bumped to 0.3.2
+
 ## [0.3.0](https://github.com/spotify/confidence-sdk-js/compare/openfeature-web-provider-v0.2.18...openfeature-web-provider-v0.3.0) (2025-04-03)
 
 

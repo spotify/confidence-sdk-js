@@ -42,6 +42,20 @@
   * devDependencies
     * @spotify-confidence/sdk bumped to 0.3.1
 
+## [0.2.1](https://github.com/spotify/confidence-sdk-js/compare/react-v0.2.0...react-v0.2.1) (2025-04-29)
+
+
+### 🐛 Bug Fixes
+
+* **react:** wait for micro queue before closing stream ([#249](https://github.com/spotify/confidence-sdk-js/issues/249)) ([d0f2f0d](https://github.com/spotify/confidence-sdk-js/commit/d0f2f0df6812b23960a764d125e82c13828f70de))
+
+
+### Dependencies
+
+* The following workspace dependencies were updated
+  * devDependencies
+    * @spotify-confidence/sdk bumped to 0.3.2
+
 ## [0.2.0](https://github.com/spotify/confidence-sdk-js/compare/react-v0.1.1...react-v0.2.0) (2025-04-04)
 
 

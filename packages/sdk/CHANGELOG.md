@@ -1,5 +1,17 @@
 # Changelog
 
+## [0.3.2](https://github.com/spotify/confidence-sdk-js/compare/sdk-v0.3.1...sdk-v0.3.2) (2025-04-29)
+
+
+### 🐛 Bug Fixes
+
+* update the resolver tester message to exclude link ([#252](https://github.com/spotify/confidence-sdk-js/issues/252)) ([fe23946](https://github.com/spotify/confidence-sdk-js/commit/fe2394619f1ee5cfc6e2230c693602048f2472e1))
+
+
+### ✨ New Features
+
+* Add status to telemetry data ([#257](https://github.com/spotify/confidence-sdk-js/issues/257)) ([02769b9](https://github.com/spotify/confidence-sdk-js/commit/02769b98b1d17831ec32fc583230f3c06ace89c2))
+
 ## [0.3.1](https://github.com/spotify/confidence-sdk-js/compare/sdk-v0.3.0...sdk-v0.3.1) (2025-04-03)
 
 
