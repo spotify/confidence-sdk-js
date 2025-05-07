@@ -107,5 +107,18 @@ describe('ConfidenceWebProvider E2E tests', () => {
 
       expect(client.getNumberDetails('web-sdk-e2e-flag.obj.double', 1)).toEqual(expectedObject);
     });
+
+    it('should evaluate a flag with null context value', async () => {
+      const client = OpenFeature.getClient();
+      OpenFeature.setContext({ targetingKey: 'test-a', pants: null });
+
+      expect(client.getBooleanDetails('web-sdk-e2e-flag-2.enabled', false)).toEqual({
+        flagKey: 'web-sdk-e2e-flag-2.enabled',
+        flagMetadata: {},
+        reason: 'MATCH',
+        variant: 'flags/web-sdk-e2e-flag-2/variants/enabled',
+        value: true,
+      });
+    });
   });
 });

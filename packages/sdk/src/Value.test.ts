@@ -23,8 +23,9 @@ describe('Value', () => {
 
   describe('serialization', () => {
     it('it produces a canonical string', () => {
-      const s0 = Value.serialize({ a: 1, b: 2 });
-      const s1 = Value.serialize({ b: 2, a: 1 });
+      // @ts-expect-error
+      const s0 = Value.serialize({ a: 1, b: 2, c: null });
+      const s1 = Value.serialize({ b: 2, a: 1, c: undefined });
       expect(s0).toBe(s1);
     });
 

@@ -72,6 +72,13 @@ describe('Confidence', () => {
       confidence.setContext(newContext);
       expect(confidence.getContext()).toEqual(newContext);
     });
+
+    it('treats null values as undefined in context', () => {
+      confidence.setContext({ pants: 'yellow' });
+      // @ts-expect-error null is not a valid Value type
+      confidence.setContext({ pants: null });
+      expect(confidence.getContext()).toEqual({});
+    });
   });
   describe('withContext', () => {
     it('creates a child context', () => {

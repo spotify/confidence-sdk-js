@@ -24,6 +24,18 @@ describe('Confidence E2E Tests', () => {
         variant: 'flags/web-sdk-e2e-flag/variants/control',
       });
     });
+
+    it('should evaluate a flag with null pants context', async () => {
+      const evaluation = await confidence
+        // @ts-expect-error null is not a valid Value type
+        .withContext({ targeting_key: 'test-a', pants: null })
+        .evaluateFlag('web-sdk-e2e-flag-2.enabled', false);
+      expect(evaluation).toEqual({
+        reason: 'MATCH',
+        value: true,
+        variant: 'flags/web-sdk-e2e-flag-2/variants/enabled',
+      });
+    });
   });
 
   describe('track event sends an event', () => {
