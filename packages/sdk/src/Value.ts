@@ -241,7 +241,7 @@ export namespace Value {
     }
 
     writeStruct(struct: Struct) {
-      const keys = Object.keys(struct).filter(key => typeof struct[key] !== 'undefined');
+      const keys = Object.keys(struct).filter(key => struct[key] !== null && typeof struct[key] !== 'undefined');
       keys.sort();
       this.buffer.push(String.fromCharCode(BinaryType.STRUCT, keys.length));
       for (const key of keys) {
