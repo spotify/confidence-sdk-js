@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.3.3](https://github.com/spotify/confidence-sdk-js/compare/sdk-v0.3.2...sdk-v0.3.3) (2025-05-07)
+
+
+### 🐛 Bug Fixes
+
+* null Value treated as undefined, fix crashes ([#262](https://github.com/spotify/confidence-sdk-js/issues/262)) ([491596d](https://github.com/spotify/confidence-sdk-js/commit/491596d85c06e762a6779e4fba7624a351870576))
+
 ## [0.3.2](https://github.com/spotify/confidence-sdk-js/compare/sdk-v0.3.1...sdk-v0.3.2) (2025-04-29)
 
 
