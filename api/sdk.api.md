@@ -230,7 +230,7 @@ export namespace Value {
 }
 
 // @public
-export type Value = Value.Primitive | Value.Struct | Value.List | undefined;
+export type Value = Value.Primitive | Value.Struct | Value.List | undefined | null;
 
 // @public
 export const visitorIdentity: () => Trackable.Manager;

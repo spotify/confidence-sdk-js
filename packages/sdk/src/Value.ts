@@ -345,4 +345,4 @@ export namespace Value {
 }
 /** Confidence used Values */
 // eslint-disable-next-line @typescript-eslint/no-redeclare
-export type Value = Value.Primitive | Value.Struct | Value.List | undefined;
+export type Value = Value.Primitive | Value.Struct | Value.List | undefined | null;
