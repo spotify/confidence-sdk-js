@@ -9,7 +9,7 @@ export namespace Value {
   const LIST_ITEM_TYPES = new Set(['number', 'string', 'boolean']);
 
   /** TypeName enum */
-  export type TypeName = 'number' | 'string' | 'boolean' | 'Struct' | 'List' | 'undefined';
+  export type TypeName = 'number' | 'string' | 'boolean' | 'Struct' | 'List' | 'undefined' | 'null';
   // TODO add Date
   /** Primitive types */
   export type Primitive = number | string | boolean;
@@ -22,13 +22,13 @@ export namespace Value {
 
   /** Asserts a Value */
   export function assertValue(value: unknown): asserts value is Value {
+    if (value === null) return;
     switch (typeof value) {
       case 'bigint':
       case 'symbol':
       case 'function':
         throw new TypeMismatchError('number | boolean | string | Struct | List', typeof value);
       case 'object':
-        if (value === null) return;
         if (Array.isArray(value)) {
           if (value.length > 0) {
             const itemType = getType(value[0]);
@@ -55,7 +55,7 @@ export namespace Value {
 
   /** Clones a Value */
   export function clone<T extends Value>(value: T): T {
-    if (value === null) return undefined as T;
+    if (value === null) return null as T;
     if (isStruct(value)) {
       const cloned: Record<string, Value> = {};
       for (const key of Object.keys(value)) {
@@ -71,8 +71,6 @@ export namespace Value {
 
   /** Asserts if two Values are equal */
   export function equal(value1: Value, value2: Value): boolean {
-    if (value1 === null) value1 = undefined;
-    if (value2 === null) value2 = undefined;
     if (value1 === value2) return true;
     const type = getType(value1);
     if (getType(value2) !== type) return false;
@@ -105,7 +103,7 @@ export namespace Value {
 
   /** Returns typename of given Value */
   export function getType(value: Value): TypeName {
-    if (value === null) return 'undefined';
+    if (value === null) return 'null';
     const jsType = typeof value;
     switch (jsType) {
       case 'boolean':
@@ -142,6 +140,8 @@ export namespace Value {
   export function assertType(expected: 'List', found: Value): asserts found is List;
   /** Asserts that type of value is Struct */
   export function assertType(expected: 'Struct', found: Value): asserts found is Struct;
+  /** Asserts that type of value is null */
+  export function assertType(expected: 'null', found: Value): asserts found is null;
   /** Asserts that type of value is Value */
   export function assertType(expected: TypeName, found: Value): asserts found is Value {
     const actual = Value.getType(found);
@@ -241,7 +241,7 @@ export namespace Value {
     }
 
     writeStruct(struct: Struct) {
-      const keys = Object.keys(struct).filter(key => typeof struct[key] !== 'undefined');
+      const keys = Object.keys(struct);
       keys.sort();
       this.buffer.push(String.fromCharCode(BinaryType.STRUCT, keys.length));
       for (const key of keys) {

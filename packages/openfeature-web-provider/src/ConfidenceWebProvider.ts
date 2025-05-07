@@ -153,7 +153,7 @@ function convertContext({ targetingKey, ...context }: EvaluationContext): Contex
 
 function convertValue(value: EvaluationContextValue): Value {
   if (typeof value === 'object') {
-    if (value === null) return undefined;
+    if (value === null) return null as unknown as Value;
     if (value instanceof Date) return value.toISOString();
     // @ts-expect-error TODO fix single type array conversion
     if (Array.isArray(value)) return value.map(convertValue);
