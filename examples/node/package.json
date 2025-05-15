@@ -6,7 +6,10 @@
   "type": "module",
   "license": "MIT",
   "dependencies": {
-    "@spotify-confidence/sdk": "workspace:*"
+    "@openfeature/core": "^1.8.0",
+    "@openfeature/server-sdk": "^1.18.0",
+    "@spotify-confidence/openfeature-server-provider": "0.3.3",
+    "@spotify-confidence/sdk": "0.3.3"
   },
   "scripts": {
     "dev": "node --env-file=../.env src/index.js"

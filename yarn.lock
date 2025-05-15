@@ -3312,12 +3312,28 @@ __metadata:
   languageName: node
   linkType: hard
 
+"@openfeature/core@npm:^1.8.0":
+  version: 1.8.0
+  resolution: "@openfeature/core@npm:1.8.0"
+  checksum: 10c0/f58ce6436a8ce505156201efe980144f63a5c8fd9f8c427050ee5b99d04956cc287133ca687798e2404826a24edfc7d6936ac17ecef57cec574adc456e50d2d1
+  languageName: node
+  linkType: hard
+
 "@openfeature/server-sdk@npm:^1.13.5":
   version: 1.13.5
   resolution: "@openfeature/server-sdk@npm:1.13.5"
   peerDependencies:
     "@openfeature/core": 1.1.0
   checksum: 10c0/1d9f3ebf86c10c70693f563aab184c9bb9fd8e0673e19d89c8cac78ee6ad4ef5070b1285835137e7aa5f261a5d1386665a19f9dffc486381e8cc35f5968fb3f4
+  languageName: node
+  linkType: hard
+
+"@openfeature/server-sdk@npm:^1.18.0":
+  version: 1.18.0
+  resolution: "@openfeature/server-sdk@npm:1.18.0"
+  peerDependencies:
+    "@openfeature/core": ^1.7.0
+  checksum: 10c0/5c3aa8fee5ec4ad9ec40ee74094fe0377b28cadfcc6f71414fa1762035cb994891184cc491a59dbaade71afe0139cd39c193e3897b05df8fa21f0e7b84b67c53
   languageName: node
   linkType: hard
 
@@ -3729,6 +3745,16 @@ __metadata:
   languageName: node
   linkType: hard
 
+"@spotify-confidence/openfeature-server-provider@npm:0.3.3":
+  version: 0.3.3
+  resolution: "@spotify-confidence/openfeature-server-provider@npm:0.3.3"
+  peerDependencies:
+    "@openfeature/server-sdk": ^1.13.5
+    "@spotify-confidence/sdk": ">=0.1.4 <0.4.0"
+  checksum: 10c0/da3c82e0193af85dca51321781de6afbada34bbec85d68dcaff57f67cc86035c4887cb7b111c6127f88a5c759b82107bf9c974d89f2657a4818fa21073a6aae6
+  languageName: node
+  linkType: hard
+
 "@spotify-confidence/openfeature-server-provider@workspace:*, @spotify-confidence/openfeature-server-provider@workspace:packages/openfeature-server-provider":
   version: 0.0.0-use.local
   resolution: "@spotify-confidence/openfeature-server-provider@workspace:packages/openfeature-server-provider"
@@ -3775,6 +3801,16 @@ __metadata:
     react: ^18 || ^19
   languageName: unknown
   linkType: soft
+
+"@spotify-confidence/sdk@npm:0.3.3":
+  version: 0.3.3
+  resolution: "@spotify-confidence/sdk@npm:0.3.3"
+  dependencies:
+    "@bufbuild/protobuf": "npm:^2.0.0"
+    web-vitals: "npm:^3.5.2"
+  checksum: 10c0/426fe353f501000d29297d76004ad3e77a2e916e0a9fdd8de3cc9c6b5699fa92c65c8c70e338612284fe37660e6fbb171c2147196b1635a95a7d06ef3384da0d
+  languageName: node
+  linkType: hard
 
 "@spotify-confidence/sdk@workspace:*, @spotify-confidence/sdk@workspace:packages/sdk":
   version: 0.0.0-use.local
@@ -13046,7 +13082,10 @@ __metadata:
   version: 0.0.0-use.local
   resolution: "node-example@workspace:examples/node"
   dependencies:
-    "@spotify-confidence/sdk": "workspace:*"
+    "@openfeature/core": "npm:^1.8.0"
+    "@openfeature/server-sdk": "npm:^1.18.0"
+    "@spotify-confidence/openfeature-server-provider": "npm:0.3.3"
+    "@spotify-confidence/sdk": "npm:0.3.3"
   languageName: unknown
   linkType: soft
 
