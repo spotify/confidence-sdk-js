@@ -11,7 +11,7 @@ async function fetchImplementation(req) {
     const end = performance.now();
     const url = new URL(req.url);
     const status = res?.status ?? 'ERR';
-    console.log(`${url.pathname} ${status} took ${end - start}ms`);
+    console.log(`${url.pathname} ${status} took ${Math.round(end - start)}ms`);
   }
 }
 if (!process.env.CLIENT_SECRET) {
@@ -29,20 +29,63 @@ const provider = createConfidenceServerProvider({
   clientSecret: process.env.CLIENT_SECRET,
   timeout: 250,
   logger: console,
+  // fetchImplementation,
   // environment: 'backend',
 });
+
+let RUNTIME = 30;
+if (process.env.RUNTIME) {
+  RUNTIME = process.env.RUNTIME;
+}
+
+let REQUESTS_PER_SECOND = 10;
+if (process.env.REQUESTS_PER_SECOND) {
+  REQUESTS_PER_SECOND = parseInt(process.env.REQUESTS_PER_SECOND, 10);
+}
 
 OpenFeature.setProvider(provider);
 
 main();
 
 async function main() {
-  console.log('Starting example');
-  for (let i = 0; i < 1000; i++) {
-    const { reason } = await evaluateFlagOf('user' + Math.random(), 'web-sdk-e2e-flag');
-    if (reason === 'ERROR') console.log(reason);
-    await sleep(1000 / 50);
+  console.log(`Starting example, will run for ${RUNTIME} minutes, at ${REQUESTS_PER_SECOND} RPS.`);
+  const durationMs = RUNTIME * 60 * 1000; // RUNTIME minutes in milliseconds
+  const startTime = Date.now();
+  let successCount = 0;
+  let errorCount = 0;
+  let lastReportTime = startTime;
+
+  while (Date.now() - startTime < durationMs) {
+    const { reason } = await evaluateFlagOf(`user${Math.random()}`, 'web-sdk-e2e-flag');
+    if (reason === 'ERROR') {
+      errorCount++;
+      console.log(reason);
+    } else {
+      successCount++;
+    }
+
+    // Report stats every 1 minute
+    const currentTime = Date.now();
+    if (currentTime - lastReportTime >= 60000) {
+      const totalEvaluations = successCount + errorCount;
+      const errorRatio = totalEvaluations === 0 ? 0 : errorCount / totalEvaluations;
+      console.log(
+        `STATS UPDATE (after ${Math.round(
+          (currentTime - startTime) / 60000,
+        )} min): Success: ${successCount}, Errors: ${errorCount}, Error Ratio: ${(errorRatio * 100).toFixed(2)}%`,
+      );
+      lastReportTime = currentTime;
+    }
+
+    await sleep(1000 / REQUESTS_PER_SECOND); // dynamically set RPS
   }
+
+  console.log(`Finished running for ${RUNTIME} minutes.`);
+  const finalTotalEvaluations = successCount + errorCount;
+  const finalErrorRatio = finalTotalEvaluations === 0 ? 0 : errorCount / finalTotalEvaluations;
+  console.log(
+    `FINAL STATS: Success: ${successCount}, Errors: ${errorCount}, Error Ratio: ${(finalErrorRatio * 100).toFixed(2)}%`,
+  );
 }
 
 async function evaluateFlagOf(targetingKey, flagName) {
