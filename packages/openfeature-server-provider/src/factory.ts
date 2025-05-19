@@ -10,6 +10,8 @@ export type ConfidenceProviderFactoryOptions = {
   fetchImplementation?: typeof fetch;
   clientSecret: string;
   timeout: number;
+  /** Sets an alternative resolve url */
+  resolveBaseUrl?: string;
 };
 
 /**
