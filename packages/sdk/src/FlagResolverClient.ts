@@ -25,10 +25,7 @@ const FLAG_PREFIX = 'flags/';
 const retryCodes = new Set([408, 502, 503, 504]);
 
 export class ResolveError extends Error {
-  constructor(
-    public readonly code: FlagEvaluation.ErrorCode,
-    message: string,
-  ) {
+  constructor(public readonly code: FlagEvaluation.ErrorCode, message: string) {
     super(message);
   }
 }
