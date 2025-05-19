@@ -9,5 +9,8 @@ RUN npm install
 # Copy application source code
 COPY src/ ./src/
 
+EXPOSE 3000
+EXPOSE 9229
+
 # Command to run the application
-CMD ["node", "src/index.js"]
+CMD ["node", "--inspect=0.0.0.0:9229", "src/index.js"]
