@@ -40,15 +40,12 @@ The timeout option is used to set the timeout for the feature flag resolve netwo
 
 ### Logging
 
-During your integration and when debugging, you can get helpful logging information by defining a `logger` when creating the Confidence instance. The `Logger` is an interface for you to implement, or you can also pass `console`.
+During your integration and when debugging, you can get helpful logging information by defining a `logger` when creating the Confidence instance. The `Logger` is an interface for you to implement. It's very similar to the console object, but all the logging functions (`debug`, `info`, `warn` etc) are optional, so you just provide the ones you are interested in. Providing console as the logger will log everything to the console. If you don't want any logging you can provide `{}` which is also a valid `Logger` implementation. If no logger is provided it will default to logging `info` or higher in development, but no logging in production.
 
 ```ts
 import { Confidence } from '@spotify-confidence/sdk';
 
 const myLogger = {
-  info: _ => {
-    // don't log anything
-  },
   warn: message => {
     console.log('Confidence warning: ', message);
   },
@@ -61,7 +58,7 @@ const confidence = Confidence.create({
   clientSecret: 'mysecret',
   region: 'eu',
   environment: 'client',
-  logger: myLogger, // or console
+  logger: myLogger,
   timeout: 1000,
 });
 ```
