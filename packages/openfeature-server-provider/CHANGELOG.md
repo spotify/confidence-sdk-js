@@ -72,6 +72,20 @@
   * devDependencies
     * @spotify-confidence/sdk bumped to 0.3.3
 
+## [0.3.4](https://github.com/spotify/confidence-sdk-js/compare/openfeature-server-provider-v0.3.3...openfeature-server-provider-v0.3.4) (2025-05-20)
+
+
+### 🐛 Bug Fixes
+
+* add support for resolveUrl in createConfidenceServerProvider() ([#265](https://github.com/spotify/confidence-sdk-js/issues/265)) ([a8812a3](https://github.com/spotify/confidence-sdk-js/commit/a8812a36c274eec3e2f23f01d168ebcada763ded))
+
+
+### Dependencies
+
+* The following workspace dependencies were updated
+  * devDependencies
+    * @spotify-confidence/sdk bumped to 0.3.4
+
 ## [0.3.0](https://github.com/spotify/confidence-sdk-js/compare/openfeature-server-provider-v0.2.18...openfeature-server-provider-v0.3.0) (2025-04-03)
 
 

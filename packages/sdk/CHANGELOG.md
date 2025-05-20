@@ -1,5 +1,17 @@
 # Changelog
 
+## [0.3.4](https://github.com/spotify/confidence-sdk-js/compare/sdk-v0.3.3...sdk-v0.3.4) (2025-05-20)
+
+
+### 🐛 Bug Fixes
+
+* defensively reject if aborted during response.json() ([#266](https://github.com/spotify/confidence-sdk-js/issues/266)) ([58f7724](https://github.com/spotify/confidence-sdk-js/commit/58f772476800315894e877538e72dee3b787cbee))
+
+
+### 📚 Documentation
+
+* add docs about logging ([#260](https://github.com/spotify/confidence-sdk-js/issues/260)) ([97f46bb](https://github.com/spotify/confidence-sdk-js/commit/97f46bb0cf9b27db0f7d7d3914efe5e9620a4c65))
+
 ## [0.3.3](https://github.com/spotify/confidence-sdk-js/compare/sdk-v0.3.2...sdk-v0.3.3) (2025-05-07)
 
 
