@@ -277,7 +277,23 @@ export class FetchingFlagResolverClient implements FlagResolverClient {
     if (!resp.ok) {
       throw new Error(`${resp.status}: ${resp.statusText}`);
     }
-    return ResolveFlagsResponse.fromJSON(await resp.json());
+    const abortPromise = new Promise((_resolve, reject) => {
+      if (signal.aborted) {
+        reject(signal.reason);
+        return;
+      }
+      signal.addEventListener(
+        'abort',
+        () => {
+          reject(signal.reason);
+        },
+        { once: true },
+      );
+    });
+    // we've seen issues where Node doesn't properly reject response.json() on abort,
+    // so we do it ourselves
+    const json = await Promise.race([abortPromise, resp.json()]);
+    return ResolveFlagsResponse.fromJSON(json);
   }
 
   // async resolveFlagsProto(request: ResolveFlagsRequest): Promise<ResolveFlagsResponse> {
