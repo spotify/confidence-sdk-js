@@ -72,6 +72,11 @@ function findPrimes(iterations) {
   return primes;
 }
 
+app.get('/resolve', async (_, res) => {
+  const result = await evaluateFlagC(`user${Math.random()}`, 'web-sdk-e2e-flag');
+  res.json({ result });
+});
+
 // Endpoint to trigger CPU-intensive work
 app.get('/generate-cpu-load', (req, res) => {
   const iterations = parseInt(req.query.iterations, 10) || 100000; // Get iterations from query param, default to 100,000
