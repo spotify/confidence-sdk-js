@@ -78,6 +78,25 @@ if (enabled) {
 const flagEvaluation = await confidence.evaluateFlag('tutorial-feature', {});
 ```
 
+#### Caching
+
+Flag evaluations are cached in memory on the Confidence instance with the evaluation context and flag name as a cache key.
+This is done to reduce network calls when evaluating multiple flags using the same context.
+
+```ts
+const confidence = Confidence.create({...});
+const flag = confidence.getFlag('flag', {})
+// subsequent calls to getFlag will return the same value
+```
+
+If you need to always fetch the latest flag values (e.g., for testing, debugging or an other use case),
+you can bypass the cache by always get a fresh Confidence instance (and an empty cache):
+
+```ts
+const confidence = Confidence.create({...});
+const flag = confidence.withContext({}).getFlag('flag', {})
+```
+
 # Contributions and Development
 
 We'd love to get patches from you! See [Contributing](CONTRIBUTING.md) for details.
