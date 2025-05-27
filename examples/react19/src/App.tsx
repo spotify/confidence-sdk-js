@@ -27,7 +27,9 @@ const confidence = Confidence.create({
   environment: 'client',
   timeout: 3000,
   logger: console,
+  // eslint-disable-next-line no-console
   fetchImplementation: (req: Request) => {
+    // eslint-disable-next-line no-console
     console.log('request', req.url);
     return state.failRequests ? Promise.resolve(new Response(null, { status: 500 })) : fetch(req);
   },
@@ -35,12 +37,12 @@ const confidence = Confidence.create({
 
 // ErrorBoundary component to catch and display errors
 class ErrorBoundary extends React.Component<{ children: React.ReactNode }, { error: Error | null }> {
+  static getDerivedStateFromError(error: Error) {
+    return { error };
+  }
   constructor(props: { children: React.ReactNode }) {
     super(props);
     this.state = { error: null };
-  }
-  static getDerivedStateFromError(error: Error) {
-    return { error };
   }
   render() {
     if (this.state.error) {
@@ -175,6 +177,14 @@ function ConfidenceDemo({ targetingKey, customLevel, setCustomLevel, toggleTarge
           </ConfidenceProvider.WithContext>
         </div>
       </section>
+      <section>
+        <h2>5. Tracking events</h2>
+        <p>
+          Use <code>confidence.track(eventName, payload)</code> to emit a custom tracking event. The current context
+          will be attached automatically.
+        </p>
+        <TrackEventDemo confidence={confidenceInstance} />
+      </section>
     </main>
   );
 }
@@ -221,6 +231,52 @@ function InnerFlags() {
         </div>
         <pre style={{ background: '#f6f8fa', padding: 8 }}>{JSON.stringify(context, null, 2)}</pre>
       </div>
+    </div>
+  );
+}
+
+interface TrackEventDemoProps {
+  confidence: ReturnType<typeof useConfidence>;
+}
+function TrackEventDemo({ confidence }: TrackEventDemoProps) {
+  const [eventName, setEventName] = useState('demo_event');
+  const [payload, setPayload] = useState('{"clicked": true}');
+  const [lastEvent, setLastEvent] = useState<{ name: string; data: any } | null>(null);
+  const [error, setError] = useState<string | null>(null);
+
+  const handleTrack = () => {
+    let data: any = undefined;
+    setError(null);
+    try {
+      data = payload ? JSON.parse(payload) : undefined;
+    } catch (e) {
+      setError('Payload must be valid JSON');
+      return;
+    }
+    confidence.track(eventName, data);
+    setLastEvent({ name: eventName, data });
+  };
+
+  return (
+    <div style={{ border: '1px solid #ddd', padding: 12, marginTop: 12 }}>
+      <div style={{ display: 'flex', gap: 8, alignItems: 'center', marginBottom: 8 }}>
+        <label>
+          Event name:{' '}
+          <input type="text" value={eventName} onChange={e => setEventName(e.target.value)} style={{ width: 120 }} />
+        </label>
+        <label>
+          Payload (JSON):{' '}
+          <input type="text" value={payload} onChange={e => setPayload(e.target.value)} style={{ width: 220 }} />
+        </label>
+        <button onClick={handleTrack}>Track event</button>
+      </div>
+      {error && <div style={{ color: 'red', marginBottom: 8 }}>{error}</div>}
+      {lastEvent && (
+        <div style={{ fontSize: 14 }}>
+          <b>Last event tracked:</b>
+          <pre style={{ background: '#f6f8fa', padding: 8 }}>{JSON.stringify(lastEvent, null, 2)}</pre>
+        </div>
+      )}
     </div>
   );
 }
