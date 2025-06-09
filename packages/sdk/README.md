@@ -108,6 +108,25 @@ const message = messageEvaluation.value;
 
 In a client application (where `environment` is set to `client`), the SDK fetches and caches all flags when the context is updated. This means the flags can be accessed synchronously after that.
 
+### Caching
+
+Flag evaluations are cached in memory on the Confidence instance with the evaluation context and flag name as a cache key.
+This is done to reduce network calls when evaluating multiple flags using the same context.
+
+```ts
+const confidence = Confidence.create({...});
+const flag = confidence.getFlag('flag', {})
+// subsequent calls to getFlag will return the same value
+```
+
+If you need to always fetch the latest flag values (e.g., for testing, debugging or an other use case),
+you can bypass the cache by always get a fresh Confidence instance (and an empty cache):
+
+```ts
+const confidence = Confidence.create({...});
+const flag = confidence.withContext({}).getFlag('flag', {})
+```
+
 ## Event tracking
 
 Use `confidence.track()` from any Confidence instance to track an event in Confidence. Any context data set on the instance will be appended to the tracking event.
