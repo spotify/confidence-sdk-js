@@ -1,5 +1,17 @@
 # Changelog
 
+## [0.3.5](https://github.com/spotify/confidence-sdk-js/compare/sdk-v0.3.4...sdk-v0.3.5) (2025-07-01)
+
+
+### 🐛 Bug Fixes
+
+* prevent lib check errors ([#272](https://github.com/spotify/confidence-sdk-js/issues/272)) ([33fc18a](https://github.com/spotify/confidence-sdk-js/commit/33fc18ae6a090647ff9f3496b58a619e548915cc))
+
+
+### 📚 Documentation
+
+* add docs about caching ([#269](https://github.com/spotify/confidence-sdk-js/issues/269)) ([36b853b](https://github.com/spotify/confidence-sdk-js/commit/36b853bd75381329f1eb1ec1bd8a8f05c0ced980))
+
 ## [0.3.4](https://github.com/spotify/confidence-sdk-js/compare/sdk-v0.3.3...sdk-v0.3.4) (2025-05-20)
 
 
