@@ -34,7 +34,6 @@ export interface CacheOptions {
    * The scope of the flag cache.
    */
   scope?: CacheScope;
-  /** @internal */
   entries?: AsyncIterable<CacheEntry>;
 }
 export class FlagCache extends AbstractCache<Context, ResolveFlagsResponse, Uint8Array> {

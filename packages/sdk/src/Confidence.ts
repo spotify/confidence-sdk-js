@@ -55,7 +55,6 @@ export interface ConfidenceOptions {
 
 /**
  * Confidence configuration
- * @internal
  */
 export interface Configuration extends ConfidenceOptions {
   /** Debug logger */
