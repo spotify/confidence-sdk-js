@@ -11,7 +11,7 @@ import { BinaryWriter } from '@bufbuild/protobuf/wire';
 export interface CacheOptions {
     // Warning: (ae-forgotten-export) The symbol "CacheEntry" needs to be exported by the entry point index.d.ts
     //
-    // @internal (undocumented)
+    // (undocumented)
     entries?: AsyncIterable<CacheEntry>;
     scope?: CacheScope;
 }
@@ -35,7 +35,6 @@ export class Confidence implements EventSender, Trackable, FlagResolver {
     // @internal
     constructor({ context, ...config }: Configuration, parent?: Confidence);
     clearContext(): void;
-    // Warning: (ae-incompatible-release-tags) The symbol "config" is marked as @public, but its signature references "Configuration" which is marked as @internal
     readonly config: Configuration;
     // Warning: (ae-forgotten-export) The symbol "Subscribe" needs to be exported by the entry point index.d.ts
     //
@@ -88,17 +87,21 @@ export interface ConfidenceOptions {
     waitUntil?: WaitUntil;
 }
 
-// Warning: (ae-internal-missing-underscore) The name "Configuration" should be prefixed with an underscore because the declaration is marked as @internal
+// Warning: (ae-missing-release-tag) "Configuration" is part of the package's API, but it is missing a release tag (@alpha, @beta, @public, or @internal)
 //
-// @internal
+// @public
 export interface Configuration extends ConfidenceOptions {
     // (undocumented)
     readonly cacheProvider: CacheProvider;
     // (undocumented)
     readonly clientSecret: string;
     // Warning: (ae-forgotten-export) The symbol "EventSenderEngine" needs to be exported by the entry point index.d.ts
+    //
+    // @internal
     readonly eventSenderEngine: EventSenderEngine;
     // Warning: (ae-forgotten-export) The symbol "FlagResolverClient" needs to be exported by the entry point index.d.ts
+    //
+    // @internal
     readonly flagResolverClient: FlagResolverClient;
     readonly logger: Logger;
 }
