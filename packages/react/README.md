@@ -4,9 +4,9 @@
 
 This package contains helper functionality to make the Confidence SDK work well in a React environment.
 
-## Usage
+# Usage
 
-### Adding the dependencies
+## Adding the dependencies
 
 To add the packages to your dependencies run:
 
@@ -14,13 +14,13 @@ To add the packages to your dependencies run:
 yarn add @spotify-confidence/react
 ```
 
-### Initializing the ConfidenceProvider
+## Initializing the ConfidenceProvider
 
 The Confidence React integration has a Provider that needs to be initialized. It accepts a Confidence instance and should wrap your component tree. Here's an example for client-side rendering:
 
 ```ts
 import { Confidence } from '@spotify-confidence/sdk/';
-import { ConfidenceProvider } from '@spotify-confidence/sdk/react';
+import { ConfidenceProvider } from '@spotify-confidence/react';
 
 // Client-side initialization
 const confidence = Confidence.create({
@@ -45,11 +45,11 @@ For server-side rendering setup, see the [Server-Side Rendering Support](#server
 
 Anywhere in the sub-tree under the `ConfidenceProvider` you can now access the confidence instance with the `useConfidence()` hook to access context modification API's. For flag resolves we suggest using `useFlag()`.
 
-### Managing context
+## Managing context
 
 The `ConfidenceProvider` API supports a `useWithContext()` hook to achieve the [standard context API](https://github.com/spotify/confidence-sdk-js/blob/main/packages/sdk/README.md#setting-the-context).
 
-### Accessing flags
+## Accessing flags
 
 Flags are accessed with a set of hooks exported from `@spotify-confidence/react`:
 
@@ -73,7 +73,7 @@ function MyComponent() {
 }
 ```
 
-#### Hook Behavior
+### Hook Behavior
 
 - `useFlag(flagName, defaultValue)`
 
@@ -90,7 +90,7 @@ function MyComponent() {
   - Useful for debugging or when you need evaluation details
   - Example: `const { value, reason } = useEvaluateFlag('feature.color', 'blue')`
 
-#### Important Notes
+### Important Notes
 
 1. **Suspense Integration**
 
@@ -128,21 +128,16 @@ function MyComponent() {
    const name: string = useFlag('user.name', '');
    ```
 
-### Server-Side Rendering Support (experimental)
+## Server-Side Rendering
+For applications using SSR frameworks such as [Next.js](https://nextjs.org/docs), feature flags can be fetched on the server using the [web sdk](packages/sdk/README.md) `@spotify-confidence/sdk` and resolved values can be passed down to client components. Flag fetching can be user-specific by using `withContext()` (to avoid mutating a globally shared Confidence instance) and loading the user context from cookies, headers, or the request object. If many client components need the same flag, consider using a Context Provider to avoid prop drilling and centralize flag access.
 
-The Confidence React SDK now supports server-side rendering (SSR) and React Server Components (RSC) for instance in Next.js. The SDK provides a separate entry point for server components:
 
-- `@spotify-confidence/react` - For client components
-- `@spotify-confidence/react/server` - For server components
-
+### Using Flags in a Server Component
 When using the SDK in a server environment:
 
 1. Create a global Confidence instance for the server using React.cache as the scope in CacheOptions.
 2. Whenever accessing flags in server components, use `withContext` to provide the context for the flag evaluation. Like shown in the example below you can simplify this by using a `getConfidence` helper function exported from the same file where you configure the Confidence instance.
 3. Use direct flag evaluation with `await` in server components.
-
-Here's an example of how to use Confidence in a Next.js application:
-
 ```ts
 // app/confidence.ts (Server-side configuration)
 import { Confidence } from '@spotify-confidence/sdk';
@@ -166,7 +161,8 @@ export async function getConfidence() {
 
   return confidence.withContext({ targeting_key });
 }
-
+```
+```tsx
 // app/components/ServerComponent.tsx
 import { getConfidence } from '../confidence';
 
@@ -180,76 +176,42 @@ export const ServerComponent = async () => {
 };
 ```
 
-#### Server and Client (experimental)
-
-If you also have interactive (client side) components that benefit from feature flagging support.
-Using the pattern below in addition to the above server side example will allow you to have the flag evaluations
-seamlessly transferred from the server component to the client components.
-
-Please note:
-
-- Server components use direct flag evaluation with `evaluateFlag` or `getFlag`
-- Client components use hooks (`useFlag`, `useConfidence`) for interactive features
-- Use React.cache for efficient server-side caching
-- The SDK automatically handles synchronization from server to client
-- Mutating the context in a client side component does not affect the server side confidence instance.
-
-> [!IMPORTANT]
-> Be aware that if you are constructing the Confidence instance using a custom `fetchImplementation` this will only be used on the server side. Client side the SDK will use the default `fetch` implementation.
-
-> [!IMPORTANT]
-> Combined server and client support currently doesn't work well in Next.js dev mode with Turbopack enabled.
-> This is due to a number of open bugs in Turbopack. We'll soon provide a list with the specific issues to track progress.
-> In the meantime you can opt out of using Turbopack by making sure the `dev` script in your `package.json` is just `next dev`, and not `next dev --turbopack`.
+### Using Flags in a Client Component
 
 ```tsx
-// app/layout.tsx
-import { ConfidenceProvider } from '@spotify-confidence/react/server';
-import { getConfidence } from '../confidence';
-import { ClientComponent } from 'components/ClientComponent';
-import { ServerComponent } from 'components/ServerComponent';
-
-export default async function Layout() {
-  const confidence = await getConfidence();
-
-  return (
-    <div>
-      <ConfidenceProvider confidence={confidence}>
-        <Suspense fallback={<h1>Loading...</h1>}>
-          <ClientComponent>
-            <ServerComponent>
-              <ClientComponent />
-            </ServerComponent>
-          </ClientComponent>
-        </Suspense>
-      </ConfidenceProvider>
-    </div>
-  );
-}
-
 // app/components/ClientComponent.tsx
-('use client');
-import { useConfidence, useFlag } from '@spotify-confidence/react/client';
+'use client';
 
-export const ClientComponent = () => {
-  // Use hooks in client components
-  const confidence = useConfidence();
-  const fontSize = useFlag('my-feature-flag.size', '12pt');
-
-  return (
-    <div>
-      <div style={{ fontSize }}>Client rendered content</div>
-      <button onClick={() => confidence.setContext({ locale: 'sv-SE' })}>Choose Swedish</button>
-    </div>
-  );
+type ClientComponentProps = {
+  color: string;
 };
+
+export default function ClientComponent({ color }: ClientComponentProps) {
+  return <div style={{ color }}>Client rendered content</div>;
+}
 ```
 
-#### In-depth
+```tsx
+// app/components/ServerComponent.tsx
+import { getConfidence } from '../confidence';
+import ClientComponent from './ClientComponent';
 
-Coming soon.
+export default async function ServerComponent() {
+  const confidence = await getConfidence();
 
-### Tracking events
+  // Fetch the flag value server-side with user context
+  const color = await confidence.getFlag('my-feature-flag.color', 'blue');
+
+  // Pass the flag value as a prop to the client component
+  return <ClientComponent color={color} />;
+}
+```
+
+## Example Application
+For a more extensive example application, see the [confidence-sdk-demos](https://github.com/spotify/confidence-sdk-demos) repository.
+
+
+## Tracking events
 
 The event tracking API is available on the Confidence instance as usual. See the [SDK Readme](https://github.com/spotify/confidence-sdk-js/blob/main/packages/sdk/README.md#event-tracking) for details.
 
