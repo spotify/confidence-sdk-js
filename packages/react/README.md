@@ -129,15 +129,17 @@ function MyComponent() {
    ```
 
 ## Server-Side Rendering
+
 For applications using SSR frameworks such as [Next.js](https://nextjs.org/docs), feature flags can be fetched on the server using the [web sdk](packages/sdk/README.md) `@spotify-confidence/sdk` and resolved values can be passed down to client components. Flag fetching can be user-specific by using `withContext()` (to avoid mutating a globally shared Confidence instance) and loading the user context from cookies, headers, or the request object. If many client components need the same flag, consider using a Context Provider to avoid prop drilling and centralize flag access.
 
-
 ### Using Flags in a Server Component
+
 When using the SDK in a server environment:
 
 1. Create a global Confidence instance for the server using React.cache as the scope in CacheOptions.
 2. Whenever accessing flags in server components, use `withContext` to provide the context for the flag evaluation. Like shown in the example below you can simplify this by using a `getConfidence` helper function exported from the same file where you configure the Confidence instance.
 3. Use direct flag evaluation with `await` in server components.
+
 ```ts
 // app/confidence.ts (Server-side configuration)
 import { Confidence } from '@spotify-confidence/sdk';
@@ -162,6 +164,7 @@ export async function getConfidence() {
   return confidence.withContext({ targeting_key });
 }
 ```
+
 ```tsx
 // app/components/ServerComponent.tsx
 import { getConfidence } from '../confidence';
@@ -208,8 +211,8 @@ export default async function ServerComponent() {
 ```
 
 ## Example Application
-For a more extensive example application, see the [confidence-sdk-demos](https://github.com/spotify/confidence-sdk-demos) repository.
 
+For a more extensive example application, see the [confidence-sdk-demos](https://github.com/spotify/confidence-sdk-demos) repository.
 
 ## Tracking events
 

@@ -8,14 +8,14 @@ JavaScript implementation of the [Confidence](https://confidence.spotify.com/) S
 
 This monorepo contains four packages:
 
-| Package | Description |
-|---------|----------|
-| [`openfeature-server-provider`](./packages/openfeature-server-provider) | OpenFeature provider for server-side environments | 
-| [`openfeature-web-provider`](./packages/openfeature-web-provider) | OpenFeature provider for client-side web applications | 
-| [`sdk`](./packages/sdk) | Core Confidence SDK for flag resolution, context, and tracking | 
-| [`react`](./packages/react) | React hooks and providers for client-side applications | 
+| Package                                                                 | Description                                                    |
+| ----------------------------------------------------------------------- | -------------------------------------------------------------- |
+| [`openfeature-server-provider`](./packages/openfeature-server-provider) | OpenFeature provider for server-side environments              |
+| [`openfeature-web-provider`](./packages/openfeature-web-provider)       | OpenFeature provider for client-side web applications          |
+| [`sdk`](./packages/sdk)                                                 | Core Confidence SDK for flag resolution, context, and tracking |
+| [`react`](./packages/react)                                             | React hooks and providers for client-side applications         |
 
-Read more about the packages in their respective docs. 
+Read more about the packages in their respective docs.
 
 ---
 
@@ -53,8 +53,8 @@ const client = OpenFeature.getClient();
 
 ```ts
 const isEnabled = await client.getBooleanValue('feature.enabled', false, {
-    targetingKey: `your-targeting-key`,
-  });
+  targetingKey: `your-targeting-key`,
+});
 ```
 
 > **Learn more**: [Server Provider Documentation](./packages/openfeature-server-provider/README.md)
@@ -117,9 +117,6 @@ For React applications, use the dedicated React package that provides hooks and 
 You can check out the example application, which is built with Next.js and uses the Confidence Server Provider, to see how the SDK can be applied within an application. This demo app provides a concrete example of integrating feature flags and context management.
 
 > **See the example app:** [confidence-sdk-demos](https://github.com/spotify/confidence-sdk-demos)
-
-
-
 
 # Contributions and Development
 
