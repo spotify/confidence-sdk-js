@@ -2,7 +2,7 @@
 
 ![](https://img.shields.io/badge/lifecycle-beta-a0c3d2.svg)
 
-This package contains helper functionality to make the Confidence SDK work well in a React environment.
+This package contains helper functionality to make the Confidence SDK work well in a React environment. **Note:** This package is only relevant if you are using the Confidence SDK directly. If you are using OpenFeature, please use the [OpenFeature React SDK](https://github.com/open-feature/js-sdk/tree/main/packages/react-sdk) instead.
 
 # Usage
 
@@ -128,7 +128,7 @@ function MyComponent() {
    const name: string = useFlag('user.name', '');
    ```
 
-## Server-Side Rendering
+## Server-Side Rendering (experimental)
 
 For applications using SSR frameworks such as [Next.js](https://nextjs.org/docs), feature flags can be fetched on the server using the [web sdk](packages/sdk/README.md) `@spotify-confidence/sdk` and resolved values can be passed down to client components. Flag fetching can be user-specific by using `withContext()` (to avoid mutating a globally shared Confidence instance) and loading the user context from cookies, headers, or the request object. If many client components need the same flag, consider using a Context Provider to avoid prop drilling and centralize flag access.
 
@@ -208,6 +208,70 @@ export default async function ServerComponent() {
   // Pass the flag value as a prop to the client component
   return <ClientComponent color={color} />;
 }
+```
+
+### Server and Client (experimental)
+
+If you also have interactive (client-side) components that benefit from feature flagging support, you can use the pattern below together with the server-side approach described above.
+This allows flag evaluations to be seamlessly transferred from server components to client components.
+
+Please note:
+
+- Server components use direct flag evaluation with `evaluateFlag` or `getFlag`
+- Client components use hooks (`useFlag`, `useConfidence`) for interactive features
+- Use React.cache for efficient server-side caching
+- The SDK automatically handles synchronization from server to client
+- Mutating the context in a client side component does not affect the server side confidence instance.
+
+> [!IMPORTANT]
+> Be aware that if you are constructing the Confidence instance using a custom `fetchImplementation` this will only be used on the server side. Client side the SDK will use the default `fetch` implementation.
+
+> [!IMPORTANT]
+> Combined server and client support currently doesn't work well in Next.js dev mode with Turbopack enabled.
+> This is due to a number of open bugs in Turbopack. We'll soon provide a list with the specific issues to track progress.
+> In the meantime you can opt out of using Turbopack by making sure the `dev` script in your `package.json` is just `next dev`, and not `next dev --turbopack`.
+
+```tsx
+// app/layout.tsx
+import { ConfidenceProvider } from '@spotify-confidence/react/server';
+import { getConfidence } from '../confidence';
+import { ClientComponent } from 'components/ClientComponent';
+import { ServerComponent } from 'components/ServerComponent';
+
+export default async function Layout() {
+  const confidence = await getConfidence();
+
+  return (
+    <div>
+      <ConfidenceProvider confidence={confidence}>
+        <Suspense fallback={<h1>Loading...</h1>}>
+          <ClientComponent>
+            <ServerComponent>
+              <ClientComponent />
+            </ServerComponent>
+          </ClientComponent>
+        </Suspense>
+      </ConfidenceProvider>
+    </div>
+  );
+}
+
+// app/components/ClientComponent.tsx
+('use client');
+import { useConfidence, useFlag } from '@spotify-confidence/react/client';
+
+export const ClientComponent = () => {
+  // Use hooks in client components
+  const confidence = useConfidence();
+  const fontSize = useFlag('my-feature-flag.size', '12pt');
+
+  return (
+    <div>
+      <div style={{ fontSize }}>Client rendered content</div>
+      <button onClick={() => confidence.setContext({ locale: 'sv-SE' })}>Choose Swedish</button>
+    </div>
+  );
+};
 ```
 
 ## Example Application

@@ -94,6 +94,16 @@ const isEnabled = client.getBooleanValue('feature.enabled', false);
 
 > **Learn more**: [Web Provider Documentation](./packages/openfeature-web-provider/README.md)
 
+### OpenFeature React SDK
+
+OpenFeature also provides a [React SDK](https://openfeature.dev/docs/reference/technologies/client/web/react) for integrating feature flags directly into React applications.
+
+## Example Application
+
+You can check out the example application, which is built with Next.js and uses the Confidence Server Provider together with OpenFeature, to see how the SDK can be applied within an application. This demo app provides a concrete example of integrating feature flags and context management.
+
+> **See the example app:** [confidence-sdk-demos](https://github.com/spotify/confidence-sdk-demos)
+
 ---
 
 # Direct SDK Usage
@@ -102,21 +112,13 @@ The vanilla sdk can be used in cases where you want direct access to the Confide
 
 > **Learn more**: [SDK Documentation](./packages/sdk/README.md)
 
----
+## React Integration
 
-# React Integration
-
-For React applications, use the dedicated React package that provides hooks and providers for seamless integration.
+For React applications, use the dedicated React package that provides hooks and providers for seamless integration. This package is built on top of the direct SDK usage.
 
 > **Learn more**: [React Integration Documentation](./packages/react/README.md)
 
 ---
-
-# Example Application
-
-You can check out the example application, which is built with Next.js and uses the Confidence Server Provider, to see how the SDK can be applied within an application. This demo app provides a concrete example of integrating feature flags and context management.
-
-> **See the example app:** [confidence-sdk-demos](https://github.com/spotify/confidence-sdk-demos)
 
 # Contributions and Development
 
