@@ -2,7 +2,7 @@
 
 ![](https://img.shields.io/badge/lifecycle-beta-a0c3d2.svg)
 
-JavaScript implementation of the Confidence SDK, enables event tracking and feature flagging capabilities in conjunction wth the OpenFeature Web SDK.
+JavaScript implementation of the Confidence SDK, enables event tracking and feature flagging capabilities in conjunction with the OpenFeature Web SDK.
 
 # Usage
 
@@ -18,12 +18,14 @@ yarn add @spotify-confidence/sdk
 
 Run the `Confidence.create` function to obtain a root instance of `Confidence`.
 
+The SDK initialization requires an API key (`clientSecret`) to work. This key obtained through the [Confidence console](https://app.confidence.spotify.com/).
+
 ```ts
 import { Confidence } from '@spotify-confidence/sdk';
 
 const confidence = Confidence.create({
   clientSecret: 'mysecret',
-  region: 'eu',
+  region: 'eu', // or 'us'
   environment: 'client', // or 'backend'
   timeout: 1000,
 });

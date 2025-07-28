@@ -4,98 +4,121 @@
 
 JavaScript implementation of the [Confidence](https://confidence.spotify.com/) SDK and the Confidence OpenFeature provider, to be used in conjunction wth the [OpenFeature SDK](https://github.com/open-feature/js-sdk).
 
-# Usage
+## Overview
 
-We recommend to try out Confidence using the vanilla [sdk](packages/sdk/README.md). The setup guide below will help you get started.
+This monorepo contains four packages:
 
-This monorepo exports multiple packages, with their own docs:
+| Package                                                                 | Description                                                    |
+| ----------------------------------------------------------------------- | -------------------------------------------------------------- |
+| [`openfeature-server-provider`](./packages/openfeature-server-provider) | OpenFeature provider for server-side environments              |
+| [`openfeature-web-provider`](./packages/openfeature-web-provider)       | OpenFeature provider for client-side web applications          |
+| [`sdk`](./packages/sdk)                                                 | Core Confidence SDK for flag resolution, context, and tracking |
+| [`react`](./packages/react)                                             | React hooks and providers for client-side applications         |
 
-- [sdk](packages/sdk/README.md)
-- [react](packages/react/README.md)
-- [openfeature-web-provider](packages/openfeature-web-provider/README.md)
-- [openfeature-server-provider](packages/openfeature-server-provider/README.md)
+Read more about the packages in their respective docs.
 
-## SDK setup
+---
 
-### Adding the dependencies
+# Usage with OpenFeature
 
-To add the packages to your dependencies run:
+OpenFeature provides a standardized API for feature flagging that works across different providers and languages.
+
+## Server Applications (Node.js)
+
+Set up Confidence as an OpenFeature provider in your Node.js application with the following steps:
+
+### 1. Install Dependencies
 
 ```sh
-yarn add @spotify-confidence/sdk
+yarn add @openfeature/server-sdk @openfeature/core @spotify-confidence/openfeature-server-provider
 ```
 
-### Initializing the SDK
-
-Run the `Confidence.create` function to obtain a root instance of `Confidence`.
-
-The SDK initialization requires an API key (`clientSecret`) to work. This key obtained through the [Confidence console](https://app.confidence.spotify.com/).
+### 2. Initialize and Set the Provider
 
 ```ts
-import { Confidence } from '@spotify-confidence/sdk';
+import { OpenFeature } from '@openfeature/server-sdk';
+import { createConfidenceServerProvider } from '@spotify-confidence/openfeature-server-provider';
 
-const confidence = Confidence.create({
-  clientSecret: 'mysecret',
-  region: 'eu', // or 'us'
-  environment: 'client', // or 'backend'
+const provider = createConfidenceServerProvider({
+  clientSecret: 'your-client-secret', // Get from Confidence console
+  fetchImplementation: fetch,
   timeout: 1000,
+});
+
+OpenFeature.setProvider(provider);
+const client = OpenFeature.getClient();
+```
+
+### 3. Fetch a Flag
+
+```ts
+const isEnabled = await client.getBooleanValue('feature.enabled', false, {
+  visitor_id: `<unique id per visitor>`,
 });
 ```
 
-### Setting the context
+> **Learn more**: [Server Provider Documentation](./packages/openfeature-server-provider/README.md)
 
-You can set the context manually by using `setContext({})` or obtain a "child instance" of Confidence with a modified context by using `withContext({})`.
+## Web Applications (Client-Side)
 
-```ts
-confidence.setContext({ 'pants-color': 'yellow' });
-const childInstance = confidence.withContext({ 'pants-color': 'blue', 'pants-fit': 'slim' });
+The following shows how to set up the client-side provider:
+
+```sh
+yarn add @openfeature/web-sdk @openfeature/core @spotify-confidence/openfeature-web-provider
 ```
 
-> [!IMPORTANT]
-> When using the SDK in a server environment, you should call `withContext` rather than `setContext`. This will give you a new instance scoped to the request and prevent context from leaking between requests.
-
-### Accessing flags
-
-The flag value API returns the Confidence assigned flag value or the passed in default value if no value was returned.
-The API supports dot notation, meaning that if the Confidence flag has a property `enabled` on the flag, you can access it directly.
-
 ```ts
-const flag = await confidence.getFlag('tutorial-feature', {});
-if (flag.enabled) {
-  // ship it!
+import { OpenFeature } from '@openfeature/web-sdk';
+import { createConfidenceWebProvider } from '@spotify-confidence/openfeature-web-provider';
+
+const provider = createConfidenceWebProvider({
+  clientSecret: 'your-client-secret',
+  fetchImplementation: window.fetch.bind(window),
+  timeout: 1000,
+});
+
+OpenFeature.setContext({
+  visitor_id: `<unique id per visitor>`,
+});
+
+try {
+  await OpenFeature.setProviderAndWait(provider);
+} (error) {
+  console.error('Failed to initialize Confidence provider:', error);
 }
-// or
-const enabled = await confidence.getFlag('tutorial-feature.enabled', false);
-if (enabled) {
-  // ship it!
-}
+
+
+const client = OpenFeature.getClient();
+const isEnabled = client.getBooleanValue('feature.enabled', false);
 ```
 
-> [!TIP]
-> If you are troubleshooting flag values, the flag evaluation API can be really useful since it returns a `FlagEvaluation` type that contain information about `variant`, `reason` and possible error details.
+> **Learn more**: [Web Provider Documentation](./packages/openfeature-web-provider/README.md)
 
-```ts
-const flagEvaluation = await confidence.evaluateFlag('tutorial-feature', {});
-```
+### OpenFeature React SDK
 
-#### Caching
+OpenFeature also provides a [React SDK](https://openfeature.dev/docs/reference/technologies/client/web/react) for integrating feature flags directly into React applications.
 
-Flag evaluations are cached in memory on the Confidence instance with the evaluation context and flag name as a cache key.
-This is done to reduce network calls when evaluating multiple flags using the same context.
+## Example Application
 
-```ts
-const confidence = Confidence.create({...});
-const flag = confidence.getFlag('flag', {})
-// subsequent calls to getFlag will return the same value
-```
+You can check out the example application, which is built with Next.js and uses the Confidence Server Provider together with OpenFeature, to see how the SDK can be applied within an application. This demo app provides a concrete example of integrating feature flags and context management.
 
-If you need to always fetch the latest flag values (e.g., for testing, debugging or an other use case),
-you can bypass the cache by always get a fresh Confidence instance (and an empty cache):
+> **See the example app:** [confidence-sdk-demos](https://github.com/spotify/confidence-sdk-demos)
 
-```ts
-const confidence = Confidence.create({...});
-const flag = confidence.withContext({}).getFlag('flag', {})
-```
+---
+
+# Direct SDK Usage
+
+The vanilla sdk can be used in cases where you want direct access to the Confidence SDK, including event tracking and custom context management.
+
+> **Learn more**: [SDK Documentation](./packages/sdk/README.md)
+
+## React Integration
+
+For React applications, use the dedicated React package that provides hooks and providers for seamless integration. This package is built on top of the direct SDK usage.
+
+> **Learn more**: [React Integration Documentation](./packages/react/README.md)
+
+---
 
 # Contributions and Development
 
@@ -141,10 +164,6 @@ If you intend to change the public API you need to run the bundle command locall
 ```sh
 yarn bundle --local
 ```
-
-## Example apps
-
-This repo contains a few example apps (under examples/) to display and test the functionality. These apps depend on the bundled output of the main packages, so you will need to run `yarn bundle` before starting any of the apps.
 
 ## Code of Conduct
 

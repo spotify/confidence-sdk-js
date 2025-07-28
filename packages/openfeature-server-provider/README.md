@@ -1,8 +1,8 @@
-# OpenFeature JS SDK JavaScript Confidence Provider
+# OpenFeature Server SDK JavaScript Confidence Provider
 
 ![](https://img.shields.io/badge/lifecycle-beta-a0c3d2.svg)
 
-JavaScript implementation of the Confidence OpenFeature web provider, to be used in conjunction wth the OpenFeature JS SDK.
+JavaScript implementation of the Confidence OpenFeature server provider, to be used in conjunction with the OpenFeature Server SDK.
 This implements the dynamic paradigm of OpenFeature.
 
 # Usage
@@ -12,7 +12,7 @@ This implements the dynamic paradigm of OpenFeature.
 To add the packages to your dependencies run:
 
 ```sh
-yarn add @openfeature/server-sdk @spotify-confidence/openfeature-server-provider @openfeature/core
+yarn add @openfeature/server-sdk @openfeature/core @spotify-confidence/sdk @spotify-confidence/openfeature-server-provider
 ```
 
 ## Enabling the provider, setting the evaluation context and resolving flags
