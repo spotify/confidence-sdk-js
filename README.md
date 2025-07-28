@@ -53,7 +53,7 @@ const client = OpenFeature.getClient();
 
 ```ts
 const isEnabled = await client.getBooleanValue('feature.enabled', false, {
-  targetingKey: `your-targeting-key`,
+  visitor_id: `<unique id per visitor>`,
 });
 ```
 
@@ -78,7 +78,7 @@ const provider = createConfidenceWebProvider({
 });
 
 OpenFeature.setContext({
-  targetingKey: 'your-targeting-key',
+  visitor_id: `<unique id per visitor>`,
 });
 
 try {
