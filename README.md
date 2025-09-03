@@ -120,6 +120,35 @@ For React applications, use the dedicated React package that provides hooks and 
 
 ---
 
+# Content Security Policy (CSP)
+
+When using the Confidence SDK in web applications with Content Security Policy enabled, you'll need to configure the following CSP directives to ensure proper functionality.
+
+## Required CSP Directives
+
+### `connect-src`
+
+The SDK makes HTTP requests to Confidence API endpoints. Add these domains to your `connect-src` directive:
+
+```
+connect-src 'self' https://*.confidence.dev
+```
+
+This covers:
+
+- `https://resolver.confidence.dev` (global flag resolution)
+- `https://resolver.eu.confidence.dev` (EU region flag resolution)
+- `https://resolver.us.confidence.dev` (US region flag resolution)
+- `https://events.confidence.dev` (global event tracking)
+- `https://events.eu.confidence.dev` (EU region event tracking)
+- `https://events.us.confidence.dev` (US region event tracking)
+
+### Additional Considerations
+
+- **Custom resolve URLs**: If you use a custom `resolveBaseUrl` in your configuration, make sure to include that domain in your `connect-src` directive
+- **Web Vitals**: The SDK includes optional web vitals tracking that uses the `web-vitals` library, but this doesn't require additional CSP permissions as it only uses browser APIs
+- **No inline scripts**: The SDK doesn't inject any inline scripts or styles, so you don't need `unsafe-inline` permissions
+
 # Contributions and Development
 
 We'd love to get patches from you! See [Contributing](CONTRIBUTING.md) for details.
