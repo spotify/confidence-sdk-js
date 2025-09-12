@@ -48,7 +48,7 @@ module.exports = defineConfig({
       workspace.set('type', 'module');
 
       if (workspace.cwd === 'packages/react') {
-        workspace.set('files', ['./index.*', './server.*']);
+        workspace.set('files', ['./index.*', './server.*', './patch-next-dev.cjs']);
         workspace.set('scripts.prepack', 'yarn build && yarn bundle && cp dist/* .');
         workspace.set('scripts.postpack', 'rm server.* & rm index.*');
         workspace.set(
