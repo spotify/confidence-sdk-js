@@ -155,7 +155,6 @@ When using the Confidence React SDK with Next.js **Pages Router** _in developmen
 
 Please note that this is purely a development issue and not something that affects production builds.
 
-
 # Contributions and Development
 
 We'd love to get patches from you! See [Contributing](CONTRIBUTING.md) for details.
