@@ -4,8 +4,12 @@
   "version": "0.2.4",
   "files": [
     "./index.*",
-    "./server.*"
+    "./server.*",
+    "./patch-next-dev.cjs"
   ],
+  "bin": {
+    "patch-next-dev": "patch-next-dev.cjs"
+  },
   "scripts": {
     "bundle": "rollup -c && ../../validate-api.sh",
     "build": "tsc",

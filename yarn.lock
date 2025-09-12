@@ -4278,6 +4278,8 @@ __metadata:
   peerDependencies:
     "@spotify-confidence/sdk": ">=0.3.1 <0.4.0"
     react: ^18 || ^19
+  bin:
+    patch-next-dev: patch-next-dev.cjs
   languageName: unknown
   linkType: soft
 
