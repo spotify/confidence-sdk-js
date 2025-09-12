@@ -13,7 +13,7 @@ if (!fs.existsSync(filePath)) {
 const bakPath = filePath + '.bak';
 
 const patchSearch = '(element,streamOptions)';
-const patchReplace = '(element,{onError:(e)=>(console.log(e),e.digest)})';
+const patchReplace = '(element,{onError:(e)=>(console.log(e),e.digest),...streamOptions})';
 const preamble = [
   '// This file is patched by @spotify-confidence/react',
   '// A backup of the original exists as react-dom-server.edge.development.js.bak',
@@ -33,7 +33,20 @@ switch (cmd) {
     console.log(`patch is ${test() ? '' : 'not '}applied`);
     break;
   default:
-    console.error('command must be "apply", "revert" or "test"');
+    console.error(
+      [
+        'command must be "apply", "revert" or "test"',
+        '',
+        'This tool applies a patch to next/dist/compiled/next-server/pages.runtime.dev.js',
+        '',
+        'When using Next.js with the pages router in dev mode, there is a bug where ',
+        'SSR errors lose their digest information, breaking intentional bailout patterns ',
+        'that use magic digests like "BAILOUT_TO_CLIENT_SIDE_RENDERING" to suppress error overlays.',
+        '',
+        'This patch fixes this by making the Next.js dev server call react-dom/server ',
+        'with an error handler that properly propagates the error digest.',
+      ].join('\n'),
+    );
     process.exit(1);
 }
 
