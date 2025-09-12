@@ -149,9 +149,9 @@ This covers:
 - **Web Vitals**: The SDK includes optional web vitals tracking that uses the `web-vitals` library, but this doesn't require additional CSP permissions as it only uses browser APIs
 - **No inline scripts**: The SDK doesn't inject any inline scripts or styles, so you don't need `unsafe-inline` permissions
 
-### Next.js Pages Router Development
+### Next.js Pages Router Development Patch
 
-When using the Confidence React SDK with Next.js **Pages Router** _in development mode_, you may need to apply a patch to the Next.js development server to improve error handling during server-side rendering. Run `npx patch-next-dev` from the `@spotify-confidence/react` package to apply this patch, which helps prevent development server crashes when using SSR with feature flags.
+When using the Confidence React SDK with Next.js **Pages Router** _in development mode_, you may need to apply a patch to the Next.js development server to improve error handling during server-side rendering. Run `npx patch-next-dev apply` from the `@spotify-confidence/react` package to apply this patch, which helps prevent development server visual crash overlay when using SSR with feature flags.
 
 Please note that this is purely a development issue and not something that affects production builds.
 
