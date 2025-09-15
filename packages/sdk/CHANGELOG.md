@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.3.6](https://github.com/spotify/confidence-sdk-js/compare/sdk-v0.3.5...sdk-v0.3.6) (2025-09-12)
+
+
+### 📚 Documentation
+
+* restructure and update to docs ([#273](https://github.com/spotify/confidence-sdk-js/issues/273)) ([e340363](https://github.com/spotify/confidence-sdk-js/commit/e34036361c6faceb3bc31d60e1c130465c465cf9))
+
 ## [0.3.5](https://github.com/spotify/confidence-sdk-js/compare/sdk-v0.3.4...sdk-v0.3.5) (2025-07-01)
 
 

@@ -66,6 +66,20 @@
   * devDependencies
     * @spotify-confidence/sdk bumped to 0.3.5
 
+## [0.3.6](https://github.com/spotify/confidence-sdk-js/compare/openfeature-web-provider-v0.3.5...openfeature-web-provider-v0.3.6) (2025-09-12)
+
+
+### 📚 Documentation
+
+* restructure and update to docs ([#273](https://github.com/spotify/confidence-sdk-js/issues/273)) ([e340363](https://github.com/spotify/confidence-sdk-js/commit/e34036361c6faceb3bc31d60e1c130465c465cf9))
+
+
+### Dependencies
+
+* The following workspace dependencies were updated
+  * devDependencies
+    * @spotify-confidence/sdk bumped to 0.3.6
+
 ## [0.3.3](https://github.com/spotify/confidence-sdk-js/compare/openfeature-web-provider-v0.3.2...openfeature-web-provider-v0.3.3) (2025-05-07)
 
 
