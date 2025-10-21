@@ -16,7 +16,7 @@ const patchSearch = '(element,streamOptions)';
 const patchReplace = '(element,{onError:(e)=>(console.log(e),e.digest),...streamOptions})';
 const preamble = [
   '// This file is patched by @spotify-confidence/react',
-  '// A backup of the original exists as react-dom-server.edge.development.js.bak',
+  '// A backup of the original exists as pages.runtime.dev.js.bak',
   '',
 ].join('\n');
 
