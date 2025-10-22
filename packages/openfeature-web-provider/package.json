@@ -10,7 +10,7 @@
     "@openfeature/web-sdk": "^1.0.3",
     "@spotify-confidence/sdk": "workspace:*",
     "rollup": "4.24.0",
-    "typescript": "5.1.6"
+    "typescript": "^5.8.3"
   },
   "peerDependencies": {
     "@openfeature/web-sdk": "^1.0.3",
