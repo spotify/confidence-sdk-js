@@ -60,6 +60,20 @@
   * devDependencies
     * @spotify-confidence/sdk bumped to 0.3.5
 
+## [0.2.6](https://github.com/spotify/confidence-sdk-js/compare/react-v0.2.5...react-v0.2.6) (2025-11-18)
+
+
+### 📚 Documentation
+
+* readme header update ([#278](https://github.com/spotify/confidence-sdk-js/issues/278)) ([351c5a0](https://github.com/spotify/confidence-sdk-js/commit/351c5a009f0ec29fac8d8c4a82be109e90c60c03))
+
+
+### Dependencies
+
+* The following workspace dependencies were updated
+  * devDependencies
+    * @spotify-confidence/sdk bumped to 0.3.7
+
 ## [0.2.5](https://github.com/spotify/confidence-sdk-js/compare/react-v0.2.4...react-v0.2.5) (2025-09-12)
 
 
