@@ -281,7 +281,6 @@ export class FetchingFlagResolverClient implements FlagResolverClient {
       signal,
     });
     if (!resp.ok) {
-      this.logger.warn?.(`Failed to resolve flags: ${resp.status} ${resp.statusText}`);
       throw new Error(`${resp.status}: ${resp.statusText}`);
     }
     const abortPromise = new Promise((_resolve, reject) => {
