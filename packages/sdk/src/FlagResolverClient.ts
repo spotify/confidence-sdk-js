@@ -109,6 +109,7 @@ export class FetchingFlagResolverClient implements FlagResolverClient {
   private readonly baseUrl: string;
   private readonly traceConsumer: TraceConsumer;
   private readonly waitUntil: WaitUntil | undefined;
+  private readonly logger: Logger;
   private readonly cacheReadThrough: (
     context: Context,
     supplier: () => Promise<ResolveFlagsResponse>,
@@ -146,6 +147,7 @@ export class FetchingFlagResolverClient implements FlagResolverClient {
     this.clientSecret = clientSecret;
     this.sdk = sdk;
     this.applyDebounce = applyDebounce;
+    this.logger = logger;
     if (resolveBaseUrl) {
       this.baseUrl = `${resolveBaseUrl}/v1`;
     } else {
@@ -229,7 +231,11 @@ export class FetchingFlagResolverClient implements FlagResolverClient {
         resolveToken,
         sdk: this.sdk,
         sendTime: new Date(),
-      }).finally(resolveCurrentFlush);
+      })
+        .catch(error => {
+          this.logger.warn?.(`Confidence: Failed to apply flags: ${error.message}`);
+        })
+        .finally(resolveCurrentFlush);
     };
 
     let timeoutId = 0;
