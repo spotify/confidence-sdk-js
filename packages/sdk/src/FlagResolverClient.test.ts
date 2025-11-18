@@ -317,6 +317,21 @@ describe('Backend environment Evaluation', () => {
       value: {},
     });
   });
+
+  it('should handle apply errors gracefully without crashing', async () => {
+    const warnSpy = jest.spyOn(console, 'warn').mockImplementation();
+    applyHandlerMock.mockRejectedValue(new Error('503: Service Unavailable'));
+
+    const flagResolution = await instanceUnderTest.resolve({});
+    flagResolution.evaluate('testflag.bool', false);
+
+    await new Promise(resolve => setImmediate(resolve));
+
+    expect(warnSpy).toHaveBeenCalledWith(expect.stringContaining('Failed to apply flags'));
+    expect(warnSpy).toHaveBeenCalledWith(expect.stringContaining('503: Service Unavailable'));
+
+    warnSpy.mockRestore();
+  });
 });
 
 describe('intercept', () => {
