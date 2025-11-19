@@ -14,8 +14,7 @@
     "lint": "eslint 'packages/*/src/**/*.{tsx,ts}'",
     "test": "jest",
     "prepare": "husky install",
-    "cm": "git-cz",
-    "publish-if-missing": "yarn workspaces foreach -R --from 'packages/*' npm publish --tolerate-republish"
+    "cm": "git-cz"
   },
   "devDependencies": {
     "@commitlint/cli": "^17.6.7",

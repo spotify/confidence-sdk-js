@@ -68,7 +68,7 @@ export class EventSenderEngine {
       fetchBuilder.rateLimit(rateLimitRps);
     }
     this.fetchImplementation = fetchBuilder
-      // update send-time before sending
+      // update send-time before sending the request
       .modifyRequest(({ method, body }) => {
         if (method === 'POST' && body) {
           body = JSON.stringify({ ...JSON.parse(body), sendTime: new Date().toISOString() });
