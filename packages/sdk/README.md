@@ -144,7 +144,7 @@ Confidence supports automatically tracking certain things out of the box and sup
 #### Visitor ID (web)
 
 Confidence can provide all flag resolves and tracking events with a browser specific identifier. We call this `visitor_id`.  
-The `visitor_id` is stored in a cookie. To add a generated `visitor_id` to the context, use the following:
+The `visitor_id` is stored in a cookie named `cnfdVisitorId`. To add a generated `visitor_id` to the context, use the following:
 
 ```ts
 import { visitorIdentity } from './trackers';
