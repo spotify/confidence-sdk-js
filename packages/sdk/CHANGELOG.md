@@ -1,5 +1,13 @@
 # Changelog
 
+## [0.3.7](https://github.com/spotify/confidence-sdk-js/compare/sdk-v0.3.6...sdk-v0.3.7) (2025-11-19)
+
+
+### 🐛 Bug Fixes
+
+* catch errors from apply endpoint to prevent crash ([#280](https://github.com/spotify/confidence-sdk-js/issues/280)) ([e42e59f](https://github.com/spotify/confidence-sdk-js/commit/e42e59fc887b54a2edc0b4de142e6ec178761ea9))
+* fix oidc deployment ([#283](https://github.com/spotify/confidence-sdk-js/issues/283)) ([9a8bc13](https://github.com/spotify/confidence-sdk-js/commit/9a8bc139b7d2713366a184beb94f5277b22e7657))
+
 ## [0.3.6](https://github.com/spotify/confidence-sdk-js/compare/sdk-v0.3.5...sdk-v0.3.6) (2025-09-12)
 
 
