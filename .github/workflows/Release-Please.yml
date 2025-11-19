@@ -50,4 +50,8 @@ jobs:
         run: yarn bundle
       - name: Publish to NPM
         shell: bash
-        run: yarn publish-if-missing
+        env:
+          NPM_TOKEN: ${{secrets.NPM_TOKEN}}
+        run: |
+          yarn config set 'npmRegistries["https://registry.npmjs.org"].npmAuthToken' $NPM_TOKEN
+          yarn publish-if-missing
