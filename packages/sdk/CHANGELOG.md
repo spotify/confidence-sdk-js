@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.3.8](https://github.com/spotify/confidence-sdk-js/compare/sdk-v0.3.7...sdk-v0.3.8) (2025-11-19)
+
+
+### 🐛 Bug Fixes
+
+* use npm publish instead of yarn ([#286](https://github.com/spotify/confidence-sdk-js/issues/286)) ([b9030b0](https://github.com/spotify/confidence-sdk-js/commit/b9030b011a4dd0f8afd8dca2d715b31881299bf1))
+
 ## [0.3.7](https://github.com/spotify/confidence-sdk-js/compare/sdk-v0.3.6...sdk-v0.3.7) (2025-11-19)
 
 
