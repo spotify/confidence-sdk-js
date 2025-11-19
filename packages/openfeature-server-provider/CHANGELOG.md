@@ -84,6 +84,20 @@
   * devDependencies
     * @spotify-confidence/sdk bumped to 0.3.7
 
+## [0.3.8](https://github.com/spotify/confidence-sdk-js/compare/openfeature-server-provider-v0.3.7...openfeature-server-provider-v0.3.8) (2025-11-19)
+
+
+### 🐛 Bug Fixes
+
+* use npm publish instead of yarn ([#286](https://github.com/spotify/confidence-sdk-js/issues/286)) ([819dac2](https://github.com/spotify/confidence-sdk-js/commit/819dac2fe2e3ba233fa6d488280e1e21065504ac))
+
+
+### Dependencies
+
+* The following workspace dependencies were updated
+  * devDependencies
+    * @spotify-confidence/sdk bumped to 0.3.8
+
 ## [0.3.6](https://github.com/spotify/confidence-sdk-js/compare/openfeature-server-provider-v0.3.5...openfeature-server-provider-v0.3.6) (2025-09-12)
 
 
