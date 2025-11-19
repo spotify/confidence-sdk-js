@@ -2,6 +2,11 @@
   "name": "@spotify-confidence/react",
   "license": "Apache-2.0",
   "version": "0.2.6",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/spotify/confidence-sdk-js.git",
+    "directory": "packages/react"
+  },
   "files": [
     "./index.*",
     "./server.*",

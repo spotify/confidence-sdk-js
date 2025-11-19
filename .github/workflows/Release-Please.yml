@@ -49,6 +49,19 @@ jobs:
       - name: Build
         shell: bash
         run: yarn bundle
-      - name: Publish to NPM
+      - name: Publish sdk to NPM
         shell: bash
-        run: yarn publish-if-missing
+        working-directory: packages/sdk
+        run: npm publish
+      - name: Publish react to NPM
+        shell: bash
+        working-directory: packages/react
+        run: npm publish
+      - name: Publish openfeature-web-provider to NPM
+        shell: bash
+        working-directory: packages/openfeature-web-provider
+        run: npm publish
+      - name: Publish openfeature-server-provider to NPM
+        shell: bash
+        working-directory: packages/openfeature-server-provider
+        run: npm publish
