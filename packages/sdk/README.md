@@ -24,7 +24,7 @@ The SDK initialization requires an API key (`clientSecret`) to work. This key ob
 import { Confidence } from '@spotify-confidence/sdk';
 
 const confidence = Confidence.create({
-  clientSecret: 'mysecret',
+  clientSecret: 'my secret',
   region: 'eu', // or 'us'
   environment: 'client', // or 'backend'
   timeout: 1000,
