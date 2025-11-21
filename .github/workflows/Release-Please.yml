@@ -52,16 +52,24 @@ jobs:
       - name: Publish sdk to NPM
         shell: bash
         working-directory: packages/sdk
-        run: npm publish
+        run: |
+          yarn pack -o package.tgz
+          npm publish package.tgz
       - name: Publish react to NPM
         shell: bash
         working-directory: packages/react
-        run: npm publish
+        run: |
+          yarn pack -o package.tgz
+          npm publish package.tgz
       - name: Publish openfeature-web-provider to NPM
         shell: bash
         working-directory: packages/openfeature-web-provider
-        run: npm publish
+        run: |
+          yarn pack -o package.tgz
+          npm publish package.tgz
       - name: Publish openfeature-server-provider to NPM
         shell: bash
         working-directory: packages/openfeature-server-provider
-        run: npm publish
+        run: |
+          yarn pack -o package.tgz
+          npm publish package.tgz
