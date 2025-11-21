@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.3.9](https://github.com/spotify/confidence-sdk-js/compare/sdk-v0.3.8...sdk-v0.3.9) (2025-11-21)
+
+
+### 🐛 Bug Fixes
+
+* use yarn pack + npm publish for OIDC compatibility ([#289](https://github.com/spotify/confidence-sdk-js/issues/289)) ([9559ff9](https://github.com/spotify/confidence-sdk-js/commit/9559ff9e1cced337b3c2483d33c777a07a8b13eb))
+
 ## [0.3.8](https://github.com/spotify/confidence-sdk-js/compare/sdk-v0.3.7...sdk-v0.3.8) (2025-11-19)
 
 
