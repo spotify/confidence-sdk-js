@@ -83,10 +83,9 @@ OpenFeature.setContext({
 
 try {
   await OpenFeature.setProviderAndWait(provider);
-} (error) {
+} catch (error) {
   console.error('Failed to initialize Confidence provider:', error);
 }
-
 
 const client = OpenFeature.getClient();
 const isEnabled = client.getBooleanValue('feature.enabled', false);
@@ -108,11 +107,17 @@ You can check out the example application, which is built with Next.js and uses 
 
 # Direct SDK Usage
 
+> [!NOTE]
+> The standalone SDK is being phased out. For new integrations, we recommend using the OpenFeature APIs described above.
+
 The vanilla sdk can be used in cases where you want direct access to the Confidence SDK, including event tracking and custom context management.
 
 > **Learn more**: [SDK Documentation](./packages/sdk/README.md)
 
 ## React Integration
+
+> [!NOTE]
+> The standalone React SDK is being phased out. For new integrations, see the [OpenFeature React SDK](https://openfeature.dev/docs/reference/sdks/client/web/react/) section above, or consider server-side flag resolution for SSR applications.
 
 For React applications, use the dedicated React package that provides hooks and providers for seamless integration. This package is built on top of the direct SDK usage.
 

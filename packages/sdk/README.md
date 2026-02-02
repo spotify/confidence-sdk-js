@@ -2,6 +2,12 @@
 
 ![](https://img.shields.io/badge/lifecycle-beta-a0c3d2.svg)
 
+> [!NOTE]
+> This Confidence standalone SDK is being phased out. For new integrations, we recommend using the OpenFeature APIs directly:
+>
+> - **Client-based (SPA)**: Use [@spotify-confidence/openfeature-web-provider](https://github.com/spotify/confidence-sdk-js/blob/main/packages/openfeature-web-provider/README.md)
+> - **Server**: Use [@spotify-confidence/openfeature-server-provider-local](https://github.com/spotify/confidence-resolver/tree/main/openfeature-provider/js/README.md), which resolves flags in-process with close to zero latency
+
 JavaScript implementation of the Confidence SDK, enables event tracking and feature flagging capabilities in conjunction with the OpenFeature Web SDK.
 
 # Usage

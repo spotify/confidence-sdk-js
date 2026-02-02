@@ -2,6 +2,12 @@
 
 ![](https://img.shields.io/badge/lifecycle-beta-a0c3d2.svg)
 
+> [!NOTE]
+> This Confidence standalone React SDK is being phased out. For new integrations, we recommend using the OpenFeature APIs directly:
+>
+> - **Client SPA**: Use the [OpenFeature React SDK](https://openfeature.dev/docs/reference/sdks/client/web/react/) with our [@spotify-confidence/openfeature-web-provider](https://github.com/spotify/confidence-sdk-js/blob/main/packages/openfeature-web-provider/README.md)
+> - **SSR (e.g., Next.js)**: Resolve all flags server-side using [@spotify-confidence/openfeature-server-provider-local](https://github.com/spotify/confidence-resolver/tree/main/openfeature-provider/js/README.md) and propagate values to the client. This gives optimal performance, avoids the complexity of managing context across the client/server boundary, and keeps flag logic and sensitive context data securely private.
+
 This package contains helper functionality to make the Confidence SDK work well in a React environment. **Note:** This package is only relevant if you are using the Confidence SDK directly. If you are using OpenFeature, please use the [OpenFeature React SDK](https://github.com/open-feature/js-sdk/tree/main/packages/react-sdk) instead.
 
 # Usage
