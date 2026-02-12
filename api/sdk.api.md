@@ -71,6 +71,7 @@ export class Confidence implements EventSender, Trackable, FlagResolver {
 
 // @public
 export interface ConfidenceOptions {
+    applyBaseUrl?: string;
     applyDebounce?: number;
     cache?: CacheOptions;
     clientSecret: string;
