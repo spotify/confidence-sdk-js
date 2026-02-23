@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.3.10](https://github.com/spotify/confidence-sdk-js/compare/sdk-v0.3.9...sdk-v0.3.10) (2026-02-23)
+
+
+### 📚 Documentation
+
+* recommendations against standalone SDK usage ([#291](https://github.com/spotify/confidence-sdk-js/issues/291)) ([e63662f](https://github.com/spotify/confidence-sdk-js/commit/e63662fd614efbfce45991cb4aa9a12edcf11f11))
+
 ## [0.3.9](https://github.com/spotify/confidence-sdk-js/compare/sdk-v0.3.8...sdk-v0.3.9) (2025-11-21)
 
 

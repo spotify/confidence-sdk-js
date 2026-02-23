@@ -1,7 +1,7 @@
 {
   "name": "@spotify-confidence/openfeature-server-provider",
   "license": "Apache-2.0",
-  "version": "0.3.9",
+  "version": "0.3.10",
   "repository": {
     "type": "git",
     "url": "https://github.com/spotify/confidence-sdk-js.git",

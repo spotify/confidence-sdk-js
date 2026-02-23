@@ -66,6 +66,20 @@
   * devDependencies
     * @spotify-confidence/sdk bumped to 0.3.9
 
+## [0.2.9](https://github.com/spotify/confidence-sdk-js/compare/react-v0.2.8...react-v0.2.9) (2026-02-23)
+
+
+### 📚 Documentation
+
+* recommendations against standalone SDK usage ([#291](https://github.com/spotify/confidence-sdk-js/issues/291)) ([e63662f](https://github.com/spotify/confidence-sdk-js/commit/e63662fd614efbfce45991cb4aa9a12edcf11f11))
+
+
+### Dependencies
+
+* The following workspace dependencies were updated
+  * devDependencies
+    * @spotify-confidence/sdk bumped to 0.3.10
+
 ## [0.2.7](https://github.com/spotify/confidence-sdk-js/compare/react-v0.2.6...react-v0.2.7) (2025-11-19)
 
 
