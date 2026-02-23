@@ -36,6 +36,17 @@ describe('Confidence E2E Tests', () => {
         variant: 'flags/web-sdk-e2e-flag-2/variants/enabled',
       });
     });
+
+    it('should return TARGETING_KEY_ERROR when targeting key exceeds 100 characters', async () => {
+      const longKey = 'a'.repeat(101);
+      const evaluation = await confidence
+        .withContext({ targeting_key: longKey })
+        .evaluateFlag('web-sdk-e2e-flag.int', 0);
+      expect(evaluation).toEqual({
+        reason: 'TARGETING_KEY_ERROR',
+        value: 0,
+      });
+    });
   });
 
   describe('track event sends an event', () => {
