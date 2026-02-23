@@ -94,6 +94,7 @@ export type FlagResolverClientOptions = {
   environment: 'client' | 'backend';
   region?: 'eu' | 'us';
   resolveBaseUrl?: string;
+  applyBaseUrl?: string;
   telemetry: Telemetry;
   logger: Logger;
   waitUntil?: WaitUntil;
@@ -107,6 +108,7 @@ export class FetchingFlagResolverClient implements FlagResolverClient {
   private readonly applyDebounce: number;
   private readonly resolveTimeout: number;
   private readonly baseUrl: string;
+  private readonly applyBaseUrl: string;
   private readonly traceConsumer: TraceConsumer;
   private readonly waitUntil: WaitUntil | undefined;
   private readonly logger: Logger;
@@ -125,6 +127,7 @@ export class FetchingFlagResolverClient implements FlagResolverClient {
     environment,
     region,
     resolveBaseUrl,
+    applyBaseUrl,
     telemetry,
     logger,
     waitUntil,
@@ -152,6 +155,11 @@ export class FetchingFlagResolverClient implements FlagResolverClient {
       this.baseUrl = `${resolveBaseUrl}/v1`;
     } else {
       this.baseUrl = region ? `https://resolver.${region}.confidence.dev/v1` : 'https://resolver.confidence.dev/v1';
+    }
+    if (applyBaseUrl) {
+      this.applyBaseUrl = `${applyBaseUrl}/v1`;
+    } else {
+      this.applyBaseUrl = this.baseUrl;
     }
     this.resolveTimeout = resolveTimeout;
     this.waitUntil = waitUntil;
@@ -259,7 +267,7 @@ export class FetchingFlagResolverClient implements FlagResolverClient {
   }
 
   async apply(request: ApplyFlagsRequest): Promise<void> {
-    const resp = await this.fetchImplementation(`${this.baseUrl}/flags:apply`, {
+    const resp = await this.fetchImplementation(`${this.applyBaseUrl}/flags:apply`, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
