@@ -99,6 +99,32 @@ describe('Confidence integration tests', () => {
     expect(await confidence.getFlag('flag2.str', 'goodbye')).toBe('hello again');
     expect(applyHandlerMock).not.toHaveBeenCalled();
   });
+  it('should resolve an integer value from a flag with intSchema', async () => {
+    resolveHandlerMock.mockReturnValue({
+      resolvedFlags: [
+        {
+          flag: 'flags/test-flag',
+          variant: 'flags/test-flag/variants/variant-1',
+          value: {
+            myinteger: 400.0,
+          },
+          flagSchema: {
+            schema: {
+              myinteger: {
+                intSchema: {},
+              },
+            },
+          },
+          reason: 'RESOLVE_REASON_MATCH',
+          shouldApply: true,
+        },
+      ],
+      resolveToken: 'token1',
+    });
+
+    expect(await confidence.getFlag('test-flag.myinteger', 0)).toBe(400);
+  });
+
   it('should abort previous requests when context changes', async () => {
     confidence.setContext({ pants: 'yellow' });
     const value = confidence.getFlag('flag1.str', 'goodbye');
