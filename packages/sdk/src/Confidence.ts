@@ -36,6 +36,8 @@ export interface ConfidenceOptions {
   logger?: Logger;
   /** Sets an alternative resolve url */
   resolveBaseUrl?: string;
+  /** Sets an alternative apply url */
+  applyBaseUrl?: string;
   /** Disable telemetry */
   disableTelemetry?: boolean;
   /** Allows you to debounce the apply message. Set in ms. 0 is treated as synchronous */
@@ -374,6 +376,7 @@ export class Confidence implements EventSender, Trackable, FlagResolver {
       fetchImplementation = defaultFetchImplementation(),
       logger = defaultLogger(),
       resolveBaseUrl,
+      applyBaseUrl,
       disableTelemetry = false,
       applyDebounce = 10,
       waitUntil,
@@ -402,6 +405,7 @@ export class Confidence implements EventSender, Trackable, FlagResolver {
       resolveTimeout: timeout,
       region,
       resolveBaseUrl,
+      applyBaseUrl,
       telemetry,
       logger,
       applyDebounce,

@@ -40,6 +40,10 @@ type ConfidenceWebProviderOptions = {
     fetchImplementation?: typeof fetch;
     clientSecret: string;
     timeout: number;
+    /** Sets an alternative resolve url */
+    resolveBaseUrl?: string;
+    /** Sets an alternative apply url */
+    applyBaseUrl?: string;
 };
 /**
  * Creates an OpenFeature-adhering Confidence Provider

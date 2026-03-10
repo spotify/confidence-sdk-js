@@ -40,6 +40,7 @@ const fetchImplementation = async (request: Request): Promise<Response> => {
     case 'https://resolver.confidence.dev/v1/flags:resolve':
       handler = resolveHandlerMock;
       break;
+    case 'https://custom-apply.dev/v1/flags:apply':
     case 'https://resolver.confidence.dev/v1/flags:apply':
       handler = applyHandlerMock;
       break;
@@ -73,7 +74,7 @@ describe('Confidence integration tests', () => {
   });
 
   it('should resolve against provided base url', async () => {
-    const customCondifence = Confidence.create({
+    const customConfidence = Confidence.create({
       clientSecret: '<client-secret>',
       timeout: 100,
       environment: 'client',
@@ -81,7 +82,26 @@ describe('Confidence integration tests', () => {
       resolveBaseUrl: 'https://custom.dev',
     });
 
-    expect(await customCondifence.getFlag('flag1.str', 'goodbye')).toBe('hello');
+    expect(await customConfidence.getFlag('flag1.str', 'goodbye')).toBe('hello');
+  });
+
+  it('should apply against provided apply base url', async () => {
+    const customConfidence = Confidence.create({
+      clientSecret: '<client-secret>',
+      timeout: 100,
+      environment: 'client',
+      fetchImplementation,
+      applyBaseUrl: 'https://custom-apply.dev',
+    });
+
+    expect(await customConfidence.getFlag('flag1.str', 'goodbye')).toBe('hello');
+    const [applyRequest] = await nextMockArgs(applyHandlerMock);
+    expect(applyRequest).toEqual(
+      expect.objectContaining({
+        clientSecret: '<client-secret>',
+        flags: [expect.objectContaining({ flag: 'flags/flag1' })],
+      }),
+    );
   });
 
   it('should resolve a value and send apply', async () => {
