@@ -90,6 +90,20 @@
   * devDependencies
     * @spotify-confidence/sdk bumped to 0.3.9
 
+## [0.3.10](https://github.com/spotify/confidence-sdk-js/compare/openfeature-server-provider-v0.3.9...openfeature-server-provider-v0.3.10) (2026-03-10)
+
+
+### ✨ New Features
+
+* add applyBaseUrl config option ([#294](https://github.com/spotify/confidence-sdk-js/issues/294)) ([a07ce90](https://github.com/spotify/confidence-sdk-js/commit/a07ce90208ce2ac74ad2ccd95ba014df3aa76e26))
+
+
+### Dependencies
+
+* The following workspace dependencies were updated
+  * devDependencies
+    * @spotify-confidence/sdk bumped to 0.3.10
+
 ## [0.3.8](https://github.com/spotify/confidence-sdk-js/compare/openfeature-server-provider-v0.3.7...openfeature-server-provider-v0.3.8) (2025-11-19)
 
 
