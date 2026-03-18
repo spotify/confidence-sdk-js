@@ -364,7 +364,7 @@ describe('intercept', () => {
           {
             library: LibraryTraces_Library.LIBRARY_REACT,
             libraryVersion: 'test',
-            traces: [{ id: LibraryTraces_TraceId.TRACE_ID_FLAG_TYPE_MISMATCH }],
+            traces: [{ id: LibraryTraces_TraceId.TRACE_ID_FLAG_EVALUATION }],
           },
         ],
         platform: Platform.PLATFORM_JS_WEB,

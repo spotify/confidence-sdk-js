@@ -12,7 +12,13 @@ import { Subscribe, Observer, subject, changeObserver } from './observing';
 import { WaitUntil } from './types';
 import { FlagResolution } from './FlagResolution';
 import { AccessiblePromise } from './AccessiblePromise';
-import { Telemetry } from './Telemetry';
+import { EvaluationObserver } from './FlagResolution';
+import { Telemetry, TraceConsumer } from './Telemetry';
+import {
+  LibraryTraces_Library,
+  LibraryTraces_TraceId,
+  LibraryTraces_Trace_EvaluationTrace_EvaluationReason,
+} from './generated/confidence/telemetry/v1/telemetry';
 import { SimpleFetch } from './fetch-util';
 import { CacheOptions, CacheProvider, FlagCache } from './flag-cache';
 import { utf8ToBase64 } from './utils';
@@ -70,6 +76,8 @@ export interface Configuration extends ConfidenceOptions {
   /* @internal */
   readonly clientSecret: string;
   readonly cacheProvider: CacheProvider;
+  readonly staleFlagTraceConsumer: TraceConsumer;
+  readonly emitEvaluationTrace: (reason: LibraryTraces_Trace_EvaluationTrace_EvaluationReason) => void;
 }
 
 /**
@@ -283,6 +291,7 @@ export class Confidence implements EventSender, Trackable, FlagResolver {
       close = this.subscribe(state => {
         // when state is ready we can be sure currentFlags exist
         if (state === 'READY' || state === 'ERROR') {
+          // evaluate() emits the evaluation trace via onEvaluation callback
           resolve(this.currentFlags!.evaluate(path, defaultValue));
         }
       });
@@ -305,11 +314,16 @@ export class Confidence implements EventSender, Trackable, FlagResolver {
         errorMessage: 'Flags are not yet ready',
         value: defaultValue,
       };
+      this.config.emitEvaluationTrace(
+        LibraryTraces_Trace_EvaluationTrace_EvaluationReason.EVALUATION_REASON_NOT_READY,
+      );
     } else {
       this.showLoggerLink(path, this.getContext());
+      // evaluate() emits the evaluation trace via onEvaluation callback
       evaluation = this.currentFlags.evaluate(path, defaultValue);
     }
     if (!this.currentFlags || !Value.equal(this.currentFlags.context, this.getContext())) {
+      this.config.staleFlagTraceConsumer({});
       const then: PromiseLike<FlagEvaluation.Resolved<T>>['then'] = (onfulfilled?, onrejected?) =>
         this.evaluateFlagAsync(path, defaultValue).then(onfulfilled, onrejected);
       const staleEvaluation = {
@@ -393,6 +407,22 @@ export class Confidence implements EventSender, Trackable, FlagResolver {
       disabled: disableTelemetry,
       environment,
     });
+    const evaluationTraceConsumer = telemetry.registerLibraryTraces({
+      library: LibraryTraces_Library.LIBRARY_CONFIDENCE,
+      version: sdk.version,
+      id: LibraryTraces_TraceId.TRACE_ID_FLAG_EVALUATION,
+    });
+    const emitEvaluationTrace = (reason: LibraryTraces_Trace_EvaluationTrace_EvaluationReason) => {
+      evaluationTraceConsumer({ evaluationTrace: { evaluationReason: reason } });
+    };
+    const onEvaluation: EvaluationObserver = evaluation => {
+      emitEvaluationTrace(evaluationReasonFromResult(evaluation));
+    };
+    const staleFlagTraceConsumer = telemetry.registerLibraryTraces({
+      library: LibraryTraces_Library.LIBRARY_CONFIDENCE,
+      version: sdk.version,
+      id: LibraryTraces_TraceId.TRACE_ID_STALE_FLAG,
+    });
     if (!clientSecret) {
       logger.error?.(`Confidence: confidence cannot be instantiated without a client secret`);
     }
@@ -411,6 +441,7 @@ export class Confidence implements EventSender, Trackable, FlagResolver {
       applyDebounce,
       waitUntil,
       cacheProvider,
+      onEvaluation,
     });
     const estEventSizeKb = 1;
     const flushTimeoutMilliseconds = 500;
@@ -436,6 +467,8 @@ export class Confidence implements EventSender, Trackable, FlagResolver {
       eventSenderEngine,
       logger,
       cacheProvider,
+      staleFlagTraceConsumer,
+      emitEvaluationTrace,
     });
   }
 }
@@ -447,6 +480,23 @@ function defaultFetchImplementation(): typeof fetch {
     );
   }
   return globalThis.fetch.bind(globalThis);
+}
+
+function evaluationReasonFromResult(
+  evaluation: FlagEvaluation.Resolved<Value>,
+): LibraryTraces_Trace_EvaluationTrace_EvaluationReason {
+  if (evaluation.reason === 'MATCH') {
+    return LibraryTraces_Trace_EvaluationTrace_EvaluationReason.EVALUATION_REASON_SUCCESS;
+  }
+  if (evaluation.reason === 'ERROR') {
+    switch (evaluation.errorCode) {
+      case 'FLAG_NOT_FOUND':
+        return LibraryTraces_Trace_EvaluationTrace_EvaluationReason.EVALUATION_REASON_FLAG_NOT_FOUND;
+      case 'TYPE_MISMATCH':
+        return LibraryTraces_Trace_EvaluationTrace_EvaluationReason.EVALUATION_REASON_TYPE_MISMATCH;
+    }
+  }
+  return LibraryTraces_Trace_EvaluationTrace_EvaluationReason.EVALUATION_REASON_UNKNOWN;
 }
 
 function defaultLogger(): Logger {

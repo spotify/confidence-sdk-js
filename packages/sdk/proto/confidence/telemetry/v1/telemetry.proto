@@ -27,6 +27,7 @@ message LibraryTraces {
     oneof trace {
       RequestTrace request_trace = 3;
       CountTrace count_trace = 4;
+      EvaluationTrace evaluation_trace = 5;
     }
 
     message CountTrace {}
@@ -43,6 +44,18 @@ message LibraryTraces {
         STATUS_CACHED = 4;
       }
     }
+
+    message EvaluationTrace {
+      EvaluationReason evaluation_reason = 1;
+
+      enum EvaluationReason {
+        EVALUATION_REASON_UNKNOWN = 0;
+        EVALUATION_REASON_SUCCESS = 1;
+        EVALUATION_REASON_FLAG_NOT_FOUND = 2;
+        EVALUATION_REASON_TYPE_MISMATCH = 3;
+        EVALUATION_REASON_NOT_READY = 4;
+      }
+    }
   }
 
   enum Library {
@@ -56,7 +69,6 @@ message LibraryTraces {
     TRACE_ID_UNSPECIFIED = 0;
     TRACE_ID_RESOLVE_LATENCY = 1;
     TRACE_ID_STALE_FLAG = 2;
-    TRACE_ID_FLAG_TYPE_MISMATCH = 3;
-    TRACE_ID_WITH_CONTEXT = 4;
+    TRACE_ID_FLAG_EVALUATION = 3;
   }
 }

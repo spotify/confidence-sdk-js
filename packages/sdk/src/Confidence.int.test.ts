@@ -1,5 +1,10 @@
 import { Confidence } from './Confidence';
 import { abortableSleep } from './fetch-util';
+import {
+  LibraryTraces_Trace_EvaluationTrace_EvaluationReason,
+  LibraryTraces_TraceId,
+  Monitoring,
+} from './generated/confidence/telemetry/v1/telemetry';
 
 const mockResolveResponse = {
   resolvedFlags: [
@@ -30,6 +35,7 @@ const mockPublishResponse = {
 const resolveHandlerMock = jest.fn();
 const applyHandlerMock = jest.fn();
 const publishHandlerMock = jest.fn();
+const capturedResolveRequests: Request[] = [];
 
 const fetchImplementation = async (request: Request): Promise<Response> => {
   await abortableSleep(10, request.signal);
@@ -38,6 +44,7 @@ const fetchImplementation = async (request: Request): Promise<Response> => {
   switch (request.url) {
     case 'https://custom.dev/v1/flags:resolve':
     case 'https://resolver.confidence.dev/v1/flags:resolve':
+      capturedResolveRequests.push(request);
       handler = resolveHandlerMock;
       break;
     case 'https://custom-apply.dev/v1/flags:apply':
@@ -71,6 +78,7 @@ describe('Confidence integration tests', () => {
 
     resolveHandlerMock.mockReturnValue(mockResolveResponse);
     publishHandlerMock.mockReturnValue(mockPublishResponse);
+    capturedResolveRequests.length = 0;
   });
 
   it('should resolve against provided base url', async () => {
@@ -119,6 +127,101 @@ describe('Confidence integration tests', () => {
     expect(await confidence.getFlag('flag2.str', 'goodbye')).toBe('hello again');
     expect(applyHandlerMock).not.toHaveBeenCalled();
   });
+  it('should send evaluation trace with SUCCESS reason on successful evaluation', async () => {
+    await confidence.getFlag('flag1.str', 'goodbye');
+    // trigger a new resolve by changing context
+    confidence.setContext({ pants: 'yellow' });
+    await confidence.getFlag('flag1.str', 'goodbye');
+
+    const telemetry = decodeTelemetryHeader(capturedResolveRequests[1]);
+    expect(telemetry).toBeDefined();
+    const evaluationTraces = telemetry!.libraryTraces.find(
+      lt => lt.traces.some(t => t.id === LibraryTraces_TraceId.TRACE_ID_FLAG_EVALUATION),
+    );
+    expect(evaluationTraces).toBeDefined();
+    expect(evaluationTraces!.traces).toEqual(
+      expect.arrayContaining([
+        expect.objectContaining({
+          id: LibraryTraces_TraceId.TRACE_ID_FLAG_EVALUATION,
+          evaluationTrace: {
+            evaluationReason: LibraryTraces_Trace_EvaluationTrace_EvaluationReason.EVALUATION_REASON_SUCCESS,
+          },
+        }),
+      ]),
+    );
+  });
+
+  it('should send evaluation trace with TYPE_MISMATCH on type mismatch', async () => {
+    // resolve flags first so we have a non-stale state
+    await confidence.getFlag('flag1.str', 'goodbye');
+    // flag1.str is a string, evaluating with a number default triggers TYPE_MISMATCH
+    confidence.evaluateFlag('flag1.str', 123);
+    // trigger a new resolve to flush telemetry
+    confidence.setContext({ pants: 'yellow' });
+    await confidence.getFlag('flag1.str', 'goodbye');
+
+    const telemetry = decodeTelemetryHeader(capturedResolveRequests[1]);
+    expect(telemetry).toBeDefined();
+    const evaluationTraces = telemetry!.libraryTraces.find(
+      lt => lt.traces.some(t => t.id === LibraryTraces_TraceId.TRACE_ID_FLAG_EVALUATION),
+    );
+    expect(evaluationTraces).toBeDefined();
+    expect(evaluationTraces!.traces).toEqual(
+      expect.arrayContaining([
+        expect.objectContaining({
+          id: LibraryTraces_TraceId.TRACE_ID_FLAG_EVALUATION,
+          evaluationTrace: {
+            evaluationReason: LibraryTraces_Trace_EvaluationTrace_EvaluationReason.EVALUATION_REASON_TYPE_MISMATCH,
+          },
+        }),
+      ]),
+    );
+  });
+
+  it('should send stale flag trace when evaluating with stale context', async () => {
+    await confidence.getFlag('flag1.str', 'goodbye');
+    // change context to make the cached flags stale
+    confidence.setContext({ pants: 'yellow' });
+    // evaluate synchronously while context is stale
+    confidence.evaluateFlag('flag1.str', 'goodbye');
+    // wait for the new resolve to complete (it carries the telemetry)
+    await confidence.getFlag('flag1.str', 'goodbye');
+
+    const telemetry = decodeTelemetryHeader(capturedResolveRequests[1]);
+    expect(telemetry).toBeDefined();
+    const staleTraces = telemetry!.libraryTraces.find(
+      lt => lt.traces.some(t => t.id === LibraryTraces_TraceId.TRACE_ID_STALE_FLAG),
+    );
+    expect(staleTraces).toBeDefined();
+  });
+
+  it('should send evaluation trace with FLAG_NOT_FOUND for unknown flags', async () => {
+    // resolve flags first so we have a non-stale state
+    await confidence.getFlag('flag1.str', 'goodbye');
+    // evaluate a flag that doesn't exist
+    confidence.evaluateFlag('unknown-flag.str', 'default');
+    // trigger new resolve to flush telemetry
+    confidence.setContext({ pants: 'yellow' });
+    await confidence.getFlag('flag1.str', 'goodbye');
+
+    const telemetry = decodeTelemetryHeader(capturedResolveRequests[1]);
+    expect(telemetry).toBeDefined();
+    const evaluationTraces = telemetry!.libraryTraces.find(
+      lt => lt.traces.some(t => t.id === LibraryTraces_TraceId.TRACE_ID_FLAG_EVALUATION),
+    );
+    expect(evaluationTraces).toBeDefined();
+    expect(evaluationTraces!.traces).toEqual(
+      expect.arrayContaining([
+        expect.objectContaining({
+          id: LibraryTraces_TraceId.TRACE_ID_FLAG_EVALUATION,
+          evaluationTrace: {
+            evaluationReason: LibraryTraces_Trace_EvaluationTrace_EvaluationReason.EVALUATION_REASON_FLAG_NOT_FOUND,
+          },
+        }),
+      ]),
+    );
+  });
+
   it('should abort previous requests when context changes', async () => {
     confidence.setContext({ pants: 'yellow' });
     const value = confidence.getFlag('flag1.str', 'goodbye');
@@ -129,6 +232,13 @@ describe('Confidence integration tests', () => {
     expect(resolveHandlerMock).toBeCalledWith(expect.objectContaining({ evaluationContext: { pants: 'blue' } }));
   });
 });
+
+function decodeTelemetryHeader(request: Request): Monitoring | undefined {
+  const header = request.headers.get('X-CONFIDENCE-TELEMETRY');
+  if (!header) return undefined;
+  const bytes = Uint8Array.from(atob(header), c => c.charCodeAt(0));
+  return Monitoring.decode(bytes);
+}
 
 function nextMockArgs<A extends any[]>(mock: jest.Mock<any, A>): Promise<A> {
   return new Promise(resolve => {
