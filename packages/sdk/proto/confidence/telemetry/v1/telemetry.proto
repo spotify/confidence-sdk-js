@@ -51,9 +51,11 @@ message LibraryTraces {
       enum EvaluationReason {
         EVALUATION_REASON_UNKNOWN = 0;
         EVALUATION_REASON_SUCCESS = 1;
-        EVALUATION_REASON_FLAG_NOT_FOUND = 2;
-        EVALUATION_REASON_TYPE_MISMATCH = 3;
-        EVALUATION_REASON_NOT_READY = 4;
+        reserved 2;
+        EVALUATION_REASON_FLAG_NOT_FOUND = 3;
+        EVALUATION_REASON_TYPE_MISMATCH = 4;
+        EVALUATION_REASON_ERROR = 5;
+        EVALUATION_REASON_NOT_READY = 6;
       }
     }
   }

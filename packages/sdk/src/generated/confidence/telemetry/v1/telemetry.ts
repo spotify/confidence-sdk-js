@@ -223,9 +223,10 @@ export interface LibraryTraces_Trace_EvaluationTrace {
 export enum LibraryTraces_Trace_EvaluationTrace_EvaluationReason {
   EVALUATION_REASON_UNKNOWN = 0,
   EVALUATION_REASON_SUCCESS = 1,
-  EVALUATION_REASON_FLAG_NOT_FOUND = 2,
-  EVALUATION_REASON_TYPE_MISMATCH = 3,
-  EVALUATION_REASON_NOT_READY = 4,
+  EVALUATION_REASON_FLAG_NOT_FOUND = 3,
+  EVALUATION_REASON_TYPE_MISMATCH = 4,
+  EVALUATION_REASON_ERROR = 5,
+  EVALUATION_REASON_NOT_READY = 6,
   UNRECOGNIZED = -1,
 }
 
@@ -239,13 +240,16 @@ export function libraryTraces_Trace_EvaluationTrace_EvaluationReasonFromJSON(
     case 1:
     case 'EVALUATION_REASON_SUCCESS':
       return LibraryTraces_Trace_EvaluationTrace_EvaluationReason.EVALUATION_REASON_SUCCESS;
-    case 2:
+    case 3:
     case 'EVALUATION_REASON_FLAG_NOT_FOUND':
       return LibraryTraces_Trace_EvaluationTrace_EvaluationReason.EVALUATION_REASON_FLAG_NOT_FOUND;
-    case 3:
+    case 4:
     case 'EVALUATION_REASON_TYPE_MISMATCH':
       return LibraryTraces_Trace_EvaluationTrace_EvaluationReason.EVALUATION_REASON_TYPE_MISMATCH;
-    case 4:
+    case 5:
+    case 'EVALUATION_REASON_ERROR':
+      return LibraryTraces_Trace_EvaluationTrace_EvaluationReason.EVALUATION_REASON_ERROR;
+    case 6:
     case 'EVALUATION_REASON_NOT_READY':
       return LibraryTraces_Trace_EvaluationTrace_EvaluationReason.EVALUATION_REASON_NOT_READY;
     case -1:
@@ -267,6 +271,8 @@ export function libraryTraces_Trace_EvaluationTrace_EvaluationReasonToJSON(
       return 'EVALUATION_REASON_FLAG_NOT_FOUND';
     case LibraryTraces_Trace_EvaluationTrace_EvaluationReason.EVALUATION_REASON_TYPE_MISMATCH:
       return 'EVALUATION_REASON_TYPE_MISMATCH';
+    case LibraryTraces_Trace_EvaluationTrace_EvaluationReason.EVALUATION_REASON_ERROR:
+      return 'EVALUATION_REASON_ERROR';
     case LibraryTraces_Trace_EvaluationTrace_EvaluationReason.EVALUATION_REASON_NOT_READY:
       return 'EVALUATION_REASON_NOT_READY';
     case LibraryTraces_Trace_EvaluationTrace_EvaluationReason.UNRECOGNIZED:
