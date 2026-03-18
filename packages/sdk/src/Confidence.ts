@@ -76,7 +76,9 @@ export interface Configuration extends ConfidenceOptions {
   /* @internal */
   readonly clientSecret: string;
   readonly cacheProvider: CacheProvider;
+  /** @internal */
   readonly staleFlagTraceConsumer: TraceConsumer;
+  /** @internal */
   readonly emitEvaluationTrace: (reason: LibraryTraces_Trace_EvaluationTrace_EvaluationReason) => void;
 }
 
@@ -494,6 +496,10 @@ function evaluationReasonFromResult(
         return LibraryTraces_Trace_EvaluationTrace_EvaluationReason.EVALUATION_REASON_FLAG_NOT_FOUND;
       case 'TYPE_MISMATCH':
         return LibraryTraces_Trace_EvaluationTrace_EvaluationReason.EVALUATION_REASON_TYPE_MISMATCH;
+      case 'NOT_READY':
+        return LibraryTraces_Trace_EvaluationTrace_EvaluationReason.EVALUATION_REASON_NOT_READY;
+      default:
+        return LibraryTraces_Trace_EvaluationTrace_EvaluationReason.EVALUATION_REASON_ERROR;
     }
   }
   return LibraryTraces_Trace_EvaluationTrace_EvaluationReason.EVALUATION_REASON_UNKNOWN;
