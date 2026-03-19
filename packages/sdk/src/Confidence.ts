@@ -22,10 +22,10 @@ import {
   LibraryTraces_Trace_EvaluationTrace_EvaluationReason,
 } from './generated/confidence/telemetry/v1/telemetry';
 import { SimpleFetch } from './fetch-util';
-
-type EvaluationTrace = Omit<LibraryTraces_Trace_EvaluationTrace, '$type'>;
 import { CacheOptions, CacheProvider, FlagCache } from './flag-cache';
 import { utf8ToBase64 } from './utils';
+
+type EvaluationTrace = Omit<LibraryTraces_Trace_EvaluationTrace, '$type'>;
 
 /**
  * Confidence options, to be used for easier initialization of Confidence
