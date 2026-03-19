@@ -489,23 +489,30 @@ function defaultFetchImplementation(): typeof fetch {
   return globalThis.fetch.bind(globalThis);
 }
 
-function evaluationTraceFromResult(
-  evaluation: FlagEvaluation.Resolved<Value>,
-): EvaluationTrace {
+function evaluationTraceFromResult(evaluation: FlagEvaluation.Resolved<Value>): EvaluationTrace {
   const EvalReason = LibraryTraces_Trace_EvaluationTrace_EvaluationReason;
   const EvalError = LibraryTraces_Trace_EvaluationTrace_EvaluationErrorCode;
 
   if (evaluation.reason === 'MATCH') {
-    return { reason: EvalReason.EVALUATION_REASON_TARGETING_MATCH, errorCode: EvalError.EVALUATION_ERROR_CODE_UNSPECIFIED };
+    return {
+      reason: EvalReason.EVALUATION_REASON_TARGETING_MATCH,
+      errorCode: EvalError.EVALUATION_ERROR_CODE_UNSPECIFIED,
+    };
   }
   if (evaluation.reason === 'ERROR') {
     switch (evaluation.errorCode) {
       case 'FLAG_NOT_FOUND':
-        return { reason: EvalReason.EVALUATION_REASON_ERROR, errorCode: EvalError.EVALUATION_ERROR_CODE_FLAG_NOT_FOUND };
+        return {
+          reason: EvalReason.EVALUATION_REASON_ERROR,
+          errorCode: EvalError.EVALUATION_ERROR_CODE_FLAG_NOT_FOUND,
+        };
       case 'TYPE_MISMATCH':
         return { reason: EvalReason.EVALUATION_REASON_ERROR, errorCode: EvalError.EVALUATION_ERROR_CODE_TYPE_MISMATCH };
       case 'NOT_READY':
-        return { reason: EvalReason.EVALUATION_REASON_ERROR, errorCode: EvalError.EVALUATION_ERROR_CODE_PROVIDER_NOT_READY };
+        return {
+          reason: EvalReason.EVALUATION_REASON_ERROR,
+          errorCode: EvalError.EVALUATION_ERROR_CODE_PROVIDER_NOT_READY,
+        };
       case 'GENERAL':
       case 'TIMEOUT':
         return { reason: EvalReason.EVALUATION_REASON_ERROR, errorCode: EvalError.EVALUATION_ERROR_CODE_GENERAL };

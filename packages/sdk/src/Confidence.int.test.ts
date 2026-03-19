@@ -136,8 +136,8 @@ describe('Confidence integration tests', () => {
 
     const telemetry = decodeTelemetryHeader(capturedResolveRequests[1]);
     expect(telemetry).toBeDefined();
-    const evaluationTraces = telemetry!.libraryTraces.find(
-      lt => lt.traces.some(t => t.id === LibraryTraces_TraceId.TRACE_ID_FLAG_EVALUATION),
+    const evaluationTraces = telemetry!.libraryTraces.find(lt =>
+      lt.traces.some(t => t.id === LibraryTraces_TraceId.TRACE_ID_FLAG_EVALUATION),
     );
     expect(evaluationTraces).toBeDefined();
     expect(evaluationTraces!.traces).toEqual(
@@ -164,8 +164,8 @@ describe('Confidence integration tests', () => {
 
     const telemetry = decodeTelemetryHeader(capturedResolveRequests[1]);
     expect(telemetry).toBeDefined();
-    const evaluationTraces = telemetry!.libraryTraces.find(
-      lt => lt.traces.some(t => t.id === LibraryTraces_TraceId.TRACE_ID_FLAG_EVALUATION),
+    const evaluationTraces = telemetry!.libraryTraces.find(lt =>
+      lt.traces.some(t => t.id === LibraryTraces_TraceId.TRACE_ID_FLAG_EVALUATION),
     );
     expect(evaluationTraces).toBeDefined();
     expect(evaluationTraces!.traces).toEqual(
@@ -192,8 +192,8 @@ describe('Confidence integration tests', () => {
 
     const telemetry = decodeTelemetryHeader(capturedResolveRequests[1]);
     expect(telemetry).toBeDefined();
-    const staleTraces = telemetry!.libraryTraces.find(
-      lt => lt.traces.some(t => t.id === LibraryTraces_TraceId.TRACE_ID_STALE_FLAG),
+    const staleTraces = telemetry!.libraryTraces.find(lt =>
+      lt.traces.some(t => t.id === LibraryTraces_TraceId.TRACE_ID_STALE_FLAG),
     );
     expect(staleTraces).toBeDefined();
   });
@@ -209,8 +209,8 @@ describe('Confidence integration tests', () => {
 
     const telemetry = decodeTelemetryHeader(capturedResolveRequests[1]);
     expect(telemetry).toBeDefined();
-    const evaluationTraces = telemetry!.libraryTraces.find(
-      lt => lt.traces.some(t => t.id === LibraryTraces_TraceId.TRACE_ID_FLAG_EVALUATION),
+    const evaluationTraces = telemetry!.libraryTraces.find(lt =>
+      lt.traces.some(t => t.id === LibraryTraces_TraceId.TRACE_ID_FLAG_EVALUATION),
     );
     expect(evaluationTraces).toBeDefined();
     expect(evaluationTraces!.traces).toEqual(
