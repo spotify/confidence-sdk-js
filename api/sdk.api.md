@@ -96,10 +96,10 @@ export interface Configuration extends ConfidenceOptions {
     readonly cacheProvider: CacheProvider;
     // (undocumented)
     readonly clientSecret: string;
-    // Warning: (ae-forgotten-export) The symbol "LibraryTraces_Trace_EvaluationTrace_EvaluationReason" needs to be exported by the entry point index.d.ts
+    // Warning: (ae-forgotten-export) The symbol "EvaluationTrace" needs to be exported by the entry point index.d.ts
     //
     // @internal (undocumented)
-    readonly emitEvaluationTrace: (reason: LibraryTraces_Trace_EvaluationTrace_EvaluationReason) => void;
+    readonly emitEvaluationTrace: (trace: EvaluationTrace) => void;
     // Warning: (ae-forgotten-export) The symbol "EventSenderEngine" needs to be exported by the entry point index.d.ts
     //
     // @internal

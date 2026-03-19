@@ -1,6 +1,7 @@
 import { Confidence } from './Confidence';
 import { abortableSleep } from './fetch-util';
 import {
+  LibraryTraces_Trace_EvaluationTrace_EvaluationErrorCode,
   LibraryTraces_Trace_EvaluationTrace_EvaluationReason,
   LibraryTraces_TraceId,
   Monitoring,
@@ -127,7 +128,7 @@ describe('Confidence integration tests', () => {
     expect(await confidence.getFlag('flag2.str', 'goodbye')).toBe('hello again');
     expect(applyHandlerMock).not.toHaveBeenCalled();
   });
-  it('should send evaluation trace with SUCCESS reason on successful evaluation', async () => {
+  it('should send evaluation trace with TARGETING_MATCH reason on successful evaluation', async () => {
     await confidence.getFlag('flag1.str', 'goodbye');
     // trigger a new resolve by changing context
     confidence.setContext({ pants: 'yellow' });
@@ -144,7 +145,8 @@ describe('Confidence integration tests', () => {
         expect.objectContaining({
           id: LibraryTraces_TraceId.TRACE_ID_FLAG_EVALUATION,
           evaluationTrace: {
-            evaluationReason: LibraryTraces_Trace_EvaluationTrace_EvaluationReason.EVALUATION_REASON_SUCCESS,
+            reason: LibraryTraces_Trace_EvaluationTrace_EvaluationReason.EVALUATION_REASON_TARGETING_MATCH,
+            errorCode: LibraryTraces_Trace_EvaluationTrace_EvaluationErrorCode.EVALUATION_ERROR_CODE_UNSPECIFIED,
           },
         }),
       ]),
@@ -171,7 +173,8 @@ describe('Confidence integration tests', () => {
         expect.objectContaining({
           id: LibraryTraces_TraceId.TRACE_ID_FLAG_EVALUATION,
           evaluationTrace: {
-            evaluationReason: LibraryTraces_Trace_EvaluationTrace_EvaluationReason.EVALUATION_REASON_TYPE_MISMATCH,
+            reason: LibraryTraces_Trace_EvaluationTrace_EvaluationReason.EVALUATION_REASON_ERROR,
+            errorCode: LibraryTraces_Trace_EvaluationTrace_EvaluationErrorCode.EVALUATION_ERROR_CODE_TYPE_MISMATCH,
           },
         }),
       ]),
@@ -215,7 +218,8 @@ describe('Confidence integration tests', () => {
         expect.objectContaining({
           id: LibraryTraces_TraceId.TRACE_ID_FLAG_EVALUATION,
           evaluationTrace: {
-            evaluationReason: LibraryTraces_Trace_EvaluationTrace_EvaluationReason.EVALUATION_REASON_FLAG_NOT_FOUND,
+            reason: LibraryTraces_Trace_EvaluationTrace_EvaluationReason.EVALUATION_REASON_ERROR,
+            errorCode: LibraryTraces_Trace_EvaluationTrace_EvaluationErrorCode.EVALUATION_ERROR_CODE_FLAG_NOT_FOUND,
           },
         }),
       ]),

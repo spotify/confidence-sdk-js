@@ -17,9 +17,13 @@ import { Telemetry, TraceConsumer } from './Telemetry';
 import {
   LibraryTraces_Library,
   LibraryTraces_TraceId,
+  LibraryTraces_Trace_EvaluationTrace,
+  LibraryTraces_Trace_EvaluationTrace_EvaluationErrorCode,
   LibraryTraces_Trace_EvaluationTrace_EvaluationReason,
 } from './generated/confidence/telemetry/v1/telemetry';
 import { SimpleFetch } from './fetch-util';
+
+type EvaluationTrace = Omit<LibraryTraces_Trace_EvaluationTrace, '$type'>;
 import { CacheOptions, CacheProvider, FlagCache } from './flag-cache';
 import { utf8ToBase64 } from './utils';
 
@@ -79,7 +83,7 @@ export interface Configuration extends ConfidenceOptions {
   /** @internal */
   readonly staleFlagTraceConsumer: TraceConsumer;
   /** @internal */
-  readonly emitEvaluationTrace: (reason: LibraryTraces_Trace_EvaluationTrace_EvaluationReason) => void;
+  readonly emitEvaluationTrace: (trace: EvaluationTrace) => void;
 }
 
 /**
@@ -316,9 +320,10 @@ export class Confidence implements EventSender, Trackable, FlagResolver {
         errorMessage: 'Flags are not yet ready',
         value: defaultValue,
       };
-      this.config.emitEvaluationTrace(
-        LibraryTraces_Trace_EvaluationTrace_EvaluationReason.EVALUATION_REASON_NOT_READY,
-      );
+      this.config.emitEvaluationTrace({
+        reason: LibraryTraces_Trace_EvaluationTrace_EvaluationReason.EVALUATION_REASON_ERROR,
+        errorCode: LibraryTraces_Trace_EvaluationTrace_EvaluationErrorCode.EVALUATION_ERROR_CODE_PROVIDER_NOT_READY,
+      });
     } else {
       this.showLoggerLink(path, this.getContext());
       // evaluate() emits the evaluation trace via onEvaluation callback
@@ -414,11 +419,11 @@ export class Confidence implements EventSender, Trackable, FlagResolver {
       version: sdk.version,
       id: LibraryTraces_TraceId.TRACE_ID_FLAG_EVALUATION,
     });
-    const emitEvaluationTrace = (reason: LibraryTraces_Trace_EvaluationTrace_EvaluationReason) => {
-      evaluationTraceConsumer({ evaluationTrace: { evaluationReason: reason } });
+    const emitEvaluationTrace = (trace: EvaluationTrace) => {
+      evaluationTraceConsumer({ evaluationTrace: trace });
     };
     const onEvaluation: EvaluationObserver = evaluation => {
-      emitEvaluationTrace(evaluationReasonFromResult(evaluation));
+      emitEvaluationTrace(evaluationTraceFromResult(evaluation));
     };
     const staleFlagTraceConsumer = telemetry.registerLibraryTraces({
       library: LibraryTraces_Library.LIBRARY_CONFIDENCE,
@@ -484,25 +489,31 @@ function defaultFetchImplementation(): typeof fetch {
   return globalThis.fetch.bind(globalThis);
 }
 
-function evaluationReasonFromResult(
+function evaluationTraceFromResult(
   evaluation: FlagEvaluation.Resolved<Value>,
-): LibraryTraces_Trace_EvaluationTrace_EvaluationReason {
+): EvaluationTrace {
+  const EvalReason = LibraryTraces_Trace_EvaluationTrace_EvaluationReason;
+  const EvalError = LibraryTraces_Trace_EvaluationTrace_EvaluationErrorCode;
+
   if (evaluation.reason === 'MATCH') {
-    return LibraryTraces_Trace_EvaluationTrace_EvaluationReason.EVALUATION_REASON_SUCCESS;
+    return { reason: EvalReason.EVALUATION_REASON_TARGETING_MATCH, errorCode: EvalError.EVALUATION_ERROR_CODE_UNSPECIFIED };
   }
   if (evaluation.reason === 'ERROR') {
     switch (evaluation.errorCode) {
       case 'FLAG_NOT_FOUND':
-        return LibraryTraces_Trace_EvaluationTrace_EvaluationReason.EVALUATION_REASON_FLAG_NOT_FOUND;
+        return { reason: EvalReason.EVALUATION_REASON_ERROR, errorCode: EvalError.EVALUATION_ERROR_CODE_FLAG_NOT_FOUND };
       case 'TYPE_MISMATCH':
-        return LibraryTraces_Trace_EvaluationTrace_EvaluationReason.EVALUATION_REASON_TYPE_MISMATCH;
+        return { reason: EvalReason.EVALUATION_REASON_ERROR, errorCode: EvalError.EVALUATION_ERROR_CODE_TYPE_MISMATCH };
       case 'NOT_READY':
-        return LibraryTraces_Trace_EvaluationTrace_EvaluationReason.EVALUATION_REASON_NOT_READY;
+        return { reason: EvalReason.EVALUATION_REASON_ERROR, errorCode: EvalError.EVALUATION_ERROR_CODE_PROVIDER_NOT_READY };
+      case 'GENERAL':
+      case 'TIMEOUT':
+        return { reason: EvalReason.EVALUATION_REASON_ERROR, errorCode: EvalError.EVALUATION_ERROR_CODE_GENERAL };
       default:
-        return LibraryTraces_Trace_EvaluationTrace_EvaluationReason.EVALUATION_REASON_ERROR;
+        return { reason: EvalReason.EVALUATION_REASON_ERROR, errorCode: EvalError.EVALUATION_ERROR_CODE_GENERAL };
     }
   }
-  return LibraryTraces_Trace_EvaluationTrace_EvaluationReason.EVALUATION_REASON_UNKNOWN;
+  return { reason: EvalReason.EVALUATION_REASON_DEFAULT, errorCode: EvalError.EVALUATION_ERROR_CODE_UNSPECIFIED };
 }
 
 function defaultLogger(): Logger {
