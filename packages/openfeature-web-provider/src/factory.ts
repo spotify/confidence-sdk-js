@@ -32,11 +32,13 @@ export function createConfidenceWebProvider(confidence: Confidence): Provider;
  * @public */
 export function createConfidenceWebProvider(confidenceOrOptions: Confidence | ConfidenceWebProviderOptions): Provider {
   if (confidenceOrOptions instanceof Confidence) {
+    confidenceOrOptions.setTelemetryLibraryOpenFeature();
     return new ConfidenceWebProvider(confidenceOrOptions);
   }
   const confidence = Confidence.create({
     ...confidenceOrOptions,
     environment: 'client',
   });
+  confidence.setTelemetryLibraryOpenFeature();
   return new ConfidenceWebProvider(confidence);
 }
