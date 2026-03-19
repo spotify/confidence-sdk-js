@@ -22,11 +22,16 @@ export class Telemetry {
   private readonly logger?: Logger;
   private readonly libraryTraces: LibraryTraces[] = [];
   private readonly platform: Platform;
+  private library: LibraryTraces_Library = LibraryTraces_Library.LIBRARY_CONFIDENCE;
 
   constructor(opts: TelemetryOptions) {
     this.disabled = opts.disabled;
     this.logger = opts.logger;
     this.platform = opts.environment === 'client' ? Platform.PLATFORM_JS_WEB : Platform.PLATFORM_JS_SERVER;
+  }
+
+  setLibrary(library: LibraryTraces_Library): void {
+    this.library = library;
   }
 
   public registerLibraryTraces({ library, version, id }: Tag): TraceConsumer {
@@ -49,10 +54,11 @@ export class Telemetry {
   }
 
   getSnapshot(): Monitoring {
+    const currentLibrary = this.library;
     const libraryTraces = this.libraryTraces
       .filter(({ traces }) => traces.length > 0)
-      .map(({ library, libraryVersion, traces }) => ({
-        library,
+      .map(({ libraryVersion, traces }) => ({
+        library: currentLibrary,
         libraryVersion,
         traces: traces.splice(0, traces.length),
       }));

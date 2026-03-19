@@ -34,11 +34,13 @@ export function createConfidenceServerProvider(
   confidenceOrOptions: Confidence | ConfidenceProviderFactoryOptions,
 ): Provider {
   if (confidenceOrOptions instanceof Confidence) {
+    confidenceOrOptions.setTelemetryLibraryOpenFeature();
     return new ConfidenceServerProvider(confidenceOrOptions);
   }
   const confidence = Confidence.create({
     ...confidenceOrOptions,
     environment: 'backend',
   });
+  confidence.setTelemetryLibraryOpenFeature();
   return new ConfidenceServerProvider(confidence);
 }

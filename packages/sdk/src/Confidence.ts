@@ -84,6 +84,8 @@ export interface Configuration extends ConfidenceOptions {
   readonly staleFlagTraceConsumer: TraceConsumer;
   /** @internal */
   readonly emitEvaluationTrace: (trace: EvaluationTrace) => void;
+  /** @internal */
+  readonly telemetry: Telemetry;
 }
 
 /**
@@ -378,6 +380,14 @@ export class Confidence implements EventSender, Trackable, FlagResolver {
   }
 
   /**
+   * Tags all telemetry from this instance as originating from the OpenFeature library.
+   * Called by OpenFeature providers during initialization.
+   */
+  setTelemetryLibraryOpenFeature(): void {
+    this.config.telemetry.setLibrary(LibraryTraces_Library.LIBRARY_OPEN_FEATURE);
+  }
+
+  /**
    * Creates a Confidence instance
    * @param clientSecret - clientSecret found on the Confidence console
    * @param region - region in which Confidence will operate
@@ -476,6 +486,7 @@ export class Confidence implements EventSender, Trackable, FlagResolver {
       cacheProvider,
       staleFlagTraceConsumer,
       emitEvaluationTrace,
+      telemetry,
     });
   }
 }
