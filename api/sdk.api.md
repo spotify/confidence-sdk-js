@@ -80,6 +80,7 @@ export interface ConfidenceOptions {
     disableTelemetry?: boolean;
     environment: 'client' | 'backend';
     fetchImplementation?: SimpleFetch;
+    // @internal
     library?: 'openfeature' | 'react';
     // Warning: (ae-forgotten-export) The symbol "Logger" needs to be exported by the entry point index.d.ts
     logger?: Logger;

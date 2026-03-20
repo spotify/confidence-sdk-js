@@ -62,7 +62,11 @@ export interface ConfidenceOptions {
    * @see {@link CacheOptions}
    */
   cache?: CacheOptions;
-  /** Library integration producing telemetry traces */
+  /**
+   * @internal
+   * Used by Confidence integration libraries (e.g. OpenFeature providers) to tag telemetry.
+   * Not intended for direct use by application code.
+   */
   library?: 'openfeature' | 'react';
   context?: Context;
 }
