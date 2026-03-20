@@ -22,7 +22,7 @@ message LibraryTraces {
     TraceId id = 1;
 
     oneof traceData {
-      uint64 millisecond_duration = 2;
+      uint64 millisecond_duration = 2 [deprecated = true];
       RequestTrace request_trace = 3;
       CountTrace count_trace = 4;
       EvaluationTrace evaluation_trace = 5;

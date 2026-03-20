@@ -1,6 +1,7 @@
 import { Confidence } from './Confidence';
 import { abortableSleep } from './fetch-util';
 import {
+  LibraryTraces_Library,
   LibraryTraces_Trace_EvaluationTrace_EvaluationErrorCode,
   LibraryTraces_Trace_EvaluationTrace_EvaluationReason,
   LibraryTraces_TraceId,
@@ -224,6 +225,142 @@ describe('Confidence integration tests', () => {
         }),
       ]),
     );
+  });
+
+  it('should send evaluation trace with DISABLED reason for archived flags', async () => {
+    const archivedResponse = {
+      resolvedFlags: [
+        {
+          flag: 'flags/flag1',
+          variant: '',
+          value: {},
+          flagSchema: { schema: { str: { stringSchema: {} } } },
+          reason: 'RESOLVE_REASON_FLAG_ARCHIVED',
+          shouldApply: false,
+        },
+      ],
+      resolveToken: 'xyz',
+    };
+    resolveHandlerMock.mockReturnValue(archivedResponse);
+    await confidence.getFlag('flag1.str', 'goodbye');
+    confidence.setContext({ pants: 'yellow' });
+    await confidence.getFlag('flag1.str', 'goodbye');
+
+    const telemetry = decodeTelemetryHeader(capturedResolveRequests[1]);
+    expect(telemetry).toBeDefined();
+    const evaluationTraces = telemetry!.libraryTraces.find(lt =>
+      lt.traces.some(t => t.id === LibraryTraces_TraceId.TRACE_ID_FLAG_EVALUATION),
+    );
+    expect(evaluationTraces).toBeDefined();
+    expect(evaluationTraces!.traces).toEqual(
+      expect.arrayContaining([
+        expect.objectContaining({
+          id: LibraryTraces_TraceId.TRACE_ID_FLAG_EVALUATION,
+          evaluationTrace: {
+            reason: LibraryTraces_Trace_EvaluationTrace_EvaluationReason.EVALUATION_REASON_DISABLED,
+            errorCode: LibraryTraces_Trace_EvaluationTrace_EvaluationErrorCode.EVALUATION_ERROR_CODE_UNSPECIFIED,
+          },
+        }),
+      ]),
+    );
+  });
+
+  it('should send evaluation trace with TARGETING_KEY_MISSING for targeting key errors', async () => {
+    const targetingKeyErrorResponse = {
+      resolvedFlags: [
+        {
+          flag: 'flags/flag1',
+          variant: '',
+          value: {},
+          flagSchema: { schema: { str: { stringSchema: {} } } },
+          reason: 'RESOLVE_REASON_TARGETING_KEY_ERROR',
+          shouldApply: false,
+        },
+      ],
+      resolveToken: 'xyz',
+    };
+    resolveHandlerMock.mockReturnValue(targetingKeyErrorResponse);
+    await confidence.getFlag('flag1.str', 'goodbye');
+    confidence.setContext({ pants: 'yellow' });
+    await confidence.getFlag('flag1.str', 'goodbye');
+
+    const telemetry = decodeTelemetryHeader(capturedResolveRequests[1]);
+    expect(telemetry).toBeDefined();
+    const evaluationTraces = telemetry!.libraryTraces.find(lt =>
+      lt.traces.some(t => t.id === LibraryTraces_TraceId.TRACE_ID_FLAG_EVALUATION),
+    );
+    expect(evaluationTraces).toBeDefined();
+    expect(evaluationTraces!.traces).toEqual(
+      expect.arrayContaining([
+        expect.objectContaining({
+          id: LibraryTraces_TraceId.TRACE_ID_FLAG_EVALUATION,
+          evaluationTrace: {
+            reason: LibraryTraces_Trace_EvaluationTrace_EvaluationReason.EVALUATION_REASON_ERROR,
+            errorCode:
+              LibraryTraces_Trace_EvaluationTrace_EvaluationErrorCode.EVALUATION_ERROR_CODE_TARGETING_KEY_MISSING,
+          },
+        }),
+      ]),
+    );
+  });
+
+  it('should send evaluation trace with DEFAULT reason for no-segment-match', async () => {
+    const noSegmentMatchResponse = {
+      resolvedFlags: [
+        {
+          flag: 'flags/flag1',
+          variant: '',
+          value: {},
+          flagSchema: { schema: { str: { stringSchema: {} } } },
+          reason: 'RESOLVE_REASON_NO_SEGMENT_MATCH',
+          shouldApply: false,
+        },
+      ],
+      resolveToken: 'xyz',
+    };
+    resolveHandlerMock.mockReturnValue(noSegmentMatchResponse);
+    await confidence.getFlag('flag1.str', 'goodbye');
+    confidence.setContext({ pants: 'yellow' });
+    await confidence.getFlag('flag1.str', 'goodbye');
+
+    const telemetry = decodeTelemetryHeader(capturedResolveRequests[1]);
+    expect(telemetry).toBeDefined();
+    const evaluationTraces = telemetry!.libraryTraces.find(lt =>
+      lt.traces.some(t => t.id === LibraryTraces_TraceId.TRACE_ID_FLAG_EVALUATION),
+    );
+    expect(evaluationTraces).toBeDefined();
+    expect(evaluationTraces!.traces).toEqual(
+      expect.arrayContaining([
+        expect.objectContaining({
+          id: LibraryTraces_TraceId.TRACE_ID_FLAG_EVALUATION,
+          evaluationTrace: {
+            reason: LibraryTraces_Trace_EvaluationTrace_EvaluationReason.EVALUATION_REASON_DEFAULT,
+            errorCode: LibraryTraces_Trace_EvaluationTrace_EvaluationErrorCode.EVALUATION_ERROR_CODE_UNSPECIFIED,
+          },
+        }),
+      ]),
+    );
+  });
+
+  it('should tag telemetry as LIBRARY_OPEN_FEATURE when library option is openfeature', async () => {
+    const ofConfidence = Confidence.create({
+      clientSecret: '<client-secret>',
+      timeout: 100,
+      environment: 'client',
+      fetchImplementation,
+      library: 'openfeature',
+    });
+    await ofConfidence.getFlag('flag1.str', 'goodbye');
+    ofConfidence.setContext({ pants: 'yellow' });
+    await ofConfidence.getFlag('flag1.str', 'goodbye');
+
+    const telemetry = decodeTelemetryHeader(capturedResolveRequests[1]);
+    expect(telemetry).toBeDefined();
+    const evaluationTraces = telemetry!.libraryTraces.find(lt =>
+      lt.traces.some(t => t.id === LibraryTraces_TraceId.TRACE_ID_FLAG_EVALUATION),
+    );
+    expect(evaluationTraces).toBeDefined();
+    expect(evaluationTraces!.library).toBe(LibraryTraces_Library.LIBRARY_OPEN_FEATURE);
   });
 
   it('should abort previous requests when context changes', async () => {

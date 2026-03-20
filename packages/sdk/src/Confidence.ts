@@ -62,6 +62,12 @@ export interface ConfidenceOptions {
    * @see {@link CacheOptions}
    */
   cache?: CacheOptions;
+  /**
+   * @internal
+   * Used by Confidence integration libraries (e.g. OpenFeature providers) to tag telemetry.
+   * Not intended for direct use by application code.
+   */
+  library?: 'openfeature' | 'react';
   context?: Context;
 }
 
@@ -402,6 +408,7 @@ export class Confidence implements EventSender, Trackable, FlagResolver {
       applyDebounce = 10,
       waitUntil,
       cache = {},
+      library,
     } = options;
     if (environment !== 'client' && environment !== 'backend') {
       throw new Error(`Invalid environment: ${environment}. Must be 'client' or 'backend'.`);
@@ -410,9 +417,16 @@ export class Confidence implements EventSender, Trackable, FlagResolver {
       id: SdkId.SDK_ID_JS_CONFIDENCE,
       version: '0.3.10', // x-release-please-version
     } as const;
+    const libraryEnum =
+      library === 'openfeature'
+        ? LibraryTraces_Library.LIBRARY_OPEN_FEATURE
+        : library === 'react'
+        ? LibraryTraces_Library.LIBRARY_REACT
+        : LibraryTraces_Library.LIBRARY_CONFIDENCE;
     const telemetry = new Telemetry({
       disabled: disableTelemetry,
       environment,
+      library: libraryEnum,
     });
     const evaluationTraceConsumer = telemetry.registerLibraryTraces({
       library: LibraryTraces_Library.LIBRARY_CONFIDENCE,
@@ -493,34 +507,51 @@ function evaluationTraceFromResult(evaluation: FlagEvaluation.Resolved<Value>): 
   const EvalReason = LibraryTraces_Trace_EvaluationTrace_EvaluationReason;
   const EvalError = LibraryTraces_Trace_EvaluationTrace_EvaluationErrorCode;
 
-  if (evaluation.reason === 'MATCH') {
-    return {
-      reason: EvalReason.EVALUATION_REASON_TARGETING_MATCH,
-      errorCode: EvalError.EVALUATION_ERROR_CODE_UNSPECIFIED,
-    };
+  switch (evaluation.reason) {
+    case 'MATCH':
+      return {
+        reason: EvalReason.EVALUATION_REASON_TARGETING_MATCH,
+        errorCode: EvalError.EVALUATION_ERROR_CODE_UNSPECIFIED,
+      };
+    case 'NO_SEGMENT_MATCH':
+    case 'NO_TREATMENT_MATCH':
+      return { reason: EvalReason.EVALUATION_REASON_DEFAULT, errorCode: EvalError.EVALUATION_ERROR_CODE_UNSPECIFIED };
+    case 'FLAG_ARCHIVED':
+      return { reason: EvalReason.EVALUATION_REASON_DISABLED, errorCode: EvalError.EVALUATION_ERROR_CODE_UNSPECIFIED };
+    case 'TARGETING_KEY_ERROR':
+      return {
+        reason: EvalReason.EVALUATION_REASON_ERROR,
+        errorCode: EvalError.EVALUATION_ERROR_CODE_TARGETING_KEY_MISSING,
+      };
+    case 'ERROR':
+      switch (evaluation.errorCode) {
+        case 'FLAG_NOT_FOUND':
+          return {
+            reason: EvalReason.EVALUATION_REASON_ERROR,
+            errorCode: EvalError.EVALUATION_ERROR_CODE_FLAG_NOT_FOUND,
+          };
+        case 'TYPE_MISMATCH':
+          return {
+            reason: EvalReason.EVALUATION_REASON_ERROR,
+            errorCode: EvalError.EVALUATION_ERROR_CODE_TYPE_MISMATCH,
+          };
+        case 'NOT_READY':
+          return {
+            reason: EvalReason.EVALUATION_REASON_ERROR,
+            errorCode: EvalError.EVALUATION_ERROR_CODE_PROVIDER_NOT_READY,
+          };
+        case 'GENERAL':
+        case 'TIMEOUT':
+        default:
+          return { reason: EvalReason.EVALUATION_REASON_ERROR, errorCode: EvalError.EVALUATION_ERROR_CODE_GENERAL };
+      }
+    case 'UNSPECIFIED':
+    default:
+      return {
+        reason: EvalReason.EVALUATION_REASON_UNSPECIFIED,
+        errorCode: EvalError.EVALUATION_ERROR_CODE_UNSPECIFIED,
+      };
   }
-  if (evaluation.reason === 'ERROR') {
-    switch (evaluation.errorCode) {
-      case 'FLAG_NOT_FOUND':
-        return {
-          reason: EvalReason.EVALUATION_REASON_ERROR,
-          errorCode: EvalError.EVALUATION_ERROR_CODE_FLAG_NOT_FOUND,
-        };
-      case 'TYPE_MISMATCH':
-        return { reason: EvalReason.EVALUATION_REASON_ERROR, errorCode: EvalError.EVALUATION_ERROR_CODE_TYPE_MISMATCH };
-      case 'NOT_READY':
-        return {
-          reason: EvalReason.EVALUATION_REASON_ERROR,
-          errorCode: EvalError.EVALUATION_ERROR_CODE_PROVIDER_NOT_READY,
-        };
-      case 'GENERAL':
-      case 'TIMEOUT':
-        return { reason: EvalReason.EVALUATION_REASON_ERROR, errorCode: EvalError.EVALUATION_ERROR_CODE_GENERAL };
-      default:
-        return { reason: EvalReason.EVALUATION_REASON_ERROR, errorCode: EvalError.EVALUATION_ERROR_CODE_GENERAL };
-    }
-  }
-  return { reason: EvalReason.EVALUATION_REASON_DEFAULT, errorCode: EvalError.EVALUATION_ERROR_CODE_UNSPECIFIED };
 }
 
 function defaultLogger(): Logger {
