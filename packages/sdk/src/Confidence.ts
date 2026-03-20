@@ -417,12 +417,12 @@ export class Confidence implements EventSender, Trackable, FlagResolver {
       id: SdkId.SDK_ID_JS_CONFIDENCE,
       version: '0.3.10', // x-release-please-version
     } as const;
-    const libraryEnum =
-      library === 'openfeature'
-        ? LibraryTraces_Library.LIBRARY_OPEN_FEATURE
-        : library === 'react'
-        ? LibraryTraces_Library.LIBRARY_REACT
-        : LibraryTraces_Library.LIBRARY_CONFIDENCE;
+    let libraryEnum = LibraryTraces_Library.LIBRARY_CONFIDENCE;
+    if (library === 'openfeature') {
+      libraryEnum = LibraryTraces_Library.LIBRARY_OPEN_FEATURE;
+    } else if (library === 'react') {
+      libraryEnum = LibraryTraces_Library.LIBRARY_REACT;
+    }
     const telemetry = new Telemetry({
       disabled: disableTelemetry,
       environment,
