@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.3.11](https://github.com/spotify/confidence-sdk-js/compare/sdk-v0.3.10...sdk-v0.3.11) (2026-03-20)
+
+
+### ✨ New Features
+
+* tracing client evaluations ([#297](https://github.com/spotify/confidence-sdk-js/issues/297)) ([6de4fda](https://github.com/spotify/confidence-sdk-js/commit/6de4fda919172e1a29eaf6f784310f900cef3552))
+
 ## [0.3.10](https://github.com/spotify/confidence-sdk-js/compare/sdk-v0.3.9...sdk-v0.3.10) (2026-03-10)
 
 
