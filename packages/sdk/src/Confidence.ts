@@ -418,7 +418,7 @@ export class Confidence implements EventSender, Trackable, FlagResolver {
         ? LibraryTraces_Library.LIBRARY_OPEN_FEATURE
         : library === 'react'
         ? LibraryTraces_Library.LIBRARY_REACT
-        : undefined;
+        : LibraryTraces_Library.LIBRARY_CONFIDENCE;
     const telemetry = new Telemetry({
       disabled: disableTelemetry,
       environment,
