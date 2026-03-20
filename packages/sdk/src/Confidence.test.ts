@@ -5,7 +5,6 @@ import { EventSenderEngine } from './EventSenderEngine';
 import { FlagResolution } from './FlagResolution';
 import { FlagResolverClient, PendingResolution } from './FlagResolverClient';
 import { FlagEvaluation, State, StateObserver } from './flags';
-import { Telemetry } from './Telemetry';
 
 const flagResolverClientMock: jest.Mocked<FlagResolverClient> = {
   resolve: jest.fn(),
@@ -35,7 +34,6 @@ describe('Confidence', () => {
       },
       staleFlagTraceConsumer: jest.fn(),
       emitEvaluationTrace: jest.fn(),
-      telemetry: new Telemetry({ disabled: true, environment: 'client' }),
     });
     flagResolverClientMock.resolve.mockImplementation((context, _flags) => {
       const flagResolution = new Promise<FlagResolution>(resolve => {

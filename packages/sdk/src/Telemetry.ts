@@ -8,7 +8,12 @@ import {
 } from './generated/confidence/telemetry/v1/telemetry';
 import { Logger } from './logger';
 
-export type TelemetryOptions = { disabled: boolean; logger?: Logger; environment: 'backend' | 'client' };
+export type TelemetryOptions = {
+  disabled: boolean;
+  logger?: Logger;
+  environment: 'backend' | 'client';
+  library?: LibraryTraces_Library;
+};
 
 export type Tag = {
   library: LibraryTraces_Library;
@@ -22,16 +27,13 @@ export class Telemetry {
   private readonly logger?: Logger;
   private readonly libraryTraces: LibraryTraces[] = [];
   private readonly platform: Platform;
-  private library: LibraryTraces_Library = LibraryTraces_Library.LIBRARY_CONFIDENCE;
+  private readonly library: LibraryTraces_Library;
 
   constructor(opts: TelemetryOptions) {
     this.disabled = opts.disabled;
     this.logger = opts.logger;
     this.platform = opts.environment === 'client' ? Platform.PLATFORM_JS_WEB : Platform.PLATFORM_JS_SERVER;
-  }
-
-  setLibrary(library: LibraryTraces_Library): void {
-    this.library = library;
+    this.library = opts.library ?? LibraryTraces_Library.LIBRARY_CONFIDENCE;
   }
 
   public registerLibraryTraces({ library, version, id }: Tag): TraceConsumer {

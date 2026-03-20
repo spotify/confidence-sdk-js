@@ -342,11 +342,17 @@ describe('Confidence integration tests', () => {
     );
   });
 
-  it('should tag telemetry as LIBRARY_OPEN_FEATURE when setTelemetryLibraryOpenFeature is called', async () => {
-    confidence.setTelemetryLibraryOpenFeature();
-    await confidence.getFlag('flag1.str', 'goodbye');
-    confidence.setContext({ pants: 'yellow' });
-    await confidence.getFlag('flag1.str', 'goodbye');
+  it('should tag telemetry as LIBRARY_OPEN_FEATURE when library option is openfeature', async () => {
+    const ofConfidence = Confidence.create({
+      clientSecret: '<client-secret>',
+      timeout: 100,
+      environment: 'client',
+      fetchImplementation,
+      library: 'openfeature',
+    });
+    await ofConfidence.getFlag('flag1.str', 'goodbye');
+    ofConfidence.setContext({ pants: 'yellow' });
+    await ofConfidence.getFlag('flag1.str', 'goodbye');
 
     const telemetry = decodeTelemetryHeader(capturedResolveRequests[1]);
     expect(telemetry).toBeDefined();

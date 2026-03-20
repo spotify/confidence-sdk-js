@@ -34,13 +34,13 @@ export function createConfidenceServerProvider(
   confidenceOrOptions: Confidence | ConfidenceProviderFactoryOptions,
 ): Provider {
   if (confidenceOrOptions instanceof Confidence) {
-    confidenceOrOptions.setTelemetryLibraryOpenFeature();
+    // telemetry library tagging is not applied when passing a pre-built Confidence instance
     return new ConfidenceServerProvider(confidenceOrOptions);
   }
   const confidence = Confidence.create({
     ...confidenceOrOptions,
     environment: 'backend',
+    library: 'openfeature',
   });
-  confidence.setTelemetryLibraryOpenFeature();
   return new ConfidenceServerProvider(confidence);
 }
