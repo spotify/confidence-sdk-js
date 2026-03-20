@@ -32,6 +32,8 @@ describe('Confidence', () => {
       cacheProvider: () => {
         throw new Error('Not implemented');
       },
+      staleFlagTraceConsumer: jest.fn(),
+      emitEvaluationTrace: jest.fn(),
     });
     flagResolverClientMock.resolve.mockImplementation((context, _flags) => {
       const flagResolution = new Promise<FlagResolution>(resolve => {

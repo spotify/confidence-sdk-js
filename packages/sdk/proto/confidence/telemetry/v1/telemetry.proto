@@ -21,12 +21,11 @@ message LibraryTraces {
   message Trace {
     TraceId id = 1;
 
-    // DEPRECATED
-    optional uint64 millisecond_duration = 2;
-
-    oneof trace {
+    oneof traceData {
+      uint64 millisecond_duration = 2 [deprecated = true];
       RequestTrace request_trace = 3;
       CountTrace count_trace = 4;
+      EvaluationTrace evaluation_trace = 5;
     }
 
     message CountTrace {}
@@ -43,10 +42,39 @@ message LibraryTraces {
         STATUS_CACHED = 4;
       }
     }
+
+    message EvaluationTrace {
+      EvaluationReason reason = 1;
+      EvaluationErrorCode error_code = 2;
+
+      enum EvaluationReason {
+        EVALUATION_REASON_UNSPECIFIED = 0;
+        EVALUATION_REASON_TARGETING_MATCH = 1;
+        EVALUATION_REASON_DEFAULT = 2;
+        EVALUATION_REASON_STALE = 3;
+        EVALUATION_REASON_DISABLED = 4;
+        EVALUATION_REASON_CACHED = 5;
+        EVALUATION_REASON_STATIC = 6;
+        EVALUATION_REASON_SPLIT = 7;
+        EVALUATION_REASON_ERROR = 8;
+      }
+
+      enum EvaluationErrorCode {
+        EVALUATION_ERROR_CODE_UNSPECIFIED = 0;
+        EVALUATION_ERROR_CODE_PROVIDER_NOT_READY = 1;
+        EVALUATION_ERROR_CODE_FLAG_NOT_FOUND = 2;
+        EVALUATION_ERROR_CODE_PARSE_ERROR = 3;
+        EVALUATION_ERROR_CODE_TYPE_MISMATCH = 4;
+        EVALUATION_ERROR_CODE_TARGETING_KEY_MISSING = 5;
+        EVALUATION_ERROR_CODE_INVALID_CONTEXT = 6;
+        EVALUATION_ERROR_CODE_PROVIDER_FATAL = 7;
+        EVALUATION_ERROR_CODE_GENERAL = 8;
+      }
+    }
   }
 
   enum Library {
-    LIBRARY_UNSPECIFIED = 0;
+    LIBRARY_UNKNOWN = 0;
     LIBRARY_CONFIDENCE = 1;
     LIBRARY_OPEN_FEATURE = 2;
     LIBRARY_REACT = 3;
@@ -56,7 +84,6 @@ message LibraryTraces {
     TRACE_ID_UNSPECIFIED = 0;
     TRACE_ID_RESOLVE_LATENCY = 1;
     TRACE_ID_STALE_FLAG = 2;
-    TRACE_ID_FLAG_TYPE_MISMATCH = 3;
-    TRACE_ID_WITH_CONTEXT = 4;
+    TRACE_ID_FLAG_EVALUATION = 3;
   }
 }

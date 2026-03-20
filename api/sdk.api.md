@@ -80,6 +80,8 @@ export interface ConfidenceOptions {
     disableTelemetry?: boolean;
     environment: 'client' | 'backend';
     fetchImplementation?: SimpleFetch;
+    // @internal
+    library?: 'openfeature' | 'react';
     // Warning: (ae-forgotten-export) The symbol "Logger" needs to be exported by the entry point index.d.ts
     logger?: Logger;
     region?: 'eu' | 'us';
@@ -96,6 +98,10 @@ export interface Configuration extends ConfidenceOptions {
     readonly cacheProvider: CacheProvider;
     // (undocumented)
     readonly clientSecret: string;
+    // Warning: (ae-forgotten-export) The symbol "EvaluationTrace" needs to be exported by the entry point index.d.ts
+    //
+    // @internal (undocumented)
+    readonly emitEvaluationTrace: (trace: EvaluationTrace) => void;
     // Warning: (ae-forgotten-export) The symbol "EventSenderEngine" needs to be exported by the entry point index.d.ts
     //
     // @internal
@@ -105,6 +111,10 @@ export interface Configuration extends ConfidenceOptions {
     // @internal
     readonly flagResolverClient: FlagResolverClient;
     readonly logger: Logger;
+    // Warning: (ae-forgotten-export) The symbol "TraceConsumer" needs to be exported by the entry point index.d.ts
+    //
+    // @internal (undocumented)
+    readonly staleFlagTraceConsumer: TraceConsumer;
 }
 
 // @public

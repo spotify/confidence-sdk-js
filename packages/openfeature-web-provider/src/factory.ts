@@ -32,11 +32,13 @@ export function createConfidenceWebProvider(confidence: Confidence): Provider;
  * @public */
 export function createConfidenceWebProvider(confidenceOrOptions: Confidence | ConfidenceWebProviderOptions): Provider {
   if (confidenceOrOptions instanceof Confidence) {
+    // telemetry library tagging is not applied when passing a pre-built Confidence instance
     return new ConfidenceWebProvider(confidenceOrOptions);
   }
   const confidence = Confidence.create({
     ...confidenceOrOptions,
     environment: 'client',
+    library: 'openfeature',
   });
   return new ConfidenceWebProvider(confidence);
 }

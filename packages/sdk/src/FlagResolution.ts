@@ -15,12 +15,22 @@ export interface FlagResolution {
 }
 
 export namespace FlagResolution {
-  export function ready(context: Value.Struct, response: ResolveFlagsResponse, applier?: Applier): FlagResolution {
-    return new ReadyFlagResolution(context, response, applier);
+  export function ready(
+    context: Value.Struct,
+    response: ResolveFlagsResponse,
+    applier?: Applier,
+    onEvaluation?: EvaluationObserver,
+  ): FlagResolution {
+    return new ReadyFlagResolution(context, response, applier, onEvaluation);
   }
 
-  export function failed(context: Value.Struct, code: FlagEvaluation.ErrorCode, message: string): FlagResolution {
-    return new FailedFlagResolution(context, code, message);
+  export function failed(
+    context: Value.Struct,
+    code: FlagEvaluation.ErrorCode,
+    message: string,
+    onEvaluation?: EvaluationObserver,
+  ): FlagResolution {
+    return new FailedFlagResolution(context, code, message, onEvaluation);
   }
 }
 
@@ -40,6 +50,7 @@ type ResolvedFlag = {
 };
 
 export type Applier = (flagName: string) => void;
+export type EvaluationObserver = (evaluation: FlagEvaluation.Resolved<Value>) => void;
 
 export class ReadyFlagResolution implements FlagResolution {
   private readonly flags: Map<string, ResolvedFlag> = new Map();
@@ -50,6 +61,7 @@ export class ReadyFlagResolution implements FlagResolution {
     readonly context: Value.Struct,
     resolveResponse: ResolveFlagsResponse,
     private readonly applier?: Applier,
+    private readonly onEvaluation?: EvaluationObserver,
   ) {
     for (const resolvedFlag of resolveResponse.resolvedFlags) {
       const { flag, variant, value, reason, flagSchema } = resolvedFlag;
@@ -73,30 +85,36 @@ export class ReadyFlagResolution implements FlagResolution {
   }
 
   evaluate<T extends Value>(path: string, defaultValue: T): FlagEvaluation.Resolved<T> {
+    let result: FlagEvaluation.Resolved<T>;
     try {
       const [name, ...steps] = path.split('.');
       const flag = this.flags.get(name);
       if (!flag) {
-        return {
+        this.applier?.('');
+        result = {
           reason: 'ERROR',
           value: defaultValue,
           errorCode: 'FLAG_NOT_FOUND',
           errorMessage: `Flag "${name}" not found`,
         };
+        this.onEvaluation?.(result);
+        return result;
       }
       const reason = flag.reason;
       if (reason === 'ERROR') throw new Error('Unknown resolve error');
 
-      if (flag.shouldApply && this.applier) {
-        this.applier?.(name);
+      this.applier?.(flag.shouldApply ? name : '');
+      if (flag.shouldApply) {
         flag.shouldApply = false;
       }
 
       if (reason !== 'MATCH') {
-        return {
+        result = {
           reason,
           value: defaultValue,
         };
+        this.onEvaluation?.(result);
+        return result;
       }
 
       const value = TypeMismatchError.hoist(name, () => Value.get(flag.value, ...steps) as T);
@@ -106,19 +124,21 @@ export class ReadyFlagResolution implements FlagResolution {
         schema.assertAssignsTo(defaultValue);
       });
 
-      return {
+      result = {
         reason,
         value,
         variant: flag.variant,
       };
     } catch (e: any) {
-      return {
+      result = {
         reason: 'ERROR',
         value: defaultValue,
         errorCode: e instanceof TypeMismatchError ? 'TYPE_MISMATCH' : 'GENERAL',
         errorMessage: e.message ?? 'Unknown error',
       };
     }
+    this.onEvaluation?.(result);
+    return result;
   }
 }
 
@@ -126,15 +146,22 @@ ReadyFlagResolution.prototype.state = 'READY';
 
 export class FailedFlagResolution implements FlagResolution {
   declare state: 'ERROR';
-  constructor(readonly context: Value.Struct, readonly code: FlagEvaluation.ErrorCode, readonly message: string) {}
+  constructor(
+    readonly context: Value.Struct,
+    readonly code: FlagEvaluation.ErrorCode,
+    readonly message: string,
+    private readonly onEvaluation?: EvaluationObserver,
+  ) {}
 
   evaluate<T extends Value>(_path: string, defaultValue: T): FlagEvaluation.Resolved<T> {
-    return {
+    const result: FlagEvaluation.Resolved<T> = {
       reason: 'ERROR',
       value: defaultValue,
       errorCode: this.code,
       errorMessage: this.message,
     };
+    this.onEvaluation?.(result);
+    return result;
   }
 }
 FailedFlagResolution.prototype.state = 'ERROR';

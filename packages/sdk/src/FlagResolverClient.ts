@@ -1,6 +1,6 @@
 import { FlagEvaluation } from '.';
 import { AccessiblePromise } from './AccessiblePromise';
-import { Applier, FlagResolution } from './FlagResolution';
+import { Applier, EvaluationObserver, FlagResolution } from './FlagResolution';
 import { Telemetry, TraceConsumer } from './Telemetry';
 import { CacheProvider } from './flag-cache';
 import { Context } from './context';
@@ -99,6 +99,7 @@ export type FlagResolverClientOptions = {
   logger: Logger;
   waitUntil?: WaitUntil;
   cacheProvider?: CacheProvider;
+  onEvaluation?: EvaluationObserver;
 };
 
 export class FetchingFlagResolverClient implements FlagResolverClient {
@@ -110,6 +111,7 @@ export class FetchingFlagResolverClient implements FlagResolverClient {
   private readonly baseUrl: string;
   private readonly applyBaseUrl: string;
   private readonly traceConsumer: TraceConsumer;
+  private readonly onEvaluation: EvaluationObserver | undefined;
   private readonly waitUntil: WaitUntil | undefined;
   private readonly logger: Logger;
   private readonly cacheReadThrough: (
@@ -132,6 +134,7 @@ export class FetchingFlagResolverClient implements FlagResolverClient {
     logger,
     waitUntil,
     cacheProvider,
+    onEvaluation,
   }: FlagResolverClientOptions) {
     this.traceConsumer = telemetry.registerLibraryTraces({
       library: LibraryTraces_Library.LIBRARY_CONFIDENCE,
@@ -150,6 +153,7 @@ export class FetchingFlagResolverClient implements FlagResolverClient {
     this.clientSecret = clientSecret;
     this.sdk = sdk;
     this.applyDebounce = applyDebounce;
+    this.onEvaluation = onEvaluation;
     this.logger = logger;
     if (resolveBaseUrl) {
       this.baseUrl = `${resolveBaseUrl}/v1`;
@@ -213,13 +217,13 @@ export class FetchingFlagResolverClient implements FlagResolverClient {
         .then(({ response, isFromCache }) => {
           const latency = performance.now() - start;
           this.markLatency(latency, isFromCache ? TraceStatus.STATUS_CACHED : TraceStatus.STATUS_SUCCESS);
-          return FlagResolution.ready(context, response, this.createApplier(response.resolveToken));
+          return FlagResolution.ready(context, response, this.createApplier(response.resolveToken), this.onEvaluation);
         })
         .catch(error => {
           const latency = performance.now() - start;
           const errorCode: FlagEvaluation.ErrorCode = error instanceof ResolveError ? error.code : 'GENERAL';
           this.markLatency(latency, errorCode === 'TIMEOUT' ? TraceStatus.STATUS_TIMEOUT : TraceStatus.STATUS_ERROR);
-          return FlagResolution.failed(context, errorCode, error.message);
+          return FlagResolution.failed(context, errorCode, error.message, this.onEvaluation);
         });
     });
   }
@@ -248,13 +252,14 @@ export class FetchingFlagResolverClient implements FlagResolverClient {
 
     let timeoutId = 0;
     return (flagName: string) => {
-      if (applied.has(flagName)) return;
-      this.waitUntil?.(nextFlush);
-      applied.add(flagName);
-      pending.push({
-        flag: FLAG_PREFIX + flagName,
-        applyTime: new Date(),
-      });
+      if (flagName && !applied.has(flagName)) {
+        this.waitUntil?.(nextFlush);
+        applied.add(flagName);
+        pending.push({
+          flag: FLAG_PREFIX + flagName,
+          applyTime: new Date(),
+        });
+      }
       if (timeoutId) {
         clearTimeout(timeoutId);
       }

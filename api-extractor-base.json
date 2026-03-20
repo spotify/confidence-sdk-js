@@ -425,6 +425,9 @@
       },
       "tsdoc-param-tag-with-invalid-name": {
         "logLevel": "none"
+      },
+      "tsdoc-missing-deprecation-message": {
+        "logLevel": "none"
       }
       // "tsdoc-link-tag-unescaped-text": {
       //   "logLevel": "warning",

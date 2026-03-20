@@ -12,10 +12,20 @@ import { Subscribe, Observer, subject, changeObserver } from './observing';
 import { WaitUntil } from './types';
 import { FlagResolution } from './FlagResolution';
 import { AccessiblePromise } from './AccessiblePromise';
-import { Telemetry } from './Telemetry';
+import { EvaluationObserver } from './FlagResolution';
+import { Telemetry, TraceConsumer } from './Telemetry';
+import {
+  LibraryTraces_Library,
+  LibraryTraces_TraceId,
+  LibraryTraces_Trace_EvaluationTrace,
+  LibraryTraces_Trace_EvaluationTrace_EvaluationErrorCode,
+  LibraryTraces_Trace_EvaluationTrace_EvaluationReason,
+} from './generated/confidence/telemetry/v1/telemetry';
 import { SimpleFetch } from './fetch-util';
 import { CacheOptions, CacheProvider, FlagCache } from './flag-cache';
 import { utf8ToBase64 } from './utils';
+
+type EvaluationTrace = Omit<LibraryTraces_Trace_EvaluationTrace, '$type'>;
 
 /**
  * Confidence options, to be used for easier initialization of Confidence
@@ -52,6 +62,12 @@ export interface ConfidenceOptions {
    * @see {@link CacheOptions}
    */
   cache?: CacheOptions;
+  /**
+   * @internal
+   * Used by Confidence integration libraries (e.g. OpenFeature providers) to tag telemetry.
+   * Not intended for direct use by application code.
+   */
+  library?: 'openfeature' | 'react';
   context?: Context;
 }
 
@@ -70,6 +86,10 @@ export interface Configuration extends ConfidenceOptions {
   /* @internal */
   readonly clientSecret: string;
   readonly cacheProvider: CacheProvider;
+  /** @internal */
+  readonly staleFlagTraceConsumer: TraceConsumer;
+  /** @internal */
+  readonly emitEvaluationTrace: (trace: EvaluationTrace) => void;
 }
 
 /**
@@ -283,6 +303,7 @@ export class Confidence implements EventSender, Trackable, FlagResolver {
       close = this.subscribe(state => {
         // when state is ready we can be sure currentFlags exist
         if (state === 'READY' || state === 'ERROR') {
+          // evaluate() emits the evaluation trace via onEvaluation callback
           resolve(this.currentFlags!.evaluate(path, defaultValue));
         }
       });
@@ -305,11 +326,17 @@ export class Confidence implements EventSender, Trackable, FlagResolver {
         errorMessage: 'Flags are not yet ready',
         value: defaultValue,
       };
+      this.config.emitEvaluationTrace({
+        reason: LibraryTraces_Trace_EvaluationTrace_EvaluationReason.EVALUATION_REASON_ERROR,
+        errorCode: LibraryTraces_Trace_EvaluationTrace_EvaluationErrorCode.EVALUATION_ERROR_CODE_PROVIDER_NOT_READY,
+      });
     } else {
       this.showLoggerLink(path, this.getContext());
+      // evaluate() emits the evaluation trace via onEvaluation callback
       evaluation = this.currentFlags.evaluate(path, defaultValue);
     }
     if (!this.currentFlags || !Value.equal(this.currentFlags.context, this.getContext())) {
+      this.config.staleFlagTraceConsumer({});
       const then: PromiseLike<FlagEvaluation.Resolved<T>>['then'] = (onfulfilled?, onrejected?) =>
         this.evaluateFlagAsync(path, defaultValue).then(onfulfilled, onrejected);
       const staleEvaluation = {
@@ -381,6 +408,7 @@ export class Confidence implements EventSender, Trackable, FlagResolver {
       applyDebounce = 10,
       waitUntil,
       cache = {},
+      library,
     } = options;
     if (environment !== 'client' && environment !== 'backend') {
       throw new Error(`Invalid environment: ${environment}. Must be 'client' or 'backend'.`);
@@ -389,9 +417,32 @@ export class Confidence implements EventSender, Trackable, FlagResolver {
       id: SdkId.SDK_ID_JS_CONFIDENCE,
       version: '0.3.10', // x-release-please-version
     } as const;
+    let libraryEnum = LibraryTraces_Library.LIBRARY_CONFIDENCE;
+    if (library === 'openfeature') {
+      libraryEnum = LibraryTraces_Library.LIBRARY_OPEN_FEATURE;
+    } else if (library === 'react') {
+      libraryEnum = LibraryTraces_Library.LIBRARY_REACT;
+    }
     const telemetry = new Telemetry({
       disabled: disableTelemetry,
       environment,
+      library: libraryEnum,
+    });
+    const evaluationTraceConsumer = telemetry.registerLibraryTraces({
+      library: LibraryTraces_Library.LIBRARY_CONFIDENCE,
+      version: sdk.version,
+      id: LibraryTraces_TraceId.TRACE_ID_FLAG_EVALUATION,
+    });
+    const emitEvaluationTrace = (trace: EvaluationTrace) => {
+      evaluationTraceConsumer({ evaluationTrace: trace });
+    };
+    const onEvaluation: EvaluationObserver = evaluation => {
+      emitEvaluationTrace(evaluationTraceFromResult(evaluation));
+    };
+    const staleFlagTraceConsumer = telemetry.registerLibraryTraces({
+      library: LibraryTraces_Library.LIBRARY_CONFIDENCE,
+      version: sdk.version,
+      id: LibraryTraces_TraceId.TRACE_ID_STALE_FLAG,
     });
     if (!clientSecret) {
       logger.error?.(`Confidence: confidence cannot be instantiated without a client secret`);
@@ -411,6 +462,7 @@ export class Confidence implements EventSender, Trackable, FlagResolver {
       applyDebounce,
       waitUntil,
       cacheProvider,
+      onEvaluation,
     });
     const estEventSizeKb = 1;
     const flushTimeoutMilliseconds = 500;
@@ -436,6 +488,8 @@ export class Confidence implements EventSender, Trackable, FlagResolver {
       eventSenderEngine,
       logger,
       cacheProvider,
+      staleFlagTraceConsumer,
+      emitEvaluationTrace,
     });
   }
 }
@@ -447,6 +501,57 @@ function defaultFetchImplementation(): typeof fetch {
     );
   }
   return globalThis.fetch.bind(globalThis);
+}
+
+function evaluationTraceFromResult(evaluation: FlagEvaluation.Resolved<Value>): EvaluationTrace {
+  const EvalReason = LibraryTraces_Trace_EvaluationTrace_EvaluationReason;
+  const EvalError = LibraryTraces_Trace_EvaluationTrace_EvaluationErrorCode;
+
+  switch (evaluation.reason) {
+    case 'MATCH':
+      return {
+        reason: EvalReason.EVALUATION_REASON_TARGETING_MATCH,
+        errorCode: EvalError.EVALUATION_ERROR_CODE_UNSPECIFIED,
+      };
+    case 'NO_SEGMENT_MATCH':
+    case 'NO_TREATMENT_MATCH':
+      return { reason: EvalReason.EVALUATION_REASON_DEFAULT, errorCode: EvalError.EVALUATION_ERROR_CODE_UNSPECIFIED };
+    case 'FLAG_ARCHIVED':
+      return { reason: EvalReason.EVALUATION_REASON_DISABLED, errorCode: EvalError.EVALUATION_ERROR_CODE_UNSPECIFIED };
+    case 'TARGETING_KEY_ERROR':
+      return {
+        reason: EvalReason.EVALUATION_REASON_ERROR,
+        errorCode: EvalError.EVALUATION_ERROR_CODE_TARGETING_KEY_MISSING,
+      };
+    case 'ERROR':
+      switch (evaluation.errorCode) {
+        case 'FLAG_NOT_FOUND':
+          return {
+            reason: EvalReason.EVALUATION_REASON_ERROR,
+            errorCode: EvalError.EVALUATION_ERROR_CODE_FLAG_NOT_FOUND,
+          };
+        case 'TYPE_MISMATCH':
+          return {
+            reason: EvalReason.EVALUATION_REASON_ERROR,
+            errorCode: EvalError.EVALUATION_ERROR_CODE_TYPE_MISMATCH,
+          };
+        case 'NOT_READY':
+          return {
+            reason: EvalReason.EVALUATION_REASON_ERROR,
+            errorCode: EvalError.EVALUATION_ERROR_CODE_PROVIDER_NOT_READY,
+          };
+        case 'GENERAL':
+        case 'TIMEOUT':
+        default:
+          return { reason: EvalReason.EVALUATION_REASON_ERROR, errorCode: EvalError.EVALUATION_ERROR_CODE_GENERAL };
+      }
+    case 'UNSPECIFIED':
+    default:
+      return {
+        reason: EvalReason.EVALUATION_REASON_UNSPECIFIED,
+        errorCode: EvalError.EVALUATION_ERROR_CODE_UNSPECIFIED,
+      };
+  }
 }
 
 function defaultLogger(): Logger {

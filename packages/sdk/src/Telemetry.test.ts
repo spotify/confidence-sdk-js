@@ -125,4 +125,48 @@ describe('Telemetry', () => {
       },
     ]);
   });
+
+  it('defaults library to LIBRARY_CONFIDENCE when not specified', () => {
+    const telemetry = new Telemetry({ disabled: false, environment: 'client' });
+    const traceConsumer = telemetry.registerLibraryTraces({
+      library: LibraryTraces_Library.LIBRARY_CONFIDENCE,
+      version: '1.0.0',
+      id: LibraryTraces_TraceId.TRACE_ID_STALE_FLAG,
+    });
+    traceConsumer({});
+    const snapshot = telemetry.getSnapshot();
+    expect(snapshot.libraryTraces[0].library).toBe(LibraryTraces_Library.LIBRARY_CONFIDENCE);
+  });
+
+  it('overrides library in snapshot when library option is LIBRARY_OPEN_FEATURE', () => {
+    const telemetry = new Telemetry({
+      disabled: false,
+      environment: 'client',
+      library: LibraryTraces_Library.LIBRARY_OPEN_FEATURE,
+    });
+    const traceConsumer = telemetry.registerLibraryTraces({
+      library: LibraryTraces_Library.LIBRARY_CONFIDENCE,
+      version: '1.0.0',
+      id: LibraryTraces_TraceId.TRACE_ID_STALE_FLAG,
+    });
+    traceConsumer({});
+    const snapshot = telemetry.getSnapshot();
+    expect(snapshot.libraryTraces[0].library).toBe(LibraryTraces_Library.LIBRARY_OPEN_FEATURE);
+  });
+
+  it('overrides library in snapshot when library option is LIBRARY_REACT', () => {
+    const telemetry = new Telemetry({
+      disabled: false,
+      environment: 'client',
+      library: LibraryTraces_Library.LIBRARY_REACT,
+    });
+    const traceConsumer = telemetry.registerLibraryTraces({
+      library: LibraryTraces_Library.LIBRARY_CONFIDENCE,
+      version: '1.0.0',
+      id: LibraryTraces_TraceId.TRACE_ID_STALE_FLAG,
+    });
+    traceConsumer({});
+    const snapshot = telemetry.getSnapshot();
+    expect(snapshot.libraryTraces[0].library).toBe(LibraryTraces_Library.LIBRARY_REACT);
+  });
 });
