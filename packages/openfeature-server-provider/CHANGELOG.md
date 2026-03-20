@@ -90,6 +90,20 @@
   * devDependencies
     * @spotify-confidence/sdk bumped to 0.3.9
 
+## [0.3.11](https://github.com/spotify/confidence-sdk-js/compare/openfeature-server-provider-v0.3.10...openfeature-server-provider-v0.3.11) (2026-03-20)
+
+
+### ✨ New Features
+
+* tracing client evaluations ([#297](https://github.com/spotify/confidence-sdk-js/issues/297)) ([6de4fda](https://github.com/spotify/confidence-sdk-js/commit/6de4fda919172e1a29eaf6f784310f900cef3552))
+
+
+### Dependencies
+
+* The following workspace dependencies were updated
+  * devDependencies
+    * @spotify-confidence/sdk bumped to 0.3.11
+
 ## [0.3.10](https://github.com/spotify/confidence-sdk-js/compare/openfeature-server-provider-v0.3.9...openfeature-server-provider-v0.3.10) (2026-03-10)
 
 
