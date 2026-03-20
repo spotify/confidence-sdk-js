@@ -62,6 +62,8 @@ export interface ConfidenceOptions {
    * @see {@link CacheOptions}
    */
   cache?: CacheOptions;
+  /** Library integration producing telemetry traces */
+  library?: 'openfeature' | 'react';
   context?: Context;
 }
 
@@ -402,6 +404,7 @@ export class Confidence implements EventSender, Trackable, FlagResolver {
       applyDebounce = 10,
       waitUntil,
       cache = {},
+      library,
     } = options;
     if (environment !== 'client' && environment !== 'backend') {
       throw new Error(`Invalid environment: ${environment}. Must be 'client' or 'backend'.`);
@@ -410,9 +413,16 @@ export class Confidence implements EventSender, Trackable, FlagResolver {
       id: SdkId.SDK_ID_JS_CONFIDENCE,
       version: '0.3.10', // x-release-please-version
     } as const;
+    const libraryEnum =
+      library === 'openfeature'
+        ? LibraryTraces_Library.LIBRARY_OPEN_FEATURE
+        : library === 'react'
+        ? LibraryTraces_Library.LIBRARY_REACT
+        : LibraryTraces_Library.LIBRARY_CONFIDENCE;
     const telemetry = new Telemetry({
       disabled: disableTelemetry,
       environment,
+      library: libraryEnum,
     });
     const evaluationTraceConsumer = telemetry.registerLibraryTraces({
       library: LibraryTraces_Library.LIBRARY_CONFIDENCE,
@@ -495,22 +505,37 @@ function evaluationTraceFromResult(evaluation: FlagEvaluation.Resolved<Value>): 
 
   switch (evaluation.reason) {
     case 'MATCH':
-      return { reason: EvalReason.EVALUATION_REASON_TARGETING_MATCH, errorCode: EvalError.EVALUATION_ERROR_CODE_UNSPECIFIED };
+      return {
+        reason: EvalReason.EVALUATION_REASON_TARGETING_MATCH,
+        errorCode: EvalError.EVALUATION_ERROR_CODE_UNSPECIFIED,
+      };
     case 'NO_SEGMENT_MATCH':
     case 'NO_TREATMENT_MATCH':
       return { reason: EvalReason.EVALUATION_REASON_DEFAULT, errorCode: EvalError.EVALUATION_ERROR_CODE_UNSPECIFIED };
     case 'FLAG_ARCHIVED':
       return { reason: EvalReason.EVALUATION_REASON_DISABLED, errorCode: EvalError.EVALUATION_ERROR_CODE_UNSPECIFIED };
     case 'TARGETING_KEY_ERROR':
-      return { reason: EvalReason.EVALUATION_REASON_ERROR, errorCode: EvalError.EVALUATION_ERROR_CODE_TARGETING_KEY_MISSING };
+      return {
+        reason: EvalReason.EVALUATION_REASON_ERROR,
+        errorCode: EvalError.EVALUATION_ERROR_CODE_TARGETING_KEY_MISSING,
+      };
     case 'ERROR':
       switch (evaluation.errorCode) {
         case 'FLAG_NOT_FOUND':
-          return { reason: EvalReason.EVALUATION_REASON_ERROR, errorCode: EvalError.EVALUATION_ERROR_CODE_FLAG_NOT_FOUND };
+          return {
+            reason: EvalReason.EVALUATION_REASON_ERROR,
+            errorCode: EvalError.EVALUATION_ERROR_CODE_FLAG_NOT_FOUND,
+          };
         case 'TYPE_MISMATCH':
-          return { reason: EvalReason.EVALUATION_REASON_ERROR, errorCode: EvalError.EVALUATION_ERROR_CODE_TYPE_MISMATCH };
+          return {
+            reason: EvalReason.EVALUATION_REASON_ERROR,
+            errorCode: EvalError.EVALUATION_ERROR_CODE_TYPE_MISMATCH,
+          };
         case 'NOT_READY':
-          return { reason: EvalReason.EVALUATION_REASON_ERROR, errorCode: EvalError.EVALUATION_ERROR_CODE_PROVIDER_NOT_READY };
+          return {
+            reason: EvalReason.EVALUATION_REASON_ERROR,
+            errorCode: EvalError.EVALUATION_ERROR_CODE_PROVIDER_NOT_READY,
+          };
         case 'GENERAL':
         case 'TIMEOUT':
         default:
@@ -518,7 +543,10 @@ function evaluationTraceFromResult(evaluation: FlagEvaluation.Resolved<Value>): 
       }
     case 'UNSPECIFIED':
     default:
-      return { reason: EvalReason.EVALUATION_REASON_UNSPECIFIED, errorCode: EvalError.EVALUATION_ERROR_CODE_UNSPECIFIED };
+      return {
+        reason: EvalReason.EVALUATION_REASON_UNSPECIFIED,
+        errorCode: EvalError.EVALUATION_ERROR_CODE_UNSPECIFIED,
+      };
   }
 }
 

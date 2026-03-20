@@ -1,6 +1,7 @@
 import { Confidence } from './Confidence';
 import { abortableSleep } from './fetch-util';
 import {
+  LibraryTraces_Library,
   LibraryTraces_Trace_EvaluationTrace_EvaluationErrorCode,
   LibraryTraces_Trace_EvaluationTrace_EvaluationReason,
   LibraryTraces_TraceId,
@@ -339,6 +340,27 @@ describe('Confidence integration tests', () => {
         }),
       ]),
     );
+  });
+
+  it('should tag telemetry as LIBRARY_OPEN_FEATURE when library option is openfeature', async () => {
+    const ofConfidence = Confidence.create({
+      clientSecret: '<client-secret>',
+      timeout: 100,
+      environment: 'client',
+      fetchImplementation,
+      library: 'openfeature',
+    });
+    await ofConfidence.getFlag('flag1.str', 'goodbye');
+    ofConfidence.setContext({ pants: 'yellow' });
+    await ofConfidence.getFlag('flag1.str', 'goodbye');
+
+    const telemetry = decodeTelemetryHeader(capturedResolveRequests[1]);
+    expect(telemetry).toBeDefined();
+    const evaluationTraces = telemetry!.libraryTraces.find(lt =>
+      lt.traces.some(t => t.id === LibraryTraces_TraceId.TRACE_ID_FLAG_EVALUATION),
+    );
+    expect(evaluationTraces).toBeDefined();
+    expect(evaluationTraces!.library).toBe(LibraryTraces_Library.LIBRARY_OPEN_FEATURE);
   });
 
   it('should abort previous requests when context changes', async () => {
