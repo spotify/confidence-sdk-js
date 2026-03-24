@@ -125,6 +125,14 @@ describe('Client environment Evaluation', () => {
       expect(applyHandlerMock).toHaveBeenCalledTimes(1);
     });
 
+    it('should not send an apply request with empty flags when evaluating a nonexistent flag', async () => {
+      const flagResolution = await instanceUnderTest.resolve({});
+      flagResolution.evaluate('nonexistent.bool', false);
+      // wait longer than the applyDebounce (10ms)
+      await new Promise(resolve => setTimeout(resolve, 50));
+      expect(applyHandlerMock).not.toHaveBeenCalledWith(expect.objectContaining({ flags: [] }));
+    });
+
     it('should register with waitUntil', async () => {
       const flagResolution = await instanceUnderTest.resolve({});
       flagResolution.evaluate('no-seg-flag.enabled', false);

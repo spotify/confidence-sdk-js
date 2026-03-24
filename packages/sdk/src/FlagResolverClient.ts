@@ -234,6 +234,7 @@ export class FetchingFlagResolverClient implements FlagResolverClient {
     let [nextFlush, resolveNextFlush] = resolvablePromise();
 
     const flush = () => {
+      if (!pending.length) return;
       const resolveCurrentFlush = resolveNextFlush;
       [nextFlush, resolveNextFlush] = resolvablePromise();
       timeoutId = 0;
