@@ -104,33 +104,31 @@ describe('Client environment Evaluation', () => {
       });
     });
 
-    it('should apply based on shouldApply', async () => {
+    it('should not send apply for a flag with shouldApply false', async () => {
       const flagResolution = await instanceUnderTest.resolve({});
-      flagResolution.evaluate('no-seg-flag.enabled', false);
+      flagResolution.evaluate('no-flag-apply-flag.str', 'default');
+      await new Promise(resolve => setTimeout(resolve, 50));
+      expect(applyHandlerMock).not.toHaveBeenCalled();
+    });
+
+    it('should not send apply when re-evaluating a flag', async () => {
+      const flagResolution = await instanceUnderTest.resolve({});
+      flagResolution.evaluate('testflag.bool', false);
       const [applyRequest] = await nextMockArgs(applyHandlerMock);
       expect(applyRequest).toMatchObject({
-        clientSecret: 'secret',
-        resolveToken: dummyResolveToken,
-        sendTime: expect.any(Date),
-        sdk: { id: 13, version: 'test' },
-        flags: [
-          {
-            applyTime: expect.any(Date),
-            flag: 'flags/no-seg-flag',
-          },
-        ],
+        flags: [{ flag: 'flags/testflag' }],
       });
-      expect(applyHandlerMock).toHaveBeenCalledTimes(1);
-      flagResolution.evaluate('no-flag-apply-flag.str', 'default');
+      // second evaluation of the same flag — shouldApply is now false
+      flagResolution.evaluate('testflag.bool', false);
+      await new Promise(resolve => setTimeout(resolve, 50));
       expect(applyHandlerMock).toHaveBeenCalledTimes(1);
     });
 
-    it('should not send an apply request with empty flags when evaluating a nonexistent flag', async () => {
+    it('should not send apply when evaluating a nonexistent flag', async () => {
       const flagResolution = await instanceUnderTest.resolve({});
       flagResolution.evaluate('nonexistent.bool', false);
-      // wait longer than the applyDebounce (10ms)
       await new Promise(resolve => setTimeout(resolve, 50));
-      expect(applyHandlerMock).not.toHaveBeenCalledWith(expect.objectContaining({ flags: [] }));
+      expect(applyHandlerMock).not.toHaveBeenCalled();
     });
 
     it('should register with waitUntil', async () => {
@@ -626,7 +624,7 @@ function createFlagResolutionResponse(): unknown {
             },
           },
         },
-        shouldApply: true,
+        shouldApply: false,
       },
     ],
     resolveToken: 'SGVsbG9Xb3JsZA==',
