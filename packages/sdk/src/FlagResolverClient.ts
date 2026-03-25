@@ -110,6 +110,7 @@ export class FetchingFlagResolverClient implements FlagResolverClient {
   private readonly resolveTimeout: number;
   private readonly baseUrl: string;
   private readonly applyBaseUrl: string;
+  private readonly telemetry: Telemetry;
   private readonly traceConsumer: TraceConsumer;
   private readonly onEvaluation: EvaluationObserver | undefined;
   private readonly waitUntil: WaitUntil | undefined;
@@ -136,6 +137,7 @@ export class FetchingFlagResolverClient implements FlagResolverClient {
     cacheProvider,
     onEvaluation,
   }: FlagResolverClientOptions) {
+    this.telemetry = telemetry;
     this.traceConsumer = telemetry.registerLibraryTraces({
       library: LibraryTraces_Library.LIBRARY_CONFIDENCE,
       version: sdk.version,
@@ -228,13 +230,40 @@ export class FetchingFlagResolverClient implements FlagResolverClient {
     });
   }
 
+  async uploadTelemetry(monitoring: Monitoring): Promise<void> {
+    const resp = await this.fetchImplementation(`${this.baseUrl}/telemetry:upload`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        clientSecret: this.clientSecret,
+        monitoring: Monitoring.toJSON(monitoring),
+      }),
+    });
+    if (!resp.ok) {
+      throw new Error(`${resp.status}: ${resp.statusText}`);
+    }
+  }
+
+  private flushTelemetry(): void {
+    const monitoring = this.telemetry.getSnapshot();
+    if (monitoring.libraryTraces.length === 0) return;
+    const promise = this.uploadTelemetry(monitoring).catch(error => {
+      this.logger.info?.(`Confidence: Failed to upload telemetry: ${error.message}`);
+    });
+    // non-blocking: just keeps serverless runtimes alive until the upload completes
+    this.waitUntil?.(promise);
+  }
+
   createApplier(resolveToken: Uint8Array): Applier {
     const applied = new Set<string>();
     const pending: AppliedFlag[] = [];
     let [nextFlush, resolveNextFlush] = resolvablePromise();
 
     const flush = () => {
-      if (!pending.length) return;
+      if (!pending.length) {
+        this.flushTelemetry();
+        return;
+      }
       const resolveCurrentFlush = resolveNextFlush;
       [nextFlush, resolveNextFlush] = resolvablePromise();
       timeoutId = 0;

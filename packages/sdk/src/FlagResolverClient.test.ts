@@ -9,13 +9,13 @@ import { LibraryTraces_Library, LibraryTraces_TraceId, Platform } from './genera
 import { WaitUntil } from './types';
 const RESOLVE_ENDPOINT = 'https://resolver.confidence.dev/v1/flags:resolve';
 const APPLY_ENDPOINT = 'https://resolver.confidence.dev/v1/flags:apply';
-
 setMaxListeners(50);
 
 const dummyResolveToken = Uint8Array.from(atob('SGVsbG9Xb3JsZA=='), c => c.charCodeAt(0));
 
 const resolveHandlerMock = jest.fn();
 const applyHandlerMock = jest.fn();
+const telemetryUploadHandlerMock = jest.fn();
 
 const fetchImplementation: SimpleFetch = async (request): Promise<Response> => {
   await abortableSleep(0, request.signal);
@@ -27,6 +27,9 @@ const fetchImplementation: SimpleFetch = async (request): Promise<Response> => {
       break;
     case 'https://resolver.confidence.dev/v1/flags:apply':
       handler = data => applyHandlerMock(ApplyFlagsRequest.fromJSON(data));
+      break;
+    case 'https://resolver.confidence.dev/v1/telemetry:upload':
+      handler = data => telemetryUploadHandlerMock(data);
       break;
     default:
       throw new Error(`Unknown url: ${request.url}`);
@@ -46,6 +49,7 @@ beforeEach(() => {
 afterEach(() => {
   resolveHandlerMock.mockClear();
   applyHandlerMock.mockClear();
+  telemetryUploadHandlerMock.mockClear();
 });
 
 describe('Client environment Evaluation', () => {
@@ -337,6 +341,82 @@ describe('Backend environment Evaluation', () => {
     expect(warnSpy).toHaveBeenCalledWith(expect.stringContaining('503: Service Unavailable'));
 
     warnSpy.mockRestore();
+  });
+});
+
+describe.each(['client', 'backend'] as const)('Telemetry upload (%s environment)', environment => {
+  let instanceUnderTest: FetchingFlagResolverClient;
+  const waitUntilMock: jest.MockedFn<WaitUntil> = jest.fn();
+
+  beforeEach(() => {
+    instanceUnderTest = new FetchingFlagResolverClient({
+      fetchImplementation,
+      clientSecret: 'secret',
+      applyDebounce: 10,
+      sdk: {
+        id: SdkId.SDK_ID_JS_CONFIDENCE,
+        version: 'test',
+      },
+      environment,
+      resolveTimeout: 10,
+      telemetry: new Telemetry({ disabled: false, logger: { warn: jest.fn() }, environment }),
+      waitUntil: waitUntilMock,
+      logger: console,
+    });
+  });
+
+  it('should upload telemetry when flush fires with no pending applies', async () => {
+    const flagResolution = await instanceUnderTest.resolve({});
+    // evaluate a flag where shouldApply is false — no apply will be pending
+    flagResolution.evaluate('no-flag-apply-flag.str', 'default');
+    await new Promise(resolve => setTimeout(resolve, 50));
+
+    expect(applyHandlerMock).not.toHaveBeenCalled();
+    expect(telemetryUploadHandlerMock).toHaveBeenCalledTimes(1);
+    const uploadBody = telemetryUploadHandlerMock.mock.calls[0][0];
+    expect(uploadBody).toMatchObject({
+      clientSecret: 'secret',
+      monitoring: expect.objectContaining({
+        libraryTraces: expect.arrayContaining([
+          expect.objectContaining({
+            library: 'LIBRARY_CONFIDENCE',
+          }),
+        ]),
+      }),
+    });
+  });
+
+  it('should not upload telemetry when applies are pending', async () => {
+    const flagResolution = await instanceUnderTest.resolve({});
+    flagResolution.evaluate('testflag.bool', false);
+    await nextMockArgs(applyHandlerMock);
+
+    expect(applyHandlerMock).toHaveBeenCalledTimes(1);
+    expect(telemetryUploadHandlerMock).not.toHaveBeenCalled();
+  });
+
+  it('should not upload telemetry when telemetry is empty', async () => {
+    const emptyTelemetryClient = new FetchingFlagResolverClient({
+      fetchImplementation,
+      clientSecret: 'secret',
+      applyDebounce: 10,
+      sdk: {
+        id: SdkId.SDK_ID_JS_CONFIDENCE,
+        version: 'test',
+      },
+      environment,
+      resolveTimeout: 10,
+      telemetry: new Telemetry({ disabled: true, logger: { warn: jest.fn() }, environment }),
+      waitUntil: waitUntilMock,
+      logger: console,
+    });
+
+    const flagResolution = await emptyTelemetryClient.resolve({});
+    flagResolution.evaluate('no-flag-apply-flag.str', 'default');
+    await new Promise(resolve => setTimeout(resolve, 50));
+
+    expect(applyHandlerMock).not.toHaveBeenCalled();
+    expect(telemetryUploadHandlerMock).not.toHaveBeenCalled();
   });
 });
 
