@@ -250,7 +250,6 @@ export class FetchingFlagResolverClient implements FlagResolverClient {
     const promise = this.uploadTelemetry(monitoring).catch(error => {
       this.logger.info?.(`Confidence: Failed to upload telemetry: ${error.message}`);
     });
-    // non-blocking: just keeps serverless runtimes alive until the upload completes
     this.waitUntil?.(promise);
   }
 
