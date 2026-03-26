@@ -49,6 +49,24 @@ describe('Confidence E2E Tests', () => {
     });
   });
 
+  describe('telemetry upload', () => {
+    it('should upload telemetry standalone when no apply is needed', async () => {
+      const child = confidence.withContext({ targeting_key: 'telemetry-upload-test' });
+
+      // First evaluation triggers resolve + apply
+      await child.evaluateFlag('web-sdk-e2e-flag.int', 0);
+      // Wait for apply debounce to fire and request to complete
+      await new Promise(resolve => setTimeout(resolve, 500));
+
+      // Re-evaluation — flag already applied, no pending applies, triggers standalone telemetry upload with Type mismatch error
+      child.evaluateFlag('web-sdk-e2e-flag.int', 'wrong-type');
+
+      // Should complete without logging any telemetry failure
+      await new Promise(resolve => setTimeout(resolve, 500));
+      expect(loggerMock.info).not.toHaveBeenCalledWith(expect.stringContaining('Failed to upload telemetry'));
+    }, 10000);
+  });
+
   describe('track event sends an event', () => {
     it('should log a trace message when all events succeed', async () => {
       confidence.track('js-sdk-e2e-tests', { pants: 'blue' });
