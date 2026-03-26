@@ -79,7 +79,7 @@ describe('Client environment Evaluation', () => {
     // This is due the request logic that's only used in the client environment
     expect(flagResolution.evaluate('testflag', {})).toEqual({
       errorCode: 'TIMEOUT',
-      errorMessage: 'Resolve timeout',
+      errorMessage: 'The operation was aborted due to timeout',
       reason: 'ERROR',
       value: {},
     });
