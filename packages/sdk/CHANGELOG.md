@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.3.12](https://github.com/spotify/confidence-sdk-js/compare/sdk-v0.3.11...sdk-v0.3.12) (2026-03-26)
+
+
+### 🐛 Bug Fixes
+
+* prevent apply request with empty flags array ([#302](https://github.com/spotify/confidence-sdk-js/issues/302)) ([568b173](https://github.com/spotify/confidence-sdk-js/commit/568b17361cff71c31b784c36f28474559cf26020))
+
 ## [0.3.11](https://github.com/spotify/confidence-sdk-js/compare/sdk-v0.3.10...sdk-v0.3.11) (2026-03-20)
 
 
