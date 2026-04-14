@@ -16,7 +16,7 @@ function createAbortError(): Error {
   return error;
 }
 
-describe('Confidence - AbortError state machine bugs', () => {
+describe('Confidence - AbortError state machine', () => {
   let confidence: Confidence;
 
   beforeEach(() => {
@@ -120,9 +120,9 @@ describe('Confidence - AbortError state machine bugs', () => {
 
   describe('AbortError should transition to ERROR', () => {
     it('should transition to ERROR when resolve rejects with AbortError', async () => {
-      // When a resolve rejects with AbortError, the catch block in
-      // Confidence.ts:262-267 should set currentFlags to a failed resolution
-      // so that flagState transitions to ERROR and subscribers are notified.
+      // When a resolve rejects with AbortError, the catch block should
+      // set currentFlags to a failed resolution so that flagState transitions
+      // to ERROR and subscribers are notified.
       flagResolverClientMock.resolve.mockImplementation(context => {
         return PendingResolution.create(context, () => {
           return Promise.reject(createAbortError());
@@ -136,7 +136,7 @@ describe('Confidence - AbortError state machine bugs', () => {
       await new Promise(r => setTimeout(r, 50));
 
       // Expected: state should transition from NOT_READY to ERROR
-      expect(states).toContain('ERROR');
+      expect(states).toEqual(['NOT_READY', 'ERROR']);
       close();
     });
 
@@ -154,13 +154,14 @@ describe('Confidence - AbortError state machine bugs', () => {
 
       // Each setContext triggers a new resolve (also immediately fails)
       confidence.setContext({ user: '1' });
+      // Stale
       confidence.setContext({ user: '2' });
 
       // Wait for all resolve chains to settle
       await new Promise(r => setTimeout(r, 200));
 
       // Expected: state should eventually reach ERROR
-      expect(states).toContain('ERROR');
+      expect(states).toEqual(['NOT_READY', 'STALE', 'ERROR']);
       close();
     });
 

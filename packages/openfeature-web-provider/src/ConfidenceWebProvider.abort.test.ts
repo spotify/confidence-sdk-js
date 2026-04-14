@@ -21,8 +21,8 @@ describe('ConfidenceWebProvider - AbortError recovery', () => {
   });
 
   it('initialize rejects when resolve fails and state transitions to ERROR', async () => {
-    // After fix: when a resolve fails (including AbortError), the SDK
-    // transitions to ERROR. subscribe emits NOT_READY then ERROR.
+    // when a resolve fails (including AbortError), the SDK transitions to ERROR.
+    // subscribe emits NOT_READY then ERROR.
     // expectReadyOrError() sees ERROR and rejects with an appropriate error.
     confidenceMock.subscribe.mockImplementation(observer => {
       observer!('NOT_READY');
@@ -57,7 +57,7 @@ describe('ConfidenceWebProvider - AbortError recovery', () => {
 
     // Expected: onContextChange rejects because expectReadyOrError sees ERROR
     await expect(provider.onContextChange({ targetingKey: 'test' }, { targetingKey: 'test2' })).rejects.toThrow(
-      'Provider initialization failed',
+      'Provider context change failed',
     );
     await provider.onClose();
   });
