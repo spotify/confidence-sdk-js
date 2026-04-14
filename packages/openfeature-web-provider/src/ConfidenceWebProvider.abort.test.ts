@@ -56,9 +56,9 @@ describe('ConfidenceWebProvider - AbortError recovery', () => {
     });
 
     // Expected: onContextChange rejects because expectReadyOrError sees ERROR
-    await expect(
-      provider.onContextChange({ targetingKey: 'test' }, { targetingKey: 'test2' }),
-    ).rejects.toThrow('Provider initialization failed');
+    await expect(provider.onContextChange({ targetingKey: 'test' }, { targetingKey: 'test2' })).rejects.toThrow(
+      'Provider initialization failed',
+    );
     await provider.onClose();
   });
 });
