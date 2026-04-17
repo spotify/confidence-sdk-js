@@ -84,6 +84,20 @@
   * devDependencies
     * @spotify-confidence/sdk bumped to 0.3.12
 
+## [0.3.13](https://github.com/spotify/confidence-sdk-js/compare/openfeature-web-provider-v0.3.12...openfeature-web-provider-v0.3.13) (2026-04-17)
+
+
+### 🐛 Bug Fixes
+
+* prevent AbortError from leaving flag state stuck in NOT_READY ([#304](https://github.com/spotify/confidence-sdk-js/issues/304)) ([1390b2b](https://github.com/spotify/confidence-sdk-js/commit/1390b2b20275041b53e368a9dfa7709c8ca66b9d))
+
+
+### Dependencies
+
+* The following workspace dependencies were updated
+  * devDependencies
+    * @spotify-confidence/sdk bumped to 0.3.13
+
 ## [0.3.11](https://github.com/spotify/confidence-sdk-js/compare/openfeature-web-provider-v0.3.10...openfeature-web-provider-v0.3.11) (2026-03-20)
 
 
