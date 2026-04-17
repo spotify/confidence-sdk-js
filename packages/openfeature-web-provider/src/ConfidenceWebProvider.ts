@@ -66,17 +66,21 @@ export class ConfidenceWebProvider implements Provider {
       return Promise.resolve();
     }
     this.confidence.setContext(convertContext(changes));
-    return this.expectReadyOrError();
+    return this.expectReadyOrError(true);
   }
 
-  private expectReadyOrError(): Promise<void> {
+  private expectReadyOrError(isContextChange: boolean = false): Promise<void> {
     let close: () => void;
     return new Promise<void>((resolve, reject) => {
       close = this.confidence.subscribe(state => {
         if (state === 'READY') {
           resolve();
         } else if (state === 'ERROR') {
-          reject(new Error('Provider initialization failed'));
+          if (isContextChange) {
+            reject(new Error('Provider context change failed'));
+          } else {
+            reject(new Error('Provider initialization failed'));
+          }
         }
       });
     }).finally(close!);

@@ -254,20 +254,19 @@ export class Confidence implements EventSender, Trackable, FlagResolver {
     const context = this.getContext();
     if (!this.pendingFlags || !Value.equal(this.pendingFlags.context, context)) {
       this.pendingFlags?.abort();
-      this.pendingFlags = this.config.flagResolverClient
-        .resolve(context, [])
+      const pending = this.config.flagResolverClient.resolve(context, []);
+      this.pendingFlags = pending
         .then(resolution => {
           this.currentFlags = resolution;
         })
         .catch(e => {
-          // TODO fix sloppy handling of error
           if (e.name !== 'AbortError') {
             this.config.logger.info?.('Resolve failed.', e);
           }
-        })
-        .finally(() => {
-          // if this resolves synchronously, the assignment on 171 will actually happen after we clear it.
-          this.pendingFlags = undefined;
+          // only set failed state if this resolve hasn't been superseded
+          if (this.pendingFlags?.signal === pending.signal) {
+            this.currentFlags = FlagResolution.failed(context, 'GENERAL', e.message || 'Resolve failed');
+          }
         });
     }
     if (this.pendingFlags.status !== 'pending') {
@@ -283,7 +282,7 @@ export class Confidence implements EventSender, Trackable, FlagResolver {
    */
   get flagState(): State {
     if (this.currentFlags) {
-      if (this.pendingFlags) return 'STALE';
+      if (this.pendingFlags?.status === 'pending') return 'STALE';
       return this.currentFlags.state;
     }
     return 'NOT_READY';
