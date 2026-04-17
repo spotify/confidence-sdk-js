@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.3.13](https://github.com/spotify/confidence-sdk-js/compare/sdk-v0.3.12...sdk-v0.3.13) (2026-04-17)
+
+
+### 🐛 Bug Fixes
+
+* prevent AbortError from leaving flag state stuck in NOT_READY ([#304](https://github.com/spotify/confidence-sdk-js/issues/304)) ([1390b2b](https://github.com/spotify/confidence-sdk-js/commit/1390b2b20275041b53e368a9dfa7709c8ca66b9d))
+
 ## [0.3.12](https://github.com/spotify/confidence-sdk-js/compare/sdk-v0.3.11...sdk-v0.3.12) (2026-03-26)
 
 
