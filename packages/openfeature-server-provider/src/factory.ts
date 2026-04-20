@@ -2,14 +2,20 @@ import { Provider } from '@openfeature/server-sdk';
 import { ConfidenceServerProvider } from './ConfidenceServerProvider';
 import { Confidence } from '@spotify-confidence/sdk';
 
+// Region for Confidence API requests. 
+// Default region is used when not specified
+export type Region = 'eu' | 'us';
+
 /**
  * Factory Options for Confidence Server Provider
  * @public */
 export type ConfidenceProviderFactoryOptions = {
-  region?: 'eu' | 'us';
+  region?: Region;
   fetchImplementation?: typeof fetch;
   clientSecret: string;
-  timeout: number;
+  // Timeout for network requests in milliseconds.
+  // Defaults to an internal SDK value if not provided
+  timeout?: number;
   /** Sets an alternative resolve url */
   resolveBaseUrl?: string;
   /** Sets an alternative apply url */
@@ -37,8 +43,12 @@ export function createConfidenceServerProvider(
     // telemetry library tagging is not applied when passing a pre-built Confidence instance
     return new ConfidenceServerProvider(confidenceOrOptions);
   }
+
+  const DEFAULT_TIMEOUT = 5000;
+
   const confidence = Confidence.create({
     ...confidenceOrOptions,
+    timeout: confidenceOrOptions.timeout ?? DEFAULT_TIMEOUT,
     environment: 'backend',
     library: 'openfeature',
   });
