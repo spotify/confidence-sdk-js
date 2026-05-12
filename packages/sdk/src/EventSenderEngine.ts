@@ -147,6 +147,7 @@ export class EventSenderEngine {
         ...batch,
         events: batch.events.map(e => ({ ...e, eventDefinition: `eventDefinitions/${e.eventDefinition}` })),
       }),
+      keepalive: true,
     };
     return this.fetchImplementation(this.publishUrl, request)
       .then(resp => resp.json())
