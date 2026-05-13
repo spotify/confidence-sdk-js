@@ -81,7 +81,7 @@ export class EventSenderEngine {
     if (typeof document !== 'undefined') {
       document.addEventListener('visibilitychange', () => {
         if (document.visibilityState === 'hidden') {
-          this.flush();
+          this.flush({ keepalive: true });
         }
       });
     }
@@ -108,17 +108,20 @@ export class EventSenderEngine {
     }
   }
 
-  public flush(): Promise<boolean> {
+  public flush({ keepalive }: { keepalive?: boolean } = {}): Promise<boolean> {
     this.clearPendingFlush();
     const batchSize = this.writeQueue.length;
     if (batchSize === 0) {
       return Promise.resolve(true);
     }
-    return this.upload({
-      clientSecret: this.clientSecret,
-      sendTime: new Date().toISOString(),
-      events: this.writeQueue.splice(0, this.maxBatchSize),
-    })
+    return this.upload(
+      {
+        clientSecret: this.clientSecret,
+        sendTime: new Date().toISOString(),
+        events: this.writeQueue.splice(0, this.maxBatchSize),
+      },
+      { keepalive },
+    )
       .then(errors => {
         if (errors.length === 0) {
           this.logger.info?.('Confidence: successfully uploaded %i events', batchSize);
@@ -147,7 +150,7 @@ export class EventSenderEngine {
   }
 
   // Made public for unit testing
-  public upload(batch: EventBatch): Promise<PublishError[]> {
+  public upload(batch: EventBatch, { keepalive }: { keepalive?: boolean } = {}): Promise<PublishError[]> {
     const request = {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
@@ -155,7 +158,7 @@ export class EventSenderEngine {
         ...batch,
         events: batch.events.map(e => ({ ...e, eventDefinition: `eventDefinitions/${e.eventDefinition}` })),
       }),
-      keepalive: true,
+      keepalive,
     };
     return this.fetchImplementation(this.publishUrl, request)
       .then(resp => resp.json())
