@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.3.14](https://github.com/spotify/confidence-sdk-js/compare/sdk-v0.3.13...sdk-v0.3.14) (2026-05-13)
+
+
+### 🐛 Bug Fixes
+
+* prevent event loss on tab close ([#309](https://github.com/spotify/confidence-sdk-js/issues/309)) ([5491b45](https://github.com/spotify/confidence-sdk-js/commit/5491b454af1f98e7791900a09bc309f8774a365c))
+
 ## [0.3.13](https://github.com/spotify/confidence-sdk-js/compare/sdk-v0.3.12...sdk-v0.3.13) (2026-04-17)
 
 
