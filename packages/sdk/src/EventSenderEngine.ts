@@ -77,6 +77,14 @@ export class EventSenderEngine {
         return {};
       })
       .build(fetchImplementation);
+
+    if (typeof document !== 'undefined') {
+      document.addEventListener('visibilitychange', () => {
+        if (document.visibilityState === 'hidden') {
+          this.flush();
+        }
+      });
+    }
   }
 
   send(context: Value.Struct, name: string, data?: EventData): void {
