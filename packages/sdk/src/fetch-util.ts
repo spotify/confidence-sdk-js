@@ -33,6 +33,7 @@ type Context = Readonly<{
   headers?: Record<string, string>;
   body?: string;
   signal?: AbortSignal;
+  keepalive?: boolean;
 }>;
 type ContextFetch = (ctx: Context) => Promise<Response>;
 type FetchPrimitive = (next: ContextFetch) => ContextFetch;

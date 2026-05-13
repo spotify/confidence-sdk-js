@@ -55,20 +55,23 @@ describe('EventSenderEngine unit tests', () => {
     noBatchEngine.send({ value: 2 }, 'my_event', { message: 1 });
     await jest.runAllTimersAsync();
     expect(uploadSpy).toHaveBeenCalledTimes(1);
-    expect(uploadSpy).toHaveBeenCalledWith({
-      sendTime: expect.any(String),
-      clientSecret: 'my_secret',
-      events: [
-        {
-          eventDefinition: 'my_event',
-          eventTime: expect.any(String),
-          payload: {
-            context: { value: 2 },
-            message: 1,
+    expect(uploadSpy).toHaveBeenCalledWith(
+      {
+        sendTime: expect.any(String),
+        clientSecret: 'my_secret',
+        events: [
+          {
+            eventDefinition: 'my_event',
+            eventTime: expect.any(String),
+            payload: {
+              context: { value: 2 },
+              message: 1,
+            },
           },
-        },
-      ],
-    });
+        ],
+      },
+      { keepalive: undefined },
+    );
   });
   it('should throw if data contains a context field', async () => {
     const noBatchEngine = new EventSenderEngine({
