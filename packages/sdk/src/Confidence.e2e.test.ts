@@ -7,7 +7,7 @@ describe('Confidence E2E Tests', () => {
     error: jest.fn(),
   };
   const confidence = Confidence.create({
-    clientSecret: 'RxDVTrXvc6op1XxiQ4OaR31dKbJ39aYV',
+    clientSecret: process.env.CONFIDENCE_CLIENT_SECRET!,
     environment: 'client',
     timeout: 1000,
     logger: loggerMock,

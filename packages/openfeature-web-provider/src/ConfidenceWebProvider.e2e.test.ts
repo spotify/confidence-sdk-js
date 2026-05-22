@@ -9,7 +9,7 @@ OpenFeature.setLogger({
 });
 function createProvider(options: Partial<ConfidenceWebProviderOptions> = {}): Provider {
   return createConfidenceWebProvider({
-    clientSecret: 'RxDVTrXvc6op1XxiQ4OaR31dKbJ39aYV',
+    clientSecret: process.env.CONFIDENCE_CLIENT_SECRET!,
     timeout: 1000,
     ...options,
   });
