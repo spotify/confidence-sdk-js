@@ -20,3 +20,5 @@ jobs:
       - run: yarn lint
       - run: yarn format:check
       - run: yarn test
+        env:
+          CONFIDENCE_CLIENT_SECRET: ${{ secrets.CONFIDENCE_CLIENT_SECRET }}
