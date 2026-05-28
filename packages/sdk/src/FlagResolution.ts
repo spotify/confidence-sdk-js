@@ -117,12 +117,14 @@ export class ReadyFlagResolution implements FlagResolution {
         return result;
       }
 
-      const value = TypeMismatchError.hoist(name, () => Value.get(flag.value, ...steps) as T);
+      const rawValue = TypeMismatchError.hoist(name, () => Value.get(flag.value, ...steps));
 
       const schema = flag.schema.get(...steps);
       TypeMismatchError.hoist(['defaultValue', ...steps], () => {
         schema.assertAssignsTo(defaultValue);
       });
+
+      const value = (rawValue === null || rawValue === undefined ? defaultValue : rawValue) as T;
 
       result = {
         reason,
