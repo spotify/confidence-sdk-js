@@ -1,5 +1,17 @@
 # Changelog
 
+## [0.3.15](https://github.com/spotify/confidence-sdk-js/compare/sdk-v0.3.14...sdk-v0.3.15) (2026-05-28)
+
+
+### 🐛 Bug Fixes
+
+* **sdk:** return default value when resolved property is null ([#315](https://github.com/spotify/confidence-sdk-js/issues/315)) ([0d3c117](https://github.com/spotify/confidence-sdk-js/commit/0d3c1171137bb31d678ef02aa55b763f651e7f4b))
+
+
+### ✨ New Features
+
+* migrate e2e tests to new Confidence workspace ([#313](https://github.com/spotify/confidence-sdk-js/issues/313)) ([2e449f7](https://github.com/spotify/confidence-sdk-js/commit/2e449f74ccdd739eaf24b07e98a40437667e629e))
+
 ## [0.3.14](https://github.com/spotify/confidence-sdk-js/compare/sdk-v0.3.13...sdk-v0.3.14) (2026-05-13)
 
 
