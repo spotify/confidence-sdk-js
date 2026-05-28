@@ -90,6 +90,20 @@
   * devDependencies
     * @spotify-confidence/sdk bumped to 0.3.14
 
+## [0.3.15](https://github.com/spotify/confidence-sdk-js/compare/openfeature-web-provider-v0.3.14...openfeature-web-provider-v0.3.15) (2026-05-28)
+
+
+### ✨ New Features
+
+* migrate e2e tests to new Confidence workspace ([#313](https://github.com/spotify/confidence-sdk-js/issues/313)) ([2e449f7](https://github.com/spotify/confidence-sdk-js/commit/2e449f74ccdd739eaf24b07e98a40437667e629e))
+
+
+### Dependencies
+
+* The following workspace dependencies were updated
+  * devDependencies
+    * @spotify-confidence/sdk bumped to 0.3.15
+
 ## [0.3.13](https://github.com/spotify/confidence-sdk-js/compare/openfeature-web-provider-v0.3.12...openfeature-web-provider-v0.3.13) (2026-04-17)
 
 
