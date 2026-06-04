@@ -1,4 +1,4 @@
-import { FetchingFlagResolverClient, FlagResolverClient, PendingResolution } from './FlagResolverClient';
+import { FetchingFlagResolverClient, FlagResolverClient, PendingResolution, ResolveError } from './FlagResolverClient';
 import { EventSenderEngine } from './EventSenderEngine';
 import { Value } from './Value';
 import { EventData, EventSender } from './events';
@@ -265,7 +265,8 @@ export class Confidence implements EventSender, Trackable, FlagResolver {
           }
           // only set failed state if this resolve hasn't been superseded
           if (this.pendingFlags?.signal === pending.signal) {
-            this.currentFlags = FlagResolution.failed(context, 'GENERAL', e.message || 'Resolve failed');
+            const errorCode: FlagEvaluation.ErrorCode = e instanceof ResolveError ? e.code : 'GENERAL';
+            this.currentFlags = FlagResolution.failed(context, errorCode, e.message || 'Resolve failed');
           }
         });
     }

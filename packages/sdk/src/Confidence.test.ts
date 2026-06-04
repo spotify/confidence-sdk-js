@@ -3,7 +3,7 @@ import { Closer } from './Closer';
 import { Confidence } from './Confidence';
 import { EventSenderEngine } from './EventSenderEngine';
 import { FlagResolution } from './FlagResolution';
-import { FlagResolverClient, PendingResolution } from './FlagResolverClient';
+import { FlagResolverClient, PendingResolution, ResolveError } from './FlagResolverClient';
 import { FlagEvaluation, State, StateObserver } from './flags';
 
 const flagResolverClientMock: jest.Mocked<FlagResolverClient> = {
@@ -384,6 +384,21 @@ describe('Confidence', () => {
         reason: 'MATCH',
         value: 'mockValue',
         variant: 'mockVariant',
+      });
+    });
+
+    it('should preserve the typed error code when resolve fails at the outer handler', async () => {
+      flagResolverClientMock.resolve.mockReturnValueOnce(
+        PendingResolution.create({}, () => Promise.reject(new ResolveError('TIMEOUT', 'Resolve timeout'))),
+      );
+      await confidence.evaluateFlag('flag1', 'default');
+
+      const result = confidence.evaluateFlag('flag1', 'default');
+      expect(result).toEqual({
+        reason: 'ERROR',
+        value: 'default',
+        errorCode: 'TIMEOUT',
+        errorMessage: 'Resolve timeout',
       });
     });
   });
