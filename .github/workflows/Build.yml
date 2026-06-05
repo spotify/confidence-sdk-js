@@ -5,9 +5,16 @@ on:
     branches: [main]
   pull_request:
     branches: [main]
+  pull_request_target:
+    branches: [main]
 
+  # PRs fire both pull_request and pull_request_target. The if-conditions
+  # below deduplicate so each job runs exactly once: Build-And-Test on
+  # pull_request (no secrets needed), E2E-Test on pull_request_target
+  # (has access to environment secrets, including from fork PRs).
 jobs:
   Build-And-Test:
+    if: github.event_name != 'pull_request_target'
     runs-on: ubuntu-latest
     steps:
       - name: Checkout
@@ -20,5 +27,21 @@ jobs:
       - run: yarn lint
       - run: yarn format:check
       - run: yarn test
+
+  E2E-Test:
+    if: github.event_name != 'pull_request'
+    runs-on: ubuntu-latest
+    environment: ci-with-e2e-test
+    steps:
+      - name: Checkout
+        uses: actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5 # v4
+        with:
+          ref: ${{ github.event.pull_request.head.sha || github.sha }}
+      - id: setup-environment
+        uses: ./.github/actions/setup
+        with:
+          node-version: '20'
+      - run: yarn bundle
+      - run: yarn test:e2e
         env:
           CONFIDENCE_CLIENT_SECRET: ${{ secrets.CONFIDENCE_CLIENT_SECRET }}
