@@ -12,7 +12,8 @@
     "format": "prettier --config prettier.config.js -w .",
     "format:check": "prettier --config prettier.config.js -c .",
     "lint": "eslint 'packages/*/src/**/*.{tsx,ts}'",
-    "test": "jest",
+    "test": "jest --testPathIgnorePatterns '\\.e2e\\.test\\.ts'",
+    "test:e2e": "jest --testPathPattern '\\.e2e\\.test\\.ts'",
     "prepare": "husky install",
     "cm": "git-cz"
   },
