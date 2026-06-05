@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.3.16](https://github.com/spotify/confidence-sdk-js/compare/sdk-v0.3.15...sdk-v0.3.16) (2026-06-05)
+
+
+### 🐛 Bug Fixes
+
+* **sdk:** preserve typed error code on resolve failure ([#316](https://github.com/spotify/confidence-sdk-js/issues/316)) ([65178af](https://github.com/spotify/confidence-sdk-js/commit/65178af03f633f2179051c048bfd7f7035d05d37))
+
 ## [0.3.15](https://github.com/spotify/confidence-sdk-js/compare/sdk-v0.3.14...sdk-v0.3.15) (2026-05-28)
 
 
