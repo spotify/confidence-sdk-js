@@ -32,14 +32,14 @@ jobs:
       - run: yarn test
 
   E2E-Test:
-    if: github.event_name != 'pull_request'
+    if: github.event_name == 'pull_request_target'
     runs-on: ubuntu-latest
-    environment: ${{ github.event_name == 'pull_request_target' && 'ci-with-e2e-test' || '' }}
+    environment: ci-with-e2e-test
     steps:
       - name: Checkout
         uses: actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5 # v4
         with:
-          ref: ${{ github.event.pull_request.head.sha || github.sha }}
+          ref: ${{ github.event.pull_request.head.sha }}
       - id: setup-environment
         uses: ./.github/actions/setup
         with:
