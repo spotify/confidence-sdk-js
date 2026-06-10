@@ -371,7 +371,7 @@ export class Confidence implements EventSender, Trackable, FlagResolver {
     );
   }
 
-  flushTelemetry(): void {
+  close(): void {
     this.config.flagResolverClient.flushTelemetry();
   }
 

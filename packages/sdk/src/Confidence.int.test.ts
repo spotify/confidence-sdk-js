@@ -183,7 +183,7 @@ describe('Telemetry trace integration tests', () => {
   }
 
   async function flushTelemetry(conf: Confidence): Promise<void> {
-    conf.flushTelemetry();
+    conf.close();
     await jest.advanceTimersByTimeAsync(20);
   }
 

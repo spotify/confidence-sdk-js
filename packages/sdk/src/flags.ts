@@ -86,4 +86,6 @@ export interface FlagResolver extends Contextual<FlagResolver> {
   getFlag(path: string, defaultValue: number): Promise<number>;
   /** Returns flag value for a flag */
   getFlag<T extends Value>(path: string, defaultValue: T): Promise<T>;
+
+  close?(): void;
 }
