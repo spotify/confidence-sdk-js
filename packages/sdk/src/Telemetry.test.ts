@@ -169,4 +169,50 @@ describe('Telemetry', () => {
     const snapshot = telemetry.getSnapshot();
     expect(snapshot.libraryTraces[0].library).toBe(LibraryTraces_Library.LIBRARY_REACT);
   });
+
+  it('calls onFlush when trace count reaches threshold', () => {
+    const onFlush = jest.fn();
+    const telemetry = new Telemetry({ disabled: false, environment: 'client' });
+    telemetry.onFlush = onFlush;
+    const traceConsumer = telemetry.registerLibraryTraces({
+      library: LibraryTraces_Library.LIBRARY_CONFIDENCE,
+      version: '1.0.0',
+      id: LibraryTraces_TraceId.TRACE_ID_FLAG_EVALUATION,
+    });
+
+    for (let i = 0; i < 189; i++) {
+      traceConsumer({});
+    }
+    expect(onFlush).not.toHaveBeenCalled();
+
+    traceConsumer({});
+    expect(onFlush).toHaveBeenCalledTimes(1);
+  });
+
+  it('resets trace count after getSnapshot', () => {
+    const onFlush = jest.fn();
+    const telemetry = new Telemetry({ disabled: false, environment: 'client' });
+    telemetry.onFlush = onFlush;
+    const traceConsumer = telemetry.registerLibraryTraces({
+      library: LibraryTraces_Library.LIBRARY_CONFIDENCE,
+      version: '1.0.0',
+      id: LibraryTraces_TraceId.TRACE_ID_FLAG_EVALUATION,
+    });
+
+    for (let i = 0; i < 190; i++) {
+      traceConsumer({});
+    }
+    expect(onFlush).toHaveBeenCalledTimes(1);
+    onFlush.mockClear();
+
+    telemetry.getSnapshot();
+
+    for (let i = 0; i < 189; i++) {
+      traceConsumer({});
+    }
+    expect(onFlush).not.toHaveBeenCalled();
+
+    traceConsumer({});
+    expect(onFlush).toHaveBeenCalledTimes(1);
+  });
 });

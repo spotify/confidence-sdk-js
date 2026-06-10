@@ -1,5 +1,6 @@
 import { Confidence } from './Confidence';
 import { abortableSleep } from './fetch-util';
+import { MAX_TRACE_COUNT } from './Telemetry';
 import {
   LibraryTraces_Library,
   LibraryTraces_Trace_EvaluationTrace_EvaluationErrorCode,
@@ -182,13 +183,16 @@ describe('Telemetry trace integration tests', () => {
     await promise;
   }
 
-  async function flushTelemetry(): Promise<void> {
-    await jest.advanceTimersByTimeAsync(5_000);
+  async function flushTelemetry(conf: Confidence): Promise<void> {
+    for (let i = 0; i < MAX_TRACE_COUNT; i++) {
+      conf.evaluateFlag('flag1.str', 'goodbye');
+    }
+    await jest.advanceTimersByTimeAsync(20);
   }
 
   it('should send evaluation trace with TARGETING_MATCH reason', async () => {
     await resolveAndEvaluate(confidence, 'flag1.str', 'goodbye');
-    await flushTelemetry();
+    await flushTelemetry(confidence);
 
     const telemetry = lastTelemetryUpload();
     expect(telemetry).toBeDefined();
@@ -207,7 +211,7 @@ describe('Telemetry trace integration tests', () => {
   it('should send evaluation trace with TYPE_MISMATCH on type mismatch', async () => {
     await resolveAndEvaluate(confidence, 'flag1.str', 'goodbye');
     confidence.evaluateFlag('flag1.str', 123);
-    await flushTelemetry();
+    await flushTelemetry(confidence);
 
     expect(findTraces(lastTelemetryUpload()!, LibraryTraces_TraceId.TRACE_ID_FLAG_EVALUATION)).toEqual(
       expect.arrayContaining([
@@ -225,7 +229,7 @@ describe('Telemetry trace integration tests', () => {
     await resolveAndEvaluate(confidence, 'flag1.str', 'goodbye');
     confidence.setContext({ pants: 'yellow' });
     confidence.evaluateFlag('flag1.str', 'goodbye');
-    await flushTelemetry();
+    await flushTelemetry(confidence);
 
     expect(findTraces(lastTelemetryUpload()!, LibraryTraces_TraceId.TRACE_ID_STALE_FLAG)).not.toHaveLength(0);
   });
@@ -233,7 +237,7 @@ describe('Telemetry trace integration tests', () => {
   it('should send evaluation trace with FLAG_NOT_FOUND for unknown flags', async () => {
     await resolveAndEvaluate(confidence, 'flag1.str', 'goodbye');
     confidence.evaluateFlag('unknown-flag.str', 'default');
-    await flushTelemetry();
+    await flushTelemetry(confidence);
 
     expect(findTraces(lastTelemetryUpload()!, LibraryTraces_TraceId.TRACE_ID_FLAG_EVALUATION)).toEqual(
       expect.arrayContaining([
@@ -262,7 +266,7 @@ describe('Telemetry trace integration tests', () => {
       resolveToken: 'xyz',
     });
     await resolveAndEvaluate(confidence, 'flag1.str', 'goodbye');
-    await flushTelemetry();
+    await flushTelemetry(confidence);
 
     expect(findTraces(lastTelemetryUpload()!, LibraryTraces_TraceId.TRACE_ID_FLAG_EVALUATION)).toEqual(
       expect.arrayContaining([
@@ -291,7 +295,7 @@ describe('Telemetry trace integration tests', () => {
       resolveToken: 'xyz',
     });
     await resolveAndEvaluate(confidence, 'flag1.str', 'goodbye');
-    await flushTelemetry();
+    await flushTelemetry(confidence);
 
     expect(findTraces(lastTelemetryUpload()!, LibraryTraces_TraceId.TRACE_ID_FLAG_EVALUATION)).toEqual(
       expect.arrayContaining([
@@ -321,7 +325,7 @@ describe('Telemetry trace integration tests', () => {
       resolveToken: 'xyz',
     });
     await resolveAndEvaluate(confidence, 'flag1.str', 'goodbye');
-    await flushTelemetry();
+    await flushTelemetry(confidence);
 
     expect(findTraces(lastTelemetryUpload()!, LibraryTraces_TraceId.TRACE_ID_FLAG_EVALUATION)).toEqual(
       expect.arrayContaining([
@@ -344,7 +348,7 @@ describe('Telemetry trace integration tests', () => {
       library: 'openfeature',
     });
     await resolveAndEvaluate(ofConfidence, 'flag1.str', 'goodbye');
-    await flushTelemetry();
+    await flushTelemetry(ofConfidence);
 
     const telemetry = lastTelemetryUpload();
     expect(telemetry).toBeDefined();

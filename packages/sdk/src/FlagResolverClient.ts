@@ -190,8 +190,7 @@ export class FetchingFlagResolverClient implements FlagResolverClient {
     }
 
     if (!disableTelemetry) {
-      const telemetryTimerId = setInterval(() => this.flushTelemetry(), 5_000);
-      if (typeof telemetryTimerId === 'object') telemetryTimerId.unref();
+      telemetry.onFlush = () => this.flushTelemetry();
       if (typeof document !== 'undefined') {
         document.addEventListener('visibilitychange', () => {
           if (document.visibilityState === 'hidden') {

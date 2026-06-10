@@ -8,6 +8,9 @@ import {
 } from './generated/confidence/telemetry/v1/telemetry';
 import { Logger } from './logger';
 
+// ~250 bytes per trace in JSON. 0.75 * 64KB keepalive limit ≈ 48KB → ~190 traces.
+export const MAX_TRACE_COUNT = 190;
+
 export type TelemetryOptions = {
   disabled: boolean;
   logger?: Logger;
@@ -28,6 +31,8 @@ export class Telemetry {
   private readonly libraryTraces: LibraryTraces[] = [];
   private readonly platform: Platform;
   private readonly library: LibraryTraces_Library;
+  private traceCount = 0;
+  onFlush?: () => void;
 
   constructor(opts: TelemetryOptions) {
     this.disabled = opts.disabled;
@@ -52,6 +57,10 @@ export class Telemetry {
         id,
         ...data,
       });
+      this.traceCount++;
+      if (this.traceCount >= MAX_TRACE_COUNT) {
+        this.onFlush?.();
+      }
     };
   }
 
@@ -64,6 +73,7 @@ export class Telemetry {
         libraryVersion,
         traces: traces.splice(0, traces.length),
       }));
+    this.traceCount = 0;
     return { libraryTraces, platform: this.platform };
   }
 }
