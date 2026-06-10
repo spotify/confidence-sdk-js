@@ -1,11 +1,10 @@
-import { FetchingFlagResolverClient, withRequestLogic, withTelemetryData } from './FlagResolverClient';
+import { FetchingFlagResolverClient, withRequestLogic } from './FlagResolverClient';
 import { setMaxListeners } from 'node:events';
 import { SdkId } from './generated/confidence/flags/resolver/v1/types';
 import { abortableSleep, FetchBuilder, InternalFetch, SimpleFetch } from './fetch-util';
 import { ApplyFlagsRequest, ResolveFlagsRequest } from './generated/confidence/flags/resolver/v1/api';
 import { FailedFlagResolution } from './FlagResolution';
 import { Telemetry } from './Telemetry';
-import { LibraryTraces_Library, LibraryTraces_TraceId, Platform } from './generated/confidence/telemetry/v1/telemetry';
 import { WaitUntil } from './types';
 const RESOLVE_ENDPOINT = 'https://resolver.confidence.dev/v1/flags:resolve';
 const APPLY_ENDPOINT = 'https://resolver.confidence.dev/v1/flags:apply';
@@ -365,25 +364,14 @@ describe.each(['client', 'backend'] as const)('Telemetry upload (%s environment)
     });
   });
 
-  it('should upload telemetry when flush fires with no pending applies', async () => {
+  it('should not upload telemetry when flush fires with no pending applies', async () => {
     const flagResolution = await instanceUnderTest.resolve({});
     // evaluate a flag where shouldApply is false — no apply will be pending
     flagResolution.evaluate('no-flag-apply-flag.str', 'default');
     await new Promise(resolve => setTimeout(resolve, 50));
 
     expect(applyHandlerMock).not.toHaveBeenCalled();
-    expect(telemetryUploadHandlerMock).toHaveBeenCalledTimes(1);
-    const uploadBody = telemetryUploadHandlerMock.mock.calls[0][0];
-    expect(uploadBody).toMatchObject({
-      clientSecret: 'secret',
-      monitoring: expect.objectContaining({
-        libraryTraces: expect.arrayContaining([
-          expect.objectContaining({
-            library: 'LIBRARY_CONFIDENCE',
-          }),
-        ]),
-      }),
-    });
+    expect(telemetryUploadHandlerMock).not.toHaveBeenCalled();
   });
 
   it('should not upload telemetry when applies are pending', async () => {
@@ -434,36 +422,6 @@ describe('intercept', () => {
   afterEach(() => {
     if (jest.getTimerCount() !== 0) throw new Error('test finished with remaining timers');
     jest.useRealTimers();
-  });
-
-  describe('withTelemetryData', () => {
-    const telemetryMock = jest.mocked(
-      new Telemetry({ disabled: false, logger: { warn: jest.fn() }, environment: 'client' }),
-    );
-
-    beforeEach(() => {
-      const fetchBuilder = new FetchBuilder();
-      withTelemetryData(fetchBuilder, telemetryMock);
-      underTest = fetchBuilder.build(fetchMock);
-      telemetryMock.getSnapshot = jest.fn().mockReturnValue({
-        libraryTraces: [
-          {
-            library: LibraryTraces_Library.LIBRARY_REACT,
-            libraryVersion: 'test',
-            traces: [{ id: LibraryTraces_TraceId.TRACE_ID_FLAG_EVALUATION }],
-          },
-        ],
-        platform: Platform.PLATFORM_JS_WEB,
-      });
-    });
-
-    it('should add telemetry header', async () => {
-      fetchMock.mockResolvedValue(new Response());
-      await underTest('https://resolver.confidence.dev/v1/flags:resolve', { method: 'POST', body: '{}' });
-      expect(fetchMock).toBeCalledTimes(1);
-      const headers = fetchMock.mock.calls[0][0].headers;
-      expect(headers.get('X-CONFIDENCE-TELEMETRY')).toEqual('CgwIAxIEdGVzdBoCCAMQBA==');
-    });
   });
 
   describe('resolve', () => {

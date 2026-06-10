@@ -145,7 +145,6 @@ export class FetchingFlagResolverClient implements FlagResolverClient {
     });
 
     const fetchBuilder = new FetchBuilder();
-    withTelemetryData(fetchBuilder, telemetry);
     if (environment === 'client') {
       withRequestLogic(fetchBuilder, logger);
     }
@@ -186,6 +185,16 @@ export class FetchingFlagResolverClient implements FlagResolverClient {
       };
     } else {
       this.cacheReadThrough = (_context, supplier) => supplier().then(response => ({ response, isFromCache: false }));
+    }
+
+    const telemetryTimerId = setInterval(() => this.flushTelemetry(), 5_000);
+    if (typeof telemetryTimerId === 'object') telemetryTimerId.unref();
+    if (typeof document !== 'undefined') {
+      document.addEventListener('visibilitychange', () => {
+        if (document.visibilityState === 'hidden') {
+          this.flushTelemetry({ keepalive: true });
+        }
+      });
     }
   }
 
@@ -230,7 +239,7 @@ export class FetchingFlagResolverClient implements FlagResolverClient {
     });
   }
 
-  async uploadTelemetry(monitoring: Monitoring): Promise<void> {
+  async uploadTelemetry(monitoring: Monitoring, { keepalive }: { keepalive?: boolean } = {}): Promise<void> {
     const resp = await this.fetchImplementation(`${this.baseUrl}/telemetry:upload`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
@@ -238,16 +247,17 @@ export class FetchingFlagResolverClient implements FlagResolverClient {
         clientSecret: this.clientSecret,
         monitoring: Monitoring.toJSON(monitoring),
       }),
+      keepalive,
     });
     if (!resp.ok) {
       throw new Error(`${resp.status}: ${resp.statusText}`);
     }
   }
 
-  private flushTelemetry(): void {
+  private flushTelemetry({ keepalive }: { keepalive?: boolean } = {}): void {
     const monitoring = this.telemetry.getSnapshot();
     if (monitoring.libraryTraces.length === 0) return;
-    const promise = this.uploadTelemetry(monitoring).catch(error => {
+    const promise = this.uploadTelemetry(monitoring, { keepalive }).catch(error => {
       this.logger.info?.(`Confidence: Failed to upload telemetry: ${error.message}`);
     });
     this.waitUntil?.(promise);
@@ -259,10 +269,7 @@ export class FetchingFlagResolverClient implements FlagResolverClient {
     let [nextFlush, resolveNextFlush] = resolvablePromise();
 
     const flush = () => {
-      if (!pending.length) {
-        this.flushTelemetry();
-        return;
-      }
+      if (!pending.length) return;
       const resolveCurrentFlush = resolveNextFlush;
       [nextFlush, resolveNextFlush] = resolvablePromise();
       timeoutId = 0;
@@ -289,6 +296,7 @@ export class FetchingFlagResolverClient implements FlagResolverClient {
           applyTime: new Date(),
         });
       }
+      if (!pending.length) return;
       if (timeoutId) {
         clearTimeout(timeoutId);
       }
@@ -359,18 +367,6 @@ export class FetchingFlagResolverClient implements FlagResolverClient {
   //   }
   //   return ResolveFlagsResponse.decode(new Uint8Array(await resp.arrayBuffer()));
   // }
-}
-
-export function withTelemetryData(fetchBuilder: FetchBuilder, telemetry: Telemetry) {
-  fetchBuilder.modifyRequest(({ headers }) => {
-    const monitoring = telemetry.getSnapshot();
-    if (monitoring.libraryTraces.length > 0) {
-      const base64Message = btoa(String.fromCharCode(...Monitoring.encode(monitoring).finish()));
-
-      return { headers: { ...headers, ['X-CONFIDENCE-TELEMETRY']: base64Message } };
-    }
-    return {};
-  });
 }
 
 export function withRequestLogic(fetchBuilder: FetchBuilder, logger: Logger) {
