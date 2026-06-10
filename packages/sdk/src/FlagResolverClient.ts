@@ -187,14 +187,16 @@ export class FetchingFlagResolverClient implements FlagResolverClient {
       this.cacheReadThrough = (_context, supplier) => supplier().then(response => ({ response, isFromCache: false }));
     }
 
-    const telemetryTimerId = setInterval(() => this.flushTelemetry(), 5_000);
-    if (typeof telemetryTimerId === 'object') telemetryTimerId.unref();
-    if (typeof document !== 'undefined') {
-      document.addEventListener('visibilitychange', () => {
-        if (document.visibilityState === 'hidden') {
-          this.flushTelemetry({ keepalive: true });
-        }
-      });
+    if (!telemetry.disabled) {
+      const telemetryTimerId = setInterval(() => this.flushTelemetry(), 5_000);
+      if (typeof telemetryTimerId === 'object') telemetryTimerId.unref();
+      if (typeof document !== 'undefined') {
+        document.addEventListener('visibilitychange', () => {
+          if (document.visibilityState === 'hidden') {
+            this.flushTelemetry({ keepalive: true });
+          }
+        });
+      }
     }
   }
 

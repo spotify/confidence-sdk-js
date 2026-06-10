@@ -78,6 +78,7 @@ describe('Confidence integration tests', () => {
       timeout: 100,
       environment: 'client',
       fetchImplementation,
+      disableTelemetry: true,
     });
 
     resolveHandlerMock.mockReturnValue(mockResolveResponse);
@@ -98,6 +99,7 @@ describe('Confidence integration tests', () => {
       environment: 'client',
       fetchImplementation,
       resolveBaseUrl: 'https://custom.dev',
+      disableTelemetry: true,
     });
 
     expect(await customConfidence.getFlag('flag1.str', 'goodbye')).toBe('hello');
@@ -110,6 +112,7 @@ describe('Confidence integration tests', () => {
       environment: 'client',
       fetchImplementation,
       applyBaseUrl: 'https://custom-apply.dev',
+      disableTelemetry: true,
     });
 
     expect(await customConfidence.getFlag('flag1.str', 'goodbye')).toBe('hello');
