@@ -8,14 +8,15 @@ import {
 } from './generated/confidence/telemetry/v1/telemetry';
 import { Logger } from './logger';
 
-// ~250 bytes per trace in JSON. 0.75 * 64KB keepalive limit ≈ 48KB → ~190 traces.
-export const MAX_TRACE_COUNT = 190;
+// 0.75 * 64KB keepalive limit = 48KB
+const DEFAULT_MAX_BUFFER_BYTES = 0.75 * 64 * 1024;
 
 export type TelemetryOptions = {
   disabled: boolean;
   logger?: Logger;
   environment: 'backend' | 'client';
   library?: LibraryTraces_Library;
+  maxBufferBytes?: number;
 };
 
 export type Tag = {
@@ -31,7 +32,8 @@ export class Telemetry {
   private readonly libraryTraces: LibraryTraces[] = [];
   private readonly platform: Platform;
   private readonly library: LibraryTraces_Library;
-  private traceCount = 0;
+  private readonly maxBufferBytes: number;
+  private bufferBytes = 0;
   onFlush?: () => void;
 
   constructor(opts: TelemetryOptions) {
@@ -39,6 +41,7 @@ export class Telemetry {
     this.logger = opts.logger;
     this.platform = opts.environment === 'client' ? Platform.PLATFORM_JS_WEB : Platform.PLATFORM_JS_SERVER;
     this.library = opts.library ?? LibraryTraces_Library.LIBRARY_CONFIDENCE;
+    this.maxBufferBytes = opts.maxBufferBytes ?? DEFAULT_MAX_BUFFER_BYTES;
   }
 
   public registerLibraryTraces({ library, version, id }: Tag): TraceConsumer {
@@ -53,12 +56,10 @@ export class Telemetry {
     });
     return data => {
       this.logger?.debug?.(LibraryTraces_TraceId[id], data);
-      traces.push({
-        id,
-        ...data,
-      });
-      this.traceCount++;
-      if (this.traceCount >= MAX_TRACE_COUNT) {
+      const trace: LibraryTraces_Trace = { id, ...data };
+      traces.push(trace);
+      this.bufferBytes += LibraryTraces_Trace.encode(trace).finish().byteLength;
+      if (this.bufferBytes >= this.maxBufferBytes) {
         this.onFlush?.();
       }
     };
@@ -73,7 +74,7 @@ export class Telemetry {
         libraryVersion,
         traces: traces.splice(0, traces.length),
       }));
-    this.traceCount = 0;
+    this.bufferBytes = 0;
     return { libraryTraces, platform: this.platform };
   }
 }

@@ -1,6 +1,5 @@
 import { Confidence } from './Confidence';
 import { abortableSleep } from './fetch-util';
-import { MAX_TRACE_COUNT } from './Telemetry';
 import {
   LibraryTraces_Library,
   LibraryTraces_Trace_EvaluationTrace_EvaluationErrorCode,
@@ -184,9 +183,7 @@ describe('Telemetry trace integration tests', () => {
   }
 
   async function flushTelemetry(conf: Confidence): Promise<void> {
-    for (let i = 0; i < MAX_TRACE_COUNT; i++) {
-      conf.evaluateFlag('flag1.str', 'goodbye');
-    }
+    conf.flushTelemetry();
     await jest.advanceTimersByTimeAsync(20);
   }
 

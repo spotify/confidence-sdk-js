@@ -9,7 +9,7 @@ import {
   ResolutionDetails,
 } from '@openfeature/server-sdk';
 
-import { Context, FlagEvaluation, FlagResolver, Value } from '@spotify-confidence/sdk';
+import { Confidence, Context, FlagEvaluation, FlagResolver, Value } from '@spotify-confidence/sdk';
 
 type Mutable<T> = { -readonly [K in keyof T]: T[K] };
 
@@ -92,6 +92,12 @@ export class ConfidenceServerProvider implements Provider {
     context: EvaluationContext,
   ): Promise<ResolutionDetails<string>> {
     return this.fetchFlag(flagKey, defaultValue, context);
+  }
+
+  async onClose(): Promise<void> {
+    if (this.confidence instanceof Confidence) {
+      this.confidence.flushTelemetry();
+    }
   }
 }
 

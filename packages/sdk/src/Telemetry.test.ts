@@ -170,9 +170,9 @@ describe('Telemetry', () => {
     expect(snapshot.libraryTraces[0].library).toBe(LibraryTraces_Library.LIBRARY_REACT);
   });
 
-  it('calls onFlush when trace count reaches threshold', () => {
+  it('calls onFlush when buffer size reaches threshold', () => {
     const onFlush = jest.fn();
-    const telemetry = new Telemetry({ disabled: false, environment: 'client' });
+    const telemetry = new Telemetry({ disabled: false, environment: 'client', maxBufferBytes: 10 });
     telemetry.onFlush = onFlush;
     const traceConsumer = telemetry.registerLibraryTraces({
       library: LibraryTraces_Library.LIBRARY_CONFIDENCE,
@@ -180,18 +180,19 @@ describe('Telemetry', () => {
       id: LibraryTraces_TraceId.TRACE_ID_FLAG_EVALUATION,
     });
 
-    for (let i = 0; i < 189; i++) {
-      traceConsumer({});
-    }
+    traceConsumer({});
     expect(onFlush).not.toHaveBeenCalled();
 
+    traceConsumer({});
+    traceConsumer({});
+    traceConsumer({});
     traceConsumer({});
     expect(onFlush).toHaveBeenCalledTimes(1);
   });
 
-  it('resets trace count after getSnapshot', () => {
+  it('resets buffer size after getSnapshot', () => {
     const onFlush = jest.fn();
-    const telemetry = new Telemetry({ disabled: false, environment: 'client' });
+    const telemetry = new Telemetry({ disabled: false, environment: 'client', maxBufferBytes: 10 });
     telemetry.onFlush = onFlush;
     const traceConsumer = telemetry.registerLibraryTraces({
       library: LibraryTraces_Library.LIBRARY_CONFIDENCE,
@@ -199,20 +200,18 @@ describe('Telemetry', () => {
       id: LibraryTraces_TraceId.TRACE_ID_FLAG_EVALUATION,
     });
 
-    for (let i = 0; i < 190; i++) {
+    while (onFlush.mock.calls.length === 0) {
       traceConsumer({});
     }
-    expect(onFlush).toHaveBeenCalledTimes(1);
     onFlush.mockClear();
 
     telemetry.getSnapshot();
-
-    for (let i = 0; i < 189; i++) {
-      traceConsumer({});
-    }
+    traceConsumer({});
     expect(onFlush).not.toHaveBeenCalled();
 
-    traceConsumer({});
+    while (onFlush.mock.calls.length === 0) {
+      traceConsumer({});
+    }
     expect(onFlush).toHaveBeenCalledTimes(1);
   });
 });
