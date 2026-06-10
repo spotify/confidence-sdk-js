@@ -173,11 +173,7 @@ describe('Telemetry trace integration tests', () => {
     jest.useRealTimers();
   });
 
-  async function resolveAndEvaluate(
-    conf: Confidence,
-    flag: string,
-    defaultValue: any,
-  ): Promise<void> {
+  async function resolveAndEvaluate(conf: Confidence, flag: string, defaultValue: any): Promise<void> {
     const promise = conf.getFlag(flag, defaultValue);
     await jest.advanceTimersByTimeAsync(20);
     await promise;
