@@ -8,7 +8,6 @@ import { FlagEvaluation, State, StateObserver } from './flags';
 
 const flagResolverClientMock: jest.Mocked<FlagResolverClient> = {
   resolve: jest.fn(),
-  flushTelemetry: jest.fn(),
 };
 
 const eventSenderEngineMock: jest.Mocked<EventSenderEngine> = {} as any; // TODO fix any by using an interface

@@ -83,7 +83,6 @@ export class PendingResolution<T = FlagResolution> extends AccessiblePromise<T> 
 
 export interface FlagResolverClient {
   resolve(context: Context, flags: string[]): PendingResolution;
-  flushTelemetry(options?: { keepalive?: boolean }): void;
 }
 
 export type FlagResolverClientOptions = {
@@ -256,7 +255,7 @@ export class FetchingFlagResolverClient implements FlagResolverClient {
     }
   }
 
-  flushTelemetry({ keepalive }: { keepalive?: boolean } = {}): void {
+  private flushTelemetry({ keepalive }: { keepalive?: boolean } = {}): void {
     const monitoring = this.telemetry.getSnapshot();
     if (monitoring.libraryTraces.length === 0) return;
     const promise = this.uploadTelemetry(monitoring, { keepalive }).catch(error => {

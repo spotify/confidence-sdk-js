@@ -112,6 +112,8 @@ export interface Configuration extends ConfidenceOptions {
     // @internal
     readonly flagResolverClient: FlagResolverClient;
     readonly logger: Logger;
+    // @internal (undocumented)
+    readonly onClose?: () => void;
     // Warning: (ae-forgotten-export) The symbol "TraceConsumer" needs to be exported by the entry point index.d.ts
     //
     // @internal (undocumented)
