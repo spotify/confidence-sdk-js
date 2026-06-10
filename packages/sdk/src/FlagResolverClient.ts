@@ -97,7 +97,6 @@ export type FlagResolverClientOptions = {
   resolveBaseUrl?: string;
   applyBaseUrl?: string;
   telemetry: Telemetry;
-  disableTelemetry?: boolean;
   logger: Logger;
   waitUntil?: WaitUntil;
   cacheProvider?: CacheProvider;
@@ -138,7 +137,6 @@ export class FetchingFlagResolverClient implements FlagResolverClient {
     waitUntil,
     cacheProvider,
     onEvaluation,
-    disableTelemetry,
   }: FlagResolverClientOptions) {
     this.telemetry = telemetry;
     this.traceConsumer = telemetry.registerLibraryTraces({
@@ -190,7 +188,7 @@ export class FetchingFlagResolverClient implements FlagResolverClient {
       this.cacheReadThrough = (_context, supplier) => supplier().then(response => ({ response, isFromCache: false }));
     }
 
-    if (!disableTelemetry) {
+    if (!telemetry.disabled) {
       telemetry.onFlush = () => this.flushTelemetry();
       if (typeof document !== 'undefined') {
         document.addEventListener('visibilitychange', () => {
