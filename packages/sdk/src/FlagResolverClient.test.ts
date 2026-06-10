@@ -364,6 +364,10 @@ describe.each(['client', 'backend'] as const)('Telemetry upload (%s environment)
     });
   });
 
+  afterEach(() => {
+    instanceUnderTest.close();
+  });
+
   it('should not upload telemetry when flush fires with no pending applies', async () => {
     const flagResolution = await instanceUnderTest.resolve({});
     // evaluate a flag where shouldApply is false — no apply will be pending
