@@ -22,6 +22,7 @@ declare class ConfidenceServerProvider implements Provider {
     resolveObjectEvaluation<T extends JsonValue>(flagKey: string, defaultValue: T, context: EvaluationContext): Promise<ResolutionDetails<T>>;
     /** Resolves with an evaluation of a String flag */
     resolveStringEvaluation(flagKey: string, defaultValue: string, context: EvaluationContext): Promise<ResolutionDetails<string>>;
+    onClose(): Promise<void>;
 }
 
 /**
