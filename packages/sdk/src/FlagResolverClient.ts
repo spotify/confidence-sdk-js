@@ -112,6 +112,7 @@ export class FetchingFlagResolverClient implements FlagResolverClient {
   private readonly baseUrl: string;
   private readonly applyBaseUrl: string;
   private readonly telemetry: Telemetry;
+  private readonly environment: 'client' | 'backend';
   private readonly traceConsumer: TraceConsumer;
   private readonly onEvaluation: EvaluationObserver | undefined;
   private readonly waitUntil: WaitUntil | undefined;
@@ -140,6 +141,7 @@ export class FetchingFlagResolverClient implements FlagResolverClient {
     disableTelemetry,
   }: FlagResolverClientOptions) {
     this.telemetry = telemetry;
+    this.environment = environment;
     this.traceConsumer = telemetry.registerLibraryTraces({
       library: LibraryTraces_Library.LIBRARY_CONFIDENCE,
       version: sdk.version,
@@ -283,6 +285,11 @@ export class FetchingFlagResolverClient implements FlagResolverClient {
         sdk: this.sdk,
         sendTime: new Date(),
       })
+        .then(() => {
+          if (this.environment === 'backend') {
+            this.flushTelemetry();
+          }
+        })
         .catch(error => {
           this.logger.warn?.(`Confidence: Failed to apply flags: ${error.message}`);
         })
