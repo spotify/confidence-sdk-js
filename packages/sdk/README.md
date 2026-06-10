@@ -89,6 +89,8 @@ At this point, the context of `childInstance` is `'pants-color': 'blue', 'pants-
 
 > [!IMPORTANT]
 > When using the SDK in a server environment, you should call `withContext` rather than `setContext`. This will give you a new instance scoped to the request and prevent context from leaking between requests.
+>
+> Call `confidence.close()` on shutdown to flush any pending telemetry before the process exits.
 
 ## Accessing flags
 
