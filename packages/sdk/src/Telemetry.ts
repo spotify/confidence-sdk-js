@@ -23,7 +23,7 @@ export type Tag = {
 
 export type TraceConsumer = (trace: Omit<LibraryTraces_Trace, 'id'>) => void;
 export class Telemetry {
-  readonly disabled: boolean;
+  private readonly disabled: boolean;
   private readonly logger?: Logger;
   private readonly libraryTraces: LibraryTraces[] = [];
   private readonly platform: Platform;

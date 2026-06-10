@@ -458,6 +458,7 @@ export class Confidence implements EventSender, Trackable, FlagResolver {
       resolveBaseUrl,
       applyBaseUrl,
       telemetry,
+      disableTelemetry,
       logger,
       applyDebounce,
       waitUntil,
