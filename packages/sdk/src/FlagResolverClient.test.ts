@@ -358,14 +358,10 @@ describe.each(['client', 'backend'] as const)('Telemetry upload (%s environment)
       },
       environment,
       resolveTimeout: 10,
-      telemetry: new Telemetry({ disabled: false, logger: { warn: jest.fn() }, environment }),
+      telemetry: new Telemetry({ disabled: true, logger: { warn: jest.fn() }, environment }),
       waitUntil: waitUntilMock,
       logger: console,
     });
-  });
-
-  afterEach(() => {
-    instanceUnderTest.close();
   });
 
   it('should not upload telemetry when flush fires with no pending applies', async () => {

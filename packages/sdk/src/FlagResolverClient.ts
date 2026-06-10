@@ -119,8 +119,6 @@ export class FetchingFlagResolverClient implements FlagResolverClient {
     context: Context,
     supplier: () => Promise<ResolveFlagsResponse>,
   ) => Promise<{ response: ResolveFlagsResponse; isFromCache: boolean }>;
-  private readonly telemetryTimerId: ReturnType<typeof setInterval> | undefined;
-  private readonly onVisibilityChange: (() => void) | undefined;
 
   constructor({
     fetchImplementation,
@@ -190,25 +188,15 @@ export class FetchingFlagResolverClient implements FlagResolverClient {
     }
 
     if (!telemetry.disabled) {
-      this.telemetryTimerId = setInterval(() => this.flushTelemetry(), 5_000);
-      if (typeof this.telemetryTimerId === 'object') this.telemetryTimerId.unref();
+      const telemetryTimerId = setInterval(() => this.flushTelemetry(), 5_000);
+      if (typeof telemetryTimerId === 'object') telemetryTimerId.unref();
       if (typeof document !== 'undefined') {
-        this.onVisibilityChange = () => {
+        document.addEventListener('visibilitychange', () => {
           if (document.visibilityState === 'hidden') {
             this.flushTelemetry({ keepalive: true });
           }
-        };
-        document.addEventListener('visibilitychange', this.onVisibilityChange);
+        });
       }
-    }
-  }
-
-  close(): void {
-    if (this.telemetryTimerId) {
-      clearInterval(this.telemetryTimerId);
-    }
-    if (this.onVisibilityChange && typeof document !== 'undefined') {
-      document.removeEventListener('visibilitychange', this.onVisibilityChange);
     }
   }
 
