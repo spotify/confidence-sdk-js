@@ -25,7 +25,6 @@ jobs:
       - run: yarn test
 
   E2E-Test:
-    if: github.event_name == 'push'
     runs-on: ubuntu-latest
     steps:
       - name: Checkout
