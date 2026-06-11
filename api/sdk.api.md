@@ -35,6 +35,7 @@ export class Confidence implements EventSender, Trackable, FlagResolver {
     // @internal
     constructor({ context, ...config }: Configuration, parent?: Confidence);
     clearContext(): void;
+    close(): void;
     readonly config: Configuration;
     // Warning: (ae-forgotten-export) The symbol "Subscribe" needs to be exported by the entry point index.d.ts
     //
@@ -111,6 +112,8 @@ export interface Configuration extends ConfidenceOptions {
     // @internal
     readonly flagResolverClient: FlagResolverClient;
     readonly logger: Logger;
+    // @internal (undocumented)
+    readonly onClose?: () => void;
     // Warning: (ae-forgotten-export) The symbol "TraceConsumer" needs to be exported by the entry point index.d.ts
     //
     // @internal (undocumented)
@@ -177,6 +180,7 @@ export type FlagEvaluation<T> = FlagEvaluation.Resolved<T> | FlagEvaluation.Stal
 
 // @public
 export interface FlagResolver extends Contextual<FlagResolver> {
+    close?(): void;
     evaluateFlag(path: string, defaultValue: string): FlagEvaluation<string>;
     evaluateFlag(path: string, defaultValue: boolean): FlagEvaluation<boolean>;
     evaluateFlag(path: string, defaultValue: number): FlagEvaluation<number>;

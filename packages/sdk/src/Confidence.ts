@@ -87,6 +87,8 @@ export interface Configuration extends ConfidenceOptions {
   readonly clientSecret: string;
   readonly cacheProvider: CacheProvider;
   /** @internal */
+  readonly onClose?: () => void;
+  /** @internal */
   readonly staleFlagTraceConsumer: TraceConsumer;
   /** @internal */
   readonly emitEvaluationTrace: (trace: EvaluationTrace) => void;
@@ -371,6 +373,11 @@ export class Confidence implements EventSender, Trackable, FlagResolver {
     );
   }
 
+  /** Flushes pending telemetry and releases resources */
+  close(): void {
+    this.config.onClose?.();
+  }
+
   toOptions(): ConfidenceOptions {
     const cache = this.config.cacheProvider(this.config.clientSecret).toOptions();
     return {
@@ -482,6 +489,7 @@ export class Confidence implements EventSender, Trackable, FlagResolver {
       maxOpenRequests: (50 * 1024) / (estEventSizeKb * maxBatchSize),
       logger,
     });
+    const onClose = !disableTelemetry ? () => telemetry.onFlush?.() : undefined;
     return new Confidence({
       ...options,
       flagResolverClient,
@@ -490,6 +498,7 @@ export class Confidence implements EventSender, Trackable, FlagResolver {
       cacheProvider,
       staleFlagTraceConsumer,
       emitEvaluationTrace,
+      onClose,
     });
   }
 }

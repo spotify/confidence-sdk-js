@@ -93,6 +93,10 @@ export class ConfidenceServerProvider implements Provider {
   ): Promise<ResolutionDetails<string>> {
     return this.fetchFlag(flagKey, defaultValue, context);
   }
+
+  async onClose(): Promise<void> {
+    this.confidence.close?.();
+  }
 }
 
 function convertContext({ targetingKey, ...context }: EvaluationContext): Context {
