@@ -114,6 +114,20 @@
   * devDependencies
     * @spotify-confidence/sdk bumped to 0.3.16
 
+## [0.3.17](https://github.com/spotify/confidence-sdk-js/compare/openfeature-server-provider-v0.3.16...openfeature-server-provider-v0.3.17) (2026-06-11)
+
+
+### 🐛 Bug Fixes
+
+* **sdk:** remove telemetry header and batch uploads ([#354](https://github.com/spotify/confidence-sdk-js/issues/354)) ([8170166](https://github.com/spotify/confidence-sdk-js/commit/8170166cfd7725e8db4d8535669f92de990a6151))
+
+
+### Dependencies
+
+* The following workspace dependencies were updated
+  * devDependencies
+    * @spotify-confidence/sdk bumped to 0.3.17
+
 ## [0.3.15](https://github.com/spotify/confidence-sdk-js/compare/openfeature-server-provider-v0.3.14...openfeature-server-provider-v0.3.15) (2026-05-28)
 
 

@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.3.17](https://github.com/spotify/confidence-sdk-js/compare/sdk-v0.3.16...sdk-v0.3.17) (2026-06-11)
+
+
+### 🐛 Bug Fixes
+
+* **sdk:** remove telemetry header and batch uploads ([#354](https://github.com/spotify/confidence-sdk-js/issues/354)) ([8170166](https://github.com/spotify/confidence-sdk-js/commit/8170166cfd7725e8db4d8535669f92de990a6151))
+
 ## [0.3.16](https://github.com/spotify/confidence-sdk-js/compare/sdk-v0.3.15...sdk-v0.3.16) (2026-06-05)
 
 
