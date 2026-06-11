@@ -155,8 +155,14 @@ Confidence can provide all flag resolves and tracking events with a browser spec
 The `visitor_id` is stored in a cookie named `cnfdVisitorId`. To add a generated `visitor_id` to the context, use the following:
 
 ```ts
-import { visitorIdentity } from './trackers';
+import { visitorIdentity } from '@spotify-confidence/sdk';
 confidence.track(visitorIdentity());
+```
+
+To share the visitor ID across subdomains, set the `domain` option:
+
+```ts
+confidence.track(visitorIdentity({ domain: '.example.com' }));
 ```
 
 #### Page Views (web)
