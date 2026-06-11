@@ -9,6 +9,10 @@ packages/*/build
 packages/*/dist
 coverage/*
 
+# csr
+csr/*/build
+csr/*/dist
+
 # examples
 examples/*/coverage
 examples/*/build

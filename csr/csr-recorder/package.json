@@ -1,0 +1,39 @@
+{
+  "name": "@spotify-confidence/csr-recorder",
+  "license": "Apache-2.0",
+  "version": "0.16.0",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/spotify/confidence-sdk-js.git",
+    "directory": "packages/csr-recorder"
+  },
+  "type": "module",
+  "main": "src/index.ts",
+  "types": "src/index.ts",
+  "files": [
+    "dist",
+    "src"
+  ],
+  "scripts": {
+    "build": "yarn run -T tsdown",
+    "typecheck": "tsc --noEmit"
+  },
+  "publishConfig": {
+    "type": "module",
+    "main": "./dist/index.cjs",
+    "module": "./dist/index.js",
+    "types": "./dist/index.d.ts",
+    "exports": {
+      ".": {
+        "types": "./dist/index.d.ts",
+        "import": "./dist/index.js",
+        "require": "./dist/index.cjs"
+      }
+    }
+  },
+  "dependencies": {
+    "@rrweb/rrweb-plugin-console-record": "^2.0.0-alpha.20",
+    "@spotify-confidence/csr-common": "workspace:^",
+    "rrweb": "^2.0.0-alpha.20"
+  }
+}

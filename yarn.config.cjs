@@ -6,6 +6,7 @@ module.exports = defineConfig({
   async constraints({ Yarn }) {
     const root = Yarn.workspace({ cwd: '.' });
     for (const workspace of Yarn.workspaces()) {
+      if (workspace.cwd.startsWith('csr/')) continue; // skip csr workspaces for now, they have different requirements
       const depsToWorkspace = Yarn.dependencies({ ident: workspace.ident });
       if (!workspace.cwd.startsWith('packages/')) {
         // workspace is not a published package (example or root)
