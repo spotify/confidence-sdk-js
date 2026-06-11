@@ -57,11 +57,12 @@ export class Telemetry {
     return data => {
       this.logger?.debug?.(LibraryTraces_TraceId[id], data);
       const trace: LibraryTraces_Trace = { id, ...data };
-      traces.push(trace);
-      this.bufferBytes += LibraryTraces_Trace.encode(trace).finish().byteLength;
-      if (this.bufferBytes >= this.maxBufferBytes) {
+      const traceSize = LibraryTraces_Trace.encode(trace).finish().byteLength;
+      if (this.bufferBytes + traceSize >= this.maxBufferBytes) {
         this.onFlush?.();
       }
+      this.bufferBytes += traceSize;
+      traces.push(trace);
     };
   }
 
