@@ -251,7 +251,12 @@ export namespace Value {
 export type Value = Value.Primitive | Value.Struct | Value.List | undefined;
 
 // @public
-export const visitorIdentity: () => Trackable.Manager;
+export const visitorIdentity: ({ domain }?: VisitorIdentityOptions) => Trackable.Manager;
+
+// @public
+export type VisitorIdentityOptions = {
+    domain?: string;
+};
 
 // Warning: (ae-missing-release-tag) "WaitUntil" is part of the package's API, but it is missing a release tag (@alpha, @beta, @public, or @internal)
 //
