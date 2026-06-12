@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.3.18](https://github.com/spotify/confidence-sdk-js/compare/sdk-v0.3.17...sdk-v0.3.18) (2026-06-12)
+
+
+### ✨ New Features
+
+* **sdk:** add domain option to visitorIdentity cookie ([#356](https://github.com/spotify/confidence-sdk-js/issues/356)) ([521e72f](https://github.com/spotify/confidence-sdk-js/commit/521e72fcd9ac4e1e89623b429abd7c5ee1cdf887))
+
 ## [0.3.17](https://github.com/spotify/confidence-sdk-js/compare/sdk-v0.3.16...sdk-v0.3.17) (2026-06-11)
 
 
