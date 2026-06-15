@@ -49,6 +49,9 @@ jobs:
       - name: Build
         shell: bash
         run: yarn bundle
+      - name: Build CSR
+        shell: bash
+        run: yarn build:csr
       - name: Publish sdk to NPM
         shell: bash
         working-directory: packages/sdk
@@ -70,6 +73,24 @@ jobs:
       - name: Publish openfeature-server-provider to NPM
         shell: bash
         working-directory: packages/openfeature-server-provider
+        run: |
+          yarn pack -o package.tgz
+          npm publish package.tgz
+      - name: Publish csr-common to NPM
+        shell: bash
+        working-directory: csr/csr-common
+        run: |
+          yarn pack -o package.tgz
+          npm publish package.tgz
+      - name: Publish csr-recorder to NPM
+        shell: bash
+        working-directory: csr/csr-recorder
+        run: |
+          yarn pack -o package.tgz
+          npm publish package.tgz
+      - name: Publish session-recording to NPM
+        shell: bash
+        working-directory: csr/session-recording
         run: |
           yarn pack -o package.tgz
           npm publish package.tgz
