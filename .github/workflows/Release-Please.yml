@@ -16,6 +16,13 @@ jobs:
     outputs:
       releases_created: ${{ steps.release.outputs.releases_created }}
       release_tag_name: ${{ steps.release.outputs.release_tag_name }}
+      sdk-release_created: ${{ steps.release.outputs['packages/sdk--release_created'] }}
+      react-release_created: ${{ steps.release.outputs['packages/react--release_created'] }}
+      web-provider-release_created: ${{ steps.release.outputs['packages/openfeature-web-provider--release_created'] }}
+      server-provider-release_created: ${{ steps.release.outputs['packages/openfeature-server-provider--release_created'] }}
+      csr-common-release_created: ${{ steps.release.outputs['csr/csr-common--release_created'] }}
+      csr-recorder-release_created: ${{ steps.release.outputs['csr/csr-recorder--release_created'] }}
+      session-recording-release_created: ${{ steps.release.outputs['csr/session-recording--release_created'] }}
     steps:
       - uses: google-github-actions/release-please-action@db8f2c60ee802b3748b512940dde88eabd7b7e01 # v3
         id: release
@@ -29,12 +36,12 @@ jobs:
     environment: deployment
     runs-on: ubuntu-latest
     needs: [Release-Please]
-    if: ${{ needs.release-please.outputs.releases_created }}
+    if: ${{ needs.Release-Please.outputs.releases_created }}
     steps:
       - name: Checkout
         uses: actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5 # v4
         with:
-          ref: ${{ needs.release-please.outputs.release_tag_name }}
+          ref: ${{ needs.Release-Please.outputs.release_tag_name }}
       - name: Setup Node
         uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4
         with:
@@ -46,6 +53,16 @@ jobs:
       - name: Install dependencies
         shell: bash
         run: corepack enable && yarn install
+      - name: Debug release outputs
+        shell: bash
+        run: |
+          echo "sdk: ${{ needs.Release-Please.outputs.sdk-release_created }}"
+          echo "react: ${{ needs.Release-Please.outputs.react-release_created }}"
+          echo "web-provider: ${{ needs.Release-Please.outputs.web-provider-release_created }}"
+          echo "server-provider: ${{ needs.Release-Please.outputs.server-provider-release_created }}"
+          echo "csr-common: ${{ needs.Release-Please.outputs.csr-common-release_created }}"
+          echo "csr-recorder: ${{ needs.Release-Please.outputs.csr-recorder-release_created }}"
+          echo "session-recording: ${{ needs.Release-Please.outputs.session-recording-release_created }}"
       - name: Build
         shell: bash
         run: yarn bundle
@@ -53,42 +70,49 @@ jobs:
         shell: bash
         run: yarn build:csr
       - name: Publish sdk to NPM
+        if: ${{ needs.Release-Please.outputs.sdk-release_created }}
         shell: bash
         working-directory: packages/sdk
         run: |
           yarn pack -o package.tgz
           npm publish package.tgz
       - name: Publish react to NPM
+        if: ${{ needs.Release-Please.outputs.react-release_created }}
         shell: bash
         working-directory: packages/react
         run: |
           yarn pack -o package.tgz
           npm publish package.tgz
       - name: Publish openfeature-web-provider to NPM
+        if: ${{ needs.Release-Please.outputs.web-provider-release_created }}
         shell: bash
         working-directory: packages/openfeature-web-provider
         run: |
           yarn pack -o package.tgz
           npm publish package.tgz
       - name: Publish openfeature-server-provider to NPM
+        if: ${{ needs.Release-Please.outputs.server-provider-release_created }}
         shell: bash
         working-directory: packages/openfeature-server-provider
         run: |
           yarn pack -o package.tgz
           npm publish package.tgz
       - name: Publish csr-common to NPM
+        if: ${{ needs.Release-Please.outputs.csr-common-release_created }}
         shell: bash
         working-directory: csr/csr-common
         run: |
           yarn pack -o package.tgz
           npm publish package.tgz
       - name: Publish csr-recorder to NPM
+        if: ${{ needs.Release-Please.outputs.csr-recorder-release_created }}
         shell: bash
         working-directory: csr/csr-recorder
         run: |
           yarn pack -o package.tgz
           npm publish package.tgz
       - name: Publish session-recording to NPM
+        if: ${{ needs.Release-Please.outputs.session-recording-release_created }}
         shell: bash
         working-directory: csr/session-recording
         run: |
