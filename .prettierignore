@@ -5,6 +5,7 @@ packages/*/dist
 coverage/*
 *.log
 packages/*/CHANGELOG.md
+csr/*/CHANGELOG.md
 api/*
 csr/*/build
 csr/*/dist
