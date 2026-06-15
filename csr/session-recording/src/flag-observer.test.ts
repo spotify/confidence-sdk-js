@@ -73,7 +73,7 @@ describe('observeFlags', () => {
     const writes: FlagWrite[] = [];
     observeFlags(w => writes.push(w));
 
-    (window as any).__confidence.flags['bad'] = { noVariant: true };
+    (window as any).__confidence.flags.bad = { noVariant: true };
 
     expect(writes).toHaveLength(0);
   });
@@ -82,7 +82,7 @@ describe('observeFlags', () => {
     const writes: FlagWrite[] = [];
     observeFlags(w => writes.push(w));
 
-    (window as any).__confidence.flags['bad'] = { variant: 42 };
+    (window as any).__confidence.flags.bad = { variant: 42 };
 
     expect(writes).toHaveLength(0);
   });
