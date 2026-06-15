@@ -23,6 +23,9 @@ examples/*/*.tsbuildinfo
 examples/*/next-env.d.ts
 examples/.env
 
+# test output
+test-results.xml
+
 # logs
 npm-debug.log*
 yarn-debug.log*
