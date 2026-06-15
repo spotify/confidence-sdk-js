@@ -1,0 +1,53 @@
+{
+  "name": "@spotify-confidence/csr-common",
+  "license": "Apache-2.0",
+  "version": "0.17.0",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/spotify/confidence-sdk-js.git",
+    "directory": "csr/csr-common"
+  },
+  "type": "module",
+  "main": "src/index.ts",
+  "types": "src/index.ts",
+  "exports": {
+    ".": {
+      "types": "./src/index.ts",
+      "default": "./src/index.ts"
+    },
+    "./uploader": {
+      "types": "./src/uploader/index.ts",
+      "default": "./src/uploader/index.ts"
+    }
+  },
+  "files": [
+    "dist",
+    "src"
+  ],
+  "scripts": {
+    "prebuild": "node scripts/build-worker.mjs",
+    "build": "yarn run -T tsdown",
+    "typecheck": "tsc --noEmit"
+  },
+  "publishConfig": {
+    "type": "module",
+    "main": "./dist/index.cjs",
+    "module": "./dist/index.js",
+    "types": "./dist/index.d.ts",
+    "exports": {
+      ".": {
+        "types": "./dist/index.d.ts",
+        "import": "./dist/index.js",
+        "require": "./dist/index.cjs"
+      },
+      "./uploader": {
+        "types": "./dist/uploader/index.d.ts",
+        "import": "./dist/uploader/index.js",
+        "require": "./dist/uploader/index.cjs"
+      }
+    }
+  },
+  "dependencies": {
+    "bowser": "^2.14.1"
+  }
+}

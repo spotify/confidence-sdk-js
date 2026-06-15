@@ -9,6 +9,11 @@ packages/*/build
 packages/*/dist
 coverage/*
 
+# csr
+csr/*/build
+csr/*/dist
+csr/session-recording/src/version.ts
+
 # examples
 examples/*/coverage
 examples/*/build
@@ -18,6 +23,9 @@ examples/*/*.log*
 examples/*/*.tsbuildinfo
 examples/*/next-env.d.ts
 examples/.env
+
+# test output
+test-results.xml
 
 # logs
 npm-debug.log*
