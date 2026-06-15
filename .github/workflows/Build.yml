@@ -34,6 +34,7 @@ jobs:
         with:
           node-version: '20'
       - run: yarn build:csr
+      - run: yarn lint:csr
       - run: yarn test:csr
 
   E2E-Test:

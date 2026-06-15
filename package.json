@@ -14,6 +14,7 @@
     "format": "prettier --config prettier.config.js -w .",
     "format:check": "prettier --config prettier.config.js -c .",
     "lint": "eslint 'packages/*/src/**/*.{tsx,ts}'",
+    "lint:csr": "eslint 'csr/*/src/**/*.{tsx,ts}'",
     "test": "jest --testPathIgnorePatterns '\\.e2e\\.test\\.ts'",
     "test:csr": "vitest run --config vitest.csr.config.ts",
     "test:e2e": "jest --testPathPattern '\\.e2e\\.test\\.ts'",

@@ -6,3 +6,6 @@ coverage/*
 *.log
 packages/*/CHANGELOG.md
 api/*
+csr/*/build
+csr/*/dist
+csr/csr-common/src/uploader/worker/worker-script.ts
