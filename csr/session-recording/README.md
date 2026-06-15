@@ -1,4 +1,6 @@
-# Confidence Session Replay
+# @spotify-confidence/session-recording
+
+![](https://img.shields.io/badge/lifecycle-beta-a0c3d2.svg)
 
 Browser SDK for recording user sessions with [Confidence](https://confidence.spotify.com). Captures DOM events in real time and streams them to the Confidence backend for analysis.
 

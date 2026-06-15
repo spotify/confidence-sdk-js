@@ -1,4 +1,6 @@
-# csr-recorder
+# @spotify-confidence/csr-recorder
+
+![](https://img.shields.io/badge/lifecycle-beta-a0c3d2.svg)
 
 Low-level browser recording engine that captures DOM events using [rrweb](https://github.com/rrweb-io/rrweb). This package is used internally by `@spotify-confidence/session-recording` — most consumers should use that SDK directly.
 
