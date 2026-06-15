@@ -30,6 +30,8 @@
     "typecheck": "tsc --noEmit"
   },
   "publishConfig": {
+    "registry": "https://registry.npmjs.org/",
+    "access": "public",
     "type": "module",
     "main": "./dist/index.cjs",
     "module": "./dist/index.js",
