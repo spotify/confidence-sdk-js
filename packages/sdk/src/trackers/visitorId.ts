@@ -16,12 +16,12 @@ export type VisitorIdentityOptions = {
 interface CookieStoreEntry {
   name: string;
   value: string;
-  domain: string;
+  domain: string | null;
 }
 
 interface CookieStore {
   getAll(name: string): Promise<CookieStoreEntry[]>;
-  delete(options: { name: string; domain: string }): Promise<void>;
+  delete(nameOrOptions: string | { name: string; domain: string }): Promise<void>;
 }
 
 declare const cookieStore: CookieStore | undefined;
@@ -39,11 +39,15 @@ async function migrateWithCookieStore(
   try {
     const cookies = await cookieStore!.getAll(name);
     const normalizedDomain = normalizeDomain(domain);
-    const domainCookie = cookies.find(c => normalizeDomain(c.domain) === normalizedDomain);
+    const domainCookie = cookies.find(c => c.domain !== null && normalizeDomain(c.domain) === normalizedDomain);
     const hostCookies = cookies.filter(c => c !== domainCookie);
 
     for (const cookie of hostCookies) {
-      await cookieStore!.delete({ name, domain: cookie.domain });
+      if (cookie.domain !== null) {
+        await cookieStore!.delete({ name, domain: cookie.domain });
+      } else {
+        await cookieStore!.delete(name);
+      }
     }
 
     if (domainCookie) {

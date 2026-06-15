@@ -15,12 +15,17 @@ function mockController(): Trackable.Controller {
   };
 }
 
-function mockCookieStore(cookies: Array<{ name: string; value: string; domain: string }>) {
+function mockCookieStore(cookies: Array<{ name: string; value: string; domain: string | null }>) {
   const store = {
     getAll: jest.fn(async (name: string) => cookies.filter(c => c.name === name)),
-    delete: jest.fn(async ({ name, domain }: { name: string; domain: string }) => {
-      const idx = cookies.findIndex(c => c.name === name && c.domain === domain);
-      if (idx >= 0) cookies.splice(idx, 1);
+    delete: jest.fn(async (nameOrOptions: string | { name: string; domain: string }) => {
+      if (typeof nameOrOptions === 'string') {
+        const idx = cookies.findIndex(c => c.name === nameOrOptions && c.domain === null);
+        if (idx >= 0) cookies.splice(idx, 1);
+      } else {
+        const idx = cookies.findIndex(c => c.name === nameOrOptions.name && c.domain === nameOrOptions.domain);
+        if (idx >= 0) cookies.splice(idx, 1);
+      }
     }),
   };
   (globalThis as any).cookieStore = store;
@@ -92,7 +97,7 @@ describe('visitorIdentity', () => {
     });
 
     it('migrates host cookie to domain cookie', async () => {
-      const cookies = [{ name: 'cnfdVisitorId', value: 'host-value', domain: 'app.example.com' }];
+      const cookies = [{ name: 'cnfdVisitorId', value: 'host-value', domain: null as string | null }];
       const store = mockCookieStore(cookies);
       Cookie.set('cnfdVisitorId', 'host-value', { maxAge: 1000 });
 
@@ -102,7 +107,7 @@ describe('visitorIdentity', () => {
       visitorIdentity({ domain: 'example.com' })(controller);
       await flushPromises();
 
-      expect(store.delete).toHaveBeenCalledWith({ name: 'cnfdVisitorId', domain: 'app.example.com' });
+      expect(store.delete).toHaveBeenCalledWith('cnfdVisitorId');
       expect(setSpy).toHaveBeenCalledWith(
         'cnfdVisitorId',
         'host-value',
@@ -113,7 +118,7 @@ describe('visitorIdentity', () => {
 
     it('preserves existing domain cookie and deletes host cookie', async () => {
       const cookies = [
-        { name: 'cnfdVisitorId', value: 'host-value', domain: 'app.example.com' },
+        { name: 'cnfdVisitorId', value: 'host-value', domain: null as string | null },
         { name: 'cnfdVisitorId', value: 'domain-value', domain: 'example.com' },
       ];
       const store = mockCookieStore(cookies);
@@ -130,7 +135,7 @@ describe('visitorIdentity', () => {
       await flushPromises();
 
       // Async: host cookie deleted, domain cookie preserved, context updated
-      expect(store.delete).toHaveBeenCalledWith({ name: 'cnfdVisitorId', domain: 'app.example.com' });
+      expect(store.delete).toHaveBeenCalledWith('cnfdVisitorId');
       expect(store.delete).not.toHaveBeenCalledWith(expect.objectContaining({ domain: 'example.com' }));
       expect(controller.setContext).toHaveBeenCalledWith({ visitor_id: 'domain-value' });
       setSpy.mockRestore();
