@@ -1,5 +1,20 @@
 # Changelog
 
+## [0.17.2](https://github.com/spotify/confidence-sdk-js/compare/session-recording-v0.17.1...session-recording-v0.17.2) (2026-06-15)
+
+
+### 🐛 Bug Fixes
+
+* improve csr package READMEs ([#367](https://github.com/spotify/confidence-sdk-js/issues/367)) ([3c5a254](https://github.com/spotify/confidence-sdk-js/commit/3c5a254b6b7bd23142ffe7ce6d99f327e67ff478))
+
+
+### Dependencies
+
+* The following workspace dependencies were updated
+  * dependencies
+    * @spotify-confidence/csr-common bumped to 0.17.2
+    * @spotify-confidence/csr-recorder bumped to 0.17.2
+
 ## [0.17.1](https://github.com/spotify/confidence-sdk-js/compare/session-recording-v0.17.0...session-recording-v0.17.1) (2026-06-15)
 
 
