@@ -12,6 +12,7 @@ coverage/*
 # csr
 csr/*/build
 csr/*/dist
+csr/session-recording/src/version.ts
 
 # examples
 examples/*/coverage
