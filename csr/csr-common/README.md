@@ -1,4 +1,6 @@
-# csr-common
+# @spotify-confidence/csr-common
+
+![](https://img.shields.io/badge/lifecycle-beta-a0c3d2.svg)
 
 Shared types, event definitions, and utilities for the Confidence session recording SDK. This package is a foundation dependency — most consumers should use `@spotify-confidence/session-recording` directly.
 
