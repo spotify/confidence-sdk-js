@@ -25,6 +25,7 @@ export {
   type RouteChangePluginData,
   type TagPluginData,
   type MeasurePluginData,
+  type FlagEvaluationPluginData,
 } from './events';
 
 export { stripUrl } from './url';

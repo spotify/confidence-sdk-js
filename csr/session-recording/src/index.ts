@@ -4,10 +4,12 @@ import {
   RecordingEventType,
   type TagPluginData,
   type MeasurePluginData,
+  type FlagEvaluationPluginData,
   validateKey,
   validateTagValue,
   validateMeasureValue,
 } from '@spotify-confidence/csr-common';
+import { observeFlags } from './flag-observer';
 import { createUploader, type ClientContext } from '@spotify-confidence/csr-common/uploader';
 import { SDK_VERSION } from './version';
 
@@ -86,6 +88,7 @@ export function initSessionRecorder(options: InitSessionRecorderOptions): Sessio
 
   let stopRecorder: (() => void) | null = null;
   let closeUploader: (() => void) | null = null;
+  let stopObservingFlags: (() => void) | null = null;
   let sendEvent: ((event: unknown) => void) | null = null;
   let started = false;
   let stopped = false;
@@ -115,6 +118,8 @@ export function initSessionRecorder(options: InitSessionRecorderOptions): Sessio
         debugLogger,
         onTerminate: ({ reason }) => {
           debugLogger?.(`Recording terminated: ${reason}`);
+          stopObservingFlags?.();
+          stopObservingFlags = null;
           stopRecorder?.();
           stopRecorder = null;
           stopped = true;
@@ -142,6 +147,18 @@ export function initSessionRecorder(options: InitSessionRecorderOptions): Sessio
       };
 
       stopRecorder = record(sendEvent, recordingConfig);
+
+      stopObservingFlags = observeFlags(({ flagKey, variant }) => {
+        const data: FlagEvaluationPluginData = {
+          plugin: 'csr:flagEvaluation',
+          payload: { flagKey, variant },
+        };
+        sendEvent?.({
+          type: RecordingEventType.Plugin,
+          timestamp: Date.now(),
+          data,
+        });
+      });
     } catch (err) {
       debugLogger?.(`Recording disabled: ${err instanceof Error ? err.message : String(err)}`);
     }
@@ -163,6 +180,8 @@ export function initSessionRecorder(options: InitSessionRecorderOptions): Sessio
     stop() {
       if (stopped) return;
       stopped = true;
+      stopObservingFlags?.();
+      stopObservingFlags = null;
       stopRecorder?.();
       stopRecorder = null;
       sendEvent = null;

@@ -1,6 +1,9 @@
 import { FlagResolution } from './FlagResolution';
+import { publishFlagEvaluation } from './flag-evaluation-global';
 import { ResolveFlagsResponse } from './generated/confidence/flags/resolver/v1/api';
 import { ResolveReason } from './generated/confidence/flags/resolver/v1/types';
+
+jest.mock('./flag-evaluation-global');
 
 function makeResponse(overrides: Partial<Parameters<typeof makeResolvedFlag>[0]> = {}): ResolveFlagsResponse {
   return {
@@ -27,6 +30,35 @@ function makeResolvedFlag({
 }
 
 describe('FlagResolution', () => {
+  describe('flag evaluation global', () => {
+    it('publishes flag evaluation on MATCH', () => {
+      const response = makeResponse();
+      const resolution = FlagResolution.ready({}, response);
+
+      resolution.evaluate('test-flag.my_bool', false);
+
+      expect(publishFlagEvaluation).toHaveBeenCalledWith('flags/test-flag', 'flags/test-flag/variants/treatment');
+    });
+
+    it('does not publish on NO_SEGMENT_MATCH', () => {
+      const response = makeResponse({ reason: ResolveReason.RESOLVE_REASON_NO_SEGMENT_MATCH });
+      const resolution = FlagResolution.ready({}, response);
+
+      resolution.evaluate('test-flag.my_bool', false);
+
+      expect(publishFlagEvaluation).not.toHaveBeenCalled();
+    });
+
+    it('does not publish when flag is not found', () => {
+      const response = makeResponse();
+      const resolution = FlagResolution.ready({}, response);
+
+      resolution.evaluate('nonexistent-flag.my_bool', false);
+
+      expect(publishFlagEvaluation).not.toHaveBeenCalled();
+    });
+  });
+
   describe('evaluate with null property values', () => {
     it('should return defaultValue when a resolved property is null', () => {
       const response = makeResponse({
