@@ -1,4 +1,0 @@
-{
-  "files": [],
-  "references": [{ "path": "csr/csr-common" }, { "path": "csr/csr-recorder" }, { "path": "csr/session-recording" }]
-}
