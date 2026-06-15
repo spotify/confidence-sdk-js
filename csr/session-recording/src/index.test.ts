@@ -13,7 +13,7 @@ vi.mock('@spotify-confidence/csr-recorder', () => ({
 import { initSessionRecorder } from './index';
 
 function flushPromises() {
-  return new Promise((r) => setTimeout(r, 0));
+  return new Promise(r => setTimeout(r, 0));
 }
 
 function mockUploader() {

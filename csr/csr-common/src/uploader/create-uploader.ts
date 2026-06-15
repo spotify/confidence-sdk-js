@@ -35,9 +35,7 @@ interface LogMessage {
 type WelcomeOrDead = WelcomeMessage | DeadMessage;
 type IncomingMessage = WelcomeMessage | DeadMessage | StateMessage | LogMessage;
 
-export async function createUploader(
-  opts: CreateUploaderOptions,
-): Promise<Uploader | null> {
+export async function createUploader(opts: CreateUploaderOptions): Promise<Uploader | null> {
   const log = opts.debugLogger;
   const sessionTtlMs = opts.sessionTtlMs ?? DEFAULT_SESSION_TTL_MS;
   const tabId = readOrMintTabId();
@@ -46,7 +44,9 @@ export async function createUploader(
   const mode = resolveMode(opts.workerMode ?? 'auto');
 
   log?.(
-    `tab: createUploader mode=${mode} tabId=${tabId} sessionHint=${sessionHint?.id ?? '(none)'} counterHint=${counterHint}`,
+    `tab: createUploader mode=${mode} tabId=${tabId} sessionHint=${
+      sessionHint?.id ?? '(none)'
+    } counterHint=${counterHint}`,
   );
 
   const port = await openWorkerPort(mode, opts.clientSecret, opts.workerUrl);
@@ -58,11 +58,11 @@ export async function createUploader(
   let sessionToken: string | null = null;
   let effectiveTabId: string = tabId;
   let resolveWelcome!: (msg: WelcomeOrDead) => void;
-  const welcomePromise = new Promise<WelcomeOrDead>((res) => {
+  const welcomePromise = new Promise<WelcomeOrDead>(res => {
     resolveWelcome = res;
   });
 
-  port.setHandler((data) => {
+  port.setHandler(data => {
     const msg = data as IncomingMessage;
     if (msg.type === 'log') {
       log?.(`worker: ${msg.msg}`);
@@ -131,9 +131,7 @@ export async function createUploader(
   }
   if ('skipRecording' in welcome.result) {
     if (opts.forceRecord) {
-      log?.(
-        'tab: forceRecord was set but backend still skipped — backend may not support forceRecord yet',
-      );
+      log?.('tab: forceRecord was set but backend still skipped — backend may not support forceRecord yet');
     }
     return null;
   }
@@ -149,9 +147,7 @@ export async function createUploader(
   }
 
   let counter = welcome.resetCounter ? 0 : counterHint;
-  let nextAdoptionMeta:
-    | Pick<Frame, 'adoptedFromSessionId' | 'adoptedAt'>
-    | undefined =
+  let nextAdoptionMeta: Pick<Frame, 'adoptedFromSessionId' | 'adoptedAt'> | undefined =
     welcome.adoptedFromSessionId !== undefined
       ? {
           adoptedFromSessionId: welcome.adoptedFromSessionId,
@@ -174,7 +170,7 @@ export async function createUploader(
     flush();
     try {
       port.postMessage({ type: 'bye', reason: 'pagehide' });
-    } catch {
+    } catch (_e) {
       // ignore
     }
   });
@@ -201,7 +197,7 @@ export async function createUploader(
     flush();
     try {
       port.postMessage({ type: 'bye', reason: 'stop' });
-    } catch {
+    } catch (_e) {
       // ignore
     }
   };
@@ -209,9 +205,7 @@ export async function createUploader(
   return uploader;
 }
 
-function resolveMode(
-  mode: 'shared' | 'dedicated' | 'auto',
-): 'shared' | 'dedicated' {
+function resolveMode(mode: 'shared' | 'dedicated' | 'auto'): 'shared' | 'dedicated' {
   if (mode === 'auto') {
     return typeof SharedWorker !== 'undefined' ? 'shared' : 'dedicated';
   }
@@ -240,8 +234,8 @@ async function openWorkerPort(
     const worker = new SharedWorker(url, options);
     worker.port.start();
     return {
-      postMessage: (m) => worker.port.postMessage(m),
-      setHandler: (cb) => {
+      postMessage: m => worker.port.postMessage(m),
+      setHandler: cb => {
         worker.port.onmessage = (e: MessageEvent) => cb(e.data);
       },
     };
@@ -249,8 +243,8 @@ async function openWorkerPort(
 
   const worker = new Worker(url, { type: 'module' });
   return {
-    postMessage: (m) => worker.postMessage(m),
-    setHandler: (cb) => {
+    postMessage: m => worker.postMessage(m),
+    setHandler: cb => {
       worker.onmessage = (e: MessageEvent) => cb(e.data);
     },
   };
@@ -261,19 +255,15 @@ function toDataUrl(script: string): string {
   // identifiers if the source ever contains them; this avoids `btoa` choking.
   const bytes = new TextEncoder().encode(script);
   let binary = '';
-  for (let i = 0; i < bytes.length; i++)
-    binary += String.fromCharCode(bytes[i]);
+  for (let i = 0; i < bytes.length; i++) binary += String.fromCharCode(bytes[i]);
   return `data:application/javascript;base64,${btoa(binary)}`;
 }
 
 async function hashSecret(secret: string): Promise<string> {
-  const buf = await crypto.subtle.digest(
-    'SHA-256',
-    new TextEncoder().encode(secret),
-  );
+  const buf = await crypto.subtle.digest('SHA-256', new TextEncoder().encode(secret));
   return Array.from(new Uint8Array(buf))
     .slice(0, 8)
-    .map((b) => b.toString(16).padStart(2, '0'))
+    .map(b => b.toString(16).padStart(2, '0'))
     .join('');
 }
 
@@ -298,16 +288,13 @@ function readSessionHint(ttlMs: number): { id: string; token: string } | null {
     if (Date.now() - parsed.ts > ttlMs) return null;
     if (!parsed.token) return null;
     return { id: parsed.id, token: parsed.token };
-  } catch {
+  } catch (_e) {
     return null;
   }
 }
 
 function writeSession(sessionId: string, sessionToken: string): void {
-  sessionStorage.setItem(
-    STORAGE_SESSION,
-    JSON.stringify({ id: sessionId, token: sessionToken, ts: Date.now() }),
-  );
+  sessionStorage.setItem(STORAGE_SESSION, JSON.stringify({ id: sessionId, token: sessionToken, ts: Date.now() }));
 }
 
 function readCounter(): number {

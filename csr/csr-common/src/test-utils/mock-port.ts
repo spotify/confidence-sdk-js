@@ -23,15 +23,15 @@ export function createMockPort(): MockPort {
   let handler: ((data: unknown) => void) | null = null;
   let cursor = 0;
   const adapter: PortAdapter = {
-    postMessage: (message) => received.push(message),
-    onmessage: (cb) => {
+    postMessage: message => received.push(message),
+    onmessage: cb => {
       handler = cb;
     },
   };
   return {
     adapter,
     received,
-    tabSends: (message) => {
+    tabSends: message => {
       if (handler === null) {
         throw new Error('no handler registered yet — register the port first');
       }

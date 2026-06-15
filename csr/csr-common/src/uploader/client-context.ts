@@ -3,13 +3,7 @@ import Bowser from 'bowser';
 /**
  * JSON-shaped values accepted in a Context — matches `google.protobuf.Struct`.
  */
-export type ContextValue =
-  | string
-  | number
-  | boolean
-  | null
-  | ContextValue[]
-  | { [key: string]: ContextValue };
+export type ContextValue = string | number | boolean | null | ContextValue[] | { [key: string]: ContextValue };
 
 /**
  * Browser-environment metadata captured at session init. Sent verbatim in the
@@ -46,14 +40,14 @@ export interface ClientContext {
 }
 
 export function collectUserAgentContext(): UserAgentContext | undefined {
-  if (typeof window === 'undefined' || typeof navigator === 'undefined') return;
+  if (typeof window === 'undefined' || typeof navigator === 'undefined') return undefined;
 
   const parsed = Bowser.parse(navigator.userAgent);
 
   let timeZone: string | undefined;
   try {
-    timeZone = Intl.DateTimeFormat().resolvedOptions().timeZone;
-  } catch {
+    timeZone = new Intl.DateTimeFormat().resolvedOptions().timeZone;
+  } catch (_e) {
     // Some embedded contexts throw.
   }
 
@@ -62,9 +56,7 @@ export function collectUserAgentContext(): UserAgentContext | undefined {
     os: parsed.os.name?.toLowerCase().replace(/\s+/g, ''),
     browser: parsed.browser.name?.toLowerCase().replace(/\s+/g, ''),
     browserVersion: parsed.browser.version?.split('.')[0],
-    mobile: parsed.platform.type
-      ? parsed.platform.type === 'mobile' || parsed.platform.type === 'tablet'
-      : undefined,
+    mobile: parsed.platform.type ? parsed.platform.type === 'mobile' || parsed.platform.type === 'tablet' : undefined,
     languageCode: navigator.language,
     timeZone,
     viewportWidth: window.innerWidth,

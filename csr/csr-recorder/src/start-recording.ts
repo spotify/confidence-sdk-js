@@ -9,10 +9,7 @@ import { RecordingConfig } from './types';
  *
  * Returns a function that stops the recording.
  */
-export function record(
-  onEvent: (event: RecordingEvent) => void,
-  config?: RecordingConfig,
-): () => void {
+export function record(onEvent: (event: RecordingEvent) => void, config?: RecordingConfig): () => void {
   const recorder = new Recorder({
     engine: new RrwebEngine(),
     onEvent,

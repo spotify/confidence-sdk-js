@@ -13,8 +13,7 @@ import type { Frame, Transport } from '../types';
 export class WebSocketTransport implements Transport {
   private ws: WebSocket | null = null;
   private onCloseCb: ((info: { reason: string }) => void) | null = null;
-  private onStateChangeCb: ((info: { connected: boolean }) => void) | null =
-    null;
+  private onStateChangeCb: ((info: { connected: boolean }) => void) | null = null;
   private intentionallyClosed = false;
   private dead = false;
   /** Frames buffered while a (re)connect is in progress. */
@@ -56,11 +55,7 @@ export class WebSocketTransport implements Transport {
     this.onStateChangeCb = cb;
   }
 
-  private connect(
-    isReconnect: boolean,
-    onReady?: () => void,
-    onReadyFail?: (err: Error) => void,
-  ): void {
+  private connect(isReconnect: boolean, onReady?: () => void, onReadyFail?: (err: Error) => void): void {
     const ws = new WebSocket(this.url);
     this.ws = ws;
     let opened = false;
@@ -79,7 +74,7 @@ export class WebSocketTransport implements Transport {
       }
     };
 
-    ws.onclose = (event) => {
+    ws.onclose = event => {
       if (this.intentionallyClosed) return;
       if (!opened) {
         // Server rejected the connection before it opened (e.g. unknown session).
@@ -101,8 +96,7 @@ export class WebSocketTransport implements Transport {
       // to inspect the code: 1000/1001 are lifecycle closes ("come back"), 4xxx are
       // application-level rejections ("don't come back"), anything else (1006 etc.) is
       // abnormal.
-      const isGracefulDrain =
-        event.wasClean && (event.code === 1000 || event.code === 1001);
+      const isGracefulDrain = event.wasClean && (event.code === 1000 || event.code === 1001);
       if (isGracefulDrain) {
         this.onStateChangeCb?.({ connected: false });
         this.connect(true);

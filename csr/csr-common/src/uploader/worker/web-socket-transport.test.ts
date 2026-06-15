@@ -44,10 +44,7 @@ describe('WebSocketTransport', () => {
     await t.ready();
 
     const [first, second] = await nextMessages(2);
-    expect([
-      JSON.parse(first).eventCounter,
-      JSON.parse(second).eventCounter,
-    ]).toEqual([0, 1]);
+    expect([JSON.parse(first).eventCounter, JSON.parse(second).eventCounter]).toEqual([0, 1]);
   });
 
   it('reconnects on a graceful drain (code 1000) and emits state changes', async () => {
@@ -101,9 +98,6 @@ describe('WebSocketTransport', () => {
     await t2.ready();
     t2.send({ tabId: 'b', eventCounter: 0, data: 'marker' });
     await vi.waitFor(() => expect(messages).toHaveLength(2));
-    expect(messages.map((m) => JSON.parse(m).data)).toEqual([
-      'before',
-      'marker',
-    ]);
+    expect(messages.map(m => JSON.parse(m).data)).toEqual(['before', 'marker']);
   });
 });

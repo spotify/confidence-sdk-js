@@ -1,10 +1,6 @@
 // @vitest-environment happy-dom
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
-import {
-  RecordingEvent,
-  RecordingEventType,
-  type RouteChangePluginData,
-} from '@spotify-confidence/csr-common';
+import { RecordingEvent, RecordingEventType, type RouteChangePluginData } from '@spotify-confidence/csr-common';
 import { Recorder } from './recorder';
 import { RecordingEngine } from './engine';
 
@@ -31,12 +27,8 @@ class MockEngine implements RecordingEngine {
 function routeChangeEvents(onEvent: ReturnType<typeof vi.fn>) {
   return (onEvent.mock.calls as [RecordingEvent][])
     .map(([e]) => e)
-    .filter(
-      (e) =>
-        e.type === RecordingEventType.Plugin &&
-        (e.data as RouteChangePluginData).plugin === 'csr:routeChange',
-    )
-    .map((e) => (e.data as RouteChangePluginData).payload);
+    .filter(e => e.type === RecordingEventType.Plugin && (e.data as RouteChangePluginData).plugin === 'csr:routeChange')
+    .map(e => (e.data as RouteChangePluginData).payload);
 }
 
 describe('Recorder route change capture', () => {
@@ -142,7 +134,7 @@ describe('Recorder route change capture', () => {
     window.dispatchEvent(new PopStateEvent('popstate'));
 
     const allEvents = routeChangeEvents(onEvent);
-    const popstateEvents = allEvents.filter((e) => e.trigger === 'popstate');
+    const popstateEvents = allEvents.filter(e => e.trigger === 'popstate');
     expect(popstateEvents.length).toBeGreaterThanOrEqual(1);
 
     recorder.stop();
@@ -161,9 +153,7 @@ describe('Recorder route change capture', () => {
 
     recorder.stop();
 
-    const popstateRemoves = removeSpy.mock.calls.filter(
-      ([t]) => t === 'popstate',
-    );
+    const popstateRemoves = removeSpy.mock.calls.filter(([t]) => t === 'popstate');
     expect(popstateRemoves.length).toBe(1);
 
     addSpy.mockRestore();

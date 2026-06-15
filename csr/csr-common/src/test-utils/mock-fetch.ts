@@ -8,22 +8,17 @@ import { onTestFinished, vi } from 'vitest';
  * has a test context to attach the cleanup to.
  */
 export function installMockFetch(
-  handler: (
-    input: RequestInfo | URL,
-    init?: RequestInit,
-  ) => Response | Promise<Response>,
+  handler: (input: RequestInfo | URL, init?: RequestInit) => Response | Promise<Response>,
 ): { calls: Array<{ url: string; init?: RequestInit }> } {
   const calls: Array<{ url: string; init?: RequestInit }> = [];
   const original = globalThis.fetch;
-  globalThis.fetch = vi.fn(
-    async (input: RequestInfo | URL, init?: RequestInit) => {
-      calls.push({
-        url: typeof input === 'string' ? input : input.toString(),
-        init,
-      });
-      return handler(input, init);
-    },
-  ) as typeof fetch;
+  globalThis.fetch = vi.fn(async (input: RequestInfo | URL, init?: RequestInit) => {
+    calls.push({
+      url: typeof input === 'string' ? input : input.toString(),
+      init,
+    });
+    return handler(input, init);
+  }) as typeof fetch;
   onTestFinished(() => {
     globalThis.fetch = original;
   });

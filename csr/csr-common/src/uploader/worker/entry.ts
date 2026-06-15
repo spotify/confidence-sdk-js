@@ -8,14 +8,10 @@ const SharedWorkerScopeCtor = (
   }
 ).SharedWorkerGlobalScope;
 
-const isShared =
-  typeof SharedWorkerScopeCtor === 'function' &&
-  self instanceof SharedWorkerScopeCtor;
+const isShared = typeof SharedWorkerScopeCtor === 'function' && self instanceof SharedWorkerScopeCtor;
 
 if (isShared) {
-  (self as unknown as SharedWorkerGlobalScope).onconnect = (
-    event: MessageEvent,
-  ) => {
+  (self as unknown as SharedWorkerGlobalScope).onconnect = (event: MessageEvent) => {
     const port = event.ports[0];
     port.start();
     registerPort(adaptMessagePort(port));
@@ -26,8 +22,8 @@ if (isShared) {
 
 function adaptMessagePort(port: MessagePort): PortAdapter {
   return {
-    postMessage: (message) => port.postMessage(message),
-    onmessage: (cb) => {
+    postMessage: message => port.postMessage(message),
+    onmessage: cb => {
       port.onmessage = (e: MessageEvent) => cb(e.data);
     },
   };
@@ -36,8 +32,8 @@ function adaptMessagePort(port: MessagePort): PortAdapter {
 function adaptDedicatedSelf(): PortAdapter {
   const ws = self as unknown as DedicatedWorkerGlobalScope;
   return {
-    postMessage: (message) => ws.postMessage(message),
-    onmessage: (cb) => {
+    postMessage: message => ws.postMessage(message),
+    onmessage: cb => {
       ws.onmessage = (e: MessageEvent) => cb(e.data);
     },
   };

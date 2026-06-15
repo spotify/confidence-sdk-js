@@ -41,7 +41,4 @@ export {
 
 export { type Frame } from './uploader/types';
 
-export {
-  type ClientContext,
-  type UserAgentContext,
-} from './uploader/client-context';
+export { type ClientContext, type UserAgentContext } from './uploader/client-context';

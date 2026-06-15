@@ -8,7 +8,7 @@ Low-level browser recording engine that captures DOM events using [rrweb](https:
 import { record } from '@spotify-confidence/csr-recorder';
 
 const stop = record(
-  (event) => {
+  event => {
     // handle each recording event
   },
   {

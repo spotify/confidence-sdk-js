@@ -142,11 +142,7 @@ export type TabRefocusCustomData = {
   };
 };
 
-export type RouteChangeTrigger =
-  | 'pushState'
-  | 'replaceState'
-  | 'popstate'
-  | 'navigation';
+export type RouteChangeTrigger = 'pushState' | 'replaceState' | 'popstate' | 'navigation';
 
 export type RouteChangePayload = {
   from: string;

@@ -1,10 +1,5 @@
 import { describe, expect, it, vi } from 'vitest';
-import {
-  createMockPort,
-  installMockFetch,
-  installMockWsServer,
-  jsonResponse,
-} from '../../test-utils';
+import { createMockPort, installMockFetch, installMockWsServer, jsonResponse } from '../../test-utils';
 
 const API_URL = 'https://api.example';
 const WS_URL = 'wss://api.example/sessions/stream?session_token=tok-1';
@@ -13,6 +8,7 @@ async function loadCore() {
   vi.resetModules();
   // .js extension is required by Node16 module resolution for dynamic imports
   // (static `import` lines work without it because the package is CJS — see package.json).
+  // eslint-disable-next-line es/no-dynamic-import
   return await import('./core.js');
 }
 
@@ -26,8 +22,7 @@ function helloMessage(overrides: Record<string, unknown> = {}) {
   };
 }
 
-const isType = (type: string) => (m: unknown) =>
-  (m as { type: string }).type === type;
+const isType = (type: string) => (m: unknown) => (m as { type: string }).type === type;
 
 interface WelcomeMessage {
   type: 'welcome';
@@ -42,9 +37,7 @@ interface DeadMessage {
 }
 
 describe('worker/core', () => {
-  function setupBackend(
-    initBody: unknown = { sessionId: 'sess-1', sessionToken: 'tok-1' },
-  ) {
+  function setupBackend(initBody: unknown = { sessionId: 'sess-1', sessionToken: 'tok-1' }) {
     const fetchHarness = installMockFetch(() => jsonResponse(initBody));
     const wsHarness = installMockWsServer(WS_URL);
     return { fetchHarness, wsHarness };
@@ -61,9 +54,7 @@ describe('worker/core', () => {
       const welcome = await port.next<WelcomeMessage>(isType('welcome'));
 
       expect(fetchHarness.calls).toHaveLength(1);
-      expect(fetchHarness.calls[0].url).toBe(
-        `${API_URL}/v1/sessions:initSession`,
-      );
+      expect(fetchHarness.calls[0].url).toBe(`${API_URL}/v1/sessions:initSession`);
       expect(welcome.result).toEqual({
         sessionId: 'sess-1',
         sessionToken: 'tok-1',
@@ -136,9 +127,7 @@ describe('worker/core', () => {
       portA.tabSends(helloMessage());
       await portA.next<WelcomeMessage>(isType('welcome'));
 
-      portB.tabSends(
-        helloMessage({ clientSecret: 'different-secret', tabId: 'tab-B' }),
-      );
+      portB.tabSends(helloMessage({ clientSecret: 'different-secret', tabId: 'tab-B' }));
       const dead = await portB.next<DeadMessage>(isType('dead'));
 
       expect(dead.reason).toMatch(/incompatible-options/);
@@ -228,10 +217,7 @@ describe('worker/core', () => {
       quiet.tabSends(helloMessage({ tabId: 'tab-B', debugLogs: false }));
 
       // Both ports get welcome — wait for that as the synchronization point.
-      await Promise.all([
-        debug.next<WelcomeMessage>(isType('welcome')),
-        quiet.next<WelcomeMessage>(isType('welcome')),
-      ]);
+      await Promise.all([debug.next<WelcomeMessage>(isType('welcome')), quiet.next<WelcomeMessage>(isType('welcome'))]);
 
       expect(debug.received.some(isType('log'))).toBe(true);
       expect(quiet.received.some(isType('log'))).toBe(false);
@@ -250,18 +236,12 @@ describe('worker/core', () => {
 
       portA.tabSends(helloMessage());
       portB.tabSends(helloMessage({ tabId: 'tab-B' }));
-      await Promise.all([
-        portA.next<WelcomeMessage>(isType('welcome')),
-        portB.next<WelcomeMessage>(isType('welcome')),
-      ]);
+      await Promise.all([portA.next<WelcomeMessage>(isType('welcome')), portB.next<WelcomeMessage>(isType('welcome'))]);
 
       const ws = await wsHarness.waitForConnection();
       ws.close({ code: 1011, reason: 'server crash', wasClean: false });
 
-      await Promise.all([
-        portA.next<DeadMessage>(isType('dead')),
-        portB.next<DeadMessage>(isType('dead')),
-      ]);
+      await Promise.all([portA.next<DeadMessage>(isType('dead')), portB.next<DeadMessage>(isType('dead'))]);
     });
   });
 });

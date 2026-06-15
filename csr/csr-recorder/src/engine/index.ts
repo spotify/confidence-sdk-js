@@ -6,9 +6,6 @@ import { RecordingConfig } from '../types';
  * The Recorder class depends on this interface — never on rrweb directly.
  */
 export interface RecordingEngine {
-  start(
-    config: RecordingConfig,
-    onEvent: (event: RecordingEvent) => void,
-  ): void;
+  start(config: RecordingConfig, onEvent: (event: RecordingEvent) => void): void;
   stop(): void;
 }

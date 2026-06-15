@@ -2,9 +2,7 @@ export interface RecorderOptions {
   /** Engine used to capture DOM events (defaults to rrweb). */
   engine: import('./engine').RecordingEngine;
   /** Called for each recorded event. */
-  onEvent: (
-    event: import('@spotify-confidence/csr-common').RecordingEvent,
-  ) => void;
+  onEvent: (event: import('@spotify-confidence/csr-common').RecordingEvent) => void;
 }
 
 export const DEFAULT_MASK_SELECTORS: string[] = ['[data-csr-mask]'];
@@ -41,9 +39,7 @@ export interface RecordingConfig {
    * - `true` — capture all levels (log, warn, error, debug, info).
    * - `{ levels: [...] }` — capture only the listed levels.
    */
-  captureConsoleLogs?:
-    | boolean
-    | { levels: import('@spotify-confidence/csr-common').ConsoleLogLevel[] };
+  captureConsoleLogs?: boolean | { levels: import('@spotify-confidence/csr-common').ConsoleLogLevel[] };
   /**
    * Capture network requests (fetch and XMLHttpRequest) during the recording.
    * Defaults to `false` because request URLs and metadata can contain PII,

@@ -120,6 +120,8 @@ function handleMessage(handle: PortHandle, message: IncomingMessage): void {
     case 'bye':
       onBye(handle);
       return;
+    default:
+      break;
   }
 }
 
@@ -140,8 +142,7 @@ function rejectIfIncompatible(handle: PortHandle): boolean {
   }
   handle.port.postMessage({
     type: 'dead',
-    reason:
-      'incompatible-options: apiUrl/websocketUrl/clientSecret differ from the worker session',
+    reason: 'incompatible-options: apiUrl/websocketUrl/clientSecret differ from the worker session',
   });
   const idx = ports.indexOf(handle);
   if (idx >= 0) ports.splice(idx, 1);
@@ -156,9 +157,7 @@ function rejectIfIncompatible(handle: PortHandle): boolean {
  */
 function detectDuplicateTab(handle: PortHandle): void {
   const tabId = handle.hello!.tabId;
-  const isDuplicate = ports.some(
-    (p) => p !== handle && p.hello?.tabId === tabId,
-  );
+  const isDuplicate = ports.some(p => p !== handle && p.hello?.tabId === tabId);
   if (!isDuplicate) return;
   const fresh = crypto.randomUUID();
   handle.newTabId = fresh;
@@ -174,7 +173,9 @@ function onHello(handle: PortHandle): void {
         clientSecret: handle.hello!.clientSecret,
       };
       log(
-        `hello received apiUrl=${handle.hello!.apiUrl} websocketUrl=${handle.hello!.websocketUrl ?? '(derive)'} sessionIdHint=${handle.hello!.sessionIdHint ?? '(none)'}`,
+        `hello received apiUrl=${handle.hello!.apiUrl} websocketUrl=${
+          handle.hello!.websocketUrl ?? '(derive)'
+        } sessionIdHint=${handle.hello!.sessionIdHint ?? '(none)'}`,
       );
       state = { phase: 'initializing' };
       void initializeSession(handle.hello!).then(flushPendingWelcomes);
@@ -189,9 +190,7 @@ function onHello(handle: PortHandle): void {
     case 'idle': {
       const { client, sessionId, sessionToken } = state;
       state = { phase: 'initializing' };
-      void resumeTransport(client, sessionId, sessionToken).then(
-        flushPendingWelcomes,
-      );
+      void resumeTransport(client, sessionId, sessionToken).then(flushPendingWelcomes);
       return;
     }
     case 'skipping':
@@ -209,6 +208,8 @@ function onHello(handle: PortHandle): void {
     case 'dead':
       handle.port.postMessage({ type: 'dead', reason: state.reason });
       return;
+    default:
+      break;
   }
 }
 
@@ -248,9 +249,7 @@ async function initializeSession(firstHello: HelloMessage): Promise<void> {
     }
   }
 
-  let result:
-    | { sessionId: string; sessionToken: string }
-    | { skipRecording: true };
+  let result: { sessionId: string; sessionToken: string } | { skipRecording: true };
   try {
     result = await client.initSession();
   } catch (err) {
@@ -288,11 +287,7 @@ async function initializeSession(firstHello: HelloMessage): Promise<void> {
   }
 }
 
-async function resumeTransport(
-  client: Client,
-  sessionId: string,
-  sessionToken: string,
-): Promise<void> {
+async function resumeTransport(client: Client, sessionId: string, sessionToken: string): Promise<void> {
   log('resuming transport from idle');
   let transport: Transport;
   try {
@@ -311,11 +306,11 @@ async function resumeTransport(
 }
 
 function wireTransport(transport: Transport): void {
-  transport.onClose((info) => {
+  transport.onClose(info => {
     if (state.phase !== 'active') return;
     transitionToDead(info.reason);
   });
-  transport.onStateChange((info) => {
+  transport.onStateChange(info => {
     if (state.phase !== 'active') return;
     for (const handle of ports) {
       handle.port.postMessage({ type: 'state', connected: info.connected });
@@ -346,11 +341,7 @@ function flushPendingWelcomes(): void {
   }
 }
 
-function sendActiveWelcome(
-  handle: PortHandle,
-  currentSessionId: string,
-  currentSessionToken: string,
-): void {
+function sendActiveWelcome(handle: PortHandle, currentSessionId: string, currentSessionToken: string): void {
   const hint = handle.hello?.sessionIdHint;
   const adopted = hint !== undefined && hint !== currentSessionId;
   const newTabId = handle.newTabId;

@@ -1,9 +1,5 @@
 import { describe, it, expect, vi, afterEach } from 'vitest';
-import {
-  RecordingEvent,
-  RecordingEventType,
-  type NetworkRequestPluginData,
-} from '@spotify-confidence/csr-common';
+import { RecordingEvent, RecordingEventType, type NetworkRequestPluginData } from '@spotify-confidence/csr-common';
 import { Recorder } from './recorder';
 import { RecordingEngine } from './engine';
 import { RecorderState } from './types';
@@ -134,7 +130,7 @@ describe('Recorder network request capture', () => {
 
     const pluginEvents = onEvent.mock.calls
       .map(([e]: [RecordingEvent]) => e)
-      .filter((e) => e.type === RecordingEventType.Plugin);
+      .filter(e => e.type === RecordingEventType.Plugin);
     expect(pluginEvents).toHaveLength(1);
     const data = pluginEvents[0].data as NetworkRequestPluginData;
     expect(data.plugin).toBe('csr:networkRequest');
@@ -149,9 +145,7 @@ describe('Recorder network request capture', () => {
   });
 
   it('emits status 0 for a failed fetch', async () => {
-    globalThis.fetch = vi
-      .fn()
-      .mockRejectedValue(new TypeError('Network error'));
+    globalThis.fetch = vi.fn().mockRejectedValue(new TypeError('Network error'));
 
     const engine = new MockEngine();
     const onEvent = vi.fn();
@@ -162,7 +156,7 @@ describe('Recorder network request capture', () => {
 
     const pluginEvents = onEvent.mock.calls
       .map(([e]: [RecordingEvent]) => e)
-      .filter((e) => e.type === RecordingEventType.Plugin);
+      .filter(e => e.type === RecordingEventType.Plugin);
     expect(pluginEvents).toHaveLength(1);
     const data = pluginEvents[0].data as NetworkRequestPluginData;
     expect(data.payload.status).toBe(0);
@@ -183,7 +177,7 @@ describe('Recorder network request capture', () => {
 
     const pluginEvents = onEvent.mock.calls
       .map(([e]: [RecordingEvent]) => e)
-      .filter((e) => e.type === RecordingEventType.Plugin);
+      .filter(e => e.type === RecordingEventType.Plugin);
     const data = pluginEvents[0].data as NetworkRequestPluginData;
     expect(data.payload.method).toBe('POST');
 
@@ -199,13 +193,11 @@ describe('Recorder network request capture', () => {
     const recorder = new Recorder({ engine, onEvent });
     recorder.start({ captureNetworkRequests: true });
 
-    await globalThis.fetch(
-      new Request('https://api.example.com/data', { method: 'DELETE' }),
-    );
+    await globalThis.fetch(new Request('https://api.example.com/data', { method: 'DELETE' }));
 
     const pluginEvents = onEvent.mock.calls
       .map(([e]: [RecordingEvent]) => e)
-      .filter((e) => e.type === RecordingEventType.Plugin);
+      .filter(e => e.type === RecordingEventType.Plugin);
     const data = pluginEvents[0].data as NetworkRequestPluginData;
     expect(data.payload.method).toBe('DELETE');
     expect(data.payload.url).toBe('https://api.example.com/data');

@@ -17,9 +17,7 @@ export class CsrClient implements Client {
     private readonly forceRecord?: boolean,
   ) {}
 
-  async initSession(): Promise<
-    { sessionId: string; sessionToken: string } | { skipRecording: true }
-  > {
+  async initSession(): Promise<{ sessionId: string; sessionToken: string } | { skipRecording: true }> {
     const url = `${this.trimSlash(this.apiUrl)}/v1/sessions:initSession`;
     this.log(`fetch POST ${url}`);
     const res = await fetch(url, {
@@ -28,9 +26,7 @@ export class CsrClient implements Client {
       body: JSON.stringify({
         clientSecret: this.clientSecret,
         ...(this.targetingKey ? { targetingKey: this.targetingKey } : {}),
-        ...(this.context && Object.keys(this.context).length > 0
-          ? { context: this.context }
-          : {}),
+        ...(this.context && Object.keys(this.context).length > 0 ? { context: this.context } : {}),
         ...(this.forceRecord ? { forceRecord: true } : {}),
       }),
     });
@@ -44,17 +40,13 @@ export class CsrClient implements Client {
     };
     if (data.skipRecording) return { skipRecording: true };
     if (!data.sessionId || !data.sessionToken) {
-      throw new Error(
-        'init-session response missing sessionId or sessionToken',
-      );
+      throw new Error('init-session response missing sessionId or sessionToken');
     }
     return { sessionId: data.sessionId, sessionToken: data.sessionToken };
   }
 
   async openTransport(sessionToken: string): Promise<Transport> {
-    const wsBase =
-      this.websocketUrl ??
-      `${this.toWsScheme(this.trimSlash(this.apiUrl))}/sessions/stream`;
+    const wsBase = this.websocketUrl ?? `${this.toWsScheme(this.trimSlash(this.apiUrl))}/sessions/stream`;
     const sep = wsBase.includes('?') ? '&' : '?';
     const url = `${wsBase}${sep}session_token=${encodeURIComponent(sessionToken)}`;
     this.log(`WebSocket connect ${url}`);
@@ -68,10 +60,8 @@ export class CsrClient implements Client {
   }
 
   private toWsScheme(base: string): string {
-    if (base.startsWith('https://'))
-      return `wss://${base.slice('https://'.length)}`;
-    if (base.startsWith('http://'))
-      return `ws://${base.slice('http://'.length)}`;
+    if (base.startsWith('https://')) return `wss://${base.slice('https://'.length)}`;
+    if (base.startsWith('http://')) return `ws://${base.slice('http://'.length)}`;
     return base;
   }
 }

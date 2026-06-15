@@ -49,9 +49,7 @@ describe('validateTagValue', () => {
   });
 
   it('rejects value exceeding max length', () => {
-    expect(validateTagValue('x'.repeat(MAX_TAG_VALUE_LENGTH + 1))).toContain(
-      'exceeds',
-    );
+    expect(validateTagValue('x'.repeat(MAX_TAG_VALUE_LENGTH + 1))).toContain('exceeds');
   });
 
   it('accepts value at max length', () => {

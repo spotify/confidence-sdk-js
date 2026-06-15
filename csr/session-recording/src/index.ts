@@ -8,15 +8,11 @@ import {
   validateTagValue,
   validateMeasureValue,
 } from '@spotify-confidence/csr-common';
-import {
-  createUploader,
-  type ClientContext,
-} from '@spotify-confidence/csr-common/uploader';
+import { createUploader, type ClientContext } from '@spotify-confidence/csr-common/uploader';
 import { SDK_VERSION } from './version';
 
 const DEFAULT_API_URL = 'https://recording.confidence.dev';
-const DEFAULT_WEBSOCKET_URL =
-  'wss://recording-ws.confidence.dev/sessions/stream';
+const DEFAULT_WEBSOCKET_URL = 'wss://recording-ws.confidence.dev/sessions/stream';
 export interface InitSessionRecorderOptions {
   /** Per-tenant secret. */
   clientSecret: string;
@@ -67,9 +63,11 @@ export interface SessionRecorder {
 function csrDebugLogger(): ((msg: string) => void) | undefined {
   try {
     if (sessionStorage.getItem('CSR_DEBUG')) {
+      // Debug logger intentionally uses console — only active when CSR_DEBUG is set.
+      // eslint-disable-next-line no-console
       return (msg: string) => console.log(msg);
     }
-  } catch {
+  } catch (_e) {
     // sessionStorage may be unavailable (sandboxed iframe, etc.)
   }
   return undefined;
@@ -82,13 +80,9 @@ function csrDebugLogger(): ((msg: string) => void) | undefined {
  *
  * Always returns a {@link SessionRecorder} — safe to call, never throws.
  */
-export function initSessionRecorder(
-  options: InitSessionRecorderOptions,
-): SessionRecorder {
+export function initSessionRecorder(options: InitSessionRecorderOptions): SessionRecorder {
   const userLogger = options.debugLogger ?? csrDebugLogger();
-  const debugLogger = userLogger
-    ? (msg: string) => userLogger(`[CSR] ${msg}`)
-    : undefined;
+  const debugLogger = userLogger ? (msg: string) => userLogger(`[CSR] ${msg}`) : undefined;
 
   let stopRecorder: (() => void) | null = null;
   let closeUploader: (() => void) | null = null;
@@ -139,22 +133,17 @@ export function initSessionRecorder(
 
       closeUploader = () => uploader.close();
 
-      sendEvent = (event) => {
+      sendEvent = event => {
         try {
           uploader(event);
         } catch (err) {
-          debugLogger?.(
-            `Event dropped: ${err instanceof Error ? err.message : String(err)}`,
-          );
+          debugLogger?.(`Event dropped: ${err instanceof Error ? err.message : String(err)}`);
         }
       };
 
       stopRecorder = record(sendEvent, recordingConfig);
     } catch (err) {
-      console.warn(
-        '[CSR] Recording disabled:',
-        err instanceof Error ? err.message : String(err),
-      );
+      debugLogger?.(`Recording disabled: ${err instanceof Error ? err.message : String(err)}`);
     }
   }
 

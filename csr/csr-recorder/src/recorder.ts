@@ -35,7 +35,7 @@ export class Recorder {
       return;
     }
     this.state = RecorderState.Recording;
-    this.engine.start(config ?? {}, (event) => {
+    this.engine.start(config ?? {}, event => {
       this.onEvent(event);
     });
 
@@ -63,9 +63,7 @@ export class Recorder {
     }
   }
 
-  private emitNetworkRequest(
-    payload: NetworkRequestPluginData['payload'],
-  ): void {
+  private emitNetworkRequest(payload: NetworkRequestPluginData['payload']): void {
     const data: NetworkRequestPluginData = {
       plugin: 'csr:networkRequest',
       payload,
@@ -89,21 +87,20 @@ export class Recorder {
     const emit = this.emitNetworkRequest.bind(this);
 
     globalThis.fetch = (input: RequestInfo | URL, init?: RequestInit) => {
-      const method =
-        input instanceof Request ? input.method : (init?.method ?? 'GET');
-      const url =
-        input instanceof Request
-          ? input.url
-          : input instanceof URL
-            ? input.href
-            : String(input);
-      const requestSize = init?.body
-        ? new Blob([init.body as BlobPart]).size
-        : undefined;
+      const method = input instanceof Request ? input.method : init?.method ?? 'GET';
+      let url: string;
+      if (input instanceof Request) {
+        url = input.url;
+      } else if (input instanceof URL) {
+        url = input.href;
+      } else {
+        url = String(input);
+      }
+      const requestSize = init?.body ? new Blob([init.body as BlobPart]).size : undefined;
       const start = Date.now();
 
       return originalFetch.call(globalThis, input, init).then(
-        (response) => {
+        response => {
           const contentLength = response.headers.get('content-length');
           emit({
             initiator: 'fetch',
@@ -111,19 +108,19 @@ export class Recorder {
             url,
             status: response.status,
             durationMs: Date.now() - start,
-            ...(requestSize != null ? { requestSize } : {}),
+            ...(requestSize !== null && requestSize !== undefined ? { requestSize } : {}),
             ...(contentLength ? { responseSize: Number(contentLength) } : {}),
           });
           return response;
         },
-        (error) => {
+        error => {
           emit({
             initiator: 'fetch',
             method: method.toUpperCase(),
             url,
             status: 0,
             durationMs: Date.now() - start,
-            ...(requestSize != null ? { requestSize } : {}),
+            ...(requestSize !== null && requestSize !== undefined ? { requestSize } : {}),
           });
           throw error;
         },
@@ -139,7 +136,7 @@ export class Recorder {
     this.originalXhrSend = originalSend;
     const emit = this.emitNetworkRequest.bind(this);
 
-    XMLHttpRequest.prototype.open = function (
+    XMLHttpRequest.prototype.open = function csrOpen(
       this: XMLHttpRequest,
       method: string,
       url: string | URL,
@@ -147,23 +144,20 @@ export class Recorder {
     ) {
       (this as unknown as Record<string, unknown>).__csr_method = method;
       (this as unknown as Record<string, unknown>).__csr_url = String(url);
-      return originalOpen.apply(this, [method, url, ...rest] as Parameters<
-        typeof XMLHttpRequest.prototype.open
-      >);
+      return originalOpen.apply(this, [method, url, ...rest] as Parameters<typeof XMLHttpRequest.prototype.open>);
     };
 
-    XMLHttpRequest.prototype.send = function (
+    XMLHttpRequest.prototype.send = function csrSend(
       this: XMLHttpRequest,
       body?: Document | XMLHttpRequestBodyInit | null,
     ) {
       const meta = this as unknown as Record<string, unknown>;
       const method = (meta.__csr_method as string) ?? 'GET';
       const url = (meta.__csr_url as string) ?? '';
-      const requestSize =
-        body != null ? new Blob([body as BlobPart]).size : undefined;
+      const requestSize = body !== null && body !== undefined ? new Blob([body as BlobPart]).size : undefined;
       const start = Date.now();
 
-      this.addEventListener('loadend', function (this: XMLHttpRequest) {
+      this.addEventListener('loadend', function csrLoadend(this: XMLHttpRequest) {
         const contentLength = this.getResponseHeader('content-length');
         emit({
           initiator: 'xhr',
@@ -171,7 +165,7 @@ export class Recorder {
           url,
           status: this.status,
           durationMs: Date.now() - start,
-          ...(requestSize != null ? { requestSize } : {}),
+          ...(requestSize !== null && requestSize !== undefined ? { requestSize } : {}),
           ...(contentLength ? { responseSize: Number(contentLength) } : {}),
         });
       });
@@ -180,11 +174,7 @@ export class Recorder {
     };
   }
 
-  private emitRouteChange(
-    from: string,
-    to: string,
-    trigger: RouteChangeTrigger,
-  ): void {
+  private emitRouteChange(from: string, to: string, trigger: RouteChangeTrigger): void {
     if (from === to) return;
     const data: RouteChangePluginData = {
       plugin: 'csr:routeChange',
@@ -221,9 +211,7 @@ export class Recorder {
 
     const originalReplaceState = history.replaceState.bind(history);
     this.originalReplaceState = history.replaceState;
-    history.replaceState = (
-      ...args: Parameters<typeof history.replaceState>
-    ) => {
+    history.replaceState = (...args: Parameters<typeof history.replaceState>) => {
       originalReplaceState(...args);
       emitNav('replaceState');
     };

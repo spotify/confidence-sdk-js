@@ -67,9 +67,7 @@ export interface CreateUploaderOptions {
 
 /** Internal: backend-protocol adapter inside the worker bundle. */
 export interface Client {
-  initSession(): Promise<
-    { sessionId: string; sessionToken: string } | { skipRecording: true }
-  >;
+  initSession(): Promise<{ sessionId: string; sessionToken: string } | { skipRecording: true }>;
   /** Opens the data-plane connection. Rejects if `sessionToken` is stale/closed. */
   openTransport(sessionToken: string): Promise<Transport>;
 }

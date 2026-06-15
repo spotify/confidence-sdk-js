@@ -21,13 +21,8 @@ describe('RrwebEngine', () => {
   });
 
   it('joins maskSelectors with `,` for maskTextSelector', () => {
-    new RrwebEngine().start(
-      { maskSelectors: ['.private', '[data-pii]'] },
-      () => {},
-    );
-    expect(recordSpy.mock.calls[0][0].maskTextSelector).toBe(
-      '.private,[data-pii]',
-    );
+    new RrwebEngine().start({ maskSelectors: ['.private', '[data-pii]'] }, () => {});
+    expect(recordSpy.mock.calls[0][0].maskTextSelector).toBe('.private,[data-pii]');
   });
 
   it('omits maskTextSelector when maskSelectors is explicitly empty', () => {
@@ -41,10 +36,7 @@ describe('RrwebEngine', () => {
   });
 
   it('joins blockSelectors with `,` for blockSelector', () => {
-    new RrwebEngine().start(
-      { blockSelectors: ['video', '.third-party'] },
-      () => {},
-    );
+    new RrwebEngine().start({ blockSelectors: ['video', '.third-party'] }, () => {});
     expect(recordSpy.mock.calls[0][0].blockSelector).toBe('video,.third-party');
   });
 
