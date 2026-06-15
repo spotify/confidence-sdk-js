@@ -53,7 +53,7 @@ async function migrateWithCookieStore(
     } else {
       Cookie.set(name, currentValue, { maxAge: MAX_AGE, domain });
     }
-  } catch {
+  } catch (_e) {
     Cookie.set(name, currentValue, { maxAge: MAX_AGE, domain });
   }
 }
