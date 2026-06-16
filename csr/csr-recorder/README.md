@@ -29,7 +29,7 @@ stop();
 
 ## Route parameterization
 
-When `captureRouteChanges` is enabled (the default), recorded pathnames are automatically parameterized before being emitted. This replaces dynamic segments with named placeholders so that analytics can group routes by pattern rather than individual URLs.
+Routes containing dynamic segments (such as IDs in the URL) are automatically normalized into patterns — for example, `/users/123/profile` becomes `/users/:id/profile`. This ensures that per-page metrics are grouped by route rather than by individual page visit, keeping dashboards meaningful and query performance fast.
 
 Default replacements:
 
@@ -40,7 +40,7 @@ Default replacements:
 | AIP-122 ID             | `cmvkznnjmbkc9rw2oxws`                 | `:id`       |
 | Hex string (20+ chars) | `507f1f77bcf86cd799439011`             | `:id`       |
 
-Provide a custom function to handle application-specific patterns:
+If your app uses URL patterns that aren't automatically detected, you can provide a custom `parameterizeRoute` function to control how routes are grouped:
 
 ```typescript
 import { record, defaultParameterizeRoute } from '@spotify-confidence/csr-recorder';

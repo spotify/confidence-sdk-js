@@ -94,9 +94,9 @@ const recorder = initSessionRecorder({
 
 ## Route parameterization
 
-When route change capture is enabled (the default), recorded pathnames are automatically parameterized — dynamic segments like UUIDs, numeric IDs, and hex strings are replaced with placeholders (`:uuid`, `:id`). This groups routes by pattern rather than individual URL, keeping analytics clean and avoiding high-cardinality data.
+Routes containing dynamic segments (such as IDs in the URL) are automatically normalized into patterns — for example, `/users/123/profile` becomes `/users/:id/profile`. This ensures that per-page metrics are grouped by route rather than by individual page visit, keeping dashboards meaningful and query performance fast.
 
-Provide a custom `parameterizeRoute` to handle application-specific patterns:
+If your app uses URL patterns that aren't automatically detected, you can provide a custom `parameterizeRoute` function to control how routes are grouped:
 
 ```typescript
 import { defaultParameterizeRoute } from '@spotify-confidence/csr-recorder';
