@@ -92,6 +92,25 @@ const recorder = initSessionRecorder({
 });
 ```
 
+## Route parameterization
+
+When route change capture is enabled (the default), recorded pathnames are automatically parameterized — dynamic segments like UUIDs, numeric IDs, and hex strings are replaced with placeholders (`:uuid`, `:id`). This groups routes by pattern rather than individual URL, keeping analytics clean and avoiding high-cardinality data.
+
+Provide a custom `parameterizeRoute` to handle application-specific patterns:
+
+```typescript
+import { defaultParameterizeRoute } from '@spotify-confidence/csr-recorder';
+
+const recorder = initSessionRecorder({
+  clientSecret: '<your-client-secret>',
+  parameterizeRoute: route => {
+    return defaultParameterizeRoute(route).replace(/\/teams\/[^/]+/, '/teams/:slug');
+  },
+});
+```
+
+See the [`@spotify-confidence/csr-recorder` README](../csr-recorder/README.md#route-parameterization) for the full list of default patterns.
+
 ## Manual mode
 
 Use `manual` mode to control when recording starts — useful for gating on user consent or feature flags.
