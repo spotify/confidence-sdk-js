@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.3.19](https://github.com/spotify/confidence-sdk-js/compare/sdk-v0.3.18...sdk-v0.3.19) (2026-06-16)
+
+
+### ✨ New Features
+
+* emit flag evaluations into session recordings ([#369](https://github.com/spotify/confidence-sdk-js/issues/369)) ([3728c6d](https://github.com/spotify/confidence-sdk-js/commit/3728c6d682f97c3b2f18c8979dc91c50328b2345))
+
 ## [0.3.18](https://github.com/spotify/confidence-sdk-js/compare/sdk-v0.3.17...sdk-v0.3.18) (2026-06-12)
 
 
