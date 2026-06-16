@@ -32,8 +32,9 @@ export interface InitSessionRecorderOptions {
   captureRouteChanges?: boolean;
   /**
    * Transform a raw pathname into a route pattern before it is emitted in
-   * route-change events. Defaults to replacing UUIDs, numeric IDs, AIP-122
-   * IDs, and long hex strings with named placeholders.
+   * route-change and Meta events. For example, `/users/123/profile` becomes
+   * `/users/:id/profile`. This ensures per-page metrics are grouped by route
+   * rather than by individual page visit.
    *
    * Import `defaultParameterizeRoute` from `@spotify-confidence/csr-recorder`
    * to compose with the built-in rules.
