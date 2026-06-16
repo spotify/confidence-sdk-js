@@ -1,6 +1,7 @@
 import { Schema } from './Schema';
 import { Value } from './Value';
 import { TypeMismatchError } from './error';
+import { publishFlagEvaluation } from './flag-evaluation-global';
 import { FlagEvaluation } from './flags';
 import { ResolveFlagsResponse } from './generated/confidence/flags/resolver/v1/api';
 import { ResolveReason } from './generated/confidence/flags/resolver/v1/types';
@@ -125,6 +126,8 @@ export class ReadyFlagResolution implements FlagResolution {
       });
 
       const value = (rawValue === null || rawValue === undefined ? defaultValue : rawValue) as T;
+
+      publishFlagEvaluation(FLAG_PREFIX + name, flag.variant);
 
       result = {
         reason,

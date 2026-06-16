@@ -217,6 +217,14 @@ export type MeasurePluginData = {
   };
 };
 
+export type FlagEvaluationPluginData = {
+  plugin: 'csr:flagEvaluation';
+  payload: {
+    flagKey: string;
+    variant: string;
+  };
+};
+
 /**
  * Closed union of every Custom event we emit. Add a new variant here when
  * introducing a new tag — emitting an unregistered tag is a TS error.
