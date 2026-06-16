@@ -1,5 +1,19 @@
 # Changelog
 
+## [0.17.3](https://github.com/spotify/confidence-sdk-js/compare/csr-recorder-v0.17.2...csr-recorder-v0.17.3) (2026-06-16)
+
+
+### ✨ New Features
+
+* add route parameterization for route change and meta events ([#370](https://github.com/spotify/confidence-sdk-js/issues/370)) ([6efbee0](https://github.com/spotify/confidence-sdk-js/commit/6efbee08776c88b05dfa0949844f6c330bb0bcaa))
+
+
+### Dependencies
+
+* The following workspace dependencies were updated
+  * dependencies
+    * @spotify-confidence/csr-common bumped to 0.17.3
+
 ## [0.17.2](https://github.com/spotify/confidence-sdk-js/compare/csr-recorder-v0.17.1...csr-recorder-v0.17.2) (2026-06-15)
 
 

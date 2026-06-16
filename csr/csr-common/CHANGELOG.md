@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.17.3](https://github.com/spotify/confidence-sdk-js/compare/csr-common-v0.17.2...csr-common-v0.17.3) (2026-06-16)
+
+
+### ✨ New Features
+
+* emit flag evaluations into session recordings ([#369](https://github.com/spotify/confidence-sdk-js/issues/369)) ([3728c6d](https://github.com/spotify/confidence-sdk-js/commit/3728c6d682f97c3b2f18c8979dc91c50328b2345))
+
 ## [0.17.2](https://github.com/spotify/confidence-sdk-js/compare/csr-common-v0.17.1...csr-common-v0.17.2) (2026-06-15)
 
 

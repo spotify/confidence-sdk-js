@@ -1,5 +1,21 @@
 # Changelog
 
+## [0.17.3](https://github.com/spotify/confidence-sdk-js/compare/session-recording-v0.17.2...session-recording-v0.17.3) (2026-06-16)
+
+
+### ✨ New Features
+
+* add route parameterization for route change and meta events ([#370](https://github.com/spotify/confidence-sdk-js/issues/370)) ([6efbee0](https://github.com/spotify/confidence-sdk-js/commit/6efbee08776c88b05dfa0949844f6c330bb0bcaa))
+* emit flag evaluations into session recordings ([#369](https://github.com/spotify/confidence-sdk-js/issues/369)) ([3728c6d](https://github.com/spotify/confidence-sdk-js/commit/3728c6d682f97c3b2f18c8979dc91c50328b2345))
+
+
+### Dependencies
+
+* The following workspace dependencies were updated
+  * dependencies
+    * @spotify-confidence/csr-common bumped to 0.17.3
+    * @spotify-confidence/csr-recorder bumped to 0.17.3
+
 ## [0.17.2](https://github.com/spotify/confidence-sdk-js/compare/session-recording-v0.17.1...session-recording-v0.17.2) (2026-06-15)
 
 
