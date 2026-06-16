@@ -4,6 +4,8 @@
 
 JavaScript implementation of the [Confidence](https://confidence.spotify.com/) SDK and the Confidence OpenFeature provider, to be used in conjunction wth the [OpenFeature SDK](https://github.com/open-feature/js-sdk).
 
+> **💡 For server-side use cases**, consider the [Confidence Local Resolver Provider for JavaScript](https://github.com/spotify/confidence-resolver/tree/main/openfeature-provider/js), which evaluates flags locally via WebAssembly for increased resilience and lower latency.
+
 ## Overview
 
 This monorepo contains four packages:
@@ -24,6 +26,9 @@ Read more about the packages in their respective docs.
 OpenFeature provides a standardized API for feature flagging that works across different providers and languages.
 
 ## Server Applications (Node.js)
+
+> [!TIP]
+> For better resilience and lower latency, see the [Confidence Local Resolver Provider](https://github.com/spotify/confidence-resolver/tree/main/openfeature-provider/js) which resolves flags locally without per-evaluation network calls.
 
 Set up Confidence as an OpenFeature provider in your Node.js application with the following steps:
 
