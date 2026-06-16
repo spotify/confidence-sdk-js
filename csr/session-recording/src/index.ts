@@ -32,6 +32,16 @@ export interface InitSessionRecorderOptions {
   captureNetworkRequests?: boolean;
   /** Capture client-side route changes (pathname only). Defaults to `true`. */
   captureRouteChanges?: boolean;
+  /**
+   * Transform a raw pathname into a route pattern before it is emitted in
+   * route-change and Meta events. For example, `/users/123/profile` becomes
+   * `/users/:id/profile`. This ensures per-page metrics are grouped by route
+   * rather than by individual page visit.
+   *
+   * Import `defaultParameterizeRoute` from `@spotify-confidence/csr-recorder`
+   * to compose with the built-in rules.
+   */
+  parameterizeRoute?: (route: string) => string;
   /** Backend base URL. Defaults to the Confidence production endpoint. */
   apiUrl?: string;
   /** WebSocket ingest URL. Defaults to the Confidence production endpoint. */
@@ -100,6 +110,7 @@ export function initSessionRecorder(options: InitSessionRecorderOptions): Sessio
     captureConsoleLogs: options.captureConsoleLogs,
     captureNetworkRequests: options.captureNetworkRequests,
     captureRouteChanges: options.captureRouteChanges,
+    parameterizeRoute: options.parameterizeRoute,
   };
 
   async function initAndRecord(forceRecord: boolean) {

@@ -8,6 +8,7 @@ import {
 } from '@spotify-confidence/csr-common';
 import { RecorderOptions, RecorderState, RecordingConfig } from './types';
 import { RecordingEngine } from './engine';
+import { defaultParameterizeRoute } from './route-parameterizer';
 
 export class Recorder {
   private readonly engine: RecordingEngine;
@@ -20,6 +21,7 @@ export class Recorder {
   private originalPushState: typeof history.pushState | null = null;
   private originalReplaceState: typeof history.replaceState | null = null;
   private popstateHandler: (() => void) | null = null;
+  private parameterizeRoute!: (route: string) => string;
 
   constructor(options: RecorderOptions) {
     this.engine = options.engine;
@@ -35,7 +37,15 @@ export class Recorder {
       return;
     }
     this.state = RecorderState.Recording;
+    this.parameterizeRoute = config?.parameterizeRoute ?? defaultParameterizeRoute;
+
     this.engine.start(config ?? {}, event => {
+      if (event.type === RecordingEventType.Meta) {
+        const data = event.data as { href?: string };
+        if (typeof data?.href === 'string') {
+          event = { ...event, data: { ...data, href: this.parameterizeHref(data.href) } };
+        }
+      }
       this.onEvent(event);
     });
 
@@ -174,11 +184,24 @@ export class Recorder {
     };
   }
 
+  private parameterizeHref(href: string): string {
+    try {
+      const url = new URL(href);
+      url.pathname = this.parameterizeRoute(url.pathname);
+      return url.toString();
+    } catch (_e) {
+      return this.parameterizeRoute(href);
+    }
+  }
+
   private emitRouteChange(from: string, to: string, trigger: RouteChangeTrigger): void {
     if (from === to) return;
+    const paramFrom = this.parameterizeRoute(from);
+    const paramTo = this.parameterizeRoute(to);
+    if (paramFrom === paramTo) return;
     const data: RouteChangePluginData = {
       plugin: 'csr:routeChange',
-      payload: { from, to, trigger },
+      payload: { from: paramFrom, to: paramTo, trigger },
     };
     this.onEvent({
       type: RecordingEventType.Plugin,

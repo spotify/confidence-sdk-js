@@ -55,6 +55,22 @@ export interface RecordingConfig {
    * hashes are stripped.
    */
   captureRouteChanges?: boolean;
+  /**
+   * Transform a raw pathname into a route pattern before it is emitted in
+   * route-change and Meta events. For example, `/users/123/profile` becomes
+   * `/users/:id/profile`. This ensures per-page metrics are grouped by route
+   * rather than by individual page visit.
+   *
+   * The default implementation replaces common dynamic segments:
+   * - UUIDs → `:uuid`
+   * - Numeric IDs → `:id`
+   * - AIP-122 IDs → `:id`
+   * - Long hex strings (20+ chars, e.g. MongoDB ObjectIDs) → `:id`
+   *
+   * Provide a custom function to handle application-specific patterns.
+   * Import `defaultParameterizeRoute` to compose with the built-in rules.
+   */
+  parameterizeRoute?: (route: string) => string;
 }
 
 export enum RecorderState {

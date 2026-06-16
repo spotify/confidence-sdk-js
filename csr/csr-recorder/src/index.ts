@@ -9,3 +9,4 @@ export {
   DEFAULT_BLOCK_SELECTORS,
 } from './types';
 export { record } from './start-recording';
+export { defaultParameterizeRoute } from './route-parameterizer';

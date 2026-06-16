@@ -92,6 +92,25 @@ const recorder = initSessionRecorder({
 });
 ```
 
+## Route parameterization
+
+Routes containing dynamic segments (such as IDs in the URL) are automatically normalized into patterns — for example, `/users/123/profile` becomes `/users/:id/profile`. This ensures that per-page metrics are grouped by route rather than by individual page visit, keeping dashboards meaningful and query performance fast.
+
+If your app uses URL patterns that aren't automatically detected, you can provide a custom `parameterizeRoute` function to control how routes are grouped:
+
+```typescript
+import { defaultParameterizeRoute } from '@spotify-confidence/csr-recorder';
+
+const recorder = initSessionRecorder({
+  clientSecret: '<your-client-secret>',
+  parameterizeRoute: route => {
+    return defaultParameterizeRoute(route).replace(/\/teams\/[^/]+/, '/teams/:slug');
+  },
+});
+```
+
+See the [`@spotify-confidence/csr-recorder` README](../csr-recorder/README.md#route-parameterization) for the full list of default patterns.
+
 ## Manual mode
 
 Use `manual` mode to control when recording starts — useful for gating on user consent or feature flags.
