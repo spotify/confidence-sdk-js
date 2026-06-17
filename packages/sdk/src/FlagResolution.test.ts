@@ -14,8 +14,8 @@ function makeResponse(overrides: Partial<Parameters<typeof makeResolvedFlag>[0]>
 }
 
 function makeResolvedFlag({
-  flag = 'flags/test-flag',
-  variant = 'flags/test-flag/variants/treatment',
+  flag = 'flags/mock-flag',
+  variant = 'flags/mock-flag/variants/treatment',
   value = { my_bool: true, my_string: 'hello' } as { [key: string]: any } | undefined,
   reason = ResolveReason.RESOLVE_REASON_MATCH,
   shouldApply = true,
@@ -35,16 +35,16 @@ describe('FlagResolution', () => {
       const response = makeResponse();
       const resolution = FlagResolution.ready({}, response);
 
-      resolution.evaluate('test-flag.my_bool', false);
+      resolution.evaluate('mock-flag.my_bool', false);
 
-      expect(publishFlagEvaluation).toHaveBeenCalledWith('flags/test-flag', 'flags/test-flag/variants/treatment');
+      expect(publishFlagEvaluation).toHaveBeenCalledWith('flags/mock-flag', 'flags/mock-flag/variants/treatment');
     });
 
     it('does not publish on NO_SEGMENT_MATCH', () => {
       const response = makeResponse({ reason: ResolveReason.RESOLVE_REASON_NO_SEGMENT_MATCH });
       const resolution = FlagResolution.ready({}, response);
 
-      resolution.evaluate('test-flag.my_bool', false);
+      resolution.evaluate('mock-flag.my_bool', false);
 
       expect(publishFlagEvaluation).not.toHaveBeenCalled();
     });
@@ -66,7 +66,7 @@ describe('FlagResolution', () => {
       });
       const resolution = FlagResolution.ready({}, response);
 
-      const result = resolution.evaluate('test-flag.my_string', 'fallback');
+      const result = resolution.evaluate('mock-flag.my_string', 'fallback');
 
       expect(result.reason).toBe('MATCH');
       expect(result.value).toBe('fallback');
@@ -78,7 +78,7 @@ describe('FlagResolution', () => {
       });
       const resolution = FlagResolution.ready({}, response);
 
-      const result = resolution.evaluate('test-flag.my_string', 'fallback');
+      const result = resolution.evaluate('mock-flag.my_string', 'fallback');
 
       expect(result.reason).toBe('MATCH');
       expect(result.value).toBe('hello');
@@ -90,7 +90,7 @@ describe('FlagResolution', () => {
       });
       const resolution = FlagResolution.ready({}, response);
 
-      const result = resolution.evaluate('test-flag.my_bool', false);
+      const result = resolution.evaluate('mock-flag.my_bool', false);
 
       expect(result.reason).toBe('MATCH');
       expect(result.value).toBe(false);
