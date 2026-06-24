@@ -36,6 +36,6 @@
   },
   "dependencies": {
     "@spotify-confidence/csr-common": "workspace:^",
-    "@spotify-confidence/csr-recorder": "0.17.4"
+    "@spotify-confidence/csr-recorder": "workspace:^"
   }
 }

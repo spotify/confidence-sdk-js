@@ -5138,7 +5138,7 @@ __metadata:
   languageName: unknown
   linkType: soft
 
-"@spotify-confidence/csr-recorder@npm:0.17.4, @spotify-confidence/csr-recorder@workspace:csr/csr-recorder":
+"@spotify-confidence/csr-recorder@workspace:^, @spotify-confidence/csr-recorder@workspace:csr/csr-recorder":
   version: 0.0.0-use.local
   resolution: "@spotify-confidence/csr-recorder@workspace:csr/csr-recorder"
   dependencies:
@@ -5216,7 +5216,7 @@ __metadata:
   resolution: "@spotify-confidence/session-recording@workspace:csr/session-recording"
   dependencies:
     "@spotify-confidence/csr-common": "workspace:^"
-    "@spotify-confidence/csr-recorder": "npm:0.17.4"
+    "@spotify-confidence/csr-recorder": "workspace:^"
   languageName: unknown
   linkType: soft
 
