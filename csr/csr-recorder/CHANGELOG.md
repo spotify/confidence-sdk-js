@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.17.4](https://github.com/spotify/confidence-sdk-js/compare/csr-recorder-v0.17.3...csr-recorder-v0.17.4) (2026-06-24)
+
+
+### 🐛 Bug Fixes
+
+* **csr-recorder:** upgrade rrweb and console plugin to 2.0.1 stable ([#375](https://github.com/spotify/confidence-sdk-js/issues/375)) ([c6f7a41](https://github.com/spotify/confidence-sdk-js/commit/c6f7a41ad13eb4da42a75b3eec68388ff4251849))
+
 ## [0.17.3](https://github.com/spotify/confidence-sdk-js/compare/csr-recorder-v0.17.2...csr-recorder-v0.17.3) (2026-06-16)
 
 
