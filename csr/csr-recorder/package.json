@@ -34,8 +34,8 @@
     }
   },
   "dependencies": {
-    "@rrweb/rrweb-plugin-console-record": "^2.0.0-alpha.20",
+    "@rrweb/rrweb-plugin-console-record": "^2.0.1",
     "@spotify-confidence/csr-common": "workspace:^",
-    "rrweb": "^2.0.0-alpha.20"
+    "rrweb": "^2.0.1"
   }
 }

@@ -4993,7 +4993,7 @@ __metadata:
   languageName: node
   linkType: hard
 
-"@rrweb/rrweb-plugin-console-record@npm:^2.0.0-alpha.20":
+"@rrweb/rrweb-plugin-console-record@npm:^2.0.1":
   version: 2.0.1
   resolution: "@rrweb/rrweb-plugin-console-record@npm:2.0.1"
   peerDependencies:
@@ -5142,9 +5142,9 @@ __metadata:
   version: 0.0.0-use.local
   resolution: "@spotify-confidence/csr-recorder@workspace:csr/csr-recorder"
   dependencies:
-    "@rrweb/rrweb-plugin-console-record": "npm:^2.0.0-alpha.20"
+    "@rrweb/rrweb-plugin-console-record": "npm:^2.0.1"
     "@spotify-confidence/csr-common": "workspace:^"
-    rrweb: "npm:^2.0.0-alpha.20"
+    rrweb: "npm:^2.0.1"
   languageName: unknown
   linkType: soft
 
@@ -18225,7 +18225,7 @@ __metadata:
   languageName: node
   linkType: hard
 
-"rrweb@npm:^2.0.0-alpha.20":
+"rrweb@npm:^2.0.1":
   version: 2.0.1
   resolution: "rrweb@npm:2.0.1"
   dependencies:
