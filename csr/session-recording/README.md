@@ -54,7 +54,6 @@ Context lets you attach custom dimensions to the recording session. These are se
 ```typescript
 const recorder = initSessionRecorder({
   clientSecret: '<your-client-secret>',
-  targetingKey: 'user-42',
   context: {
     buildVersion: '2.3.1',
     environment: 'production',
@@ -64,8 +63,6 @@ const recorder = initSessionRecorder({
 });
 ```
 
-`targetingKey` is the end-user identifier (visitor ID, device ID, etc.). The backend uses it for sampling and targeting decisions — it determines whether this user should be recorded.
-
 ## Configuration
 
 ```typescript
@@ -73,8 +70,7 @@ const recorder = initSessionRecorder({
   // Required
   clientSecret: '<your-client-secret>',
 
-  // Identity and context
-  targetingKey: 'user-42',
+  // Context
   context: { buildVersion: '2.3.1' },
 
   // Privacy

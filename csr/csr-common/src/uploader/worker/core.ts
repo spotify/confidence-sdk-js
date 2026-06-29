@@ -13,6 +13,7 @@ interface HelloMessage {
   apiUrl: string;
   websocketUrl?: string;
   clientSecret: string;
+  /** @deprecated No longer used for session targeting. */
   targetingKey?: string;
   context?: ClientContext;
   forceRecord?: boolean;

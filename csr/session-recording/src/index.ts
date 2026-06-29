@@ -18,7 +18,10 @@ const DEFAULT_WEBSOCKET_URL = 'wss://recording-ws.confidence.dev/sessions/stream
 export interface InitSessionRecorderOptions {
   /** Per-tenant secret. */
   clientSecret: string;
-  /** End-user identifier (visitor / device id). */
+  /**
+   * End-user identifier (visitor / device id).
+   * @deprecated No longer used for session targeting. Will be removed in a future release.
+   */
   targetingKey?: string;
   /** CSS selectors whose text content should be masked. */
   maskSelectors?: string[];
