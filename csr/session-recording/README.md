@@ -92,6 +92,39 @@ const recorder = initSessionRecorder({
 });
 ```
 
+## Using with the Confidence flags SDK
+
+If you use both session recording and the Confidence SDK (or an OpenFeature provider) for feature flags, keep the contexts aligned. The Confidence backend uses the same context to target recording rules and flag rules, so matching values let you set up policies like "record sessions for users in the `beta` environment" or "only record premium users" without surprises.
+
+```typescript
+import Confidence from '@spotify-confidence/sdk';
+import { initSessionRecorder } from '@spotify-confidence/session-recording';
+
+const targetingKey = 'user-42';
+const context = {
+  environment: 'production',
+  plan: 'premium',
+};
+
+const confidence = Confidence.create({
+  clientSecret: '<your-client-secret>',
+  environment: 'client',
+  timeout: 1000,
+});
+confidence.setContext({
+  targeting_key: targetingKey,
+  ...context,
+});
+
+const recorder = initSessionRecorder({
+  clientSecret: '<your-client-secret>',
+  targetingKey,
+  context,
+});
+```
+
+The key thing is that `targetingKey` and any context fields you use for targeting should carry the same values in both SDKs.
+
 ## Route parameterization
 
 Routes containing dynamic segments (such as IDs in the URL) are automatically normalized into patterns — for example, `/users/123/profile` becomes `/users/:id/profile`. This ensures that per-page metrics are grouped by route rather than by individual page visit, keeping dashboards meaningful and query performance fast.
