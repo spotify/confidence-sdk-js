@@ -55,6 +55,7 @@ Context lets you attach custom dimensions to the recording session. These are se
 const recorder = initSessionRecorder({
   clientSecret: '<your-client-secret>',
   context: {
+    visitor_id: 'user-42',
     buildVersion: '2.3.1',
     environment: 'production',
     plan: 'premium',
@@ -71,7 +72,7 @@ const recorder = initSessionRecorder({
   clientSecret: '<your-client-secret>',
 
   // Context
-  context: { buildVersion: '2.3.1' },
+  context: { visitor_id: 'user-42', buildVersion: '2.3.1' },
 
   // Privacy
   maskSelectors: ['.pii'],
