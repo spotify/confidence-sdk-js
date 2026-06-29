@@ -18,8 +18,6 @@ const DEFAULT_WEBSOCKET_URL = 'wss://recording-ws.confidence.dev/sessions/stream
 export interface InitSessionRecorderOptions {
   /** Per-tenant secret. */
   clientSecret: string;
-  /** End-user identifier (visitor / device id). */
-  targetingKey?: string;
   /** CSS selectors whose text content should be masked. */
   maskSelectors?: string[];
   /** CSS selectors whose subtrees should be blocked (replaced with a placeholder, never serialized). */
@@ -119,7 +117,6 @@ export function initSessionRecorder(options: InitSessionRecorderOptions): Sessio
         apiUrl: options.apiUrl ?? DEFAULT_API_URL,
         websocketUrl: options.websocketUrl ?? DEFAULT_WEBSOCKET_URL,
         clientSecret: options.clientSecret,
-        targetingKey: options.targetingKey,
         context: {
           ...options.context,
           _csr_sdk_version: SDK_VERSION,

@@ -19,8 +19,6 @@ export interface CreateUploaderOptions {
   websocketUrl?: string;
   /** Per-tenant secret. Hashed to scope the SharedWorker so different secrets never share a session, and sent in the `initSession` request body. */
   clientSecret: string;
-  /** End-user identifier (visitor / device ID). Forwarded in the `initSession` body for sampling and eligibility. */
-  targetingKey?: string;
   /**
    * Session context sent in the InitSession request. The SDK auto-populates
    * `userAgent` with browser/OS/screen metadata. Pass any extra keys as

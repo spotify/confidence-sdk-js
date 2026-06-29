@@ -55,7 +55,6 @@ describe('initSessionRecorder', () => {
     const ctx = { buildVersion: '2.3.1' };
     initSessionRecorder({
       clientSecret: 'secret',
-      targetingKey: 'user-42',
       context: ctx,
       maskSelectors: ['.private'],
       blockSelectors: ['video', '.third-party'],
@@ -67,7 +66,6 @@ describe('initSessionRecorder', () => {
       apiUrl: 'https://recording.confidence.dev',
       websocketUrl: 'wss://recording-ws.confidence.dev/sessions/stream',
       clientSecret: 'secret',
-      targetingKey: 'user-42',
       context: ctx,
     });
     expect(record.mock.calls[0][1]).toEqual({
