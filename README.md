@@ -23,11 +23,11 @@ Feature flag resolution via [OpenFeature](https://github.com/open-feature/js-sdk
 
 Browser SDK for capturing user sessions and streaming them to Confidence for replay and analysis.
 
-| Package                                                       | Description                                                       |
-| ------------------------------------------------------------- | ----------------------------------------------------------------- |
-| [`session-recording`](./csr/session-recording)                | Session recording SDK — start here                                |
-| [`csr-recorder`](./csr/csr-recorder)                          | Low-level recording engine (internal)                             |
-| [`csr-common`](./csr/csr-common)                              | Shared types, events, and transport utilities (internal)          |
+| Package                                                                 | Description                                              |
+| ----------------------------------------------------------------------- | -------------------------------------------------------- |
+| [`session-recording`](./csr/session-recording)                          | Session recording SDK — start here                       |
+| [`csr-recorder`](./csr/csr-recorder)                                    | Low-level recording engine (internal)                    |
+| [`csr-common`](./csr/csr-common)                                        | Shared types, events, and transport utilities (internal) |
 
 ---
 
