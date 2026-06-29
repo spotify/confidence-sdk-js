@@ -2,7 +2,7 @@
 
 ![](https://img.shields.io/badge/lifecycle-beta-a0c3d2.svg)
 
-JavaScript SDKs for [Confidence](https://confidence.spotify.com/).
+Frontend JavaScript SDKs for [Confidence](https://confidence.spotify.com/).
 
 ## Overview
 
