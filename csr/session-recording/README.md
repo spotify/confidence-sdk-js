@@ -92,6 +92,10 @@ const recorder = initSessionRecorder({
 });
 ```
 
+## Using with the Confidence flags SDK
+
+If you use both session recording and the Confidence SDK (or an OpenFeature provider) for feature flags, try your best to keep the contexts aligned. Aligning the contexts will make sense when using the Confidence app to set up targeting on recording rules and flag rules. Matching contexts will let you set up policies like "record sessions for users in the `beta` environment" or "only record premium users" without surprises.
+
 ## Route parameterization
 
 Routes containing dynamic segments (such as IDs in the URL) are automatically normalized into patterns — for example, `/users/123/profile` becomes `/users/:id/profile`. This ensures that per-page metrics are grouped by route rather than by individual page visit, keeping dashboards meaningful and query performance fast.

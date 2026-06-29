@@ -2,22 +2,32 @@
 
 ![](https://img.shields.io/badge/lifecycle-beta-a0c3d2.svg)
 
-JavaScript implementation of the [Confidence](https://confidence.spotify.com/) SDK and the Confidence OpenFeature provider, to be used in conjunction wth the [OpenFeature SDK](https://github.com/open-feature/js-sdk).
-
-> **💡 For server-side use cases**, consider the [Confidence Local Resolver Provider for JavaScript](https://github.com/spotify/confidence-resolver/tree/main/openfeature-provider/js), which evaluates flags locally via WebAssembly for increased resilience and lower latency.
+Frontend JavaScript SDKs for [Confidence](https://confidence.spotify.com/).
 
 ## Overview
 
-This monorepo contains four packages:
+### Feature Flags
 
-| Package                                                                 | Description                                                    |
-| ----------------------------------------------------------------------- | -------------------------------------------------------------- |
-| [`openfeature-server-provider`](./packages/openfeature-server-provider) | OpenFeature provider for server-side environments              |
-| [`openfeature-web-provider`](./packages/openfeature-web-provider)       | OpenFeature provider for client-side web applications          |
-| [`sdk`](./packages/sdk)                                                 | Core Confidence SDK for flag resolution, context, and tracking |
-| [`react`](./packages/react)                                             | React hooks and providers for client-side applications         |
+Feature flag resolution via [OpenFeature](https://github.com/open-feature/js-sdk) or the standalone Confidence SDK.
 
-Read more about the packages in their respective docs.
+> **💡 For server-side use cases**, consider the [Confidence Local Resolver Provider for JavaScript](https://github.com/spotify/confidence-resolver/tree/main/openfeature-provider/js), which evaluates flags locally via WebAssembly for increased resilience and lower latency.
+
+| Package                                                                 | Description                                            |
+| ----------------------------------------------------------------------- | ------------------------------------------------------ |
+| [`openfeature-server-provider`](./packages/openfeature-server-provider) | OpenFeature provider for server-side environments      |
+| [`openfeature-web-provider`](./packages/openfeature-web-provider)       | OpenFeature provider for client-side web applications  |
+| [`sdk`](./packages/sdk)                                                 | Core SDK for flag resolution, context, and tracking    |
+| [`react`](./packages/react)                                             | React hooks and providers for client-side applications |
+
+### Session Recording
+
+Browser SDK for capturing user sessions and streaming them to Confidence for replay and analysis.
+
+| Package                                        | Description                                              |
+| ---------------------------------------------- | -------------------------------------------------------- |
+| [`session-recording`](./csr/session-recording) | Session recording SDK — start here                       |
+| [`csr-recorder`](./csr/csr-recorder)           | Low-level recording engine (internal)                    |
+| [`csr-common`](./csr/csr-common)               | Shared types, events, and transport utilities (internal) |
 
 ---
 
