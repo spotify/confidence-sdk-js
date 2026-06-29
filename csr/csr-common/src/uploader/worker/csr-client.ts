@@ -10,7 +10,6 @@ export class CsrClient implements Client {
   constructor(
     private readonly apiUrl: string,
     private readonly clientSecret: string,
-    private readonly targetingKey: string | undefined,
     private readonly context: ClientContext | undefined,
     private readonly websocketUrl?: string,
     private readonly log: (msg: string) => void = () => {},
@@ -25,7 +24,6 @@ export class CsrClient implements Client {
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({
         clientSecret: this.clientSecret,
-        ...(this.targetingKey ? { targetingKey: this.targetingKey } : {}),
         ...(this.context && Object.keys(this.context).length > 0 ? { context: this.context } : {}),
         ...(this.forceRecord ? { forceRecord: true } : {}),
       }),

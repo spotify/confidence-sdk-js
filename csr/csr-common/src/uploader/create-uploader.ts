@@ -109,7 +109,6 @@ export async function createUploader(opts: CreateUploaderOptions): Promise<Uploa
     apiUrl: opts.apiUrl,
     websocketUrl: opts.websocketUrl,
     clientSecret: opts.clientSecret,
-    targetingKey: opts.targetingKey,
     context,
     forceRecord: opts.forceRecord,
     sessionIdHint: sessionHint?.id,

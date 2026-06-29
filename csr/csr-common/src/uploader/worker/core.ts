@@ -13,8 +13,6 @@ interface HelloMessage {
   apiUrl: string;
   websocketUrl?: string;
   clientSecret: string;
-  /** @deprecated No longer used for session targeting. */
-  targetingKey?: string;
   context?: ClientContext;
   forceRecord?: boolean;
   sessionIdHint?: string;
@@ -218,7 +216,6 @@ async function initializeSession(firstHello: HelloMessage): Promise<void> {
   const client = new CsrClient(
     firstHello.apiUrl,
     firstHello.clientSecret,
-    firstHello.targetingKey,
     firstHello.context,
     firstHello.websocketUrl,
     log,
