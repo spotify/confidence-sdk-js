@@ -1,5 +1,5 @@
 import { Provider, ProviderMetadata, OpenFeatureEventEmitter, EvaluationContext, ResolutionDetails, JsonValue } from '@openfeature/web-sdk';
-import { FlagResolver, Confidence } from '@spotify-confidence/sdk';
+import { FlagResolver, Confidence, ConfidenceOptions } from '@spotify-confidence/sdk';
 
 /**
  * OpenFeature Provider for Confidence Web SDK
@@ -35,16 +35,7 @@ declare class ConfidenceWebProvider implements Provider {
 /**
  * Factory Options for Confidence Web Provider
  * @public */
-type ConfidenceWebProviderOptions = {
-    region?: 'eu' | 'us';
-    fetchImplementation?: typeof fetch;
-    clientSecret: string;
-    timeout: number;
-    /** Sets an alternative resolve url */
-    resolveBaseUrl?: string;
-    /** Sets an alternative apply url */
-    applyBaseUrl?: string;
-};
+type ConfidenceWebProviderOptions = Omit<ConfidenceOptions, 'environment' | 'library' | 'context'>;
 /**
  * Creates an OpenFeature-adhering Confidence Provider
  * @param options - Options for Confidence Provider

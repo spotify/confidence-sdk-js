@@ -1,20 +1,11 @@
 import { Provider } from '@openfeature/web-sdk';
 import { ConfidenceWebProvider } from './ConfidenceWebProvider';
-import { Confidence } from '@spotify-confidence/sdk';
+import { Confidence, ConfidenceOptions } from '@spotify-confidence/sdk';
 
 /**
  * Factory Options for Confidence Web Provider
  * @public */
-export type ConfidenceWebProviderOptions = {
-  region?: 'eu' | 'us';
-  fetchImplementation?: typeof fetch;
-  clientSecret: string;
-  timeout: number;
-  /** Sets an alternative resolve url */
-  resolveBaseUrl?: string;
-  /** Sets an alternative apply url */
-  applyBaseUrl?: string;
-};
+export type ConfidenceWebProviderOptions = Omit<ConfidenceOptions, 'environment' | 'library' | 'context'>;
 
 /**
  * Creates an OpenFeature-adhering Confidence Provider
