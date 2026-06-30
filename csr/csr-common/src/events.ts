@@ -115,6 +115,8 @@ export type InputCustomData = {
     targetId: number;
     element?: ElementDescriptor;
     pathname?: string;
+    fieldType?: string;
+    hasValue?: boolean;
   };
 };
 
