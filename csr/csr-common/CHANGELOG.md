@@ -1,5 +1,17 @@
 # Changelog
 
+## [0.18.0](https://github.com/spotify/confidence-sdk-js/compare/csr-common-v0.17.3...csr-common-v0.18.0) (2026-06-30)
+
+
+### ⚠ BREAKING CHANGES
+
+* **csr:** remove targetingKey from session recording API ([#381](https://github.com/spotify/confidence-sdk-js/issues/381))
+
+### ✨ New Features
+
+* **csr-common:** add fieldType and hasValue to InputCustomData ([#384](https://github.com/spotify/confidence-sdk-js/issues/384)) ([a375425](https://github.com/spotify/confidence-sdk-js/commit/a375425aeec577c4856ba23ef976d4c065665ef8))
+* **csr:** remove targetingKey from session recording API ([#381](https://github.com/spotify/confidence-sdk-js/issues/381)) ([4d2a930](https://github.com/spotify/confidence-sdk-js/commit/4d2a9301d700ad8d68cfcf28b9d620f24c55aee5))
+
 ## [0.17.3](https://github.com/spotify/confidence-sdk-js/compare/csr-common-v0.17.2...csr-common-v0.17.3) (2026-06-16)
 
 
