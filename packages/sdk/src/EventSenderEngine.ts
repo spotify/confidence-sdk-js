@@ -30,6 +30,10 @@ export interface EventSenderEngineOptions {
   logger: Logger;
 }
 
+// sendBeacon has a ~64KB payload limit shared with keepalive fetches.
+// Cap the unload batch well below that to maximize delivery success.
+const BEACON_MAX_BATCH_SIZE = 25;
+
 export class EventSenderEngine {
   private readonly writeQueue: Event[] = [];
   private readonly flushTimeoutMilliseconds: number;
@@ -149,9 +153,12 @@ export class EventSenderEngine {
     }
   }
 
+  // Bypasses fetchImplementation intentionally: sendBeacon must serialize and
+  // enqueue synchronously during page unload — the async FetchBuilder chain
+  // cannot guarantee completion before the page is discarded.
   private beaconFlush(): void {
     this.clearPendingFlush();
-    const batchSize = Math.min(this.writeQueue.length, this.maxBatchSize);
+    const batchSize = Math.min(this.writeQueue.length, this.maxBatchSize, BEACON_MAX_BATCH_SIZE);
     if (batchSize === 0) return;
 
     if (typeof navigator === 'undefined' || typeof navigator.sendBeacon !== 'function') {

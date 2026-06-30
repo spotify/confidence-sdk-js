@@ -166,4 +166,31 @@ describe('EventSenderEngine visibilitychange', () => {
 
     await jest.runAllTimersAsync();
   });
+
+  it('should cap beacon batch size and leave remaining events in queue', async () => {
+    const engine = createEngine({ maxBatchSize: 100 });
+    // Send 40 events — more than the 25-event beacon cap but within maxBatchSize
+    for (let i = 0; i < 40; i++) {
+      engine.send({ value: i }, 'my_event');
+    }
+
+    engine.clearPendingFlush();
+
+    jest.spyOn(document, 'visibilityState', 'get').mockReturnValue('hidden');
+    document.dispatchEvent(new Event('visibilitychange'));
+
+    expect(mockSendBeacon).toHaveBeenCalledTimes(1);
+    const blob: Blob = mockSendBeacon.mock.calls[0][1];
+    const body = JSON.parse(
+      await new Promise<string>(resolve => {
+        const reader = new FileReader();
+        reader.onload = () => resolve(reader.result as string);
+        reader.readAsText(blob);
+      }),
+    );
+    // Only 25 events beaconed, 15 remain in queue
+    expect(body.events).toHaveLength(25);
+
+    await jest.runAllTimersAsync();
+  });
 });
