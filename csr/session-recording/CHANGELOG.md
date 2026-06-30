@@ -1,5 +1,34 @@
 # Changelog
 
+## [0.18.0](https://github.com/spotify/confidence-sdk-js/compare/session-recording-v0.17.4...session-recording-v0.18.0) (2026-06-30)
+
+
+### ⚠ BREAKING CHANGES
+
+* **csr:** remove targetingKey from session recording API ([#381](https://github.com/spotify/confidence-sdk-js/issues/381))
+
+### 🐛 Bug Fixes
+
+* **csr:** use workspace:* for inter-package deps ([#383](https://github.com/spotify/confidence-sdk-js/issues/383)) ([cb46378](https://github.com/spotify/confidence-sdk-js/commit/cb46378716d7c2402e400167dec2e31c1c6ffe4b))
+
+
+### ✨ New Features
+
+* **csr:** remove targetingKey from session recording API ([#381](https://github.com/spotify/confidence-sdk-js/issues/381)) ([4d2a930](https://github.com/spotify/confidence-sdk-js/commit/4d2a9301d700ad8d68cfcf28b9d620f24c55aee5))
+
+
+### 📚 Documentation
+
+* add session recording packages to README ([#380](https://github.com/spotify/confidence-sdk-js/issues/380)) ([10c3541](https://github.com/spotify/confidence-sdk-js/commit/10c354177627e3f6889be09943f9cb49e65ea8e7))
+
+
+### Dependencies
+
+* The following workspace dependencies were updated
+  * dependencies
+    * @spotify-confidence/csr-common bumped to 0.18.0
+    * @spotify-confidence/csr-recorder bumped to 0.17.5
+
 ## [0.17.4](https://github.com/spotify/confidence-sdk-js/compare/session-recording-v0.17.3...session-recording-v0.17.4) (2026-06-24)
 
 
