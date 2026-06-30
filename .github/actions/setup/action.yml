@@ -19,10 +19,4 @@ runs:
       run: npm install -g npm@latest
     - name: Install dependencies
       shell: bash
-      run: |
-        corepack enable
-        if [ "${{ github.head_ref }}" = "release-please--branches--main" ]; then
-          YARN_ENABLE_HARDENED_MODE=0 yarn install
-        else
-          yarn install
-        fi
+      run: corepack enable && yarn install
