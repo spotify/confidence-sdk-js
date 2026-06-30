@@ -5130,7 +5130,7 @@ __metadata:
   languageName: node
   linkType: hard
 
-"@spotify-confidence/csr-common@workspace:^, @spotify-confidence/csr-common@workspace:csr/csr-common":
+"@spotify-confidence/csr-common@workspace:*, @spotify-confidence/csr-common@workspace:csr/csr-common":
   version: 0.0.0-use.local
   resolution: "@spotify-confidence/csr-common@workspace:csr/csr-common"
   dependencies:
@@ -5138,12 +5138,12 @@ __metadata:
   languageName: unknown
   linkType: soft
 
-"@spotify-confidence/csr-recorder@workspace:^, @spotify-confidence/csr-recorder@workspace:csr/csr-recorder":
+"@spotify-confidence/csr-recorder@workspace:*, @spotify-confidence/csr-recorder@workspace:csr/csr-recorder":
   version: 0.0.0-use.local
   resolution: "@spotify-confidence/csr-recorder@workspace:csr/csr-recorder"
   dependencies:
     "@rrweb/rrweb-plugin-console-record": "npm:^2.0.1"
-    "@spotify-confidence/csr-common": "workspace:^"
+    "@spotify-confidence/csr-common": "workspace:*"
     rrweb: "npm:^2.0.1"
   languageName: unknown
   linkType: soft
@@ -5215,8 +5215,8 @@ __metadata:
   version: 0.0.0-use.local
   resolution: "@spotify-confidence/session-recording@workspace:csr/session-recording"
   dependencies:
-    "@spotify-confidence/csr-common": "workspace:^"
-    "@spotify-confidence/csr-recorder": "workspace:^"
+    "@spotify-confidence/csr-common": "workspace:*"
+    "@spotify-confidence/csr-recorder": "workspace:*"
   languageName: unknown
   linkType: soft
 
