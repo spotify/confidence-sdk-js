@@ -16,8 +16,16 @@ describe('EventSenderEngine visibilitychange', () => {
     return new Response(JSON.stringify({ errors: [] }));
   });
 
-  it('should flush with keepalive when document becomes hidden', async () => {
-    const engine = new EventSenderEngine({
+  let mockSendBeacon: jest.Mock;
+
+  beforeEach(() => {
+    mockFetch.mockClear();
+    mockSendBeacon = jest.fn().mockReturnValue(true);
+    Object.defineProperty(navigator, 'sendBeacon', { value: mockSendBeacon, configurable: true, writable: true });
+  });
+
+  function createEngine(overrides?: Partial<ConstructorParameters<typeof EventSenderEngine>[0]>) {
+    return new EventSenderEngine({
       clientSecret: 'my_secret',
       maxBatchSize: BATCH_SIZE,
       flushTimeoutMilliseconds: FLUSH_TIMEOUT,
@@ -25,31 +33,95 @@ describe('EventSenderEngine visibilitychange', () => {
       region: 'eu',
       maxOpenRequests: MAX_OPEN_REQUESTS,
       logger: {},
+      ...overrides,
     });
-    const uploadSpy = jest.spyOn(engine, 'upload');
-    engine.send({ value: 1 }, 'my_event');
+  }
 
-    expect(uploadSpy).not.toHaveBeenCalled();
+  it('should use sendBeacon when document becomes hidden', async () => {
+    const engine = createEngine();
+    engine.send({ value: 1 }, 'my_event');
 
     jest.spyOn(document, 'visibilityState', 'get').mockReturnValue('hidden');
     document.dispatchEvent(new Event('visibilitychange'));
 
+    expect(mockSendBeacon).toHaveBeenCalledTimes(1);
+    expect(mockSendBeacon).toHaveBeenCalledWith('https://events.eu.confidence.dev/v1/events:publish', expect.any(Blob));
+
+    const blob: Blob = mockSendBeacon.mock.calls[0][1];
+    expect(blob.type).toBe('application/json');
+    const body = JSON.parse(
+      await new Promise<string>(resolve => {
+        const reader = new FileReader();
+        reader.onload = () => resolve(reader.result as string);
+        reader.readAsText(blob);
+      }),
+    );
+    expect(body.clientSecret).toBe('my_secret');
+    expect(body.events).toHaveLength(1);
+    expect(body.events[0].eventDefinition).toBe('eventDefinitions/my_event');
+    expect(body.events[0].payload).toEqual({ context: { value: 1 } });
+
+    await jest.runAllTimersAsync();
+  });
+
+  it('should remove events from queue after successful beacon', async () => {
+    const engine = createEngine();
+    engine.send({ value: 1 }, 'my_event');
+
+    jest.spyOn(document, 'visibilityState', 'get').mockReturnValue('hidden');
+    document.dispatchEvent(new Event('visibilitychange'));
+
+    expect(mockSendBeacon).toHaveBeenCalledTimes(1);
+
+    // Queue should be empty — a subsequent flush should be a no-op
+    const flushResult = await engine.flush();
+    expect(flushResult).toBe(true); // empty queue returns true
+    expect(mockFetch).not.toHaveBeenCalled();
+
+    await jest.runAllTimersAsync();
+  });
+
+  it('should fall back to fetch when sendBeacon returns false', async () => {
+    mockSendBeacon.mockReturnValue(false);
+    const engine = createEngine();
+    const uploadSpy = jest.spyOn(engine, 'upload');
+    engine.send({ value: 1 }, 'my_event');
+
+    jest.spyOn(document, 'visibilityState', 'get').mockReturnValue('hidden');
+    document.dispatchEvent(new Event('visibilitychange'));
+
+    expect(mockSendBeacon).toHaveBeenCalledTimes(1);
+    // Events should still be in the queue and flushed via fetch
     expect(uploadSpy).toHaveBeenCalledTimes(1);
     expect(uploadSpy).toHaveBeenCalledWith(expect.any(Object), { keepalive: true });
 
     await jest.runAllTimersAsync();
   });
 
+  it('should fall back to fetch when sendBeacon is unavailable', async () => {
+    mockSendBeacon.mockRestore();
+    const original = navigator.sendBeacon;
+    Object.defineProperty(navigator, 'sendBeacon', { value: undefined, configurable: true });
+
+    try {
+      const engine = createEngine();
+      const uploadSpy = jest.spyOn(engine, 'upload');
+      engine.send({ value: 1 }, 'my_event');
+
+      jest.spyOn(document, 'visibilityState', 'get').mockReturnValue('hidden');
+      document.dispatchEvent(new Event('visibilitychange'));
+
+      expect(uploadSpy).toHaveBeenCalledTimes(1);
+      expect(uploadSpy).toHaveBeenCalledWith(expect.any(Object), { keepalive: true });
+    } finally {
+      Object.defineProperty(navigator, 'sendBeacon', { value: original, configurable: true });
+    }
+
+    await jest.runAllTimersAsync();
+  });
+
   it('should not use keepalive for regular flushes', async () => {
-    const engine = new EventSenderEngine({
-      clientSecret: 'my_secret',
-      maxBatchSize: BATCH_SIZE,
-      flushTimeoutMilliseconds: FLUSH_TIMEOUT,
-      fetchImplementation: mockFetch as any,
-      region: 'eu',
-      maxOpenRequests: MAX_OPEN_REQUESTS,
-      logger: {},
-    });
+    const engine = createEngine();
     const uploadSpy = jest.spyOn(engine, 'upload');
     engine.send({ value: 1 }, 'my_event');
 
@@ -57,6 +129,40 @@ describe('EventSenderEngine visibilitychange', () => {
 
     expect(uploadSpy).toHaveBeenCalledTimes(1);
     expect(uploadSpy).toHaveBeenCalledWith(expect.any(Object), { keepalive: undefined });
+    expect(mockSendBeacon).not.toHaveBeenCalled();
+
+    await jest.runAllTimersAsync();
+  });
+
+  it('should not beacon when queue is empty', async () => {
+    createEngine();
+
+    jest.spyOn(document, 'visibilityState', 'get').mockReturnValue('hidden');
+    document.dispatchEvent(new Event('visibilitychange'));
+
+    expect(mockSendBeacon).not.toHaveBeenCalled();
+    expect(mockFetch).not.toHaveBeenCalled();
+
+    await jest.runAllTimersAsync();
+  });
+
+  it('should include sendTime in beaconed payload', async () => {
+    const engine = createEngine();
+    engine.send({ value: 1 }, 'my_event');
+
+    jest.spyOn(document, 'visibilityState', 'get').mockReturnValue('hidden');
+    document.dispatchEvent(new Event('visibilitychange'));
+
+    const blob: Blob = mockSendBeacon.mock.calls[0][1];
+    const body = JSON.parse(
+      await new Promise<string>(resolve => {
+        const reader = new FileReader();
+        reader.onload = () => resolve(reader.result as string);
+        reader.readAsText(blob);
+      }),
+    );
+    expect(body.sendTime).toBeDefined();
+    expect(new Date(body.sendTime).getTime()).not.toBeNaN();
 
     await jest.runAllTimersAsync();
   });
