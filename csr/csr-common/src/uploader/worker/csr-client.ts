@@ -47,7 +47,7 @@ export class CsrClient implements Client {
     const wsBase = this.websocketUrl ?? `${this.toWsScheme(this.trimSlash(this.apiUrl))}/sessions/stream`;
     const sep = wsBase.includes('?') ? '&' : '?';
     const url = `${wsBase}${sep}session_token=${encodeURIComponent(sessionToken)}`;
-    this.log(`WebSocket connect ${url}`);
+    this.log(`WebSocket connect ${url.replace(/session_token=[^&]*/, 'session_token=[REDACTED]')}`);
     const transport = new WebSocketTransport(url);
     await transport.ready();
     return transport;

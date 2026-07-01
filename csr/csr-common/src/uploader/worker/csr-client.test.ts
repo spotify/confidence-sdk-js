@@ -95,6 +95,18 @@ describe('CsrClient.openTransport', () => {
     await expect(client.openTransport('tok')).resolves.toBeDefined();
   });
 
+  it('redacts session_token from debug log', async () => {
+    installMockWsServer('wss://api/sessions/stream?session_token=secret-tok');
+
+    const logs: string[] = [];
+    const client = new CsrClient('https://api', 'secret', undefined, undefined, msg => logs.push(msg));
+    await client.openTransport('secret-tok');
+
+    expect(logs).toHaveLength(1);
+    expect(logs[0]).toContain('session_token=[REDACTED]');
+    expect(logs[0]).not.toContain('secret-tok');
+  });
+
   it('URL-encodes the session token', async () => {
     installMockWsServer('wss://api/sessions/stream?session_token=tok%2Fwith%3Dspecials');
 
