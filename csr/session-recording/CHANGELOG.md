@@ -1,5 +1,19 @@
 # Changelog
 
+## [0.18.1](https://github.com/spotify/confidence-sdk-js/compare/session-recording-v0.18.0...session-recording-v0.18.1) (2026-07-01)
+
+
+### ✨ New Features
+
+* **csr:** expose userTriggeredOnInput option ([#389](https://github.com/spotify/confidence-sdk-js/issues/389)) ([9780b29](https://github.com/spotify/confidence-sdk-js/commit/9780b29f87a8847fed6190ce0322c8f48cc27d98))
+
+
+### Dependencies
+
+* The following workspace dependencies were updated
+  * dependencies
+    * @spotify-confidence/csr-recorder bumped to 0.17.6
+
 ## [0.18.0](https://github.com/spotify/confidence-sdk-js/compare/session-recording-v0.17.4...session-recording-v0.18.0) (2026-06-30)
 
 
