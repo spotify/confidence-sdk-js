@@ -227,6 +227,38 @@ export type FlagEvaluationPluginData = {
   };
 };
 
+export type ErrorMessageCustomData = {
+  tag: 'csr:errorMessage';
+  payload: {
+    text: string;
+  };
+};
+
+export type DialogOpenedCustomData = {
+  tag: 'csr:dialogOpened';
+  payload: {
+    content: string[];
+  };
+};
+
+export type IdleGapCustomData = {
+  tag: 'csr:idleGap';
+  payload: {
+    visibleGapS: number;
+    totalGapS: number;
+    hiddenS: number;
+    trailing: boolean;
+  };
+};
+
+export type AwayGapCustomData = {
+  tag: 'csr:awayGap';
+  payload: {
+    totalGapS: number;
+    hiddenS: number;
+  };
+};
+
 /**
  * Closed union of every Custom event we emit. Add a new variant here when
  * introducing a new tag — emitting an unregistered tag is a TS error.
@@ -240,7 +272,11 @@ export type CustomEventData =
   | DeadClickCustomData
   | TabUnfocusCustomData
   | TabRefocusCustomData
-  | RouteChangeCustomData;
+  | RouteChangeCustomData
+  | ErrorMessageCustomData
+  | DialogOpenedCustomData
+  | IdleGapCustomData
+  | AwayGapCustomData;
 
 /**
  * A single recorded event.
