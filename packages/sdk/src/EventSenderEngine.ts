@@ -30,6 +30,10 @@ export interface EventSenderEngineOptions {
   logger: Logger;
 }
 
+// sendBeacon has a ~64KB payload limit shared with keepalive fetches.
+// Cap the unload batch well below that to maximize delivery success.
+const BEACON_MAX_BATCH_SIZE = 25;
+
 export class EventSenderEngine {
   private readonly writeQueue: Event[] = [];
   private readonly flushTimeoutMilliseconds: number;
@@ -81,7 +85,7 @@ export class EventSenderEngine {
     if (typeof document !== 'undefined') {
       document.addEventListener('visibilitychange', () => {
         if (document.visibilityState === 'hidden') {
-          this.flush({ keepalive: true });
+          this.beaconFlush();
         }
       });
     }
@@ -146,6 +150,35 @@ export class EventSenderEngine {
     if (this.pendingFlush) {
       clearTimeout(this.pendingFlush);
       this.pendingFlush = undefined;
+    }
+  }
+
+  // Bypasses fetchImplementation intentionally: sendBeacon must serialize and
+  // enqueue synchronously during page unload — the async FetchBuilder chain
+  // cannot guarantee completion before the page is discarded.
+  private beaconFlush(): void {
+    this.clearPendingFlush();
+    const batchSize = Math.min(this.writeQueue.length, this.maxBatchSize, BEACON_MAX_BATCH_SIZE);
+    if (batchSize === 0) return;
+
+    if (typeof navigator === 'undefined' || typeof navigator.sendBeacon !== 'function') {
+      this.flush({ keepalive: true });
+      return;
+    }
+
+    const events = this.writeQueue.slice(0, batchSize);
+    const body = JSON.stringify({
+      clientSecret: this.clientSecret,
+      sendTime: new Date().toISOString(),
+      events: events.map(e => ({ ...e, eventDefinition: `eventDefinitions/${e.eventDefinition}` })),
+    });
+    const queued = navigator.sendBeacon(this.publishUrl, new Blob([body], { type: 'application/json' }));
+    if (queued) {
+      this.writeQueue.splice(0, batchSize);
+      this.logger.info?.('Confidence: beaconed %i events', batchSize);
+    } else {
+      this.logger.warn?.('Confidence: sendBeacon rejected, falling back to fetch');
+      this.flush({ keepalive: true });
     }
   }
 
