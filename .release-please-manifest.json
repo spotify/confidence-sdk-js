@@ -3,7 +3,7 @@
   "packages/openfeature-web-provider": "0.3.19",
   "packages/sdk": "0.3.19",
   "packages/react": "0.2.18",
-  "csr/csr-common": "0.18.0",
-  "csr/csr-recorder": "0.17.6",
-  "csr/session-recording": "0.18.1"
+  "csr/csr-common": "0.18.1",
+  "csr/csr-recorder": "0.17.7",
+  "csr/session-recording": "0.18.2"
 }

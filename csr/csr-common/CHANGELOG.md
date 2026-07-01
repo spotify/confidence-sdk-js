@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.18.1](https://github.com/spotify/confidence-sdk-js/compare/csr-common-v0.18.0...csr-common-v0.18.1) (2026-07-01)
+
+
+### ✨ New Features
+
+* **csr-common:** add analyzer custom event types ([#391](https://github.com/spotify/confidence-sdk-js/issues/391)) ([09f135b](https://github.com/spotify/confidence-sdk-js/commit/09f135b38743b7726bc7e690d864a148fd49b2bb))
+
 ## [0.18.0](https://github.com/spotify/confidence-sdk-js/compare/csr-common-v0.17.3...csr-common-v0.18.0) (2026-06-30)
 
 
