@@ -71,6 +71,11 @@ export interface RecordingConfig {
    * Import `defaultParameterizeRoute` to compose with the built-in rules.
    */
   parameterizeRoute?: (route: string) => string;
+  /**
+   * Tag each input event with a `userTriggered` flag derived from the
+   * browser's `event.isTrusted` property. Defaults to `false`.
+   */
+  userTriggeredOnInput?: boolean;
 }
 
 export enum RecorderState {

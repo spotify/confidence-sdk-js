@@ -34,6 +34,7 @@ export class RrwebEngine implements RecordingEngine {
         ...(maskSelectors.length ? { maskTextSelector: maskSelectors.join(',') } : {}),
         ...(blockSelectors.length ? { blockSelector: blockSelectors.join(',') } : {}),
         ...(plugins.length ? { plugins } : {}),
+        ...(config.userTriggeredOnInput ? { userTriggeredOnInput: true } : {}),
         sampling: {
           mousemove: 100,
           input: 'last',

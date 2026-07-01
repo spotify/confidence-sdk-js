@@ -31,6 +31,12 @@ export interface InitSessionRecorderOptions {
   /** Capture client-side route changes (pathname only). Defaults to `true`. */
   captureRouteChanges?: boolean;
   /**
+   * Tag each input event with a `userTriggered` flag derived from the
+   * browser's `event.isTrusted` property. When enabled, the analyzer can
+   * filter out programmatic input changes. Defaults to `false`.
+   */
+  userTriggeredOnInput?: boolean;
+  /**
    * Transform a raw pathname into a route pattern before it is emitted in
    * route-change and Meta events. For example, `/users/123/profile` becomes
    * `/users/:id/profile`. This ensures per-page metrics are grouped by route
@@ -109,6 +115,7 @@ export function initSessionRecorder(options: InitSessionRecorderOptions): Sessio
     captureNetworkRequests: options.captureNetworkRequests,
     captureRouteChanges: options.captureRouteChanges,
     parameterizeRoute: options.parameterizeRoute,
+    userTriggeredOnInput: options.userTriggeredOnInput,
   };
 
   async function initAndRecord(forceRecord: boolean) {
