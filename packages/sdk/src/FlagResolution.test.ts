@@ -19,6 +19,7 @@ function makeResolvedFlag({
   value = { my_bool: true, my_string: 'hello' } as { [key: string]: any } | undefined,
   reason = ResolveReason.RESOLVE_REASON_MATCH,
   shouldApply = true,
+  assignmentOrigin = '',
   flagSchema = {
     schema: {
       my_bool: { boolSchema: {} },
@@ -26,7 +27,7 @@ function makeResolvedFlag({
     },
   } as any,
 } = {}) {
-  return { flag, variant, value, reason, shouldApply, flagSchema };
+  return { flag, variant, value, reason, shouldApply, assignmentOrigin, flagSchema };
 }
 
 describe('FlagResolution', () => {
@@ -37,7 +38,7 @@ describe('FlagResolution', () => {
 
       resolution.evaluate('test-flag.my_bool', false);
 
-      expect(publishFlagEvaluation).toHaveBeenCalledWith('flags/test-flag', 'flags/test-flag/variants/treatment');
+      expect(publishFlagEvaluation).toHaveBeenCalledWith('flags/test-flag', 'flags/test-flag/variants/treatment', '');
     });
 
     it('does not publish on NO_SEGMENT_MATCH', () => {
