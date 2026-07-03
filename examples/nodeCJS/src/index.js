@@ -23,7 +23,7 @@ async function main() {
   const client = OpenFeature.getClient();
 
   client
-    .getStringValue('tutorial-feature.title', 'Default', {
+    .getStringValue('my-flag.title', 'Default', {
       targetingKey: `user-${Math.random()}`,
     })
     .then(result => {
@@ -32,6 +32,6 @@ async function main() {
 
   const fe = await confidence
     .withContext({ targeting_key: 'user-a' })
-    .evaluateFlag('tutorial-feature.title', 'Default');
+    .evaluateFlag('my-flag.title', 'Default');
   console.log('from confidence API: ', fe);
 }

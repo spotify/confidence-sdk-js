@@ -100,8 +100,8 @@ The flag value API returns the Confidence assigned flag value or the passed in d
 The evaluate API returns a `FlagEvaluation` type that also contain information about `variant`, `reason` and possible error details.
 
 ```ts
-const flag = await confidence.getFlag('tutorial-feature', {});
-const flagEvaluation = await confidence.evaluateFlag('tutorial-feature', {});
+const flag = await confidence.getFlag('my-flag', {});
+const flagEvaluation = await confidence.evaluateFlag('my-flag', {});
 ```
 
 ### Dot notation
@@ -109,8 +109,8 @@ const flagEvaluation = await confidence.evaluateFlag('tutorial-feature', {});
 Both the "flag value", and the "evaluate" API's support dot notation, meaning that if the Confidence flag has a property `enabled` or `title` on the flag, you can access them directly:
 
 ```ts
-const enabled = await confidence.getFlag('tutorial-feature.enabled', false);
-const messageEvaluation = await confidence.evaluateFlag('tutorial-feature.message', 'default message');
+const enabled = await confidence.getFlag('my-flag.enabled', false);
+const messageEvaluation = await confidence.evaluateFlag('my-flag.message', 'default message');
 const message = messageEvaluation.value;
 ```
 

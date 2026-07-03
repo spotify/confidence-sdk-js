@@ -94,7 +94,7 @@ function Level({ name, children }: { name: string; children?: React.ReactNode })
 
 function Flags() {
   const confidence = useConfidence();
-  const flagData = JSON.stringify(confidence.useEvaluateFlag('tutorial-feature.title', 'Default'), null, '  ');
+  const flagData = JSON.stringify(confidence.useEvaluateFlag('my-flag.title', 'Default'), null, '  ');
   // const flagData = useDeferredValue(confidence.useFlag('web-sdk-e2e-flag.str', 'default'));
   return (
     <fieldset>
