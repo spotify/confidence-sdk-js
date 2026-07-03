@@ -86,6 +86,9 @@ const recorder = initSessionRecorder({
 
   // Recording mode
   mode: 'automatic', // 'automatic' (default) or 'manual'
+
+  // Debug
+  debugLogger: (msg) => console.log(msg), // lifecycle/transport messages (default: off, or console.log when CSR_DEBUG is set in sessionStorage)
 });
 ```
 
@@ -111,6 +114,33 @@ const recorder = initSessionRecorder({
 ```
 
 See the [`@spotify-confidence/csr-recorder` README](../csr-recorder/README.md#route-parameterization) for the full list of default patterns.
+
+## Debug logging
+
+The SDK can emit one-line lifecycle and transport messages to help you verify your setup and diagnose issues.
+
+### Option 1: pass a logger
+
+```typescript
+const recorder = initSessionRecorder({
+  clientSecret: '<your-client-secret>',
+  debugLogger: (msg) => console.log(msg),
+});
+```
+
+All messages are prefixed with `[CSR]` — you can filter your browser console to quickly find them.
+
+### Option 2: sessionStorage flag
+
+If you can't (or don't want to) change code, open your browser DevTools console and run:
+
+```javascript
+sessionStorage.setItem('CSR_DEBUG', 'true');
+```
+
+Then reload the page. The SDK will detect the flag and log to `console.log` automatically. Remove it with `sessionStorage.removeItem('CSR_DEBUG')` when you're done.
+
+> **Tip:** We recommend enabling debug logging when first integrating the SDK. It lets you confirm that a session is established, events are flowing, and the backend is reachable — all before you open the Confidence dashboard.
 
 ## Manual mode
 
