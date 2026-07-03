@@ -88,7 +88,7 @@ const recorder = initSessionRecorder({
   mode: 'automatic', // 'automatic' (default) or 'manual'
 
   // Debug
-  debugLogger: (msg) => console.log(msg), // lifecycle/transport messages (default: off, or console.log when CSR_DEBUG is set in sessionStorage)
+  debugLogger: msg => console.log(msg), // lifecycle/transport messages (default: off, or console.log when CSR_DEBUG is set in sessionStorage)
 });
 ```
 
@@ -124,7 +124,7 @@ The SDK can emit one-line lifecycle and transport messages to help you verify yo
 ```typescript
 const recorder = initSessionRecorder({
   clientSecret: '<your-client-secret>',
-  debugLogger: (msg) => console.log(msg),
+  debugLogger: msg => console.log(msg),
 });
 ```
 
