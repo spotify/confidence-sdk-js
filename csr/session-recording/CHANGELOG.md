@@ -1,5 +1,25 @@
 # Changelog
 
+## [0.18.3](https://github.com/spotify/confidence-sdk-js/compare/session-recording-v0.18.2...session-recording-v0.18.3) (2026-07-06)
+
+
+### ✨ New Features
+
+* **sdk:** add assignmentOrigin to window API ([#396](https://github.com/spotify/confidence-sdk-js/issues/396)) ([9dd17d5](https://github.com/spotify/confidence-sdk-js/commit/9dd17d5f3af787e39406785f85f0d2e79703e656))
+
+
+### 📚 Documentation
+
+* **csr:** add debug logging section to README ([#395](https://github.com/spotify/confidence-sdk-js/issues/395)) ([6e6d1c3](https://github.com/spotify/confidence-sdk-js/commit/6e6d1c3c28460ef222f07fe053f2dc8d35fdc365))
+
+
+### Dependencies
+
+* The following workspace dependencies were updated
+  * dependencies
+    * @spotify-confidence/csr-common bumped to 0.18.2
+    * @spotify-confidence/csr-recorder bumped to 0.17.8
+
 ## [0.18.2](https://github.com/spotify/confidence-sdk-js/compare/session-recording-v0.18.1...session-recording-v0.18.2) (2026-07-01)
 
 

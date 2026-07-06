@@ -1,5 +1,17 @@
 # Changelog
 
+## [0.3.20](https://github.com/spotify/confidence-sdk-js/compare/sdk-v0.3.19...sdk-v0.3.20) (2026-07-06)
+
+
+### 🐛 Bug Fixes
+
+* **sdk:** use sendBeacon for visibilitychange flush ([#388](https://github.com/spotify/confidence-sdk-js/issues/388)) ([42747fc](https://github.com/spotify/confidence-sdk-js/commit/42747fc7d0f24c7fed8577bfc898a1a29c1b2615))
+
+
+### ✨ New Features
+
+* **sdk:** add assignmentOrigin to window API ([#396](https://github.com/spotify/confidence-sdk-js/issues/396)) ([9dd17d5](https://github.com/spotify/confidence-sdk-js/commit/9dd17d5f3af787e39406785f85f0d2e79703e656))
+
 ## [0.3.19](https://github.com/spotify/confidence-sdk-js/compare/sdk-v0.3.18...sdk-v0.3.19) (2026-06-16)
 
 
