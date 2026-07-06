@@ -224,6 +224,7 @@ export type FlagEvaluationPluginData = {
   payload: {
     flagKey: string;
     variant: string;
+    assignmentOrigin: string;
   };
 };
 

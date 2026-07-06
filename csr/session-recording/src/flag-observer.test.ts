@@ -11,62 +11,71 @@ describe('observeFlags', () => {
     const writes: FlagWrite[] = [];
     observeFlags(w => writes.push(w));
 
-    (window as any).__confidence.flags['my-flag'] = { variant: 'treatment-a' };
+    (window as any).__confidence.flags['my-flag'] = { variant: 'treatment-a', assignmentOrigin: 'rule-1' };
 
-    expect(writes).toEqual([{ flagKey: 'my-flag', variant: 'treatment-a' }]);
+    expect(writes).toEqual([{ flagKey: 'my-flag', variant: 'treatment-a', assignmentOrigin: 'rule-1' }]);
   });
 
   it('emits snapshot entries for pre-existing flags', () => {
     (window as any).__confidence = {
       flags: {
-        'flag-a': { variant: 'v1' },
-        'flag-b': { variant: 'v2' },
+        'flag-a': { variant: 'v1', assignmentOrigin: 'rule-a' },
+        'flag-b': { variant: 'v2', assignmentOrigin: 'rule-b' },
       },
     };
 
     const writes: FlagWrite[] = [];
     observeFlags(w => writes.push(w));
 
-    expect(writes).toContainEqual({ flagKey: 'flag-a', variant: 'v1' });
-    expect(writes).toContainEqual({ flagKey: 'flag-b', variant: 'v2' });
+    expect(writes).toContainEqual({ flagKey: 'flag-a', variant: 'v1', assignmentOrigin: 'rule-a' });
+    expect(writes).toContainEqual({ flagKey: 'flag-b', variant: 'v2', assignmentOrigin: 'rule-b' });
+  });
+
+  it('defaults assignmentOrigin to empty string when missing', () => {
+    const writes: FlagWrite[] = [];
+    observeFlags(w => writes.push(w));
+
+    (window as any).__confidence.flags['my-flag'] = { variant: 'treatment-a' };
+
+    expect(writes).toEqual([{ flagKey: 'my-flag', variant: 'treatment-a', assignmentOrigin: '' }]);
   });
 
   it('observes new writes after reading the snapshot', () => {
     (window as any).__confidence = {
-      flags: { existing: { variant: 'old' } },
+      flags: { existing: { variant: 'old', assignmentOrigin: 'rule-old' } },
     };
 
     const writes: FlagWrite[] = [];
     observeFlags(w => writes.push(w));
 
-    (window as any).__confidence.flags['new-flag'] = { variant: 'new' };
+    (window as any).__confidence.flags['new-flag'] = { variant: 'new', assignmentOrigin: 'rule-new' };
 
     expect(writes).toHaveLength(2);
-    expect(writes[0]).toEqual({ flagKey: 'existing', variant: 'old' });
-    expect(writes[1]).toEqual({ flagKey: 'new-flag', variant: 'new' });
+    expect(writes[0]).toEqual({ flagKey: 'existing', variant: 'old', assignmentOrigin: 'rule-old' });
+    expect(writes[1]).toEqual({ flagKey: 'new-flag', variant: 'new', assignmentOrigin: 'rule-new' });
   });
 
   it('cleanup replaces proxy with plain copy', () => {
     const writes: FlagWrite[] = [];
     const cleanup = observeFlags(w => writes.push(w));
 
-    (window as any).__confidence.flags['flag-a'] = { variant: 'v1' };
+    (window as any).__confidence.flags['flag-a'] = { variant: 'v1', assignmentOrigin: 'rule-1' };
     expect(writes).toHaveLength(1);
 
     cleanup();
 
-    (window as any).__confidence.flags['flag-b'] = { variant: 'v2' };
+    (window as any).__confidence.flags['flag-b'] = { variant: 'v2', assignmentOrigin: 'rule-2' };
     expect(writes).toHaveLength(1);
   });
 
   it('preserves data after cleanup', () => {
     observeFlags(() => {});
-    (window as any).__confidence.flags['my-flag'] = { variant: 'treatment' };
+    (window as any).__confidence.flags['my-flag'] = { variant: 'treatment', assignmentOrigin: 'rule-1' };
 
     const cleanup = observeFlags(() => {});
     cleanup();
 
-    expect((window as any).__confidence.flags['my-flag']).toEqual({ variant: 'treatment' });
+    expect((window as any).__confidence.flags['my-flag']).toEqual({ variant: 'treatment', assignmentOrigin: 'rule-1' });
   });
 
   it('ignores writes with missing variant', () => {
