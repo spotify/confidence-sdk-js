@@ -48,6 +48,7 @@ type ResolvedFlag = {
     | 'TARGETING_KEY_ERROR'
     | 'ERROR';
   shouldApply: boolean;
+  assignmentOrigin: string;
 };
 
 export type Applier = (flagName: string) => void;
@@ -65,7 +66,7 @@ export class ReadyFlagResolution implements FlagResolution {
     private readonly onEvaluation?: EvaluationObserver,
   ) {
     for (const resolvedFlag of resolveResponse.resolvedFlags) {
-      const { flag, variant, value, reason, flagSchema } = resolvedFlag;
+      const { flag, variant, value, reason, flagSchema, assignmentOrigin } = resolvedFlag;
       const name = flag.slice(FLAG_PREFIX.length);
 
       const schema = flagSchema ? Schema.parse({ structSchema: flagSchema }) : Schema.ANY;
@@ -74,6 +75,7 @@ export class ReadyFlagResolution implements FlagResolution {
         value: value! as Value.Struct,
         variant,
         reason: toEvaluationReason(reason),
+        assignmentOrigin,
         set shouldApply(value) {
           resolvedFlag.shouldApply = value;
         },
@@ -127,7 +129,7 @@ export class ReadyFlagResolution implements FlagResolution {
 
       const value = (rawValue === null || rawValue === undefined ? defaultValue : rawValue) as T;
 
-      publishFlagEvaluation(FLAG_PREFIX + name, flag.variant);
+      publishFlagEvaluation(FLAG_PREFIX + name, flag.variant, flag.assignmentOrigin);
 
       result = {
         reason,

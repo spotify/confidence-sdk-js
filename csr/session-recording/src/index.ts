@@ -163,10 +163,10 @@ export function initSessionRecorder(options: InitSessionRecorderOptions): Sessio
 
       stopRecorder = record(sendEvent, recordingConfig);
 
-      stopObservingFlags = observeFlags(({ flagKey, variant }) => {
+      stopObservingFlags = observeFlags(({ flagKey, variant, assignmentOrigin }) => {
         const data: FlagEvaluationPluginData = {
           plugin: 'csr:flagEvaluation',
-          payload: { flagKey, variant },
+          payload: { flagKey, variant, assignmentOrigin },
         };
         sendEvent?.({
           type: RecordingEventType.Plugin,

@@ -1,4 +1,7 @@
 import { Confidence } from './Confidence';
+import { publishFlagEvaluation } from './flag-evaluation-global';
+
+jest.mock('./flag-evaluation-global');
 
 describe('Confidence E2E Tests', () => {
   const loggerMock = {
@@ -23,6 +26,16 @@ describe('Confidence E2E Tests', () => {
         value: 3,
         variant: 'flags/web-sdk-e2e-flag/variants/control',
       });
+    });
+
+    it('should publish assignmentOrigin on evaluation', async () => {
+      await confidence.withContext({ targeting_key: 'test-b' }).evaluateFlag('web-sdk-e2e-flag.int', 0);
+
+      expect(publishFlagEvaluation).toHaveBeenCalledWith(
+        'flags/web-sdk-e2e-flag',
+        'flags/web-sdk-e2e-flag/variants/treatment',
+        'flags/web-sdk-e2e-flag/rules/anxow1dwkiydabdtlizm',
+      );
     });
 
     it('should evaluate a flag with null pants context', async () => {

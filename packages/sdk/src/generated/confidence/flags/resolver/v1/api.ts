@@ -107,6 +107,8 @@ export interface ResolvedFlag {
   reason: ResolveReason;
   /** Determines whether the flag should be applied in the clients */
   shouldApply: boolean;
+  /** The name of the rule that matched the flag assignment. */
+  assignmentOrigin: string;
 }
 
 function createBaseResolveFlagsRequest(): ResolveFlagsRequest {
@@ -516,7 +518,15 @@ export const AppliedFlag: MessageFns<AppliedFlag> = {
 };
 
 function createBaseResolvedFlag(): ResolvedFlag {
-  return { flag: '', variant: '', value: undefined, flagSchema: undefined, reason: 0, shouldApply: false };
+  return {
+    flag: '',
+    variant: '',
+    value: undefined,
+    flagSchema: undefined,
+    reason: 0,
+    shouldApply: false,
+    assignmentOrigin: '',
+  };
 }
 
 export const ResolvedFlag: MessageFns<ResolvedFlag> = {
@@ -538,6 +548,9 @@ export const ResolvedFlag: MessageFns<ResolvedFlag> = {
     }
     if (message.shouldApply !== false) {
       writer.uint32(48).bool(message.shouldApply);
+    }
+    if (message.assignmentOrigin !== '') {
+      writer.uint32(58).string(message.assignmentOrigin);
     }
     return writer;
   },
@@ -597,6 +610,14 @@ export const ResolvedFlag: MessageFns<ResolvedFlag> = {
           message.shouldApply = reader.bool();
           continue;
         }
+        case 7: {
+          if (tag !== 58) {
+            break;
+          }
+
+          message.assignmentOrigin = reader.string();
+          continue;
+        }
       }
       if ((tag & 7) === 4 || tag === 0) {
         break;
@@ -614,6 +635,7 @@ export const ResolvedFlag: MessageFns<ResolvedFlag> = {
       flagSchema: isSet(object.flagSchema) ? FlagSchema_StructFlagSchema.fromJSON(object.flagSchema) : undefined,
       reason: isSet(object.reason) ? resolveReasonFromJSON(object.reason) : 0,
       shouldApply: isSet(object.shouldApply) ? globalThis.Boolean(object.shouldApply) : false,
+      assignmentOrigin: isSet(object.assignmentOrigin) ? globalThis.String(object.assignmentOrigin) : '',
     };
   },
 
@@ -636,6 +658,9 @@ export const ResolvedFlag: MessageFns<ResolvedFlag> = {
     }
     if (message.shouldApply !== false) {
       obj.shouldApply = message.shouldApply;
+    }
+    if (message.assignmentOrigin !== '') {
+      obj.assignmentOrigin = message.assignmentOrigin;
     }
     return obj;
   },
