@@ -1,5 +1,17 @@
 # Changelog
 
+## [0.18.2](https://github.com/spotify/confidence-sdk-js/compare/csr-common-v0.18.1...csr-common-v0.18.2) (2026-07-06)
+
+
+### 🐛 Bug Fixes
+
+* **csr-common:** redact session_token from debug logs ([#387](https://github.com/spotify/confidence-sdk-js/issues/387)) ([114ca3d](https://github.com/spotify/confidence-sdk-js/commit/114ca3d008d8764f18515ca6b67a8b349e1fe068)), closes [#364](https://github.com/spotify/confidence-sdk-js/issues/364)
+
+
+### ✨ New Features
+
+* **sdk:** add assignmentOrigin to window API ([#396](https://github.com/spotify/confidence-sdk-js/issues/396)) ([9dd17d5](https://github.com/spotify/confidence-sdk-js/commit/9dd17d5f3af787e39406785f85f0d2e79703e656))
+
 ## [0.18.1](https://github.com/spotify/confidence-sdk-js/compare/csr-common-v0.18.0...csr-common-v0.18.1) (2026-07-01)
 
 
