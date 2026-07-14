@@ -57,6 +57,9 @@ describe('createUploader', () => {
 
   async function loadCreateUploader() {
     vi.resetModules();
+    // .js extension is required by Node16 module resolution for dynamic imports
+    // (static `import` lines work without it because the package is CJS — see package.json).
+    // eslint-disable-next-line es/no-dynamic-import
     const mod = await import('./create-uploader.js');
     return mod.createUploader;
   }
