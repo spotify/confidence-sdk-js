@@ -6,10 +6,12 @@ const STORAGE_TAB_ID = 'csr:tabId';
 const STORAGE_SESSION = 'csr:session';
 const STORAGE_COUNTER = 'csr:counter';
 const DEFAULT_SESSION_TTL_MS = 30 * 60 * 1000;
+const WELCOME_TIMEOUT_MS = 10_000;
 
 interface PortLike {
   postMessage(m: unknown): void;
   setHandler(cb: (data: unknown) => void): void;
+  onError(cb: (err: Error) => void): void;
 }
 
 interface WelcomeMessage {
@@ -118,14 +120,36 @@ export async function createUploader(opts: CreateUploaderOptions): Promise<Uploa
   });
   log?.('tab: hello sent, awaiting welcome');
 
-  const welcome = await welcomePromise;
+  const timeoutMs = opts._welcomeTimeoutMs ?? WELCOME_TIMEOUT_MS;
+  let welcomeTimer: ReturnType<typeof setTimeout> | undefined;
+  const welcomeDeadline = new Promise<never>((_, reject) => {
+    port.onError(err => reject(err));
+    welcomeTimer = setTimeout(
+      () =>
+        reject(
+          new Error(
+            'uploader: welcome timeout. The worker did not respond within ' +
+              `${timeoutMs / 1000}s. This may indicate a CSP policy blocking ` +
+              'the worker script from loading. Check your browser console for errors.',
+          ),
+        ),
+      timeoutMs,
+    );
+  });
+  welcomeDeadline.catch(() => {});
+  const welcome = await Promise.race([
+    welcomePromise.then(msg => {
+      clearTimeout(welcomeTimer);
+      return msg;
+    }),
+    welcomeDeadline,
+  ]);
   log?.(
     welcome.type === 'welcome'
       ? `tab: welcome (${'sessionId' in welcome.result ? `sessionId=${welcome.result.sessionId}` : 'skipRecording'})`
       : `tab: dead reason=${welcome.reason}`,
   );
   if (welcome.type === 'dead') {
-    // Worker died before establishing a session — surface the reason instead of swallowing it as `null`.
     throw new Error(`uploader: ${welcome.reason}`);
   }
   if ('skipRecording' in welcome.result) {
@@ -219,6 +243,7 @@ async function openWorkerPort(
   // Default to a content-derived data URL: identical across tabs (so SharedWorker
   // sharing works) and self-contained (no infrastructure for SDK consumers).
   const url = workerUrl ?? toDataUrl(workerScript);
+  let errorCb: ((err: Error) => void) | null = null;
 
   if (mode === 'shared') {
     const name = await hashSecret(clientSecret);
@@ -230,23 +255,64 @@ async function openWorkerPort(
       type: 'module',
       extendedLifetime: true,
     } as WorkerOptions;
-    const worker = new SharedWorker(url, options);
+
+    let worker: SharedWorker;
+    try {
+      worker = new SharedWorker(url, options);
+    } catch (err) {
+      throw workerLoadError(err, url);
+    }
+
+    worker.onerror = () => {
+      errorCb?.(workerLoadError(null, url));
+    };
     worker.port.start();
     return {
       postMessage: m => worker.port.postMessage(m),
       setHandler: cb => {
         worker.port.onmessage = (e: MessageEvent) => cb(e.data);
       },
+      onError: cb => {
+        errorCb = cb;
+      },
     };
   }
 
-  const worker = new Worker(url, { type: 'module' });
+  let worker: Worker;
+  try {
+    worker = new Worker(url, { type: 'module' });
+  } catch (err) {
+    throw workerLoadError(err, url);
+  }
+
+  worker.onerror = () => {
+    errorCb?.(workerLoadError(null, url));
+  };
   return {
     postMessage: m => worker.postMessage(m),
     setHandler: cb => {
       worker.onmessage = (e: MessageEvent) => cb(e.data);
     },
+    onError: cb => {
+      errorCb = cb;
+    },
   };
+}
+
+function workerLoadError(cause: unknown, url: string): Error {
+  const isDataUrl = url.startsWith('data:');
+  const hint = isDataUrl
+    ? 'This is likely caused by a Content Security Policy (CSP) that blocks `data:` in ' +
+      '`worker-src`. To fix this, either add `data:` to your `worker-src` directive, or ' +
+      'use the `workerUrl` option to serve the worker script from your own origin.'
+    : `Failed to load the worker script from ${url}. Check that the URL is reachable and ` +
+      'that your CSP `worker-src` directive allows it.';
+
+  // eslint-disable-next-line no-console
+  console.warn(`[@spotify-confidence/session-recording] Worker failed to load. ${hint}`);
+
+  const msg = `worker-load-failed: ${cause instanceof Error ? cause.message : 'async load error'}`;
+  return new Error(msg, cause instanceof Error ? { cause } : undefined);
 }
 
 function toDataUrl(script: string): string {

@@ -59,6 +59,8 @@ export interface CreateUploaderOptions {
    * Worker messages are forwarded over the port and tagged so you can tell them apart.
    */
   debugLogger?: (msg: string) => void;
+  /** @internal Override the welcome-handshake timeout for testing. */
+  _welcomeTimeoutMs?: number;
 }
 
 // --- Internal types: used across the worker / tab pieces, not part of the public API. ---
