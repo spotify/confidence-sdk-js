@@ -87,6 +87,9 @@ const recorder = initSessionRecorder({
   // Recording mode
   mode: 'automatic', // 'automatic' (default) or 'manual'
 
+  // CSP: self-hosted worker (only needed when data: and blob: are blocked)
+  // workerUrl: '/confidence-worker.js',
+
   // Debug
   debugLogger: msg => console.log(msg), // lifecycle/transport messages (default: off, or console.log when CSR_DEBUG is set in sessionStorage)
 });
@@ -141,6 +144,74 @@ sessionStorage.setItem('CSR_DEBUG', 'true');
 Then reload the page. The SDK will detect the flag and log to `console.log` automatically. Remove it with `sessionStorage.removeItem('CSR_DEBUG')` when you're done.
 
 > **Tip:** We recommend enabling debug logging when first integrating the SDK. It lets you confirm that a session is established, events are flowing, and the backend is reachable — all before you open the Confidence dashboard.
+
+## Content Security Policy (CSP)
+
+The SDK runs its upload logic in a Web Worker. By default it loads the worker from a `data:` URL, which requires no setup but may be blocked by strict Content Security Policies.
+
+### Required directives
+
+| Directive    | Value                                                                       |
+| ------------ | --------------------------------------------------------------------------- |
+| `worker-src` | `data:` (default), or `blob:` (automatic fallback), or `'self'` (see below) |
+| `connect-src` | `https://recording.confidence.dev wss://recording-ws.confidence.dev`       |
+
+### If `data:` is blocked
+
+The SDK automatically falls back to a `blob:` URL. Most CSPs already allow `blob:` in `worker-src` — if yours does, no action is needed.
+
+### If both `data:` and `blob:` are blocked
+
+Self-host the worker script. The package ships a standalone file you can copy to your static assets:
+
+**Option A: copy from `node_modules`**
+
+```bash
+# After install, copy the worker to your public directory
+cp node_modules/@spotify-confidence/session-recording/dist/confidence-worker.js public/
+```
+
+**Option B: build-tool integration (Vite, webpack, etc.)**
+
+```typescript
+import { workerScript } from '@spotify-confidence/session-recording/worker';
+import { writeFileSync } from 'fs';
+
+// In a build plugin or script — write the worker to your output directory
+writeFileSync('dist/confidence-worker.js', workerScript);
+```
+
+**Option C: serve via a route (Express, Next.js API route, etc.)**
+
+```typescript
+import { workerScript } from '@spotify-confidence/session-recording/worker';
+
+app.get('/confidence-worker.js', (req, res) => {
+  res.type('application/javascript').send(workerScript);
+});
+```
+
+Then pass the URL:
+
+```typescript
+const recorder = initSessionRecorder({
+  clientSecret: '<your-client-secret>',
+  workerUrl: '/confidence-worker.js',
+});
+```
+
+Your CSP only needs `worker-src 'self'` with this setup.
+
+> **Note:** The worker version must match the SDK version. After upgrading `@spotify-confidence/session-recording`, re-copy or re-deploy the worker file.
+
+### Troubleshooting
+
+If recording silently fails, open DevTools and look for:
+
+- A `SecurityError` mentioning `worker-src` — your CSP blocks the worker. Use one of the options above.
+- A blocked `connect-src` request to `recording.confidence.dev` — add the hosts to your CSP.
+
+Enable [debug logging](#debug-logging) to see the full lifecycle and pinpoint where it fails.
 
 ## Manual mode
 

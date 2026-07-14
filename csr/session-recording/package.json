@@ -12,7 +12,7 @@
   "types": "src/index.ts",
   "scripts": {
     "prebuild": "node sync-version.mjs",
-    "build": "yarn run -T tsdown",
+    "build": "yarn run -T tsdown && node scripts/emit-worker-file.mjs",
     "typecheck": "tsc --noEmit"
   },
   "files": [
@@ -31,6 +31,11 @@
         "types": "./dist/index.d.ts",
         "import": "./dist/index.js",
         "require": "./dist/index.cjs"
+      },
+      "./worker": {
+        "types": "./dist/worker.d.ts",
+        "import": "./dist/worker.js",
+        "require": "./dist/worker.cjs"
       }
     }
   },
