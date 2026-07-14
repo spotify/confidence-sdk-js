@@ -41,17 +41,17 @@ jobs:
     if: ${{ needs.Release-Please.outputs.releases_created }}
     steps:
       - name: Checkout
-        uses: actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5 # v4
+        uses: actions/checkout@v6
         with:
           ref: ${{ needs.Release-Please.outputs.release_tag_name }}
       - name: Setup Node
-        uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4
+        uses: actions/setup-node@v6
         with:
-          node-version: '20'
+          node-version: '22'
           registry-url: 'https://registry.npmjs.org'
       - name: Update npm # Ensure npm 11.5.1 or later for trusted publishing
         shell: bash
-        run: npm install -g npm@latest
+        run: npm install -g npm@11
       - name: Install dependencies
         shell: bash
         run: corepack enable && yarn install

@@ -4,19 +4,16 @@ inputs:
   node-version:
     description: 'Node version to setup'
     required: false
-    default: '20'
+    default: '22'
 
 runs:
   using: 'composite'
   steps:
     - name: Setup Node
-      uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4
+      uses: actions/setup-node@v6
       with:
         node-version: ${{ inputs.node-version }}
         scope: '@spotify-confidence'
-    - name: Update npm
-      shell: bash
-      run: npm install -g npm@latest
     - name: Install dependencies
       shell: bash
       run: corepack enable && yarn install
