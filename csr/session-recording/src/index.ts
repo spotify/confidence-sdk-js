@@ -175,7 +175,16 @@ export function initSessionRecorder(options: InitSessionRecorderOptions): Sessio
         });
       });
     } catch (err) {
-      debugLogger?.(`Recording disabled: ${err instanceof Error ? err.message : String(err)}`);
+      const msg = err instanceof Error ? err.message : String(err);
+      debugLogger?.(`Recording disabled: ${msg}`);
+      try {
+        if (process.env.NODE_ENV !== 'production') {
+          // eslint-disable-next-line no-console
+          console.warn(`[@spotify-confidence/session-recording] Recording disabled: ${msg}`);
+        }
+      } catch (_e) {
+        // process may not exist in all environments
+      }
     }
   }
 
