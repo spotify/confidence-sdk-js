@@ -93,6 +93,16 @@ describe('initSessionRecorder', () => {
     expect(recorder).toBeDefined();
   });
 
+  it('surfaces createUploader errors via debugLogger', async () => {
+    createUploader.mockRejectedValueOnce(new Error('worker-load-failed: worker-src'));
+
+    const logger = vi.fn();
+    initSessionRecorder({ clientSecret: 'secret', debugLogger: logger });
+    await flushPromises();
+
+    expect(logger).toHaveBeenCalledWith(expect.stringContaining('worker-load-failed'));
+  });
+
   it('manual mode does not init until start is called', async () => {
     createUploader.mockResolvedValueOnce(mockUploader());
     record.mockReturnValueOnce(() => {});
