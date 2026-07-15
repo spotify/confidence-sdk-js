@@ -263,8 +263,8 @@ async function openWorkerPort(
       throw workerLoadError(err, url);
     }
 
-    worker.onerror = () => {
-      errorCb?.(workerLoadError(null, url));
+    worker.onerror = e => {
+      errorCb?.(workerLoadError(e, url));
     };
     worker.port.start();
     return {
@@ -285,8 +285,8 @@ async function openWorkerPort(
     throw workerLoadError(err, url);
   }
 
-  worker.onerror = () => {
-    errorCb?.(workerLoadError(null, url));
+  worker.onerror = e => {
+    errorCb?.(workerLoadError(e, url));
   };
   return {
     postMessage: m => worker.postMessage(m),
@@ -308,10 +308,7 @@ function workerLoadError(cause: unknown, url: string): Error {
     : `Failed to load the worker script from ${url}. Check that the URL is reachable and ` +
       'that your CSP `worker-src` directive allows it.';
 
-  // eslint-disable-next-line no-console
-  console.warn(`[@spotify-confidence/session-recording] Worker failed to load. ${hint}`);
-
-  const msg = `worker-load-failed: ${cause instanceof Error ? cause.message : 'async load error'}`;
+  const msg = `worker-load-failed: ${hint}`;
   return new Error(msg, cause instanceof Error ? { cause } : undefined);
 }
 

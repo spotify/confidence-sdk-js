@@ -29,11 +29,7 @@ function fakeSessionStorage(): Storage {
 }
 
 describe('createUploader', () => {
-  let warnSpy: ReturnType<typeof vi.spyOn>;
-
   beforeEach(() => {
-    warnSpy = vi.spyOn(console, 'warn').mockImplementation(() => {});
-
     globalThis.sessionStorage = fakeSessionStorage();
 
     if (!globalThis.crypto) {
@@ -65,7 +61,7 @@ describe('createUploader', () => {
   }
 
   describe('worker load failure (sync throw)', () => {
-    it('throws and warns when Worker constructor throws (CSP block)', async () => {
+    it('throws with CSP hint when Worker constructor throws', async () => {
       (globalThis as Record<string, unknown>).Worker = class {
         constructor() {
           throw new DOMException('Refused to create a worker', 'SecurityError');
@@ -75,11 +71,10 @@ describe('createUploader', () => {
 
       const createUploader = await loadCreateUploader();
 
-      await expect(createUploader({ ...DEFAULTS, workerMode: 'dedicated' })).rejects.toThrow(/worker-load-failed/);
-      expect(warnSpy).toHaveBeenCalledWith(expect.stringContaining('worker-src'));
+      await expect(createUploader({ ...DEFAULTS, workerMode: 'dedicated' })).rejects.toThrow(/worker-src/);
     });
 
-    it('throws and warns when SharedWorker constructor throws', async () => {
+    it('throws with CSP hint when SharedWorker constructor throws', async () => {
       (globalThis as Record<string, unknown>).SharedWorker = class {
         constructor() {
           throw new DOMException('Refused to create a worker', 'SecurityError');
@@ -88,13 +83,12 @@ describe('createUploader', () => {
 
       const createUploader = await loadCreateUploader();
 
-      await expect(createUploader({ ...DEFAULTS, workerMode: 'shared' })).rejects.toThrow(/worker-load-failed/);
-      expect(warnSpy).toHaveBeenCalledWith(expect.stringContaining('worker-src'));
+      await expect(createUploader({ ...DEFAULTS, workerMode: 'shared' })).rejects.toThrow(/worker-src/);
     });
   });
 
   describe('worker load failure (async error)', () => {
-    it('throws and warns when dedicated Worker fires onerror', async () => {
+    it('throws with CSP hint when dedicated Worker fires onerror', async () => {
       (globalThis as Record<string, unknown>).Worker = class {
         onerror: ((e: Event) => void) | null = null;
         onmessage: ((e: MessageEvent) => void) | null = null;
@@ -107,11 +101,10 @@ describe('createUploader', () => {
 
       const createUploader = await loadCreateUploader();
 
-      await expect(createUploader({ ...DEFAULTS, workerMode: 'dedicated' })).rejects.toThrow(/worker-load-failed/);
-      expect(warnSpy).toHaveBeenCalledWith(expect.stringContaining('worker-src'));
+      await expect(createUploader({ ...DEFAULTS, workerMode: 'dedicated' })).rejects.toThrow(/worker-src/);
     });
 
-    it('throws and warns when SharedWorker fires onerror', async () => {
+    it('throws with CSP hint when SharedWorker fires onerror', async () => {
       (globalThis as Record<string, unknown>).SharedWorker = class {
         onerror: ((e: Event) => void) | null = null;
         port = {
@@ -126,8 +119,7 @@ describe('createUploader', () => {
 
       const createUploader = await loadCreateUploader();
 
-      await expect(createUploader({ ...DEFAULTS, workerMode: 'shared' })).rejects.toThrow(/worker-load-failed/);
-      expect(warnSpy).toHaveBeenCalledWith(expect.stringContaining('worker-src'));
+      await expect(createUploader({ ...DEFAULTS, workerMode: 'shared' })).rejects.toThrow(/worker-src/);
     });
   });
 
@@ -149,7 +141,7 @@ describe('createUploader', () => {
   });
 
   describe('custom workerUrl', () => {
-    it('includes the URL in the warning when a custom workerUrl fails', async () => {
+    it('includes the URL in the error when a custom workerUrl fails', async () => {
       (globalThis as Record<string, unknown>).Worker = class {
         constructor() {
           throw new Error('Not found');
@@ -161,8 +153,7 @@ describe('createUploader', () => {
 
       await expect(
         createUploader({ ...DEFAULTS, workerMode: 'dedicated', workerUrl: 'https://cdn.example/worker.js' }),
-      ).rejects.toThrow(/worker-load-failed/);
-      expect(warnSpy).toHaveBeenCalledWith(expect.stringContaining('https://cdn.example/worker.js'));
+      ).rejects.toThrow(/https:\/\/cdn\.example\/worker\.js/);
     });
   });
 });
