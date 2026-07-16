@@ -36,7 +36,8 @@
         "types": "./dist/worker.d.ts",
         "import": "./dist/worker.js",
         "require": "./dist/worker.cjs"
-      }
+      },
+      "./confidence-worker.js": "./dist/confidence-worker.js"
     }
   },
   "dependencies": {
