@@ -51,7 +51,11 @@ export async function createUploader(opts: CreateUploaderOptions): Promise<Uploa
     } counterHint=${counterHint}`,
   );
 
-  const port = await openWorkerPort(mode, opts.clientSecret, opts.workerUrl);
+  const workerName = mode === 'shared' ? await hashSecret(opts.clientSecret) : undefined;
+  const { port, urlScheme } = openWorkerPort(mode, opts.workerUrl, workerName, log);
+  log?.(
+    `tab: worker loaded via ${urlScheme}${urlScheme === 'blob' ? ' (fallback — cross-tab sharing unavailable)' : ''}`,
+  );
 
   // State accessible to both the message handler (for post-welcome state/dead messages)
   // and the post-welcome setup code below. Mutable so welcome can populate them.
@@ -235,58 +239,82 @@ function resolveMode(mode: 'shared' | 'dedicated' | 'auto'): 'shared' | 'dedicat
   return mode;
 }
 
-async function openWorkerPort(
+type UrlScheme = 'data' | 'blob' | 'custom';
+
+function openWorkerPort(
   mode: 'shared' | 'dedicated',
-  clientSecret: string,
   workerUrl: string | undefined,
-): Promise<PortLike> {
-  // Default to a content-derived data URL: identical across tabs (so SharedWorker
-  // sharing works) and self-contained (no infrastructure for SDK consumers).
-  const url = workerUrl ?? toDataUrl(workerScript);
-  let errorCb: ((err: Error) => void) | null = null;
-
-  if (mode === 'shared') {
-    const name = await hashSecret(clientSecret);
-    // `extendedLifetime` keeps the SharedWorker alive across top-level navigations on
-    // Chrome 139+. No-op everywhere else. Cast required because the option isn't in the
-    // standard SharedWorker type yet.
-    const options = {
-      name,
-      type: 'module',
-      extendedLifetime: true,
-    } as WorkerOptions;
-
-    let worker: SharedWorker;
-    try {
-      worker = new SharedWorker(url, options);
-    } catch (err) {
-      throw workerLoadError(err, url);
-    }
-
-    worker.onerror = e => {
-      errorCb?.(workerLoadError(e, url));
-    };
-    worker.port.start();
-    return {
-      postMessage: m => worker.port.postMessage(m),
-      setHandler: cb => {
-        worker.port.onmessage = (e: MessageEvent) => cb(e.data);
-      },
-      onError: cb => {
-        errorCb = cb;
-      },
-    };
+  workerName: string | undefined,
+  log: ((msg: string) => void) | undefined,
+): { port: PortLike; urlScheme: UrlScheme } {
+  if (workerUrl) {
+    return { port: createWorker(mode, workerUrl, workerName), urlScheme: 'custom' };
   }
 
-  let worker: Worker;
+  const dataUrl = toDataUrl(workerScript);
   try {
-    worker = new Worker(url, { type: 'module' });
-  } catch (err) {
-    throw workerLoadError(err, url);
+    return { port: createWorker(mode, dataUrl, workerName), urlScheme: 'data' };
+  } catch (_dataErr) {
+    log?.('tab: data: worker blocked, falling back to blob: URL (dedicated mode)');
+    const blobUrl = toBlobUrl(workerScript);
+    try {
+      return { port: createDedicatedWorker(blobUrl), urlScheme: 'blob' };
+    } catch (blobErr) {
+      const hint =
+        'Your Content Security Policy blocks both `data:` and `blob:` in `worker-src`. ' +
+        'To fix this, either add `blob:` to your `worker-src` directive, or ' +
+        'use the `workerUrl` option to serve the worker script from your own origin.';
+      log?.(`tab: worker-load-failed: ${hint}`);
+      throw new Error(
+        `worker-load-failed: ${hint}`,
+        blobErr instanceof Error ? { cause: blobErr } : undefined,
+      );
+    }
   }
+}
+
+function createWorker(mode: 'shared' | 'dedicated', url: string, workerName: string | undefined): PortLike {
+  if (mode === 'shared') return createSharedWorker(url, workerName!);
+  return createDedicatedWorker(url);
+}
+
+function createSharedWorker(url: string, name: string): PortLike {
+  const options = {
+    name,
+    type: 'module',
+    extendedLifetime: true,
+  } as WorkerOptions;
+  const worker = new SharedWorker(url, options);
+  let errorCb: ((err: Error) => void) | null = null;
+  let bufferedError: Error | null = null;
 
   worker.onerror = e => {
-    errorCb?.(workerLoadError(e, url));
+    const err = workerLoadError(e, url);
+    if (errorCb) errorCb(err);
+    else bufferedError = err;
+  };
+  worker.port.start();
+  return {
+    postMessage: m => worker.port.postMessage(m),
+    setHandler: cb => {
+      worker.port.onmessage = (e: MessageEvent) => cb(e.data);
+    },
+    onError: cb => {
+      errorCb = cb;
+      if (bufferedError) cb(bufferedError);
+    },
+  };
+}
+
+function createDedicatedWorker(url: string): PortLike {
+  const worker = new Worker(url, { type: 'module' });
+  let errorCb: ((err: Error) => void) | null = null;
+  let bufferedError: Error | null = null;
+
+  worker.onerror = e => {
+    const err = workerLoadError(e, url);
+    if (errorCb) errorCb(err);
+    else bufferedError = err;
   };
   return {
     postMessage: m => worker.postMessage(m),
@@ -295,6 +323,7 @@ async function openWorkerPort(
     },
     onError: cb => {
       errorCb = cb;
+      if (bufferedError) cb(bufferedError);
     },
   };
 }
@@ -319,6 +348,10 @@ function toDataUrl(script: string): string {
   let binary = '';
   for (let i = 0; i < bytes.length; i++) binary += String.fromCharCode(bytes[i]);
   return `data:application/javascript;base64,${btoa(binary)}`;
+}
+
+function toBlobUrl(script: string): string {
+  return URL.createObjectURL(new Blob([script], { type: 'application/javascript' }));
 }
 
 async function hashSecret(secret: string): Promise<string> {
