@@ -181,7 +181,6 @@ describe('createUploader', () => {
           postMessage() {},
         };
         constructor() {
-          // Chrome doesn't throw — it fires onerror asynchronously
           setTimeout(() => this.onerror?.(new Event('error')), 0);
         }
       };
@@ -196,13 +195,15 @@ describe('createUploader', () => {
 
       const createUploader = await loadCreateUploader();
       const logs: string[] = [];
-      createUploader({ ...DEFAULTS, workerMode: 'shared', debugLogger: m => logs.push(m) });
-      // Multiple ticks needed: hashSecret (microtask) → openWorkerPort's
-      // setTimeout probe (macrotask) → blob fallback creation
-      await tick();
-      await tick();
-      await tick();
-      await tick();
+      // Await the full async chain: openWorkerPort detects the async onerror,
+      // falls back to blob, then createUploader eventually hits the welcome timeout.
+      const p = createUploader({
+        ...DEFAULTS,
+        workerMode: 'shared',
+        debugLogger: m => logs.push(m),
+        _welcomeTimeoutMs: 50,
+      });
+      await expect(p).rejects.toThrow(/welcome timeout/);
 
       expect(blobUrls).toHaveLength(1);
       expect(constructedUrl).toBe(blobUrls[0]);
