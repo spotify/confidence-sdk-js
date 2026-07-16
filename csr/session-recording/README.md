@@ -151,10 +151,10 @@ The SDK runs its upload logic in a Web Worker. By default it loads the worker fr
 
 ### Required directives
 
-| Directive    | Value                                                                       |
-| ------------ | --------------------------------------------------------------------------- |
-| `worker-src` | `data:` (default), or `blob:` (automatic fallback), or `'self'` (see below) |
-| `connect-src` | `https://recording.confidence.dev wss://recording-ws.confidence.dev`       |
+| Directive     | Value                                                                       |
+| ------------- | --------------------------------------------------------------------------- |
+| `worker-src`  | `data:` (default), or `blob:` (automatic fallback), or `'self'` (see below) |
+| `connect-src` | `https://recording.confidence.dev wss://recording-ws.confidence.dev`        |
 
 ### If `data:` is blocked
 
