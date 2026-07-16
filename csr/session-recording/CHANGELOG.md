@@ -1,5 +1,20 @@
 # Changelog
 
+## [0.18.4](https://github.com/spotify/confidence-sdk-js/compare/session-recording-v0.18.3...session-recording-v0.18.4) (2026-07-16)
+
+
+### 🐛 Bug Fixes
+
+* **csr:** attempt to detect worker load failures caused by CSP ([#409](https://github.com/spotify/confidence-sdk-js/issues/409)) ([d0e38dc](https://github.com/spotify/confidence-sdk-js/commit/d0e38dc746bc571ee020d09f8922acb14ae7d7ae))
+
+
+### Dependencies
+
+* The following workspace dependencies were updated
+  * dependencies
+    * @spotify-confidence/csr-common bumped to 0.18.3
+    * @spotify-confidence/csr-recorder bumped to 0.17.9
+
 ## [0.18.3](https://github.com/spotify/confidence-sdk-js/compare/session-recording-v0.18.2...session-recording-v0.18.3) (2026-07-06)
 
 
