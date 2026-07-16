@@ -52,7 +52,7 @@ export async function createUploader(opts: CreateUploaderOptions): Promise<Uploa
   );
 
   const workerName = mode === 'shared' ? await hashSecret(opts.clientSecret) : undefined;
-  const { port, urlScheme } = openWorkerPort(mode, opts.workerUrl, workerName, log);
+  const { port, urlScheme } = await openWorkerPort(mode, opts.workerUrl, workerName, log);
   log?.(
     `tab: worker loaded via ${urlScheme}${urlScheme === 'blob' ? ' (fallback — cross-tab sharing unavailable)' : ''}`,
   );
@@ -241,19 +241,29 @@ function resolveMode(mode: 'shared' | 'dedicated' | 'auto'): 'shared' | 'dedicat
 
 type UrlScheme = 'data' | 'blob' | 'custom';
 
-function openWorkerPort(
+interface InternalPort extends PortLike {
+  getBufferedError(): Error | null;
+}
+
+async function openWorkerPort(
   mode: 'shared' | 'dedicated',
   workerUrl: string | undefined,
   workerName: string | undefined,
   log: ((msg: string) => void) | undefined,
-): { port: PortLike; urlScheme: UrlScheme } {
+): Promise<{ port: PortLike; urlScheme: UrlScheme }> {
   if (workerUrl) {
     return { port: createWorker(mode, workerUrl, workerName), urlScheme: 'custom' };
   }
 
   const dataUrl = toDataUrl(workerScript);
   try {
-    return { port: createWorker(mode, dataUrl, workerName), urlScheme: 'data' };
+    const port = createWorker(mode, dataUrl, workerName);
+    // Chrome's SharedWorker doesn't throw synchronously for CSP blocks — it fires
+    // onerror asynchronously. Yield one macrotask to let it fire, then check.
+    await new Promise(resolve => setTimeout(resolve, 0));
+    const asyncErr = port.getBufferedError();
+    if (asyncErr) throw asyncErr;
+    return { port, urlScheme: 'data' };
   } catch (_dataErr) {
     log?.('tab: data: worker blocked, falling back to blob: URL (dedicated mode)');
     const blobUrl = toBlobUrl(workerScript);
@@ -265,20 +275,17 @@ function openWorkerPort(
         'To fix this, either add `blob:` to your `worker-src` directive, or ' +
         'use the `workerUrl` option to serve the worker script from your own origin.';
       log?.(`tab: worker-load-failed: ${hint}`);
-      throw new Error(
-        `worker-load-failed: ${hint}`,
-        blobErr instanceof Error ? { cause: blobErr } : undefined,
-      );
+      throw new Error(`worker-load-failed: ${hint}`, blobErr instanceof Error ? { cause: blobErr } : undefined);
     }
   }
 }
 
-function createWorker(mode: 'shared' | 'dedicated', url: string, workerName: string | undefined): PortLike {
+function createWorker(mode: 'shared' | 'dedicated', url: string, workerName: string | undefined): InternalPort {
   if (mode === 'shared') return createSharedWorker(url, workerName!);
   return createDedicatedWorker(url);
 }
 
-function createSharedWorker(url: string, name: string): PortLike {
+function createSharedWorker(url: string, name: string): InternalPort {
   const options = {
     name,
     type: 'module',
@@ -303,10 +310,11 @@ function createSharedWorker(url: string, name: string): PortLike {
       errorCb = cb;
       if (bufferedError) cb(bufferedError);
     },
+    getBufferedError: () => bufferedError,
   };
 }
 
-function createDedicatedWorker(url: string): PortLike {
+function createDedicatedWorker(url: string): InternalPort {
   const worker = new Worker(url, { type: 'module' });
   let errorCb: ((err: Error) => void) | null = null;
   let bufferedError: Error | null = null;
@@ -325,6 +333,7 @@ function createDedicatedWorker(url: string): PortLike {
       errorCb = cb;
       if (bufferedError) cb(bufferedError);
     },
+    getBufferedError: () => bufferedError,
   };
 }
 

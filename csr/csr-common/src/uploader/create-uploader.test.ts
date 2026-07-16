@@ -171,6 +171,44 @@ describe('createUploader', () => {
       expect(logs.some(l => l.includes('falling back to blob:'))).toBe(true);
     });
 
+    it('falls back to blob: when SharedWorker onerror fires asynchronously (Chrome CSP)', async () => {
+      let constructedUrl: string | undefined;
+      (globalThis as Record<string, unknown>).SharedWorker = class {
+        onerror: ((e: Event) => void) | null = null;
+        port = {
+          start() {},
+          onmessage: null as ((e: MessageEvent) => void) | null,
+          postMessage() {},
+        };
+        constructor() {
+          // Chrome doesn't throw — it fires onerror asynchronously
+          setTimeout(() => this.onerror?.(new Event('error')), 0);
+        }
+      };
+      (globalThis as Record<string, unknown>).Worker = class {
+        onerror: ((e: Event) => void) | null = null;
+        onmessage: ((e: MessageEvent) => void) | null = null;
+        postMessage() {}
+        constructor(url: string) {
+          constructedUrl = url;
+        }
+      };
+
+      const createUploader = await loadCreateUploader();
+      const logs: string[] = [];
+      createUploader({ ...DEFAULTS, workerMode: 'shared', debugLogger: m => logs.push(m) });
+      // Multiple ticks needed: hashSecret (microtask) → openWorkerPort's
+      // setTimeout probe (macrotask) → blob fallback creation
+      await tick();
+      await tick();
+      await tick();
+      await tick();
+
+      expect(blobUrls).toHaveLength(1);
+      expect(constructedUrl).toBe(blobUrls[0]);
+      expect(logs.some(l => l.includes('falling back to blob:'))).toBe(true);
+    });
+
     it('throws with CSP hint when both data: and blob: are blocked', async () => {
       (globalThis as Record<string, unknown>).Worker = class {
         constructor() {
