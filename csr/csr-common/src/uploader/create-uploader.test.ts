@@ -28,7 +28,46 @@ function fakeSessionStorage(): Storage {
   };
 }
 
+class StubWorker {
+  onerror: ((e: Event) => void) | null = null;
+  onmessage: ((e: MessageEvent) => void) | null = null;
+  postMessage() {}
+}
+
+function installWorkerStubs(opts?: { workerThrows?: boolean; sharedWorkerThrows?: boolean }) {
+  (globalThis as Record<string, unknown>).Worker = opts?.workerThrows
+    ? class {
+        constructor() {
+          throw new DOMException('Blocked', 'SecurityError');
+        }
+      }
+    : StubWorker;
+
+  if (opts?.sharedWorkerThrows) {
+    (globalThis as Record<string, unknown>).SharedWorker = class {
+      constructor() {
+        throw new DOMException('Blocked', 'SecurityError');
+      }
+    };
+  } else {
+    (globalThis as Record<string, unknown>).SharedWorker = class {
+      onerror: ((e: Event) => void) | null = null;
+      port = {
+        start() {},
+        onmessage: null as ((e: MessageEvent) => void) | null,
+        postMessage() {},
+      };
+    };
+  }
+}
+
+function tick() {
+  return new Promise(r => setTimeout(r, 0));
+}
+
 describe('createUploader', () => {
+  const blobUrls: string[] = [];
+
   beforeEach(() => {
     globalThis.sessionStorage = fakeSessionStorage();
 
@@ -44,10 +83,17 @@ describe('createUploader', () => {
         digest: async () => new ArrayBuffer(32),
       };
     }
+
+    vi.spyOn(URL, 'createObjectURL').mockImplementation(() => {
+      const url = `blob:http://localhost/${blobUrls.length}`;
+      blobUrls.push(url);
+      return url;
+    });
   });
 
   afterEach(() => {
     vi.restoreAllMocks();
+    blobUrls.length = 0;
     delete (globalThis as Record<string, unknown>).SharedWorker;
   });
 
@@ -60,11 +106,114 @@ describe('createUploader', () => {
     return mod.createUploader;
   }
 
-  describe('worker load failure (sync throw)', () => {
-    it('throws with CSP hint when Worker constructor throws', async () => {
+  describe('blob: fallback', () => {
+    it('uses data: URL when Worker constructor succeeds', async () => {
+      installWorkerStubs();
+
+      const createUploader = await loadCreateUploader();
+      const logs: string[] = [];
+      createUploader({ ...DEFAULTS, workerMode: 'dedicated', debugLogger: m => logs.push(m) });
+      await tick();
+
+      expect(blobUrls).toHaveLength(0);
+      expect(logs.some(l => l.includes('via data'))).toBe(true);
+    });
+
+    it('falls back to blob: when data: Worker throws', async () => {
+      let constructedUrl: string | undefined;
+      (globalThis as Record<string, unknown>).Worker = class {
+        onerror: ((e: Event) => void) | null = null;
+        onmessage: ((e: MessageEvent) => void) | null = null;
+        postMessage() {}
+        constructor(url: string) {
+          if (url.startsWith('data:')) {
+            throw new DOMException('Blocked', 'SecurityError');
+          }
+          constructedUrl = url;
+        }
+      };
+      delete (globalThis as Record<string, unknown>).SharedWorker;
+
+      const createUploader = await loadCreateUploader();
+      const logs: string[] = [];
+      createUploader({ ...DEFAULTS, workerMode: 'dedicated', debugLogger: m => logs.push(m) });
+      await tick();
+
+      expect(blobUrls).toHaveLength(1);
+      expect(constructedUrl).toBe(blobUrls[0]);
+      expect(logs.some(l => l.includes('falling back to blob:'))).toBe(true);
+      expect(logs.some(l => l.includes('via blob'))).toBe(true);
+    });
+
+    it('falls back to blob: dedicated worker when SharedWorker data: throws', async () => {
+      (globalThis as Record<string, unknown>).SharedWorker = class {
+        constructor() {
+          throw new DOMException('Blocked', 'SecurityError');
+        }
+      };
+      let constructedUrl: string | undefined;
+      (globalThis as Record<string, unknown>).Worker = class {
+        onerror: ((e: Event) => void) | null = null;
+        onmessage: ((e: MessageEvent) => void) | null = null;
+        postMessage() {}
+        constructor(url: string) {
+          constructedUrl = url;
+        }
+      };
+
+      const createUploader = await loadCreateUploader();
+      const logs: string[] = [];
+      createUploader({ ...DEFAULTS, workerMode: 'shared', debugLogger: m => logs.push(m) });
+      await tick();
+
+      expect(blobUrls).toHaveLength(1);
+      expect(constructedUrl).toBe(blobUrls[0]);
+      expect(logs.some(l => l.includes('falling back to blob:'))).toBe(true);
+    });
+
+    it('falls back to blob: when SharedWorker onerror fires asynchronously (Chrome CSP)', async () => {
+      let constructedUrl: string | undefined;
+      (globalThis as Record<string, unknown>).SharedWorker = class {
+        onerror: ((e: Event) => void) | null = null;
+        port = {
+          start() {},
+          onmessage: null as ((e: MessageEvent) => void) | null,
+          postMessage() {},
+        };
+        constructor() {
+          setTimeout(() => this.onerror?.(new Event('error')), 0);
+        }
+      };
+      (globalThis as Record<string, unknown>).Worker = class {
+        onerror: ((e: Event) => void) | null = null;
+        onmessage: ((e: MessageEvent) => void) | null = null;
+        postMessage() {}
+        constructor(url: string) {
+          constructedUrl = url;
+        }
+      };
+
+      const createUploader = await loadCreateUploader();
+      const logs: string[] = [];
+      // Await the full async chain: openWorkerPort detects the async onerror,
+      // falls back to blob, then createUploader eventually hits the welcome timeout.
+      const p = createUploader({
+        ...DEFAULTS,
+        workerMode: 'shared',
+        debugLogger: m => logs.push(m),
+        _welcomeTimeoutMs: 50,
+      });
+      await expect(p).rejects.toThrow(/welcome timeout/);
+
+      expect(blobUrls).toHaveLength(1);
+      expect(constructedUrl).toBe(blobUrls[0]);
+      expect(logs.some(l => l.includes('falling back to blob:'))).toBe(true);
+    });
+
+    it('throws with CSP hint when both data: and blob: are blocked', async () => {
       (globalThis as Record<string, unknown>).Worker = class {
         constructor() {
-          throw new DOMException('Refused to create a worker', 'SecurityError');
+          throw new DOMException('Blocked', 'SecurityError');
         }
       };
       delete (globalThis as Record<string, unknown>).SharedWorker;
@@ -74,16 +223,37 @@ describe('createUploader', () => {
       await expect(createUploader({ ...DEFAULTS, workerMode: 'dedicated' })).rejects.toThrow(/worker-src/);
     });
 
-    it('throws with CSP hint when SharedWorker constructor throws', async () => {
-      (globalThis as Record<string, unknown>).SharedWorker = class {
+    it('logs CSP hint via debugLogger when both data: and blob: are blocked', async () => {
+      (globalThis as Record<string, unknown>).Worker = class {
         constructor() {
-          throw new DOMException('Refused to create a worker', 'SecurityError');
+          throw new DOMException('Blocked', 'SecurityError');
         }
       };
+      delete (globalThis as Record<string, unknown>).SharedWorker;
+
+      const createUploader = await loadCreateUploader();
+      const logs: string[] = [];
+
+      await expect(
+        createUploader({ ...DEFAULTS, workerMode: 'dedicated', debugLogger: m => logs.push(m) }),
+      ).rejects.toThrow();
+      expect(logs.some(l => l.includes('worker-load-failed') && l.includes('worker-src'))).toBe(true);
+    });
+
+    it('does not fall back when a custom workerUrl is provided', async () => {
+      (globalThis as Record<string, unknown>).Worker = class {
+        constructor() {
+          throw new Error('custom URL not found');
+        }
+      };
+      delete (globalThis as Record<string, unknown>).SharedWorker;
 
       const createUploader = await loadCreateUploader();
 
-      await expect(createUploader({ ...DEFAULTS, workerMode: 'shared' })).rejects.toThrow(/worker-src/);
+      await expect(
+        createUploader({ ...DEFAULTS, workerMode: 'dedicated', workerUrl: 'https://cdn.example/worker.js' }),
+      ).rejects.toThrow();
+      expect(blobUrls).toHaveLength(0);
     });
   });
 
@@ -137,23 +307,6 @@ describe('createUploader', () => {
       await expect(createUploader({ ...DEFAULTS, workerMode: 'dedicated', _welcomeTimeoutMs: 50 })).rejects.toThrow(
         /welcome timeout/,
       );
-    });
-  });
-
-  describe('custom workerUrl', () => {
-    it('includes the URL in the error when a custom workerUrl fails', async () => {
-      (globalThis as Record<string, unknown>).Worker = class {
-        constructor() {
-          throw new Error('Not found');
-        }
-      };
-      delete (globalThis as Record<string, unknown>).SharedWorker;
-
-      const createUploader = await loadCreateUploader();
-
-      await expect(
-        createUploader({ ...DEFAULTS, workerMode: 'dedicated', workerUrl: 'https://cdn.example/worker.js' }),
-      ).rejects.toThrow(/https:\/\/cdn\.example\/worker\.js/);
     });
   });
 });
