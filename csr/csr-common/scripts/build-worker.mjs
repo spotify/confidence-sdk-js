@@ -1,12 +1,11 @@
 #!/usr/bin/env node
 import { rolldown } from 'rolldown';
-import { readFileSync, writeFileSync } from 'node:fs';
+import { writeFileSync } from 'node:fs';
 import { dirname, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
 
 const here = dirname(fileURLToPath(import.meta.url));
 const pkgRoot = resolve(here, '..');
-const { version } = JSON.parse(readFileSync(resolve(pkgRoot, 'package.json'), 'utf8'));
 
 const bundle = await rolldown({
   input: resolve(pkgRoot, 'src/uploader/worker/entry.ts'),
@@ -31,7 +30,3 @@ writeFileSync(
   )};\n`,
 );
 console.log(`build-worker: wrote ${code.length} bytes to ${workerScriptOut}`);
-
-const versionOut = resolve(pkgRoot, 'src/uploader/csr-version.ts');
-writeFileSync(versionOut, `// Generated — do not edit.\nexport const CSR_VERSION = '${version}';\n`);
-console.log(`build-worker: wrote csr-version ${version} to ${versionOut}`);
