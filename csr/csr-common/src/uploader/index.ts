@@ -13,3 +13,4 @@ export {
  * SharedWorker sharing (per-document blob URLs defeat sharing).
  */
 export { workerScript } from './worker/worker-script';
+export { WORKER_HASH } from './worker-hash';
