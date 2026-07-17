@@ -27,6 +27,7 @@ const isType = (type: string) => (m: unknown) => (m as { type: string }).type ==
 interface WelcomeMessage {
   type: 'welcome';
   result: { sessionId: string; sessionToken: string } | { skipRecording: true };
+  workerHash?: string;
   newTabId?: string;
   resetCounter?: boolean;
   adoptedFromSessionId?: string;
@@ -59,6 +60,32 @@ describe('worker/core', () => {
         sessionId: 'sess-1',
         sessionToken: 'tok-1',
       });
+    });
+
+    it('includes workerHash in welcome when set on globalThis', async () => {
+      (globalThis as Record<string, unknown>).__WORKER_HASH__ = 'abc123';
+      setupBackend();
+      const { registerPort } = await loadCore();
+      const port = createMockPort();
+      registerPort(port.adapter);
+
+      port.tabSends(helloMessage());
+      const welcome = await port.next<WelcomeMessage>(isType('welcome'));
+
+      expect(welcome.workerHash).toBe('abc123');
+      delete (globalThis as Record<string, unknown>).__WORKER_HASH__;
+    });
+
+    it('workerHash is undefined when not set on globalThis', async () => {
+      setupBackend();
+      const { registerPort } = await loadCore();
+      const port = createMockPort();
+      registerPort(port.adapter);
+
+      port.tabSends(helloMessage());
+      const welcome = await port.next<WelcomeMessage>(isType('welcome'));
+
+      expect(welcome.workerHash).toBeUndefined();
     });
 
     it('replies with skipRecording when the backend opts out', async () => {

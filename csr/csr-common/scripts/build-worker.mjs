@@ -1,5 +1,6 @@
 #!/usr/bin/env node
 import { rolldown } from 'rolldown';
+import { createHash } from 'node:crypto';
 import { writeFileSync } from 'node:fs';
 import { dirname, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
@@ -21,6 +22,7 @@ const { output } = await bundle.generate({
 });
 
 const code = output[0].code;
+const hash = createHash('sha256').update(code).digest('hex').slice(0, 16);
 
 const workerScriptOut = resolve(pkgRoot, 'src/uploader/worker/worker-script.ts');
 writeFileSync(
@@ -30,3 +32,7 @@ writeFileSync(
   )};\n`,
 );
 console.log(`build-worker: wrote ${code.length} bytes to ${workerScriptOut}`);
+
+const hashOut = resolve(pkgRoot, 'src/uploader/worker-hash.ts');
+writeFileSync(hashOut, `// Generated — do not edit.\nexport const WORKER_HASH = '${hash}';\n`);
+console.log(`build-worker: worker hash ${hash}`);

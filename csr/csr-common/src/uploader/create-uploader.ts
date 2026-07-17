@@ -2,6 +2,7 @@ import type { CreateUploaderOptions, Frame, Uploader } from './types';
 import { ClientContext, collectUserAgentContext } from './client-context';
 import { isSessionActivityEvent } from '../session-activity';
 import { workerScript } from './worker/worker-script';
+import { WORKER_HASH } from './worker-hash';
 
 const STORAGE_TAB_ID = 'csr:tabId';
 const STORAGE_SESSION = 'csr:session';
@@ -18,6 +19,7 @@ interface PortLike {
 interface WelcomeMessage {
   type: 'welcome';
   result: { sessionId: string; sessionToken: string } | { skipRecording: true };
+  workerHash?: string;
   adoptedFromSessionId?: string;
   /** Worker-assigned fresh tabId because this tab is a duplicate of another live one. */
   newTabId?: string;
@@ -154,6 +156,17 @@ export async function createUploader(opts: CreateUploaderOptions): Promise<Uploa
       ? `tab: welcome (${'sessionId' in welcome.result ? `sessionId=${welcome.result.sessionId}` : 'skipRecording'})`
       : `tab: dead reason=${welcome.reason}`,
   );
+  if (
+    welcome.type === 'welcome' &&
+    urlScheme === 'custom' &&
+    welcome.workerHash &&
+    welcome.workerHash !== WORKER_HASH
+  ) {
+    log?.(
+      'tab: WORKER MISMATCH — the self-hosted confidence-worker.js does not match the installed SDK. ' +
+        'Copy the updated file from node_modules/@spotify-confidence/session-recording/dist/confidence-worker.js',
+    );
+  }
   if (welcome.type === 'dead') {
     throw new Error(`uploader: ${welcome.reason}`);
   }
