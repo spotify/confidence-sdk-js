@@ -1,5 +1,17 @@
 # Changelog
 
+## [0.18.3](https://github.com/spotify/confidence-sdk-js/compare/csr-common-v0.18.2...csr-common-v0.18.3) (2026-07-16)
+
+
+### 🐛 Bug Fixes
+
+* **csr:** attempt to detect worker load failures caused by CSP ([#409](https://github.com/spotify/confidence-sdk-js/issues/409)) ([d0e38dc](https://github.com/spotify/confidence-sdk-js/commit/d0e38dc746bc571ee020d09f8922acb14ae7d7ae))
+
+
+### ✨ New Features
+
+* **csr:** blob: URL fallback when data: worker is blocked by CSP ([#410](https://github.com/spotify/confidence-sdk-js/issues/410)) ([52b56db](https://github.com/spotify/confidence-sdk-js/commit/52b56db4988b72a60d92517162773fca0d01eebb))
+
 ## [0.18.2](https://github.com/spotify/confidence-sdk-js/compare/csr-common-v0.18.1...csr-common-v0.18.2) (2026-07-06)
 
 
