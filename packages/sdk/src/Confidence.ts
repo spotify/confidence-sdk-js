@@ -367,7 +367,9 @@ export class Confidence implements EventSender, Trackable, FlagResolver {
     };
     const jsonString = JSON.stringify(data);
     const base64 =
-      typeof window !== 'undefined' ? utf8ToBase64(jsonString) : Buffer.from(jsonString).toString('base64');
+      typeof window !== 'undefined' && typeof TextEncoder !== 'undefined'
+        ? utf8ToBase64(jsonString)
+        : Buffer.from(jsonString).toString('base64');
     this.config.logger.info?.(
       `Check your flag evaluation for '${flag}' by copy-pasting the payload to the Resolve tester: ${base64}`,
     );
