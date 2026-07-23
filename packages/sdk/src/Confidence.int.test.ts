@@ -153,6 +153,58 @@ describe('Confidence integration tests', () => {
   });
 });
 
+describe('Confidence read-only mode', () => {
+  let confidence: Confidence;
+
+  beforeEach(() => {
+    confidence = Confidence.create({
+      clientSecret: '<client-secret>',
+      timeout: 100,
+      environment: 'client',
+      fetchImplementation,
+      readOnly: true,
+    });
+
+    resolveHandlerMock.mockReturnValue(mockResolveResponse);
+    publishHandlerMock.mockReturnValue(mockPublishResponse);
+  });
+
+  afterEach(() => {
+    resolveHandlerMock.mockClear();
+    applyHandlerMock.mockClear();
+    publishHandlerMock.mockClear();
+    telemetryUploadHandlerMock.mockClear();
+  });
+
+  it('resolves flag values with apply=false and no backend logging', async () => {
+    expect(await confidence.getFlag('flag1.str', 'goodbye')).toBe('hello');
+    expect(resolveHandlerMock).toHaveBeenCalled();
+    // apply defaults to false and is omitted from the serialized request; ensure it's never true.
+    const [resolveRequest] = resolveHandlerMock.mock.calls[0];
+    expect(resolveRequest.apply).toBeFalsy();
+  });
+
+  it('never sends an apply signal, even when shouldApply is true', async () => {
+    // Drain any debounced apply that may still be in flight from previous tests, then start clean.
+    await abortableSleep(50);
+    applyHandlerMock.mockClear();
+
+    expect(await confidence.getFlag('flag1.str', 'goodbye')).toBe('hello');
+    // Give any (non-existent) debounced apply a chance to fire.
+    await abortableSleep(50);
+    expect(applyHandlerMock).not.toHaveBeenCalled();
+  });
+
+  it('never uploads telemetry, even on close', async () => {
+    await confidence.getFlag('flag1.str', 'goodbye');
+    // A type mismatch would normally produce an evaluation trace.
+    confidence.evaluateFlag('flag1.str', 123);
+    confidence.close();
+    await abortableSleep(50);
+    expect(telemetryUploadHandlerMock).not.toHaveBeenCalled();
+  });
+});
+
 describe('Telemetry trace integration tests', () => {
   let confidence: Confidence;
 

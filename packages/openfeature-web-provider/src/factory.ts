@@ -14,6 +14,12 @@ export type ConfidenceWebProviderOptions = {
   resolveBaseUrl?: string;
   /** Sets an alternative apply url */
   applyBaseUrl?: string;
+  /**
+   * Read-only mode. When true, flags are resolved to read their values but the SDK
+   * sends no signals back to Confidence: no apply (exposure) signals and no telemetry.
+   * Flag exposures are not recorded, so experiment metrics are unaffected. Defaults to false.
+   */
+  readOnly?: boolean;
 };
 
 /**

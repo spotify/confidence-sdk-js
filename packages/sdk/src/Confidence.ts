@@ -50,6 +50,14 @@ export interface ConfidenceOptions {
   applyBaseUrl?: string;
   /** Disable telemetry */
   disableTelemetry?: boolean;
+  /**
+   * Read-only mode. When true, flags are resolved to read their values but the SDK
+   * sends no signals back to Confidence: no apply (exposure) signals and no telemetry.
+   * Flag exposures are not recorded, so experiment metrics are unaffected. Resolves
+   * are always performed with apply=false, so the backend logs nothing either.
+   * Defaults to false.
+   */
+  readOnly?: boolean;
   /** Allows you to debounce the apply message. Set in ms. 0 is treated as synchronous */
   applyDebounce?: number;
   /**
@@ -412,6 +420,7 @@ export class Confidence implements EventSender, Trackable, FlagResolver {
       resolveBaseUrl,
       applyBaseUrl,
       disableTelemetry = false,
+      readOnly = false,
       applyDebounce = 10,
       waitUntil,
       cache = {},
@@ -420,6 +429,8 @@ export class Confidence implements EventSender, Trackable, FlagResolver {
     if (environment !== 'client' && environment !== 'backend') {
       throw new Error(`Invalid environment: ${environment}. Must be 'client' or 'backend'.`);
     }
+    // Read-only mode suppresses all outbound signals, including telemetry.
+    const telemetryDisabled = disableTelemetry || readOnly;
     const sdk = {
       id: SdkId.SDK_ID_JS_CONFIDENCE,
       version: '0.3.20', // x-release-please-version
@@ -431,7 +442,7 @@ export class Confidence implements EventSender, Trackable, FlagResolver {
       libraryEnum = LibraryTraces_Library.LIBRARY_REACT;
     }
     const telemetry = new Telemetry({
-      disabled: disableTelemetry,
+      disabled: telemetryDisabled,
       environment,
       library: libraryEnum,
     });
@@ -467,6 +478,7 @@ export class Confidence implements EventSender, Trackable, FlagResolver {
       telemetry,
       logger,
       applyDebounce,
+      readOnly,
       waitUntil,
       cacheProvider,
       onEvaluation,
@@ -489,7 +501,7 @@ export class Confidence implements EventSender, Trackable, FlagResolver {
       maxOpenRequests: (50 * 1024) / (estEventSizeKb * maxBatchSize),
       logger,
     });
-    const onClose = !disableTelemetry ? () => telemetry.onFlush?.() : undefined;
+    const onClose = !telemetryDisabled ? () => telemetry.onFlush?.() : undefined;
     return new Confidence({
       ...options,
       flagResolverClient,

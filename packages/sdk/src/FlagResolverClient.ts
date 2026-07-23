@@ -90,6 +90,7 @@ export type FlagResolverClientOptions = {
   clientSecret: string;
   sdk: Sdk;
   applyDebounce: number;
+  readOnly?: boolean;
   resolveTimeout: number;
   environment: 'client' | 'backend';
   region?: 'eu' | 'us';
@@ -107,6 +108,7 @@ export class FetchingFlagResolverClient implements FlagResolverClient {
   private readonly clientSecret: string;
   private readonly sdk: Sdk;
   private readonly applyDebounce: number;
+  private readonly readOnly: boolean;
   private readonly resolveTimeout: number;
   private readonly baseUrl: string;
   private readonly applyBaseUrl: string;
@@ -125,6 +127,7 @@ export class FetchingFlagResolverClient implements FlagResolverClient {
     clientSecret,
     sdk,
     applyDebounce,
+    readOnly = false,
     resolveTimeout,
     // todo refactor to move out environment
     environment,
@@ -154,6 +157,7 @@ export class FetchingFlagResolverClient implements FlagResolverClient {
     this.clientSecret = clientSecret;
     this.sdk = sdk;
     this.applyDebounce = applyDebounce;
+    this.readOnly = readOnly;
     this.onEvaluation = onEvaluation;
     this.logger = logger;
     if (resolveBaseUrl) {
@@ -229,7 +233,9 @@ export class FetchingFlagResolverClient implements FlagResolverClient {
         .then(({ response, isFromCache }) => {
           const latency = performance.now() - start;
           this.markLatency(latency, isFromCache ? TraceStatus.STATUS_CACHED : TraceStatus.STATUS_SUCCESS);
-          return FlagResolution.ready(context, response, this.createApplier(response.resolveToken), this.onEvaluation);
+          // In read-only mode no applier is created, so evaluations never send an apply signal.
+          const applier = this.readOnly ? undefined : this.createApplier(response.resolveToken);
+          return FlagResolution.ready(context, response, applier, this.onEvaluation);
         })
         .catch(error => {
           const latency = performance.now() - start;
