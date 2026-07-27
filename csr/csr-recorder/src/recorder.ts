@@ -6,9 +6,10 @@ import {
   type RouteChangePluginData,
   type RouteChangeTrigger,
 } from '@spotify-confidence/csr-common';
-import { RecorderOptions, RecorderState, RecordingConfig } from './types';
+import { RecorderOptions, RecorderState, RecordingConfig, DEFAULT_BLOCK_SELECTORS } from './types';
 import { RecordingEngine } from './engine';
 import { defaultParameterizeRoute } from './route-parameterizer';
+import { ElementVisibilityTracker } from './element-visibility';
 
 export class Recorder {
   private readonly engine: RecordingEngine;
@@ -22,6 +23,7 @@ export class Recorder {
   private originalReplaceState: typeof history.replaceState | null = null;
   private popstateHandler: (() => void) | null = null;
   private parameterizeRoute!: (route: string) => string;
+  private elementVisibility: ElementVisibilityTracker | null = null;
 
   constructor(options: RecorderOptions) {
     this.engine = options.engine;
@@ -62,6 +64,21 @@ export class Recorder {
         });
       };
       document.addEventListener('visibilitychange', this.visibilityHandler);
+    }
+
+    if (config?.captureElementVisibility !== false && typeof document !== 'undefined') {
+      const blockSelectors = config?.blockSelectors ?? DEFAULT_BLOCK_SELECTORS;
+      this.elementVisibility = new ElementVisibilityTracker({
+        getNodeId: node => this.engine.getNodeId(node),
+        emit: data =>
+          this.onEvent({
+            type: RecordingEventType.Plugin,
+            timestamp: Date.now(),
+            data,
+          }),
+        ...(blockSelectors.length ? { blockSelector: blockSelectors.join(',') } : {}),
+      });
+      this.elementVisibility.start();
     }
 
     if (config?.captureNetworkRequests) {
@@ -281,6 +298,8 @@ export class Recorder {
       document.removeEventListener('visibilitychange', this.visibilityHandler);
       this.visibilityHandler = null;
     }
+    this.elementVisibility?.stop();
+    this.elementVisibility = null;
     this.restoreNetwork();
     this.restoreRouting();
     this.engine.stop();

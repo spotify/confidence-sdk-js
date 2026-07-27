@@ -76,6 +76,14 @@ export interface RecordingConfig {
    * browser's `event.isTrusted` property. Defaults to `false`.
    */
   userTriggeredOnInput?: boolean;
+  /**
+   * Observe content-significant elements (sections, headings, alerts,
+   * images) with an IntersectionObserver and record when they enter or
+   * leave the viewport, so analysis can distinguish content the user saw
+   * from content that was merely in the DOM. Defaults to `true`. Payload
+   * contains only rrweb node ids and intersection ratios — no content.
+   */
+  captureElementVisibility?: boolean;
 }
 
 export enum RecorderState {

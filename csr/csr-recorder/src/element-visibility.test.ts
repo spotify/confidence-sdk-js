@@ -2,8 +2,10 @@
  * @vitest-environment happy-dom
  */
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
-import type { ElementVisibilityPluginData } from '@spotify-confidence/csr-common';
+import { RecordingEvent, RecordingEventType, type ElementVisibilityPluginData } from '@spotify-confidence/csr-common';
 import { ElementVisibilityTracker } from './element-visibility';
+import { Recorder } from './recorder';
+import type { RecordingEngine } from './engine';
 
 class FakeIntersectionObserver {
   static instances: FakeIntersectionObserver[] = [];
@@ -220,5 +222,54 @@ describe('ElementVisibilityTracker', () => {
     expect(io.observed).toHaveLength(0);
     expect(emitted).toHaveLength(0);
     vi.useRealTimers();
+  });
+});
+
+describe('Recorder wiring', () => {
+  class StubEngine implements RecordingEngine {
+    start(): void {}
+    stop(): void {}
+    getNodeId(node: Node): number {
+      return getNodeId(node);
+    }
+  }
+
+  it('emits csr:elementVisibility plugin events through onEvent', () => {
+    FakeIntersectionObserver.instances = [];
+    vi.stubGlobal('IntersectionObserver', FakeIntersectionObserver);
+    document.body.innerHTML = '<section data-test-id="7"></section>';
+    const events: RecordingEvent[] = [];
+    const recorder = new Recorder({
+      engine: new StubEngine(),
+      onEvent: e => events.push(e),
+    });
+    recorder.start();
+
+    const io = FakeIntersectionObserver.instances[0];
+    io.trigger([entry(io.observed[0], { ratio: 1, intersecting: true })]);
+    recorder.stop();
+
+    const visEvents = events.filter(
+      e => e.type === RecordingEventType.Plugin && (e.data as { plugin?: string }).plugin === 'csr:elementVisibility',
+    );
+    expect(visEvents).toHaveLength(1);
+    expect((visEvents[0].data as ElementVisibilityPluginData).payload.changes).toEqual([
+      { id: 7, visible: true, ratio: 1 },
+    ]);
+    vi.unstubAllGlobals();
+  });
+
+  it('does not observe when captureElementVisibility is false', () => {
+    FakeIntersectionObserver.instances = [];
+    vi.stubGlobal('IntersectionObserver', FakeIntersectionObserver);
+    document.body.innerHTML = '<section data-test-id="7"></section>';
+    const recorder = new Recorder({
+      engine: new StubEngine(),
+      onEvent: () => {},
+    });
+    recorder.start({ captureElementVisibility: false });
+    expect(FakeIntersectionObserver.instances).toHaveLength(0);
+    recorder.stop();
+    vi.unstubAllGlobals();
   });
 });
