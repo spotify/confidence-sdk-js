@@ -50,6 +50,14 @@ export class ElementVisibilityTracker {
   private observed = new Set<Element>();
   /** Last emitted state per rrweb node id. Absent = no baseline emitted yet. */
   private visibleState = new Map<number, boolean>();
+  /**
+   * Cache of element → rrweb node id, populated whenever we successfully
+   * resolve an id via getNodeId. Required because rrweb 2.0.1 removes nodes
+   * from its mirror synchronously (in a microtask MutationObserver flush) —
+   * always before our 500 ms debounced rescan — so getNodeId returns -1 for
+   * disconnected elements by the time rescan() runs.
+   */
+  private idByElement = new Map<Element, number>();
 
   constructor(options: ElementVisibilityTrackerOptions) {
     this.getNodeId = options.getNodeId;
@@ -83,6 +91,7 @@ export class ElementVisibilityTracker {
     }
     this.observed.clear();
     this.visibleState.clear();
+    this.idByElement.clear();
   }
 
   /** Observe not-yet-observed candidates until the budget is exhausted. */
@@ -96,6 +105,10 @@ export class ElementVisibilityTracker {
         if (this.blockSelector && el.closest(this.blockSelector)) continue;
         this.observed.add(el);
         this.io.observe(el);
+        // Try to pre-populate the id cache. May be -1 if rrweb hasn't
+        // serialized the element yet — onEntries will refresh on first callback.
+        const id = this.getNodeId(el);
+        if (id !== -1) this.idByElement.set(el, id);
       }
     }
   }
@@ -113,12 +126,17 @@ export class ElementVisibilityTracker {
     // Close out elements that left the DOM: rrweb has recorded their removal,
     // so the analyzer's mirror drops them — emit the final invisible state so
     // the timeline's last word matches.
+    //
+    // NOTE: we use idByElement (not getNodeId) here because rrweb 2.0.1 evicts
+    // nodes from its mirror synchronously before our debounced rescan runs, so
+    // getNodeId always returns -1 for disconnected elements at this point.
     const changes: VisibilityChange[] = [];
     for (const el of [...this.observed]) {
       if (el.isConnected) continue;
       this.observed.delete(el);
       this.io.unobserve(el);
-      const id = this.getNodeId(el);
+      const id = this.idByElement.get(el) ?? -1;
+      this.idByElement.delete(el);
       if (id !== -1 && this.visibleState.get(id) === true) {
         this.visibleState.set(id, false);
         changes.push({ id, visible: false, ratio: 0 });
@@ -138,6 +156,9 @@ export class ElementVisibilityTracker {
     for (const e of entries) {
       const id = this.getNodeId(e.target);
       if (id === -1) continue;
+      // Refresh the id cache so rescan() can close out this element even after
+      // rrweb removes it from its mirror (which happens before our rescan).
+      this.idByElement.set(e.target as Element, id);
       // Assumes `isIntersecting === false` means the element is genuinely
       // off-screen: browsers never deliver `isIntersecting: false` together
       // with a qualifying ratio or intersection rect.

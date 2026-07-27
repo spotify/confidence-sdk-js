@@ -10,7 +10,10 @@ import type { RecordingEngine } from './engine';
 class FakeIntersectionObserver {
   static instances: FakeIntersectionObserver[] = [];
   observed: Element[] = [];
-  constructor(public cb: IntersectionObserverCallback, public options?: IntersectionObserverInit) {
+  constructor(
+    public cb: IntersectionObserverCallback,
+    public options?: IntersectionObserverInit,
+  ) {
     FakeIntersectionObserver.instances.push(this);
   }
   observe(el: Element): void {
@@ -27,9 +30,15 @@ class FakeIntersectionObserver {
   }
 }
 
-/** Elements carry data-test-id; unserialized elements have none and map to -1. */
+/**
+ * Elements carry data-test-id; unserialized elements have none and map to -1.
+ * Disconnected elements also return -1, mirroring rrweb 2.0.1 behavior where
+ * nodes are removed from the mirror synchronously before our debounced rescan.
+ */
 const getNodeId = (node: Node): number => {
-  const raw = (node as Element).getAttribute?.('data-test-id');
+  const el = node as Element;
+  if (!el.isConnected) return -1;
+  const raw = el.getAttribute?.('data-test-id');
   return raw === undefined || raw === null ? -1 : Number(raw);
 };
 
