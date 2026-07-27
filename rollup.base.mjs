@@ -110,7 +110,7 @@ function createExternalTest(prefix, external = []) {
  */
 function normalizePath(id, parent = '') {
   const absolute = id.startsWith('.') ? resolve(parent, id) : id;
-  return relative(cwd, absolute);
+  return relative(cwd, absolute).replaceAll('\\', '/');
 }
 
 /**

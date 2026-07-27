@@ -42,12 +42,14 @@
   },
   "exports": {
     ".": {
-      "import": "./build/index.js",
-      "types": "./build/index.d.ts"
+      "import": "./dist/index.mjs",
+      "require": "./dist/index.cjs",
+      "types": "./dist/index.d.ts"
     },
     "./server": {
-      "import": "./build/server.js",
-      "types": "./build/server.d.ts"
+      "import": "./dist/server.mjs",
+      "require": "./dist/server.cjs",
+      "types": "./dist/server.d.ts"
     }
   },
   "type": "module",
@@ -69,5 +71,8 @@
         "types": "./server.d.ts"
       }
     }
-  }
+  },
+  "main": "index.cjs",
+  "module": "index.mjs",
+  "types": "index.d.ts"
 }

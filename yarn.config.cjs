@@ -54,11 +54,14 @@ module.exports = defineConfig({
         workspace.set('scripts.postpack', 'rm server.* & rm index.*');
         workspace.set(
           'exports',
-          buildExports({
+          distExports({
             '.': 'index',
             './server': 'server',
           }),
         );
+        workspace.set('main', 'index.cjs');
+        workspace.set('module', 'index.mjs');
+        workspace.set('types', 'index.d.ts');
         workspace.set('publishConfig', {
           registry: 'https://registry.npmjs.org/',
           access: 'public',
@@ -81,7 +84,10 @@ module.exports = defineConfig({
       } else {
         workspace.set('files', ['dist/index.*']);
         workspace.set('scripts.prepack', 'yarn build && yarn bundle');
-        workspace.set('exports', buildExports({ '.': 'index' }));
+        workspace.set('exports', distExports({ '.': 'index' }));
+        workspace.set('main', 'dist/index.cjs');
+        workspace.set('module', 'dist/index.mjs');
+        workspace.set('types', 'dist/index.d.ts');
         workspace.set('publishConfig', {
           registry: 'https://registry.npmjs.org/',
           access: 'public',
@@ -100,10 +106,6 @@ module.exports = defineConfig({
 
       workspace.set('scripts.build', 'tsc');
       workspace.set('scripts.clean', 'rm -rf {build,dist}');
-
-      workspace.unset('main');
-      workspace.unset('module');
-      workspace.unset('types');
 
       // dev deps that should all share the same version (from root package.json)
       for (const id of ['rollup', 'typescript']) {
