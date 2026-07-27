@@ -17,6 +17,8 @@ const PRIORITY_SELECTORS = [
   'img',
 ];
 
+export const RESCAN_DEBOUNCE_MS = 500;
+
 const DEFAULT_MAX_OBSERVED = 300;
 /**
  * Fine-grained thresholds so the "covers half the viewport" clause below gets
@@ -43,6 +45,8 @@ export class ElementVisibilityTracker {
   private readonly doc: Document;
 
   private io: IntersectionObserver | null = null;
+  private mo: MutationObserver | null = null;
+  private rescanTimer: ReturnType<typeof setTimeout> | null = null;
   private observed = new Set<Element>();
   /** Last emitted state per rrweb node id. Absent = no baseline emitted yet. */
   private visibleState = new Map<number, boolean>();
@@ -62,11 +66,21 @@ export class ElementVisibilityTracker {
       threshold: THRESHOLDS,
     });
     this.scan();
+    if (typeof MutationObserver !== 'undefined' && this.doc.documentElement) {
+      this.mo = new MutationObserver(() => this.scheduleRescan());
+      this.mo.observe(this.doc.documentElement, { childList: true, subtree: true });
+    }
   }
 
   stop(): void {
     this.io?.disconnect();
     this.io = null;
+    this.mo?.disconnect();
+    this.mo = null;
+    if (this.rescanTimer !== null) {
+      clearTimeout(this.rescanTimer);
+      this.rescanTimer = null;
+    }
     this.observed.clear();
     this.visibleState.clear();
   }
@@ -84,6 +98,36 @@ export class ElementVisibilityTracker {
         this.io.observe(el);
       }
     }
+  }
+
+  private scheduleRescan(): void {
+    if (this.rescanTimer !== null) return;
+    this.rescanTimer = setTimeout(() => {
+      this.rescanTimer = null;
+      this.rescan();
+    }, RESCAN_DEBOUNCE_MS);
+  }
+
+  private rescan(): void {
+    if (!this.io) return;
+    // Close out elements that left the DOM: rrweb has recorded their removal,
+    // so the analyzer's mirror drops them — emit the final invisible state so
+    // the timeline's last word matches.
+    const changes: VisibilityChange[] = [];
+    for (const el of [...this.observed]) {
+      if (el.isConnected) continue;
+      this.observed.delete(el);
+      this.io.unobserve(el);
+      const id = this.getNodeId(el);
+      if (id !== -1 && this.visibleState.get(id) === true) {
+        this.visibleState.set(id, false);
+        changes.push({ id, visible: false, ratio: 0 });
+      }
+    }
+    if (changes.length > 0) {
+      this.emit({ plugin: 'csr:elementVisibility', payload: { changes } });
+    }
+    this.scan();
   }
 
   private onEntries(entries: IntersectionObserverEntry[]): void {

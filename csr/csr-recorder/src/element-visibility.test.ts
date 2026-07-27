@@ -8,7 +8,10 @@ import { ElementVisibilityTracker } from './element-visibility';
 class FakeIntersectionObserver {
   static instances: FakeIntersectionObserver[] = [];
   observed: Element[] = [];
-  constructor(public cb: IntersectionObserverCallback, public options?: IntersectionObserverInit) {
+  constructor(
+    public cb: IntersectionObserverCallback,
+    public options?: IntersectionObserverInit,
+  ) {
     FakeIntersectionObserver.instances.push(this);
   }
   observe(el: Element): void {
@@ -159,5 +162,42 @@ describe('ElementVisibilityTracker', () => {
     startTracker();
     tracker!.start();
     expect(FakeIntersectionObserver.instances).toHaveLength(1);
+  });
+
+  it('observes elements added after start, once the rescan debounce elapses', async () => {
+    vi.useFakeTimers();
+    document.body.innerHTML = '<section data-test-id="1"></section>';
+    const io = startTracker();
+    expect(io.observed).toHaveLength(1);
+
+    const late = document.createElement('section');
+    late.setAttribute('data-test-id', '9');
+    document.body.appendChild(late);
+    // Let happy-dom's MutationObserver deliver, then run the debounce timer.
+    await vi.advanceTimersByTimeAsync(600);
+    expect(io.observed.map(el => getNodeId(el))).toContain(9);
+    vi.useRealTimers();
+  });
+
+  it('emits visible=false for a removed element that was visible', async () => {
+    vi.useFakeTimers();
+    document.body.innerHTML = '<section data-test-id="1"></section>';
+    const io = startTracker();
+    const [a] = io.observed;
+    io.trigger([entry(a, { ratio: 1, intersecting: true })]);
+    expect(emitted).toHaveLength(1);
+
+    a.remove();
+    await vi.advanceTimersByTimeAsync(600);
+    expect(emitted).toHaveLength(2);
+    expect(emitted[1].payload.changes).toEqual([{ id: 1, visible: false, ratio: 0 }]);
+    vi.useRealTimers();
+  });
+
+  it('stop() disconnects observers and clears pending rescans', () => {
+    document.body.innerHTML = '<section data-test-id="1"></section>';
+    const io = startTracker();
+    tracker!.stop();
+    expect(io.observed).toHaveLength(0);
   });
 });
