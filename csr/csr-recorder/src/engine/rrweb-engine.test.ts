@@ -2,17 +2,19 @@ import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { RrwebEngine } from './rrweb-engine';
 
 const recordSpy = vi.fn().mockReturnValue(() => {});
+const getIdSpy = vi.hoisted(() => vi.fn().mockReturnValue(-1));
 
 vi.mock('rrweb', () => {
   const record = (opts: unknown) => recordSpy(opts);
-  record.mirror = {
-    getId: vi.fn().mockReturnValue(-1),
-  };
+  record.mirror = { getId: getIdSpy };
   return { record };
 });
 
 describe('RrwebEngine', () => {
-  beforeEach(() => recordSpy.mockClear());
+  beforeEach(() => {
+    recordSpy.mockClear();
+    getIdSpy.mockClear();
+  });
 
   it('defaults maskAllInputs=true when maskInputs is omitted', () => {
     new RrwebEngine().start({}, () => {});
@@ -66,9 +68,11 @@ describe('RrwebEngine', () => {
   });
 
   describe('getNodeId', () => {
-    it('returns -1 for a node rrweb has not serialized', () => {
+    it('delegates to record.mirror.getId and returns -1 for a node rrweb has not serialized', () => {
       const engine = new RrwebEngine();
-      expect(engine.getNodeId({} as unknown as Node)).toBe(-1);
+      const node = {} as unknown as Node;
+      expect(engine.getNodeId(node)).toBe(-1);
+      expect(getIdSpy).toHaveBeenCalledWith(node);
     });
   });
 });
