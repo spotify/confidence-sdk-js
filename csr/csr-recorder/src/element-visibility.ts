@@ -56,6 +56,7 @@ export class ElementVisibilityTracker {
   }
 
   start(): void {
+    if (this.io) return;
     if (typeof IntersectionObserver === 'undefined') return;
     this.io = new IntersectionObserver(entries => this.onEntries(entries), {
       threshold: THRESHOLDS,
@@ -90,6 +91,9 @@ export class ElementVisibilityTracker {
     for (const e of entries) {
       const id = this.getNodeId(e.target);
       if (id === -1) continue;
+      // Assumes `isIntersecting === false` means the element is genuinely
+      // off-screen: browsers never deliver `isIntersecting: false` together
+      // with a qualifying ratio or intersection rect.
       const visible =
         e.isIntersecting &&
         (e.intersectionRatio >= 0.5 ||

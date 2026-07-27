@@ -8,10 +8,7 @@ import { ElementVisibilityTracker } from './element-visibility';
 class FakeIntersectionObserver {
   static instances: FakeIntersectionObserver[] = [];
   observed: Element[] = [];
-  constructor(
-    public cb: IntersectionObserverCallback,
-    public options?: IntersectionObserverInit,
-  ) {
+  constructor(public cb: IntersectionObserverCallback, public options?: IntersectionObserverInit) {
     FakeIntersectionObserver.instances.push(this);
   }
   observe(el: Element): void {
@@ -155,5 +152,12 @@ describe('ElementVisibilityTracker', () => {
     const io = startTracker();
     io.trigger([entry(io.observed[0], { ratio: 1, intersecting: true })]);
     expect(emitted).toHaveLength(0);
+  });
+
+  it('is idempotent: a second start() does not create another observer', () => {
+    document.body.innerHTML = '<section data-test-id="1"></section>';
+    startTracker();
+    tracker!.start();
+    expect(FakeIntersectionObserver.instances).toHaveLength(1);
   });
 });
