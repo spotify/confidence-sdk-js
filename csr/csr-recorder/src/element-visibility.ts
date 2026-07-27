@@ -22,10 +22,13 @@ export const RESCAN_DEBOUNCE_MS = 500;
 const DEFAULT_MAX_OBSERVED = 300;
 /**
  * Fine-grained thresholds so the "covers half the viewport" clause below gets
- * a callback even for elements many times taller than the viewport (whose
- * intersection ratio can never reach 0.5).
+ * a callback for very tall elements (whose intersection ratio can never reach
+ * 0.5 or even 0.1). An element taller than 10× the viewport has a max ratio
+ * of ~0.1, and one taller than 100× has a max of ~0.01. The sub-0.1 entries
+ * (0.01, 0.025, 0.05) ensure the real IntersectionObserver fires at those
+ * crossings so the clause can be evaluated at a non-trivial ratio.
  */
-const THRESHOLDS = [0, 0.1, 0.2, 0.3, 0.4, 0.5];
+const THRESHOLDS = [0, 0.01, 0.025, 0.05, 0.1, 0.2, 0.3, 0.4, 0.5];
 
 export interface ElementVisibilityTrackerOptions {
   /** rrweb node id lookup; returns -1 for unserialized nodes. */

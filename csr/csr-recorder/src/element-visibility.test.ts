@@ -158,6 +158,22 @@ describe('ElementVisibilityTracker', () => {
     expect(emitted[0].payload.changes).toEqual([{ id: 1, visible: true, ratio: 0.1 }]);
   });
 
+  it('configures fine low thresholds so very tall elements get callbacks below ratio 0.1', () => {
+    // An element >10× the viewport height can never reach ratio 0.1. With only
+    // [0, 0.1, ...] the real IntersectionObserver only fires at threshold 0 (the
+    // initial intersection crossing) and the "covers half the viewport" clause is
+    // never evaluated at a non-zero ratio. Fine low thresholds (0.01, 0.025, ...)
+    // ensure callbacks at ratios like 0.02 so the clause can fire.
+    document.body.innerHTML = '<section data-test-id="1"></section>';
+    const io = startTracker();
+    const thresholds = io.options?.threshold as number[] | undefined;
+    expect(thresholds).toBeDefined();
+    // There must be at least one threshold strictly between 0 and 0.1 so the
+    // real browser fires a callback when the element reaches ratio ~0.02.
+    const hasFineLow = (thresholds ?? []).some(t => t > 0 && t < 0.1);
+    expect(hasFineLow).toBe(true);
+  });
+
   it('ignores elements the engine has not serialized (id -1)', () => {
     document.body.innerHTML = '<section></section>';
     const io = startTracker();
