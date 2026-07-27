@@ -123,6 +123,9 @@ export class ElementVisibilityTracker {
         this.visibleState.set(id, false);
         changes.push({ id, visible: false, ratio: 0 });
       }
+      // The visibleState entry is retained on purpose: if an element with the
+      // same id reappears, the retained `false` means it emits only on a
+      // transition to visible, not a duplicate baseline.
     }
     if (changes.length > 0) {
       this.emit({ plugin: 'csr:elementVisibility', payload: { changes } });

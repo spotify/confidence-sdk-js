@@ -8,10 +8,7 @@ import { ElementVisibilityTracker } from './element-visibility';
 class FakeIntersectionObserver {
   static instances: FakeIntersectionObserver[] = [];
   observed: Element[] = [];
-  constructor(
-    public cb: IntersectionObserverCallback,
-    public options?: IntersectionObserverInit,
-  ) {
+  constructor(public cb: IntersectionObserverCallback, public options?: IntersectionObserverInit) {
     FakeIntersectionObserver.instances.push(this);
   }
   observe(el: Element): void {
@@ -199,5 +196,29 @@ describe('ElementVisibilityTracker', () => {
     const io = startTracker();
     tracker!.stop();
     expect(io.observed).toHaveLength(0);
+  });
+
+  it('after stop(), a pending rescan never fires and later mutations are ignored', async () => {
+    vi.useFakeTimers();
+    document.body.innerHTML = '<section data-test-id="1"></section>';
+    const io = startTracker();
+
+    // Mutate so a rescan timer is pending, then stop before the debounce elapses.
+    const late = document.createElement('section');
+    late.setAttribute('data-test-id', '9');
+    document.body.appendChild(late);
+    await vi.advanceTimersByTimeAsync(0); // deliver the mutation record only
+    tracker!.stop();
+
+    await vi.advanceTimersByTimeAsync(600); // past RESCAN_DEBOUNCE_MS
+    // A mutation after stop() must not schedule anything either.
+    const evenLater = document.createElement('section');
+    evenLater.setAttribute('data-test-id', '10');
+    document.body.appendChild(evenLater);
+    await vi.advanceTimersByTimeAsync(600);
+
+    expect(io.observed).toHaveLength(0);
+    expect(emitted).toHaveLength(0);
+    vi.useRealTimers();
   });
 });
