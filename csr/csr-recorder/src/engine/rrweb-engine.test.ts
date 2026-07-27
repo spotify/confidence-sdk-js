@@ -3,9 +3,13 @@ import { RrwebEngine } from './rrweb-engine';
 
 const recordSpy = vi.fn().mockReturnValue(() => {});
 
-vi.mock('rrweb', () => ({
-  record: (opts: unknown) => recordSpy(opts),
-}));
+vi.mock('rrweb', () => {
+  const record = (opts: unknown) => recordSpy(opts);
+  record.mirror = {
+    getId: vi.fn().mockReturnValue(-1),
+  };
+  return { record };
+});
 
 describe('RrwebEngine', () => {
   beforeEach(() => recordSpy.mockClear());
@@ -59,5 +63,12 @@ describe('RrwebEngine', () => {
   it('enables slimDOMOptions to strip head noise', () => {
     new RrwebEngine().start({}, () => {});
     expect(recordSpy.mock.calls[0][0].slimDOMOptions).toBe('all');
+  });
+
+  describe('getNodeId', () => {
+    it('returns -1 for a node rrweb has not serialized', () => {
+      const engine = new RrwebEngine();
+      expect(engine.getNodeId({} as unknown as Node)).toBe(-1);
+    });
   });
 });

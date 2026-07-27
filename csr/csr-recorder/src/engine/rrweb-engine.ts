@@ -47,4 +47,8 @@ export class RrwebEngine implements RecordingEngine {
     this.stopFn?.();
     this.stopFn = null;
   }
+
+  getNodeId(node: Node): number {
+    return record.mirror.getId(node);
+  }
 }

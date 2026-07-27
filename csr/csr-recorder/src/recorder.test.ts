@@ -23,6 +23,10 @@ class MockEngine implements RecordingEngine {
     this.onEvent = null;
   }
 
+  getNodeId(_node: Node): number {
+    return -1;
+  }
+
   emit(event: RecordingEvent): void {
     this.onEvent?.(event);
   }

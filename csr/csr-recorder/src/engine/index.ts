@@ -8,4 +8,9 @@ import { RecordingConfig } from '../types';
 export interface RecordingEngine {
   start(config: RecordingConfig, onEvent: (event: RecordingEvent) => void): void;
   stop(): void;
+  /**
+   * rrweb serialized-node id for a live DOM node, or -1 if the node has not
+   * been serialized (not yet snapshotted, or inside a blocked subtree).
+   */
+  getNodeId(node: Node): number;
 }
