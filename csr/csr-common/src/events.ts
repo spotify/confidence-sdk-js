@@ -165,6 +165,26 @@ export type TabVisibilityPluginData = {
   payload: { hidden: boolean };
 };
 
+/**
+ * Plugin event data emitted by the recorder when observed elements enter or
+ * leave the viewport. `id` is the rrweb serialized-node id — the same id
+ * space the analyzer's DOM mirror indexes. The first IntersectionObserver
+ * callback after an element is observed always produces an entry (the
+ * baseline, possibly `visible: false`); afterwards entries are emitted only
+ * on state transitions.
+ */
+export type ElementVisibilityPluginData = {
+  plugin: 'csr:elementVisibility';
+  payload: {
+    changes: Array<{
+      id: number;
+      visible: boolean;
+      /** Intersection ratio at the transition. */
+      ratio: number;
+    }>;
+  };
+};
+
 export type ConsoleLogLevel = 'log' | 'warn' | 'error' | 'debug' | 'info';
 
 /**

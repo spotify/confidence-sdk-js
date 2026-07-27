@@ -12,6 +12,7 @@ export {
   type ScrollBackCustomData,
   type DeadClickCustomData,
   type ElementDescriptor,
+  type ElementVisibilityPluginData,
   type TabUnfocusCustomData,
   type TabRefocusCustomData,
   type TabVisibilityPluginData,
