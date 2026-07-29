@@ -35,6 +35,15 @@ export {
 export { stripUrl } from './url';
 
 export {
+  USER_ACTION_CUSTOM_EVENT_TAGS,
+  USER_ACTIVITY_CUSTOM_EVENT_TAGS,
+  isUserActionCustomEventTag,
+  isUserActivityCustomEventTag,
+  type UserActionCustomEventTag,
+  type UserActivityCustomEventTag,
+} from './user-activity';
+
+export {
   MAX_KEY_LENGTH,
   MAX_TAG_VALUE_LENGTH,
   MAX_DISTINCT_KEYS,
