@@ -16,7 +16,7 @@
     "patch-next-dev": "patch-next-dev.cjs"
   },
   "scripts": {
-    "bundle": "rollup -c && ../../validate-api.sh",
+    "bundle": "rollup -c && ../../validate-api.sh && ../../emit-dcts.sh",
     "build": "tsc",
     "prepack": "yarn build && yarn bundle && cp dist/* .",
     "clean": "rm -rf {build,dist}",
@@ -59,14 +59,24 @@
     "types": "index.d.ts",
     "exports": {
       ".": {
-        "import": "./index.mjs",
-        "require": "./index.cjs",
-        "types": "./index.d.ts"
+        "import": {
+          "types": "./index.d.ts",
+          "default": "./index.mjs"
+        },
+        "require": {
+          "types": "./index.d.cts",
+          "default": "./index.cjs"
+        }
       },
       "./server": {
-        "import": "./server.mjs",
-        "require": "./server.cjs",
-        "types": "./server.d.ts"
+        "import": {
+          "types": "./server.d.ts",
+          "default": "./server.mjs"
+        },
+        "require": {
+          "types": "./server.d.cts",
+          "default": "./server.cjs"
+        }
       }
     }
   }

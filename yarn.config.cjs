@@ -65,18 +65,13 @@ module.exports = defineConfig({
           main: 'index.cjs',
           module: 'index.mjs',
           types: 'index.d.ts',
-          exports: {
-            '.': {
-              import: './index.mjs',
-              require: './index.cjs',
-              types: './index.d.ts',
+          exports: conditionalExports(
+            {
+              '.': 'index',
+              './server': 'server',
             },
-            './server': {
-              import: './server.mjs',
-              require: './server.cjs',
-              types: './server.d.ts',
-            },
-          },
+            './',
+          ),
         });
       } else {
         workspace.set('files', ['dist/index.*']);
@@ -93,9 +88,9 @@ module.exports = defineConfig({
       }
 
       if (workspace.cwd === 'packages/sdk') {
-        workspace.set('scripts.bundle', 'rollup -c && api-extractor run');
+        workspace.set('scripts.bundle', 'rollup -c && api-extractor run && ../../emit-dcts.sh');
       } else {
-        workspace.set('scripts.bundle', 'rollup -c && ../../validate-api.sh');
+        workspace.set('scripts.bundle', 'rollup -c && ../../validate-api.sh && ../../emit-dcts.sh');
       }
 
       workspace.set('scripts.build', 'tsc');
@@ -134,17 +129,28 @@ function buildExports(map) {
     }),
   );
 }
-function distExports(map) {
+/**
+ * Build a conditional exports map for bundled output living under `prefix`.
+ *
+ * `types` is nested inside each condition rather than listed as a sibling: conditions are
+ * matched in order, so a top-level `types` after `import`/`require` is never reached. The
+ * require branch points at .d.cts (see emit-dcts.sh) so that CJS consumers on
+ * moduleResolution=node16 don't fall back to the ESM .d.ts.
+ */
+function conditionalExports(map, prefix) {
   return Object.fromEntries(
     Object.entries(map).map(([key, value]) => {
       if (typeof value === 'string') {
         value = {
-          import: `./dist/${value}.mjs`,
-          require: `./dist/${value}.cjs`,
-          types: `./dist/${value}.d.ts`,
+          import: { types: `${prefix}${value}.d.ts`, default: `${prefix}${value}.mjs` },
+          require: { types: `${prefix}${value}.d.cts`, default: `${prefix}${value}.cjs` },
         };
       }
       return [key, value];
     }),
   );
+}
+
+function distExports(map) {
+  return conditionalExports(map, './dist/');
 }

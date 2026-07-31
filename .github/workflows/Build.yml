@@ -23,6 +23,8 @@ jobs:
       - run: yarn lint
       - run: yarn format:check
       - run: yarn test
+      # packs and installs the tarballs, so it can only run against a completed bundle
+      - run: yarn verify:types
 
   Build-And-Test-CSR:
     runs-on: ubuntu-latest
