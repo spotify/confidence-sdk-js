@@ -106,11 +106,12 @@ function createExternalTest(prefix, external = []) {
  *
  * @param id the imported path
  * @param parent absolute path of the file containing the import, or undefined if it's the entry point
- * @returns path relative to cwd
+ * @returns path relative to cwd, always with forward slashes
  */
 function normalizePath(id, parent = '') {
   const absolute = id.startsWith('.') ? resolve(parent, id) : id;
-  return relative(cwd, absolute);
+  // relative() yields backslashes on Windows, which would break the prefix checks in createExternalTest
+  return relative(cwd, absolute).replaceAll('\\', '/');
 }
 
 /**
