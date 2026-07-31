@@ -401,5 +401,44 @@ describe('Confidence', () => {
         errorMessage: 'Resolve timeout',
       });
     });
+
+    it('does not throw when window is defined but TextEncoder is not (e.g. jsdom without polyfills)', async () => {
+      const originalWindow = (global as any).window;
+      const originalTextEncoder = (global as any).TextEncoder;
+      (global as any).window = {};
+      delete (global as any).TextEncoder;
+
+      try {
+        const info = jest.fn();
+        const confidenceWithLogger = new Confidence({
+          clientSecret: 'secret',
+          timeout: 10,
+          environment: 'client',
+          logger: { info },
+          eventSenderEngine: eventSenderEngineMock,
+          flagResolverClient: flagResolverClientMock,
+          cacheProvider: () => {
+            throw new Error('Not implemented');
+          },
+          staleFlagTraceConsumer: jest.fn(),
+          emitEvaluationTrace: jest.fn(),
+        });
+
+        await confidenceWithLogger.evaluateFlag('flag1', 'default');
+        expect(() => confidenceWithLogger.evaluateFlag('flag1', 'default')).not.toThrow();
+        expect(info).toHaveBeenCalledWith(expect.stringContaining('Resolve tester'));
+      } finally {
+        if (originalWindow === undefined) {
+          delete (global as any).window;
+        } else {
+          (global as any).window = originalWindow;
+        }
+        if (originalTextEncoder === undefined) {
+          delete (global as any).TextEncoder;
+        } else {
+          (global as any).TextEncoder = originalTextEncoder;
+        }
+      }
+    });
   });
 });
