@@ -110,7 +110,8 @@ function createExternalTest(prefix, external = []) {
  */
 function normalizePath(id, parent = '') {
   const absolute = id.startsWith('.') ? resolve(parent, id) : id;
-  return relative(cwd, absolute);
+  // relative() yields backslashes on Windows, which would break the prefix checks in createExternalTest
+  return relative(cwd, absolute).replaceAll('\\', '/');
 }
 
 /**
