@@ -71,6 +71,37 @@ export class Confidence implements EventSender, Trackable, FlagResolver {
 }
 
 // @public
+export namespace ConfidenceClient {
+    export type ApplyResult = {
+        ok: true;
+    } | {
+        ok: false;
+        errorCode: 'TIMEOUT' | 'GENERAL';
+        errorMessage: string;
+        status?: number;
+    };
+    export interface Options {
+        fetch?: typeof fetch;
+        flagClientSecret: string;
+        // Warning: (ae-forgotten-export) The symbol "Logger" needs to be exported by the entry point index.d.ts
+        logger?: Logger;
+        url?: string;
+    }
+}
+
+// @public
+export class ConfidenceClient {
+    constructor(options: ConfidenceClient.Options);
+    apply(resolveToken: string, flagNames: string | string[], options?: {
+        signal?: AbortSignal;
+    }): Promise<ConfidenceClient.ApplyResult>;
+    resolve(flagNames: string[], context: EvaluationContext, options?: {
+        apply?: boolean;
+        signal?: AbortSignal;
+    }): Promise<FlagBundle>;
+}
+
+// @public
 export interface ConfidenceOptions {
     applyBaseUrl?: string;
     applyDebounce?: number;
@@ -83,7 +114,6 @@ export interface ConfidenceOptions {
     fetchImplementation?: SimpleFetch;
     // @internal
     library?: 'openfeature' | 'react';
-    // Warning: (ae-forgotten-export) The symbol "Logger" needs to be exported by the entry point index.d.ts
     logger?: Logger;
     region?: 'eu' | 'us';
     resolveBaseUrl?: string;
@@ -142,6 +172,12 @@ export interface Contextual<Self extends Contextual<Self>> {
 }
 
 // @public
+export type EvaluationContext = {
+    targeting_key?: string;
+    [key: string]: unknown;
+};
+
+// @public
 export type EventData = Value.Struct & {
     context?: never;
 };
@@ -149,6 +185,36 @@ export type EventData = Value.Struct & {
 // @public
 export interface EventSender extends Contextual<EventSender> {
     track(name: string, data?: EventData): void;
+}
+
+// @public
+export interface FlagBundle {
+    errorCode?: FlagBundle.ErrorCode;
+    errorMessage?: string;
+    flags: Record<string, FlagBundle.Details<FlagBundle.Struct | null> | undefined>;
+    resolveId: string;
+    resolveToken: string;
+}
+
+// @public
+export namespace FlagBundle {
+    export interface Details<T> {
+        assignmentOrigin?: string;
+        errorCode?: ErrorCode;
+        errorMessage?: string;
+        reason: Reason;
+        shouldApply: boolean;
+        value: T;
+        variant?: string;
+    }
+    export type ErrorCode = 'FLAG_NOT_FOUND' | 'TYPE_MISMATCH' | 'TIMEOUT' | 'GENERAL';
+    export function evaluate<T extends Value>(bundle: FlagBundle, flagKey: string, defaultValue: T, logger?: Logger): Details<T>;
+    export type Primitive = null | boolean | string | number;
+    export type Reason = 'ERROR' | 'FLAG_ARCHIVED' | 'MATCH' | 'NO_SEGMENT_MATCH' | 'TARGETING_KEY_ERROR' | 'NO_TREATMENT_MATCH' | 'UNSPECIFIED';
+    export type Struct = {
+        [key: string]: Value;
+    };
+    export type Value = Primitive | Struct;
 }
 
 // Warning: (ae-missing-release-tag) "FlagEvaluation" is part of the package's API, but it is missing a release tag (@alpha, @beta, @public, or @internal)

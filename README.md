@@ -123,11 +123,13 @@ You can check out the example application, which is built with Next.js and uses 
 # Direct SDK Usage
 
 > [!NOTE]
-> The standalone SDK is being phased out. For new integrations, we recommend using the OpenFeature APIs described above.
+> The standalone `Confidence` class is being phased out. For new integrations, we recommend using the OpenFeature APIs described above.
 
 The vanilla sdk can be used in cases where you want direct access to the Confidence SDK, including event tracking and custom context management.
 
-> **Learn more**: [SDK Documentation](./packages/sdk/README.md)
+The package also provides `ConfidenceClient`, a thin stateless client for a remote resolver that does flag resolution and exposure only. It is the primitive the providers above are moving onto, and is useful directly when resolving from a worker, or when resolving on the server and forwarding the result to the browser to evaluate.
+
+> **Learn more**: [SDK Documentation](./packages/sdk/README.md) · [`ConfidenceClient`](./packages/sdk/README.md#confidenceclient)
 
 ## React Integration
 
