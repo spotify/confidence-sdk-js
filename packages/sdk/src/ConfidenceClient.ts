@@ -15,7 +15,7 @@ const FLAG_PREFIX = 'flags/';
 // distinguishable from the rest of the JS SDK. Additive proto change.
 const SDK: Sdk = {
   id: SdkId.SDK_ID_JS_CONFIDENCE,
-  version: '0.3.20', // x-release-please-version
+  version: '0.3.21', // x-release-please-version
 };
 
 /**

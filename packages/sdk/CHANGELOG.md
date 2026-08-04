@@ -1,5 +1,18 @@
 # Changelog
 
+## [0.3.21](https://github.com/spotify/confidence-sdk-js/compare/sdk-v0.3.20...sdk-v0.3.21) (2026-08-04)
+
+
+### 🐛 Bug Fixes
+
+* **js:** make ConfidenceClient usable from a Cloudflare Worker ([#427](https://github.com/spotify/confidence-sdk-js/issues/427)) ([5d9a1d5](https://github.com/spotify/confidence-sdk-js/commit/5d9a1d595052b6aedf5c7b81c155a9678dfc7ce3))
+* textEncoder not defined in Node.js test environments ([#416](https://github.com/spotify/confidence-sdk-js/issues/416)) ([6a0c219](https://github.com/spotify/confidence-sdk-js/commit/6a0c219c8e55311c8a47cb6e369202aa1d8b04e0))
+
+
+### ✨ New Features
+
+* stateless remote client ([#426](https://github.com/spotify/confidence-sdk-js/issues/426)) ([39ad1bf](https://github.com/spotify/confidence-sdk-js/commit/39ad1bf9f91644617c1d3df49d17645f0d61e213))
+
 ## [0.3.20](https://github.com/spotify/confidence-sdk-js/compare/sdk-v0.3.19...sdk-v0.3.20) (2026-07-06)
 
 
