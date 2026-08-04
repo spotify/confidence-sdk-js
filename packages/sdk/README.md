@@ -8,7 +8,7 @@
 > - **Client-based (SPA)**: Use [@spotify-confidence/openfeature-web-provider](https://github.com/spotify/confidence-sdk-js/blob/main/packages/openfeature-web-provider/README.md)
 > - **Server**: Use [@spotify-confidence/openfeature-server-provider-local](https://github.com/spotify/confidence-resolver/tree/main/openfeature-provider/js/README.md), which resolves flags in-process with close to zero latency
 >
-> [`ConfidenceClient`](#confidenceclient) is a low-level client for a remote resolver, and will become the engine behind the providers above. Most integrations should use a provider rather than calling it directly.
+> [`ConfidenceClient`](#confidenceclient) is a low-level client for a remote resolver, and is the engine behind the providers above. Most integrations should use a provider rather than calling it directly.
 
 JavaScript implementation of the Confidence SDK, enables event tracking and feature flagging capabilities in conjunction with the OpenFeature Web SDK.
 

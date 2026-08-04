@@ -16,7 +16,12 @@ async function main() {
     environment: 'backend',
   });
 
-  const provider = createConfidenceServerProvider(confidence);
+  const provider = createConfidenceServerProvider({
+    clientSecret: process.env.CLIENT_SECRET,
+    region: 'eu',
+    fetchImplementation: fetch,
+    timeout: 1000,
+  });
 
   OpenFeature.setProvider(provider);
 

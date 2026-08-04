@@ -3,7 +3,7 @@ import { EventSenderEngine } from './EventSenderEngine';
 import { Value } from './Value';
 import { EventData, EventSender } from './events';
 import { Context } from './context';
-import { Logger } from './logger';
+import { Logger, LoggerUtil } from './logger';
 import { FlagEvaluation, FlagResolver, State, StateObserver } from './flags';
 import { SdkId } from './generated/confidence/flags/resolver/v1/types';
 import { Trackable } from './Trackable';
@@ -568,10 +568,10 @@ function evaluationTraceFromResult(evaluation: FlagEvaluation.Resolved<Value>): 
 function defaultLogger(): Logger {
   try {
     if (process.env.NODE_ENV === 'development') {
-      return Logger.withLevel(console, 'info');
+      return LoggerUtil.withLevel(console, 'info');
     }
   } catch (e) {
     // ignore
   }
-  return Logger.noOp();
+  return LoggerUtil.noOp();
 }

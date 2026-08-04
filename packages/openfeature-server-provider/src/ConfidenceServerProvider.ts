@@ -9,12 +9,14 @@ import {
   ResolutionDetails,
 } from '@openfeature/server-sdk';
 
-import { Context, EventData, EventSender, FlagEvaluation, FlagResolver, Value } from '@spotify-confidence/sdk';
-
-type Mutable<T> = { -readonly [K in keyof T]: T[K] };
+import { ConfidenceClient, EvaluationContext as Context, FlagBundle } from '@spotify-confidence/sdk';
 
 /**
- * OpenFeature Provider for Confidence Server SDK
+ * OpenFeature Provider for Confidence, for server side use.
+ *
+ * Implements the dynamic paradigm: each evaluation resolves the flag it needs
+ * against the context it was given, so there is no state and nothing to
+ * initialize.
  * @public
  */
 export class ConfidenceServerProvider implements Provider {
@@ -22,102 +24,94 @@ export class ConfidenceServerProvider implements Provider {
   readonly metadata: ProviderMetadata = {
     name: 'ConfidenceServerProvider',
   };
-  /** Current status of the provider. Can be READY, NOT_READY, ERROR, STALE and FATAL. */
+  /** Current status of the provider. There is nothing to set up, so it is READY from the start. */
   status: ProviderStatus = ProviderStatus.READY;
-  private readonly confidence: FlagResolver;
 
-  constructor(client: FlagResolver) {
-    this.confidence = client;
+  private readonly client: ConfidenceClient;
+  private readonly timeout: number;
+
+  constructor(client: ConfidenceClient, { timeout }: { timeout: number }) {
+    this.client = client;
+    this.timeout = timeout;
   }
 
-  private async fetchFlag<T extends Value>(
+  private async evaluateFlag<T extends FlagBundle.Value>(
     flagKey: string,
     defaultValue: T,
     context: EvaluationContext,
   ): Promise<ResolutionDetails<T>> {
-    const evaluation = (await this.confidence
-      .withContext(convertContext(context))
-      .evaluateFlag(flagKey, defaultValue)) as FlagEvaluation.Resolved<T>;
+    // Only the flag being evaluated is resolved, and the resolve applies it: on a
+    // server a resolve *is* the access, so backend apply records exposure for
+    // exactly the flag that was asked for. See concepts/apply.md.
+    const flagName = flagKey.split('.')[0];
+    const bundle = await this.client.resolve([flagName], convertContext(context), {
+      signal: AbortSignal.timeout(this.timeout),
+    });
+    return toResolutionDetails(FlagBundle.evaluate(bundle, flagKey, defaultValue));
+  }
 
-    if (evaluation.reason === 'ERROR') {
-      const { errorCode, ...rest } = evaluation;
-      return {
-        ...rest,
-        errorCode: this.mapErrorCode(errorCode),
-      };
-    }
-    return evaluation;
-  }
-  private mapErrorCode(errorCode: FlagEvaluation.ErrorCode): ErrorCode {
-    switch (errorCode) {
-      case 'FLAG_NOT_FOUND':
-        return ErrorCode.FLAG_NOT_FOUND;
-      case 'TYPE_MISMATCH':
-        return ErrorCode.TYPE_MISMATCH;
-      case 'NOT_READY':
-        return ErrorCode.PROVIDER_NOT_READY;
-      default:
-        return ErrorCode.GENERAL;
-    }
-  }
   /** Resolves with an evaluation of a Boolean flag */
   resolveBooleanEvaluation(
     flagKey: string,
     defaultValue: boolean,
     context: EvaluationContext,
   ): Promise<ResolutionDetails<boolean>> {
-    return this.fetchFlag(flagKey, defaultValue, context);
+    return this.evaluateFlag(flagKey, defaultValue, context);
   }
+
   /** Resolves with an evaluation of a Numbers flag */
   resolveNumberEvaluation(
     flagKey: string,
     defaultValue: number,
     context: EvaluationContext,
   ): Promise<ResolutionDetails<number>> {
-    return this.fetchFlag(flagKey, defaultValue, context);
+    return this.evaluateFlag(flagKey, defaultValue, context);
   }
+
   /** Resolves with an evaluation of an Object flag */
   resolveObjectEvaluation<T extends JsonValue>(
     flagKey: string,
     defaultValue: T,
     context: EvaluationContext,
   ): Promise<ResolutionDetails<T>> {
-    Value.assertValue(defaultValue);
-    return this.fetchFlag(flagKey, defaultValue, context);
+    // JsonValue allows arrays, which are not valid flag values. Evaluation
+    // reports that as a TYPE_MISMATCH rather than throwing.
+    return this.evaluateFlag(flagKey, defaultValue as FlagBundle.Value, context) as Promise<ResolutionDetails<T>>;
   }
+
   /** Resolves with an evaluation of a String flag */
   resolveStringEvaluation(
     flagKey: string,
     defaultValue: string,
     context: EvaluationContext,
   ): Promise<ResolutionDetails<string>> {
-    return this.fetchFlag(flagKey, defaultValue, context);
-  }
-
-  /** Tracks an event */
-  track(
-    trackingEventName: string,
-    context: EvaluationContext = {},
-    trackingEventDetails: { [key: string]: EvaluationContextValue } & { context?: never } = {},
-  ): void {
-    const scopedConfidence = this.confidence.withContext(convertContext(context));
-    // The public constructor still accepts custom FlagResolvers created before tracking support was added.
-    if (!isEventSender(scopedConfidence)) {
-      throw new TypeError(
-        'The configured FlagResolver does not support event tracking; construct the provider with a full Confidence instance',
-      );
-    }
-    // Dynamic event details can bypass the public type; do not let them replace the evaluation context.
-    scopedConfidence.track(trackingEventName, convertStruct(trackingEventDetails, 'context') as EventData);
-  }
-
-  async onClose(): Promise<void> {
-    this.confidence.close?.();
+    return this.evaluateFlag(flagKey, defaultValue, context);
   }
 }
 
-function isEventSender(confidence: FlagResolver): confidence is FlagResolver & EventSender {
-  return 'track' in confidence && typeof confidence.track === 'function';
+function toResolutionDetails<T>({
+  value,
+  reason,
+  variant,
+  errorCode,
+  errorMessage,
+}: FlagBundle.Details<T>): ResolutionDetails<T> {
+  if (errorCode) return { value, reason, errorCode: mapErrorCode(errorCode), errorMessage };
+  // A flag that matched nothing has no variant to report.
+  return variant ? { value, reason, variant } : { value, reason };
+}
+
+function mapErrorCode(errorCode: FlagBundle.ErrorCode): ErrorCode {
+  switch (errorCode) {
+    case 'FLAG_NOT_FOUND':
+      return ErrorCode.FLAG_NOT_FOUND;
+    case 'TYPE_MISMATCH':
+      return ErrorCode.TYPE_MISMATCH;
+    // OpenFeature has no code for a timeout; a resolve that never arrived is
+    // as general a failure as any.
+    default:
+      return ErrorCode.GENERAL;
+  }
 }
 
 function convertContext({ targetingKey, ...context }: EvaluationContext): Context {
@@ -125,21 +119,22 @@ function convertContext({ targetingKey, ...context }: EvaluationContext): Contex
   return { ...targetingContext, ...convertStruct(context) };
 }
 
-function convertValue(value: EvaluationContextValue): Value {
+function convertValue(value: EvaluationContextValue): unknown {
   if (typeof value === 'object') {
+    // Undefined rather than null: targeting treats an absent attribute and a
+    // null one differently, and JSON.stringify drops undefined for us.
     if (value === null) return undefined;
     if (value instanceof Date) return value.toISOString();
-    // @ts-expect-error TODO fix single type array conversion
     if (Array.isArray(value)) return value.map(convertValue);
     return convertStruct(value);
   }
   return value;
 }
 
-function convertStruct(value: { [key: string]: EvaluationContextValue }, ignoredKey?: string): Value.Struct {
-  const struct: Mutable<Value.Struct> = {};
+function convertStruct(value: { [key: string]: EvaluationContextValue }): Record<string, unknown> {
+  const struct: Record<string, unknown> = {};
   for (const key of Object.keys(value)) {
-    if (key === ignoredKey || typeof value[key] === 'undefined') continue;
+    if (typeof value[key] === 'undefined') continue;
     struct[key] = convertValue(value[key]);
   }
   return struct;

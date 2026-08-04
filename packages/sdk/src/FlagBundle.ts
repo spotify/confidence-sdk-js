@@ -111,6 +111,22 @@ export namespace FlagBundle {
       };
     }
 
+    // A flag that was not assigned carries no value, so there is no path to read
+    // out of it and no type to check: the default stands, labelled with the
+    // reason it did not match. Without this a dot path would report a type
+    // mismatch against a value that was never there.
+    if (flag.reason !== 'MATCH') {
+      if (flag.reason === 'ERROR') {
+        return {
+          ...flag,
+          value: defaultValue,
+          errorCode: 'GENERAL',
+          errorMessage: `Flag "${flagName}" could not be resolved`,
+        };
+      }
+      return { ...flag, value: defaultValue };
+    }
+
     let value: Value = flag.value;
     for (let i = 0; i < path.length; i++) {
       if (value === null || typeof value !== 'object') {

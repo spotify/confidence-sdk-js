@@ -83,10 +83,14 @@ export namespace ConfidenceClient {
     export interface Options {
         fetch?: typeof fetch;
         flagClientSecret: string;
-        // Warning: (ae-forgotten-export) The symbol "Logger" needs to be exported by the entry point index.d.ts
         logger?: Logger;
+        sdk?: {
+            name: SdkName;
+            version: string;
+        };
         url?: string;
     }
+    export type SdkName = 'JS_CONFIDENCE' | 'JS_WEB_PROVIDER' | 'JS_SERVER_PROVIDER';
 }
 
 // @public
@@ -259,7 +263,30 @@ export interface FlagResolver extends Contextual<FlagResolver> {
 }
 
 // @public
+export interface Logger {
+    // (undocumented)
+    readonly debug?: Logger.Fn;
+    // (undocumented)
+    readonly error?: Logger.Fn;
+    // (undocumented)
+    readonly info?: Logger.Fn;
+    // (undocumented)
+    readonly trace?: Logger.Fn;
+    // (undocumented)
+    readonly warn?: Logger.Fn;
+}
+
+// @public
+export namespace Logger {
+    export type Fn = (message: string, ...optionalParams: any[]) => void;
+    export type Level = 'trace' | 'debug' | 'info' | 'warn' | 'error';
+}
+
+// @public
 export function pageViews(): Trackable.Manager;
+
+// @public
+export function publishFlagEvaluation(flagName: string, variant: string, assignmentOrigin: string): void;
 
 // Warning: (ae-missing-release-tag) "SimpleFetch" is part of the package's API, but it is missing a release tag (@alpha, @beta, @public, or @internal)
 //

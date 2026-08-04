@@ -33,7 +33,8 @@ describe('ConfidenceWebProvider E2E tests', () => {
         errorCode: 'GENERAL',
         flagKey: 'web-sdk-e2e-flag.str',
         flagMetadata: {},
-        errorMessage: 'Resolve timeout',
+        // The abort reason travels out of fetch, so the message names the deadline
+        errorMessage: expect.stringContaining('Resolve timeout'),
         reason: 'ERROR',
         value: 'default',
       });

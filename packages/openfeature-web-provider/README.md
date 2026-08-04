@@ -80,18 +80,31 @@ const provider = createConfidenceWebProvider({
 
 The timeout option is used to set the timeout for the network request to the Confidence backend. When the timeout is reached, default values will be returned.
 
+## Logging
+
+Resolve and apply failures are reported to the console in development, and go
+unreported otherwise. Pass a `logger` — anything with a subset of `console`'s
+methods — to report them wherever you collect diagnostics:
+
+```ts
+const provider = createConfidenceWebProvider({
+  logger: { warn: message => myTelemetry.warn(message) },
+  // ... other options
+});
+```
+
 ## Configuring Apply
 
 See [apply concept](../../concepts/apply.md).
 
-By default, `'access'` apply is used, using a timeout of 250ms.
-
-To use Backend Apply, set the apply option to `'backend'`:
+Access apply is used, as the static paradigm calls for: a flag counts as seen when
+it is evaluated rather than when it was resolved. Flags evaluated close together
+are applied in one request, over a 10ms window by default. Set `applyDebounce` to
+widen the window, or to 0 to apply each flag as it is evaluated:
 
 ```ts
 const provider = createConfidenceWebProvider({
-    ...,
-    apply: 'backend'
+  applyDebounce: 0,
+  // ... other options
 });
-
 ```

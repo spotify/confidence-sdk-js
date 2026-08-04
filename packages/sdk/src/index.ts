@@ -13,3 +13,7 @@ export { CacheOptions, CacheScope } from './flag-cache';
 // ConfidenceClient carries its Options and ApplyResult types in a merged namespace.
 export { ConfidenceClient, EvaluationContext } from './ConfidenceClient';
 export { FlagBundle } from './FlagBundle';
+// Type-only: LoggerUtil in the same module builds the SDK's own loggers and
+// stays internal.
+export type { Logger } from './logger';
+export { publishFlagEvaluation } from './flag-evaluation-global';

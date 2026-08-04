@@ -16,7 +16,7 @@
   },
   "peerDependencies": {
     "@openfeature/server-sdk": "^1.13.5",
-    "@spotify-confidence/sdk": ">=0.1.4 <0.4.0"
+    "@spotify-confidence/sdk": ">=0.3.21 <0.5.0"
   },
   "scripts": {
     "build": "tsc",

@@ -105,6 +105,32 @@ describe('ConfidenceClient', () => {
       expect(requestBody(fetchImpl as any)).not.toHaveProperty('flags');
     });
 
+    it('reports the calling sdk, so a provider is distinguishable from direct use', async () => {
+      const fetchImpl = mockTransport();
+      const provider = new ConfidenceClient({
+        flagClientSecret: SECRET,
+        fetch: fetchImpl,
+        sdk: { name: 'JS_WEB_PROVIDER', version: '1.2.3' },
+      });
+      await provider.resolve(['promo-banner'], {});
+
+      expect(requestBody(fetchImpl as any).sdk).toEqual({ id: 'SDK_ID_JS_WEB_PROVIDER', version: '1.2.3' });
+    });
+
+    it('falls back to its own id for a name it does not know', async () => {
+      const fetchImpl = mockTransport();
+      const client = new ConfidenceClient({
+        flagClientSecret: SECRET,
+        fetch: fetchImpl,
+        // Only a JS caller can get here, and an unknown id would leave the
+        // resolver with no sdk at all.
+        sdk: { name: 'JS_SOMETHING_ELSE' as any, version: '1.2.3' },
+      });
+      await client.resolve(['promo-banner'], {});
+
+      expect(requestBody(fetchImpl as any).sdk).toEqual({ id: 'SDK_ID_JS_CONFIDENCE', version: '1.2.3' });
+    });
+
     it('converts the response into a FlagBundle keyed by unprefixed flag name', async () => {
       const bundle = await client(mockTransport()).resolve(['promo-banner'], {});
 
@@ -379,6 +405,29 @@ describe('ConfidenceClient', () => {
       const details = FlagBundle.evaluate(await bundle(), 'checkout-redesign', { enabled: false });
       expect(details.value).toEqual({ enabled: false });
       expect(details.reason).toBe('NO_SEGMENT_MATCH');
+    });
+
+    it('substitutes the default for a dot path into a flag that did not match', async () => {
+      // There is no value to read a path out of, so this is a non-match rather
+      // than a type mismatch against a value that was never there.
+      const details = FlagBundle.evaluate(await bundle(), 'checkout-redesign.enabled', false);
+      expect(details.value).toBe(false);
+      expect(details.reason).toBe('NO_SEGMENT_MATCH');
+      expect(details.errorCode).toBeUndefined();
+    });
+
+    it('reports a flag the resolver failed on as an error', async () => {
+      const errored = await client(
+        mockTransport({
+          ...RESOLVE_RESPONSE,
+          resolvedFlags: [{ flag: 'flags/promo-banner', reason: 'RESOLVE_REASON_ERROR' }],
+        }),
+      ).resolve(['promo-banner'], {});
+
+      const details = FlagBundle.evaluate(errored, 'promo-banner.text', 'default');
+      expect(details.value).toBe('default');
+      expect(details.reason).toBe('ERROR');
+      expect(details.errorCode).toBe('GENERAL');
     });
 
     it('logs evaluation failures when a logger is passed', async () => {

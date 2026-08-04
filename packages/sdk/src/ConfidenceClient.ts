@@ -11,11 +11,15 @@ import { Logger } from './logger';
 const DEFAULT_URL = 'https://resolver.confidence.dev';
 const FLAG_PREFIX = 'flags/';
 
-// TODO: a dedicated SDK id for the thin client would make its resolve traffic
-// distinguishable from the rest of the JS SDK. Additive proto change.
-const SDK: Sdk = {
-  id: SdkId.SDK_ID_JS_CONFIDENCE,
-  version: '0.3.22', // x-release-please-version
+const DEFAULT_VERSION = '0.3.22'; // x-release-please-version
+
+// TODO: a dedicated SDK id for the thin client would make its own resolve
+// traffic distinguishable from the rest of the JS SDK, the way the provider ids
+// below distinguish theirs. Additive proto change.
+const SDK_IDS: Record<ConfidenceClient.SdkName, SdkId> = {
+  JS_CONFIDENCE: SdkId.SDK_ID_JS_CONFIDENCE,
+  JS_WEB_PROVIDER: SdkId.SDK_ID_JS_WEB_PROVIDER,
+  JS_SERVER_PROVIDER: SdkId.SDK_ID_JS_SERVER_PROVIDER,
 };
 
 /**
@@ -39,6 +43,12 @@ export type EvaluationContext = {
 export namespace ConfidenceClient {
   // Types only, so this is erased and may precede the class it merges with.
 
+  /**
+   * Names the calling SDK to the resolver. `JS_CONFIDENCE` is this SDK itself;
+   * the others belong to the OpenFeature providers built on this client.
+   */
+  export type SdkName = 'JS_CONFIDENCE' | 'JS_WEB_PROVIDER' | 'JS_SERVER_PROVIDER';
+
   /** Options for constructing a {@link (ConfidenceClient:class)} */
   export interface Options {
     /** Credentials identifying the client and the flags available to it */
@@ -59,6 +69,12 @@ export namespace ConfidenceClient {
     fetch?: typeof fetch;
     /** Optional logger. Nothing is logged when omitted. */
     logger?: Logger;
+    /**
+     * Identifies the caller to the resolver, so that a provider's traffic can be
+     * told apart from direct use of this client. Defaults to this SDK's own name
+     * and version.
+     */
+    sdk?: { name: SdkName; version: string };
   }
 
   /** The outcome of {@link (ConfidenceClient:class).apply} */
@@ -92,6 +108,7 @@ export class ConfidenceClient {
   private readonly baseUrl: string;
   private readonly fetchImpl: typeof fetch;
   private readonly logger?: Logger;
+  private readonly sdk: Sdk;
 
   /** Create a client. Does no work */
   constructor(options: ConfidenceClient.Options) {
@@ -108,6 +125,12 @@ export class ConfidenceClient {
     // constructing still does no work when the runtime has no global fetch.
     this.fetchImpl = options.fetch ?? ((...args) => globalThis.fetch(...args));
     this.logger = options.logger;
+    // Falls back rather than trusting the name: a JS caller can pass anything,
+    // and an unknown id would leave the resolver with no sdk at all.
+    this.sdk = {
+      id: (options.sdk && SDK_IDS[options.sdk.name]) ?? SdkId.SDK_ID_JS_CONFIDENCE,
+      version: options.sdk?.version ?? DEFAULT_VERSION,
+    };
   }
 
   /**
@@ -141,7 +164,7 @@ export class ConfidenceClient {
         evaluationContext: context,
         apply: options?.apply ?? true,
         clientSecret: this.clientSecret,
-        sdk: SDK,
+        sdk: this.sdk,
       };
       const response = await this.post('/v1/flags:resolve', ResolveFlagsRequest.toJSON(request), options?.signal);
       return createBundle(ResolveFlagsResponse.fromJSON(await response.json()));
@@ -184,7 +207,7 @@ export class ConfidenceClient {
         // Throws on malformed base64 in browsers; caught below with everything else.
         resolveToken: bytesFromBase64(resolveToken),
         sendTime: now,
-        sdk: SDK,
+        sdk: this.sdk,
       };
       await this.post('/v1/flags:apply', ApplyFlagsRequest.toJSON(request), options?.signal);
       return { ok: true };

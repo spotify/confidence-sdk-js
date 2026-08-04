@@ -73,6 +73,19 @@ const provider = createConfidenceServerProvider({
 
 The timeout option is used to set the timeout for the network request to the Confidence backend. When the timeout is reached, default values will be returned.
 
+## Logging
+
+Resolve failures are reported to the console in development, and go unreported
+otherwise. Pass a `logger` — anything with a subset of `console`'s methods — to
+report them wherever you collect diagnostics:
+
+```ts
+const provider = createConfidenceServerProvider({
+  logger: { warn: message => myTelemetry.warn(message) },
+  // ... other options
+});
+```
+
 ## Configuring Apply
 
 See [apply concept](../../concepts/apply.md).
