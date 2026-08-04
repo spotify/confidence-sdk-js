@@ -1,5 +1,6 @@
 import { Schema } from './Schema';
 import { Value } from './Value';
+import { base64FromBytes } from './base64';
 import { TypeMismatchError } from './error';
 import { publishFlagEvaluation } from './flag-evaluation-global';
 import { FlagEvaluation } from './flags';
@@ -192,15 +193,4 @@ function toEvaluationReason(reason: ResolveReason): Exclude<FlagEvaluation<unkno
     default:
       return 'UNSPECIFIED';
   }
-}
-
-function base64FromBytes(arr: Uint8Array): string {
-  if ((globalThis as any).Buffer) {
-    return globalThis.Buffer.from(arr).toString('base64');
-  }
-  const bin: string[] = [];
-  arr.forEach(byte => {
-    bin.push(globalThis.String.fromCharCode(byte));
-  });
-  return globalThis.btoa(bin.join(''));
 }

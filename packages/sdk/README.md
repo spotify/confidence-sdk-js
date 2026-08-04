@@ -3,10 +3,12 @@
 ![](https://img.shields.io/badge/lifecycle-beta-a0c3d2.svg)
 
 > [!NOTE]
-> This Confidence standalone SDK is being phased out. For new integrations, we recommend using the OpenFeature APIs directly:
+> The standalone `Confidence` class is being phased out. For new integrations, we recommend using the OpenFeature APIs directly:
 >
 > - **Client-based (SPA)**: Use [@spotify-confidence/openfeature-web-provider](https://github.com/spotify/confidence-sdk-js/blob/main/packages/openfeature-web-provider/README.md)
 > - **Server**: Use [@spotify-confidence/openfeature-server-provider-local](https://github.com/spotify/confidence-resolver/tree/main/openfeature-provider/js/README.md), which resolves flags in-process with close to zero latency
+>
+> [`ConfidenceClient`](#confidenceclient) is a low-level client for a remote resolver, and will become the engine behind the providers above. Most integrations should use a provider rather than calling it directly.
 
 JavaScript implementation of the Confidence SDK, enables event tracking and feature flagging capabilities in conjunction with the OpenFeature Web SDK.
 
@@ -19,6 +21,145 @@ To add the packages to your dependencies run:
 ```sh
 yarn add @spotify-confidence/sdk
 ```
+
+# ConfidenceClient
+
+`ConfidenceClient` is a thin, stateless client for a remote Confidence resolver. It does flag resolution and exposure only — no event tracking, no context management, no caching.
+
+## When to use it
+
+Prefer a provider over calling this directly:
+
+- **Client-side (SPA)**: [@spotify-confidence/openfeature-web-provider](https://github.com/spotify/confidence-sdk-js/blob/main/packages/openfeature-web-provider/README.md)
+- **Server**: [@spotify-confidence/openfeature-server-provider-local](https://github.com/spotify/confidence-resolver/tree/main/openfeature-provider/js/README.md), which resolves in-process with close to zero latency
+
+Reach for `ConfidenceClient` when you want the underlying primitive instead: resolving from a worker, forwarding a resolve to the browser, or anywhere a provider's lifecycle is more than you need.
+
+There is no lifecycle, no background work and no cached state, so constructing one is free — create it per request or share it at module level, it makes no difference. There is nothing to `close()`.
+
+```ts
+import { ConfidenceClient, FlagBundle } from '@spotify-confidence/sdk';
+
+const client = new ConfidenceClient({ flagClientSecret: 'my secret' });
+
+const bundle = await client.resolve(['tutorial-feature'], { targeting_key: 'user-1' });
+const { value } = FlagBundle.evaluate(bundle, 'tutorial-feature.title', 'default title');
+```
+
+> [!IMPORTANT]
+> The evaluation context is passed to targeting verbatim, so use the wire spelling `targeting_key` — not OpenFeature's `targetingKey`.
+
+## Resolve on the server, evaluate in the browser
+
+Resolving flags in the browser is generally not recommended. Instead resolve once on the server and forward the resulting `FlagBundle` to the client: it is plain JSON, and `FlagBundle.evaluate` is a pure function, so the browser can evaluate flags without a second round trip or a client secret.
+
+Defer exposure with `apply: false` so a flag counts as seen when it is actually used, rather than when it was resolved.
+
+```ts
+// --- server ---
+const bundle = await client.resolve([], { targeting_key: userId }, { apply: false });
+return { props: { bundle } }; // serialize into the page
+
+// --- browser ---
+import { FlagBundle } from '@spotify-confidence/sdk';
+
+const showBanner = FlagBundle.evaluate(bundle, 'promo-banner.enabled', false);
+if (showBanner.shouldApply) {
+  await fetch('/api/apply', { method: 'POST', body: JSON.stringify({ flag: 'promo-banner' }) });
+}
+```
+
+The bundle's `resolveToken` only permits applying the flags it was minted for, which is what makes it safe to round-trip through the browser.
+
+## Pointing at your own resolver
+
+`url` defaults to `https://resolver.confidence.dev`. Set it to target a resolver you run yourself, and pass a `fetch`-compatible transport to reach it — a Cloudflare service binding, for instance:
+
+```ts
+const client = new ConfidenceClient({
+  flagClientSecret: env.CONFIDENCE_CLIENT_SECRET,
+  fetch: env.RESOLVER.fetch.bind(env.RESOLVER),
+  url: 'https://resolver.internal',
+});
+```
+
+> [!NOTE]
+> The `url` option is still used with a service binding: bindings route by binding rather than by hostname, but the request path is taken from the URL, so it has to be a valid absolute URL.
+
+## Resolving flags
+
+`resolve` takes the flag names to resolve — or an empty array for every flag available to the client — and returns a `FlagBundle`.
+
+```ts
+const bundle = await client.resolve(['promo-banner'], { targeting_key: 'user-1', country: 'SE' });
+
+bundle.flags['promo-banner']; // { reason, value, variant, shouldApply, assignmentOrigin }
+bundle.resolveId; // identifies this resolve
+bundle.resolveToken; // empty unless apply was deferred
+```
+
+`apply` defaults to `true`, so a plain `resolve` counts as an exposure.
+
+### Evaluating
+
+`FlagBundle.evaluate` takes a default value, which fixes the expected type. A resolved value that does not match the default's type yields the default with a `TYPE_MISMATCH` error, and dot notation reads into the flag's value:
+
+```ts
+FlagBundle.evaluate(bundle, 'promo-banner', { enabled: false, title: '' });
+FlagBundle.evaluate(bundle, 'promo-banner.title', 'default title');
+```
+
+Each result carries the `reason` the flag resolved the way it did, the assigned `variant`, and `shouldApply`. Pass an optional `Logger` as the fourth argument to have evaluation failures reported.
+
+## Recording exposure
+
+When a resolve deferred exposure, `apply` records it against the bundle's token. Pass one flag name or several; several are sent in a single request.
+
+```ts
+const result = await client.apply(bundle.resolveToken, ['promo-banner']);
+```
+
+Flags whose `shouldApply` is false can be skipped — applying them has no observable effect.
+
+## Errors
+
+Neither `resolve` nor `apply` rejects.
+
+A failed resolve returns an errored bundle rather than throwing, so the failure travels to the browser correctly labelled instead of looking like a missing flag. Evaluating against it yields your defaults with an `ERROR` reason:
+
+```ts
+const bundle = await client.resolve(['promo-banner'], context);
+if (bundle.errorCode) {
+  // 'TIMEOUT' or 'GENERAL' — evaluation still works, and returns defaults
+}
+```
+
+`apply` returns an `ApplyResult` instead of rejecting, because the natural call site is fire-and-forget and an unhandled rejection terminates the process on Node:
+
+```ts
+const result = await client.apply(token, 'promo-banner');
+if (!result.ok) {
+  // result.errorCode, result.errorMessage, and result.status for HTTP failures
+}
+```
+
+Failures are reported through the `logger` if one was passed.
+
+## Timeouts and cancellation
+
+There is no `timeout` option — pass an `AbortSignal`, which covers both deadlines and cancellation:
+
+```ts
+await client.resolve(flags, context, { signal: AbortSignal.timeout(1000) });
+await client.apply(token, flags, { signal: AbortSignal.timeout(1000) });
+```
+
+A signal that aborts on a deadline is reported as `TIMEOUT`; a deliberate `controller.abort()` is not. Neither call retries — for `apply`, inspect `status` to tell a permanent failure (4xx) from a transient one and retry at your own cadence.
+
+# The Confidence class
+
+> [!NOTE]
+> Being phased out — see the recommendations at the top of this page.
 
 ## Initializing the SDK
 
