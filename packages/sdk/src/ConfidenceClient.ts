@@ -50,7 +50,12 @@ export namespace ConfidenceClient {
      * Defaults to `https://resolver.confidence.dev`.
      */
     url?: string;
-    /** fetch-compatible transport. Pass a Cloudflare service binding here. */
+    /**
+     * fetch-compatible transport. To use a Cloudflare service binding, wrap it
+     * rather than passing the method itself — a detached `fetch` loses its
+     * receiver and Workers rejects it with "Illegal invocation":
+     * `fetch: (...args) => env.ConfidenceBinding.fetch(...args)`.
+     */
     fetch?: typeof fetch;
     /** Optional logger. Nothing is logged when omitted. */
     logger?: Logger;
@@ -91,9 +96,17 @@ export class ConfidenceClient {
   /** Create a client. Does no work */
   constructor(options: ConfidenceClient.Options) {
     this.clientSecret = options.flagClientSecret;
-    // Trailing slashes would produce '//v1/flags:resolve'.
-    this.baseUrl = (options.url ?? DEFAULT_URL).replace(/\/+$/, '');
-    this.fetchImpl = options.fetch ?? globalThis.fetch;
+    // Trailing slashes would produce '//v1/flags:resolve'. `||` rather than
+    // `??` so an empty string falls back too: over a service binding the
+    // hostname is ignored, which invites passing '' — and a relative URL is not
+    // something `fetch` or a binding can send.
+    this.baseUrl = (options.url || DEFAULT_URL).replace(/\/+$/, '');
+    // Wrapped, not `globalThis.fetch` directly: Cloudflare Workers reject a
+    // detached `fetch` with "Illegal invocation: function called with incorrect
+    // `this` reference", so capturing the bare function breaks every request
+    // from inside a Worker. Resolved per call rather than bound here, so
+    // constructing still does no work when the runtime has no global fetch.
+    this.fetchImpl = options.fetch ?? ((...args) => globalThis.fetch(...args));
     this.logger = options.logger;
   }
 

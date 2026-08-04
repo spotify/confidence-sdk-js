@@ -221,6 +221,14 @@ describe('ConfidenceClient', () => {
       await client(fetchImpl, 'https://my-resolver.example.com//').resolve(['promo-banner'], {});
       expect((fetchImpl as any).mock.calls[0][0]).toBe('https://my-resolver.example.com/v1/flags:resolve');
     });
+
+    it('falls back to the default url for an empty one', async () => {
+      // A service binding ignores the hostname, which invites passing '' — but
+      // neither `fetch` nor a binding can send a relative URL.
+      const fetchImpl = mockTransport();
+      await client(fetchImpl, '').resolve(['promo-banner'], {});
+      expect((fetchImpl as any).mock.calls[0][0]).toBe('https://resolver.confidence.dev/v1/flags:resolve');
+    });
   });
 
   describe('apply', () => {
@@ -391,6 +399,61 @@ describe('ConfidenceClient', () => {
       const instance = client(mockTransport()) as unknown as Record<string, unknown>;
       expect(instance.initialize).toBeUndefined();
       expect(instance.close).toBeUndefined();
+    });
+  });
+
+  describe('default transport', () => {
+    /**
+     * Cloudflare Workers reject a `fetch` called with the wrong receiver
+     * ("Illegal invocation"), so a client that captured the bare
+     * `globalThis.fetch` fails every request from inside a Worker. Node and
+     * browsers are lenient, which is why only a real Worker caught this.
+     */
+    function installStrictReceiverFetch(impl: typeof fetch) {
+      const original = globalThis.fetch;
+      // Not an arrow: the point is to observe the receiver the client calls with.
+      const strict = function strictFetch(this: unknown, ...args: Parameters<typeof fetch>) {
+        if (this !== globalThis) {
+          throw new TypeError('Illegal invocation: function called with incorrect `this` reference.');
+        }
+        return impl(...args);
+      };
+      globalThis.fetch = strict as unknown as typeof fetch;
+      return () => {
+        globalThis.fetch = original;
+      };
+    }
+
+    it('calls the global fetch with the global as receiver', async () => {
+      const fetchImpl = mockTransport();
+      const restore = installStrictReceiverFetch(fetchImpl);
+      try {
+        const bundle = await new ConfidenceClient({ flagClientSecret: SECRET }).resolve(['promo-banner'], {});
+
+        expect(bundle.errorCode).toBeUndefined();
+        expect(bundle.flags['promo-banner']).toMatchObject({ reason: 'MATCH' });
+      } finally {
+        restore();
+      }
+    });
+
+    it('reads the global fetch per call, so construction needs no global', async () => {
+      const originalDescriptor = Object.getOwnPropertyDescriptor(globalThis, 'fetch');
+      // @ts-expect-error — deliberately removing fetch to mimic a runtime without it
+      delete globalThis.fetch;
+      try {
+        const instance = new ConfidenceClient({ flagClientSecret: SECRET });
+        expect(instance).toBeDefined();
+
+        const restore = installStrictReceiverFetch(mockTransport());
+        try {
+          expect((await instance.resolve(['promo-banner'], {})).errorCode).toBeUndefined();
+        } finally {
+          restore();
+        }
+      } finally {
+        if (originalDescriptor) Object.defineProperty(globalThis, 'fetch', originalDescriptor);
+      }
     });
   });
 });

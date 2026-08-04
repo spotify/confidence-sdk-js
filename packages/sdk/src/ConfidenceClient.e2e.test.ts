@@ -105,7 +105,10 @@ describe('ConfidenceClient E2E (resolve)', () => {
 
       const bundle = await bogus.resolve([FLAG], CONTEXT, { apply: false });
 
-      expect(bundle.errorMessage).toMatch(/flags:resolve failed: 4\d\d/);
+      // Status not pinned to 4xx — the Cloudflare edge resolver answers 500 for
+      // an unknown secret. What matters is that the diagnostic survives.
+      expect(bundle.errorCode).toBe('GENERAL');
+      expect(bundle.errorMessage).toMatch(/flags:resolve failed: \d{3}/);
       expect(FlagBundle.evaluate(bundle, FLAG, 'fallback')).toMatchObject({ reason: 'ERROR', value: 'fallback' });
     },
     TIMEOUT,
@@ -199,7 +202,18 @@ describe('ConfidenceClient E2E (apply)', () => {
   let resolveToken: string;
 
   beforeAll(async () => {
-    ({ resolveToken } = await client.resolve([FLAG], CONTEXT, { apply: false }));
+    const bundle = await client.resolve([FLAG], CONTEXT, { apply: false });
+
+    // Asserted here on purpose. `resolve` never rejects, so a transient failure
+    // would yield an errored bundle with an empty token; `apply` then
+    // short-circuits to `{ ok: true }` without a request, which passes the
+    // positive tests below vacuously and fails the negative ones with a
+    // baffling "expected ok: false, received ok: true". Failing in the hook
+    // instead points at the real cause and prints the resolver's diagnostic.
+    expect(bundle.errorMessage).toBeUndefined();
+    expect(bundle.resolveToken).toBeTruthy();
+
+    ({ resolveToken } = bundle);
   }, TIMEOUT);
 
   it(
@@ -219,15 +233,18 @@ describe('ConfidenceClient E2E (apply)', () => {
   );
 
   it(
-    'reports a resolve token the resolver will not accept, with a 4xx status',
+    'reports a resolve token the resolver will not accept, carrying the HTTP status',
     async () => {
       const result = await client.apply('bm90LWEtdG9rZW4=', FLAG);
 
       expect(result).toMatchObject({ ok: false, errorCode: 'GENERAL' });
-      // A permanent failure: the status is what tells a caller not to retry.
+      // Deliberately not pinned to 4xx. The status is there so a caller can log
+      // or branch on it, but it is not a portable retry signal: this resolver
+      // answers 4xx, while the Cloudflare edge resolver returns 500 for the
+      // same permanently-doomed apply (confidence-cloudflare-resolver
+      // src/lib.rs maps every apply error to 500).
       expect(result.ok === false && result.status).toBeGreaterThanOrEqual(400);
-      expect(result.ok === false && result.status).toBeLessThan(500);
-      expect(result.ok === false && result.errorMessage).toMatch(/flags:apply failed: 4\d\d/);
+      expect(result.ok === false && result.errorMessage).toMatch(/flags:apply failed: \d{3}/);
     },
     TIMEOUT,
   );
@@ -240,7 +257,9 @@ describe('ConfidenceClient E2E (apply)', () => {
       // round-trip through the browser.
       const result = await client.apply(resolveToken, OTHER_FLAG);
 
-      expect(result).toMatchObject({ ok: false, status: 400 });
+      // The diagnostic is the portable part; the status is not (see above).
+      expect(result).toMatchObject({ ok: false, errorCode: 'GENERAL' });
+      expect(result.ok === false && result.status).toBeGreaterThanOrEqual(400);
       expect(result.ok === false && result.errorMessage).toMatch(
         /Flag in resolve token does not match flag in request/,
       );
@@ -255,7 +274,8 @@ describe('ConfidenceClient E2E (apply)', () => {
       // carry — an apply naming a flag it never resolved isn't partly right.
       const result = await client.apply(resolveToken, [FLAG, OTHER_FLAG]);
 
-      expect(result).toMatchObject({ ok: false, status: 400 });
+      expect(result).toMatchObject({ ok: false, errorCode: 'GENERAL' });
+      expect(result.ok === false && result.status).toBeGreaterThanOrEqual(400);
       expect(result.ok === false && result.errorMessage).toMatch(
         /Flag in resolve token does not match flag in request/,
       );
