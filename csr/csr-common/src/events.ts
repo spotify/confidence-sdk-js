@@ -65,6 +65,7 @@ export enum MouseInteractions {
 export type RageClickCustomData = {
   tag: 'csr:rageClick';
   payload: {
+    eventId?: string;
     targetId: number;
     clickCount: number;
     durationMs: number;
@@ -76,6 +77,7 @@ export type RageClickCustomData = {
 export type FormFieldReEditCustomData = {
   tag: 'csr:formFieldReEdit';
   payload: {
+    eventId?: string;
     targetId: number;
     editCount: number;
     element?: ElementDescriptor;
@@ -86,6 +88,7 @@ export type FormFieldReEditCustomData = {
 export type ScrollBackCustomData = {
   tag: 'csr:scrollBack';
   payload: {
+    eventId?: string;
     scrollBackPx: number;
     fromY: number;
     toY: number;
@@ -103,6 +106,7 @@ export type ElementDescriptor = {
 export type ClickCustomData = {
   tag: 'csr:click';
   payload: {
+    eventId?: string;
     targetId: number;
     element?: ElementDescriptor;
     pathname?: string;
@@ -112,6 +116,7 @@ export type ClickCustomData = {
 export type InputCustomData = {
   tag: 'csr:input';
   payload: {
+    eventId?: string;
     targetId: number;
     element?: ElementDescriptor;
     pathname?: string;
@@ -123,6 +128,7 @@ export type InputCustomData = {
 export type DeadClickCustomData = {
   tag: 'csr:deadClick';
   payload: {
+    eventId?: string;
     targetId: number;
     element?: ElementDescriptor;
     pathname?: string;
@@ -132,6 +138,7 @@ export type DeadClickCustomData = {
 export type TabUnfocusCustomData = {
   tag: 'csr:tabUnfocus';
   payload: {
+    eventId?: string;
     pathname?: string;
   };
 };
@@ -139,6 +146,7 @@ export type TabUnfocusCustomData = {
 export type TabRefocusCustomData = {
   tag: 'csr:tabRefocus';
   payload: {
+    eventId?: string;
     awayDurationMs: number;
     pathname?: string;
   };
@@ -154,7 +162,9 @@ export type RouteChangePayload = {
 
 export type RouteChangeCustomData = {
   tag: 'csr:routeChange';
-  payload: RouteChangePayload;
+  // Intersected rather than added to RouteChangePayload so the plugin-event
+  // shape (RouteChangePluginData) stays free of analyzer identity.
+  payload: RouteChangePayload & { eventId?: string };
 };
 
 /**
@@ -231,6 +241,7 @@ export type FlagEvaluationPluginData = {
 export type ErrorMessageCustomData = {
   tag: 'csr:errorMessage';
   payload: {
+    eventId?: string;
     text: string;
   };
 };
@@ -238,6 +249,7 @@ export type ErrorMessageCustomData = {
 export type DialogOpenedCustomData = {
   tag: 'csr:dialogOpened';
   payload: {
+    eventId?: string;
     content: string[];
   };
 };
@@ -245,6 +257,7 @@ export type DialogOpenedCustomData = {
 export type IdleGapCustomData = {
   tag: 'csr:idleGap';
   payload: {
+    eventId?: string;
     visibleGapS: number;
     totalGapS: number;
     hiddenS: number;
@@ -255,6 +268,7 @@ export type IdleGapCustomData = {
 export type AwayGapCustomData = {
   tag: 'csr:awayGap';
   payload: {
+    eventId?: string;
     totalGapS: number;
     hiddenS: number;
   };
@@ -263,6 +277,11 @@ export type AwayGapCustomData = {
 /**
  * Closed union of every Custom event we emit. Add a new variant here when
  * introducing a new tag — emitting an unregistered tag is a TS error.
+ *
+ * Every payload carries an optional `eventId`: a per-event identity stamped
+ * at emission by the analyzer (uuid). It is inert metadata — players ignore
+ * it — and exists so downstream review tooling can reference and remove
+ * individual generated events without patching untyped data.
  */
 export type CustomEventData =
   | ClickCustomData
