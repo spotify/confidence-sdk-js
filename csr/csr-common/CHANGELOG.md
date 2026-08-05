@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.18.4](https://github.com/spotify/confidence-sdk-js/compare/csr-common-v0.18.3...csr-common-v0.18.4) (2026-08-05)
+
+
+### ✨ New Features
+
+* **csr-common:** optional eventId identity on custom event payloads ([#428](https://github.com/spotify/confidence-sdk-js/issues/428)) ([f49970a](https://github.com/spotify/confidence-sdk-js/commit/f49970a4ccd34cbfbdef7729df19a256f077fced))
+
 ## [0.18.3](https://github.com/spotify/confidence-sdk-js/compare/csr-common-v0.18.2...csr-common-v0.18.3) (2026-07-16)
 
 
