@@ -8,8 +8,27 @@ import { base64FromBytes, bytesFromBase64 } from './base64';
 import { FlagBundle } from './FlagBundle';
 import { Logger } from './logger';
 
-const DEFAULT_URL = 'https://resolver.confidence.dev';
 const FLAG_PREFIX = 'flags/';
+const EVENT_PREFIX = 'eventDefinitions/';
+
+/**
+ * Base URL of a Confidence service, in the given region or the global one.
+ *
+ * Flags and events are separate services, so a single URL option could never
+ * place both — which is why `region` is the option and a URL is not. Rewriting
+ * URLs outright is still possible through `fetch`, and stays the rare case it is.
+ */
+function serviceUrl(service: 'resolver' | 'events', region?: ConfidenceClient.Region): string {
+  return `https://${service}${region ? `.${region}` : ''}.confidence.dev`;
+}
+
+/**
+ * Browsers share one 64KB quota across all in-flight `keepalive` bodies and fail
+ * the fetch outright when it is exceeded, so only bodies comfortably under it
+ * are sent that way. Compared against a string length, which counts UTF-16 code
+ * units rather than bytes — hence the margin.
+ */
+const KEEPALIVE_MAX_BODY_LENGTH = 50_000;
 
 const DEFAULT_VERSION = '0.3.22'; // x-release-please-version
 
@@ -49,22 +68,29 @@ export namespace ConfidenceClient {
    */
   export type SdkName = 'JS_CONFIDENCE' | 'JS_WEB_PROVIDER' | 'JS_SERVER_PROVIDER';
 
+  /** A Confidence data region */
+  export type Region = 'eu' | 'us';
+
   /** Options for constructing a {@link (ConfidenceClient:class)} */
   export interface Options {
     /** Credentials identifying the client and the flags available to it */
-    flagClientSecret: string;
+    clientSecret: string;
     /**
-     * Resolver base URL. Also used for the request path when `fetch` is a
-     * Cloudflare service binding (bindings route by binding, not by hostname).
+     * Pins flag resolution and event publishing to a region, for data residency.
+     * Both services are placed, since events carry data of their own.
      *
-     * Defaults to `https://resolver.confidence.dev`.
+     * Defaults to the global region.
      */
-    url?: string;
+    region?: Region;
     /**
-     * fetch-compatible transport. To use a Cloudflare service binding, wrap it
-     * rather than passing the method itself — a detached `fetch` loses its
-     * receiver and Workers rejects it with "Illegal invocation":
-     * `fetch: (...args) => env.ConfidenceBinding.fetch(...args)`.
+     * fetch-compatible transport. Also the way to reach a resolver of your own:
+     * rewrite the URL here, since there is no url option.
+     *
+     * To use a Cloudflare service binding, wrap it rather than passing the method
+     * itself — a detached `fetch` loses its receiver and Workers rejects it with
+     * "Illegal invocation": `fetch: (...args) => env.ConfidenceBinding.fetch(...args)`.
+     * A binding routes by binding rather than by hostname, so the Confidence
+     * hostname in the request is ignored and only its path is used.
      */
     fetch?: typeof fetch;
     /** Optional logger. Nothing is logged when omitted. */
@@ -77,19 +103,67 @@ export namespace ConfidenceClient {
     sdk?: { name: SdkName; version: string };
   }
 
-  /** The outcome of {@link (ConfidenceClient:class).apply} */
-  export type ApplyResult =
+  /**
+   * The outcome of a write — {@link (ConfidenceClient:class).apply} or
+   * {@link (ConfidenceClient:class).publish}. Neither rejects, so this is how a
+   * failure is reported.
+   */
+  export type WriteResult =
     | { ok: true }
     | {
-        /** The exposure was not recorded */
+        /** Nothing was recorded, or — when `errors` is set — not all of it was */
         ok: false;
         /** `TIMEOUT` when the signal aborted with a `TimeoutError` */
         errorCode: 'TIMEOUT' | 'GENERAL';
         /** Human-readable cause */
         errorMessage: string;
-        /** HTTP status, absent for transport failures, timeouts and aborts */
+        /**
+         * HTTP status. Absent for transport failures, timeouts and aborts, and
+         * for an event the publisher rejected on an otherwise successful request.
+         */
         status?: number;
+        /**
+         * The events that were rejected, by their index in the published batch.
+         * Only a publish sets this, and only when the request itself succeeded:
+         * the rest of the batch was recorded.
+         */
+        errors?: Array<{ index: number; errorMessage: string }>;
       };
+
+  /** An event for {@link (ConfidenceClient:class).publish} */
+  export interface Event {
+    /** Event definition name, without the `eventDefinitions/` prefix */
+    name: string;
+    /** Arbitrary event data */
+    payload?: EventPayload;
+    /**
+     * When the event happened. Defaults to the time the request is sent.
+     *
+     * Set it explicitly when publishing events that were queued: a batch would
+     * otherwise restamp everything in it with the flush time.
+     */
+    eventTime?: Date;
+  }
+
+  /**
+   * Event data, sent as arbitrary JSON.
+   *
+   * `context` is the well-known key Confidence attributes events by — it is what
+   * joins an event to the flag exposures for the same targeting context. Nothing
+   * enforces its presence, but events published without it cannot be attributed.
+   */
+  export type EventPayload = {
+    /** The evaluation context the event happened in */
+    context?: EvaluationContext;
+    [key: string]: unknown;
+  };
+}
+
+/** A per-event failure, as the publish endpoint reports them */
+interface PublishError {
+  index: number;
+  reason: string;
+  message: string;
 }
 
 /**
@@ -105,19 +179,17 @@ export namespace ConfidenceClient {
 // eslint-disable-next-line @typescript-eslint/no-redeclare
 export class ConfidenceClient {
   private readonly clientSecret: string;
-  private readonly baseUrl: string;
+  private readonly resolverUrl: string;
+  private readonly eventsUrl: string;
   private readonly fetchImpl: typeof fetch;
   private readonly logger?: Logger;
   private readonly sdk: Sdk;
 
   /** Create a client. Does no work */
   constructor(options: ConfidenceClient.Options) {
-    this.clientSecret = options.flagClientSecret;
-    // Trailing slashes would produce '//v1/flags:resolve'. `||` rather than
-    // `??` so an empty string falls back too: over a service binding the
-    // hostname is ignored, which invites passing '' — and a relative URL is not
-    // something `fetch` or a binding can send.
-    this.baseUrl = (options.url || DEFAULT_URL).replace(/\/+$/, '');
+    this.clientSecret = options.clientSecret;
+    this.resolverUrl = serviceUrl('resolver', options.region);
+    this.eventsUrl = serviceUrl('events', options.region);
     // Wrapped, not `globalThis.fetch` directly: Cloudflare Workers reject a
     // detached `fetch` with "Illegal invocation: function called with incorrect
     // `this` reference", so capturing the bare function breaks every request
@@ -166,7 +238,11 @@ export class ConfidenceClient {
         clientSecret: this.clientSecret,
         sdk: this.sdk,
       };
-      const response = await this.post('/v1/flags:resolve', ResolveFlagsRequest.toJSON(request), options?.signal);
+      const response = await this.post(
+        `${this.resolverUrl}/v1/flags:resolve`,
+        ResolveFlagsRequest.toJSON(request),
+        options?.signal,
+      );
       return createBundle(ResolveFlagsResponse.fromJSON(await response.json()));
     } catch (err) {
       // Named once here; evaluation would otherwise report it per flag.
@@ -186,14 +262,14 @@ export class ConfidenceClient {
    * flag fails the call in full.
    *
    * Never rejects — failures come back as
-   * {@link (ConfidenceClient:namespace).ApplyResult} and are logged. Pass
+   * {@link (ConfidenceClient:namespace).WriteResult} and are logged. Pass
    * `\{ signal: AbortSignal.timeout(1000) \}` to bound it.
    */
   async apply(
     resolveToken: string,
     flagNames: string | string[],
     options?: { signal?: AbortSignal },
-  ): Promise<ConfidenceClient.ApplyResult> {
+  ): Promise<ConfidenceClient.WriteResult> {
     const names = typeof flagNames === 'string' ? [flagNames] : flagNames;
     // A resolve with apply=true returns no token, and there is nothing to
     // apply for an empty flag list — save the round trip either way.
@@ -209,25 +285,95 @@ export class ConfidenceClient {
         sendTime: now,
         sdk: this.sdk,
       };
-      await this.post('/v1/flags:apply', ApplyFlagsRequest.toJSON(request), options?.signal);
+      await this.post(`${this.resolverUrl}/v1/flags:apply`, ApplyFlagsRequest.toJSON(request), options?.signal);
       return { ok: true };
     } catch (err) {
       this.logger?.warn?.('Apply failed, exposure was not recorded. %s', String(err));
-      return {
-        ok: false,
-        errorCode: isTimeout(err) ? 'TIMEOUT' : 'GENERAL',
-        errorMessage: String(err),
-        status: err instanceof HttpError ? err.status : undefined,
-      };
+      return writeError(err);
     }
   }
 
-  private async post(path: string, body: unknown, signal?: AbortSignal): Promise<Response> {
-    const response = await this.fetchImpl(`${this.baseUrl}${path}`, {
+  /**
+   * Publish one event, or a batch of them in a single request.
+   *
+   * Nothing is queued: the request goes out on call, so nothing is lost when the
+   * page goes away — and in a browser it is made with `keepalive`, so it also
+   * survives a navigation that starts while it is in flight. A batching layer
+   * built on top owns the queue, and should set each event's
+   * {@link (ConfidenceClient:namespace).Event.eventTime | eventTime} so a flush
+   * does not restamp the batch.
+   *
+   * Attribution comes from
+   * {@link (ConfidenceClient:namespace).EventPayload.context | payload.context}.
+   *
+   * There is no retry. A dropped event is reported and gone; callers who need
+   * more can retry on a failed result.
+   *
+   * Never rejects — failures come back as
+   * {@link (ConfidenceClient:namespace).WriteResult} and are logged. Note that
+   * the publish endpoint rejects individual events in the body of an HTTP 200: an
+   * `ok: false` result may therefore carry no `status`, and when it names
+   * `errors` the rest of the batch was recorded. Pass
+   * `\{ signal: AbortSignal.timeout(1000) \}` to bound it.
+   */
+  async publish(
+    event: ConfidenceClient.Event | ConfidenceClient.Event[],
+    options?: { signal?: AbortSignal },
+  ): Promise<ConfidenceClient.WriteResult> {
+    const events = Array.isArray(event) ? event : [event];
+    // Nothing to publish — save the round trip, as `apply` does for no flags.
+    if (events.length === 0) return { ok: true };
+
+    try {
+      const sendTime = new Date();
+      const response = await this.post(
+        `${this.eventsUrl}/v1/events:publish`,
+        {
+          clientSecret: this.clientSecret,
+          sendTime: sendTime.toISOString(),
+          events: events.map(({ name, payload, eventTime }) => ({
+            eventDefinition: EVENT_PREFIX + name,
+            // A direct publish happens as it is sent; only a queued one differs.
+            eventTime: (eventTime ?? sendTime).toISOString(),
+            payload: payload ?? {},
+          })),
+        },
+        options?.signal,
+        true,
+      );
+
+      // The publish endpoint answers 200 and reports per-event failures in the
+      // body, so an ok response is not yet a recorded event.
+      const { errors } = (await response.json().catch(() => ({}))) as { errors?: PublishError[] };
+      if (errors?.length) {
+        const rejected = errors.map(({ index, reason, message }) => ({
+          index,
+          errorMessage: `Confidence rejected event "${events[index]?.name ?? index}": ${message || reason}`,
+        }));
+        const errorMessage = rejected.map(({ errorMessage }) => errorMessage).join('; ');
+        this.logger?.warn?.(
+          'Publish failed, %s of %s event(s) were not recorded. %s',
+          rejected.length,
+          events.length,
+          errorMessage,
+        );
+        return { ok: false, errorCode: 'GENERAL', errorMessage, errors: rejected };
+      }
+      return { ok: true };
+    } catch (err) {
+      this.logger?.warn?.('Publish failed, %s event(s) were not recorded. %s', events.length, String(err));
+      return writeError(err);
+    }
+  }
+
+  private async post(url: string, body: unknown, signal?: AbortSignal, keepalive = false): Promise<Response> {
+    const payload = JSON.stringify(body);
+    const response = await this.fetchImpl(url, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify(body),
+      body: payload,
       signal,
+      keepalive: keepalive && payload.length <= KEEPALIVE_MAX_BODY_LENGTH,
     });
     if (!response.ok) {
       // The resolver returns diagnostics as the body (e.g. "client secret not
@@ -235,15 +381,25 @@ export class ConfidenceClient {
       const detail = await response.text().catch(() => '');
       throw new HttpError(
         response.status,
-        `Confidence ${path} failed: ${response.status} ${response.statusText}${detail ? ` - ${detail}` : ''}`,
+        `Confidence ${url} failed: ${response.status} ${response.statusText}${detail ? ` - ${detail}` : ''}`,
       );
     }
     return response;
   }
 }
 
+/** Shared by the write methods, which report failures rather than throwing them */
+function writeError(err: unknown): ConfidenceClient.WriteResult {
+  return {
+    ok: false,
+    errorCode: isTimeout(err) ? 'TIMEOUT' : 'GENERAL',
+    errorMessage: String(err),
+    status: err instanceof HttpError ? err.status : undefined,
+  };
+}
+
 /**
- * Carries the status through to {@link (ConfidenceClient:namespace).ApplyResult},
+ * Carries the status through to {@link (ConfidenceClient:namespace).WriteResult},
  * so callers can tell 4xx from 5xx.
  */
 class HttpError extends Error {

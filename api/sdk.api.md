@@ -72,25 +72,39 @@ export class Confidence implements EventSender, Trackable, FlagResolver {
 
 // @public
 export namespace ConfidenceClient {
-    export type ApplyResult = {
+    export interface Event {
+        eventTime?: Date;
+        name: string;
+        payload?: EventPayload;
+    }
+    export type EventPayload = {
+        context?: EvaluationContext;
+        [key: string]: unknown;
+    };
+    export interface Options {
+        clientSecret: string;
+        fetch?: typeof fetch;
+        logger?: Logger;
+        region?: Region;
+        sdk?: {
+            name: SdkName;
+            version: string;
+        };
+    }
+    export type Region = 'eu' | 'us';
+    export type SdkName = 'JS_CONFIDENCE' | 'JS_WEB_PROVIDER' | 'JS_SERVER_PROVIDER';
+    export type WriteResult = {
         ok: true;
     } | {
         ok: false;
         errorCode: 'TIMEOUT' | 'GENERAL';
         errorMessage: string;
         status?: number;
+        errors?: Array<{
+            index: number;
+            errorMessage: string;
+        }>;
     };
-    export interface Options {
-        fetch?: typeof fetch;
-        flagClientSecret: string;
-        logger?: Logger;
-        sdk?: {
-            name: SdkName;
-            version: string;
-        };
-        url?: string;
-    }
-    export type SdkName = 'JS_CONFIDENCE' | 'JS_WEB_PROVIDER' | 'JS_SERVER_PROVIDER';
 }
 
 // @public
@@ -98,7 +112,10 @@ export class ConfidenceClient {
     constructor(options: ConfidenceClient.Options);
     apply(resolveToken: string, flagNames: string | string[], options?: {
         signal?: AbortSignal;
-    }): Promise<ConfidenceClient.ApplyResult>;
+    }): Promise<ConfidenceClient.WriteResult>;
+    publish(event: ConfidenceClient.Event | ConfidenceClient.Event[], options?: {
+        signal?: AbortSignal;
+    }): Promise<ConfidenceClient.WriteResult>;
     resolve(flagNames: string[], context: EvaluationContext, options?: {
         apply?: boolean;
         signal?: AbortSignal;

@@ -42,7 +42,7 @@ function resolveRequests(fetchImpl: jest.Mock): any[] {
 }
 
 function createProvider(fetchImpl: jest.Mock | typeof fetch, timeout = 1000): ConfidenceServerProvider {
-  const client = new ConfidenceClient({ flagClientSecret: SECRET, fetch: fetchImpl as unknown as typeof fetch });
+  const client = new ConfidenceClient({ clientSecret: SECRET, fetch: fetchImpl as unknown as typeof fetch });
   return new ConfidenceServerProvider(client, { timeout });
 }
 
@@ -189,6 +189,70 @@ describe('ConfidenceServerProvider', () => {
       reason: 'ERROR',
       errorCode: ErrorCode.GENERAL,
       errorMessage: expect.stringContaining('TimeoutError'),
+    });
+  });
+
+  describe('track', () => {
+    const EVENTS_URL = 'https://events.confidence.dev/v1/events:publish';
+
+    /** Every request the provider made to the events service. */
+    function eventRequests(fetchImpl: jest.Mock): any[] {
+      return fetchImpl.mock.calls
+        .filter(([url]) => String(url) === EVENTS_URL)
+        .map(([, init]) => JSON.parse(init.body));
+    }
+
+    it('sends the event with the context it was given', () => {
+      const fetchImpl = mockFetch({});
+      createProvider(fetchImpl).track('order-completed', { targetingKey: 'user-1', country: 'SE' }, { value: 42 });
+
+      expect(eventRequests(fetchImpl)).toEqual([
+        {
+          clientSecret: SECRET,
+          sendTime: expect.any(String),
+          events: [
+            {
+              eventDefinition: 'eventDefinitions/order-completed',
+              eventTime: expect.any(String),
+              // targetingKey converted to the resolver's targeting_key spelling
+              payload: { context: { targeting_key: 'user-1', country: 'SE' }, value: 42 },
+            },
+          ],
+        },
+      ]);
+    });
+
+    it('returns synchronously, as the OpenFeature signature requires', () => {
+      const fetchImpl = mockFetch({});
+      // Not a promise: nothing for a caller to await or forget to await.
+      expect(createProvider(fetchImpl).track('order-completed', {})).toBeUndefined();
+    });
+
+    it('works with no context and no details', () => {
+      const fetchImpl = mockFetch({});
+      createProvider(fetchImpl).track('page-viewed');
+      expect(eventRequests(fetchImpl)[0].events[0].payload).toEqual({ context: {} });
+    });
+
+    it('does not let tracking details displace the attribution context', () => {
+      // TrackingEventDetails is an open record, so `context` is a legal key in
+      // it — but the context OpenFeature passed is the authoritative one.
+      const fetchImpl = mockFetch({});
+      createProvider(fetchImpl).track('order-completed', { targetingKey: 'user-1' }, {
+        context: 'not-a-context',
+      } as any);
+
+      expect(eventRequests(fetchImpl)[0].events[0].payload).toEqual({ context: { targeting_key: 'user-1' } });
+    });
+
+    it('does not throw when the event fails to send', async () => {
+      // The signature is void, so a failure has nowhere to go but the log.
+      const fetchImpl = jest.fn(async () => {
+        throw new Error('network down');
+      });
+      expect(() => createProvider(fetchImpl).track('order-completed', {})).not.toThrow();
+      // Let the fire-and-forget promise settle so a rejection would surface.
+      await new Promise(resolve => setImmediate(resolve));
     });
   });
 });

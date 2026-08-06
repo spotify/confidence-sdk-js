@@ -7,6 +7,7 @@ import {
   ProviderMetadata,
   ProviderStatus,
   ResolutionDetails,
+  TrackingEventDetails,
 } from '@openfeature/server-sdk';
 
 import { ConfidenceClient, EvaluationContext as Context, FlagBundle } from '@spotify-confidence/sdk';
@@ -86,6 +87,22 @@ export class ConfidenceServerProvider implements Provider {
     context: EvaluationContext,
   ): Promise<ResolutionDetails<string>> {
     return this.evaluateFlag(flagKey, defaultValue, context);
+  }
+
+  /**
+   * Sends an event to Confidence.
+   *
+   * The OpenFeature signature is synchronous, so this cannot report back: the
+   * request is fired and forgotten. `publish` never rejects and logs its own
+   * failures, so nothing is lost silently.
+   */
+  track(trackingEventName: string, context?: EvaluationContext, trackingEventDetails?: TrackingEventDetails): void {
+    void this.client.publish({
+      name: trackingEventName,
+      // Context last: tracking details are an open record, so they may carry a
+      // `context` key of their own, which must not displace the real one.
+      payload: { ...trackingEventDetails, context: convertContext(context ?? {}) },
+    });
   }
 }
 

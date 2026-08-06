@@ -8,6 +8,7 @@ import {
   ProviderEvents,
   ProviderMetadata,
   ResolutionDetails,
+  TrackingEventDetails,
 } from '@openfeature/web-sdk';
 import equal from 'fast-deep-equal';
 
@@ -168,6 +169,26 @@ export class ConfidenceWebProvider implements Provider {
   /** Resolves with an evaluation of a String flag */
   resolveStringEvaluation(flagKey: string, defaultValue: string): ResolutionDetails<string> {
     return this.evaluateFlag(flagKey, defaultValue);
+  }
+
+  /**
+   * Sends an event to Confidence.
+   *
+   * The context comes from OpenFeature, which passes the effective evaluation
+   * context on every call — deliberately not the context of the last resolve,
+   * which may be older than what the event should be attributed to.
+   *
+   * The OpenFeature signature is synchronous, so this cannot report back: the
+   * request is fired and forgotten. `publish` never rejects and logs its own
+   * failures, so nothing is lost silently.
+   */
+  track(trackingEventName: string, context?: EvaluationContext, trackingEventDetails?: TrackingEventDetails): void {
+    void this.client.publish({
+      name: trackingEventName,
+      // Context last: tracking details are an open record, so they may carry a
+      // `context` key of their own, which must not displace the real one.
+      payload: { ...trackingEventDetails, context: convertContext(context ?? {}) },
+    });
   }
 }
 

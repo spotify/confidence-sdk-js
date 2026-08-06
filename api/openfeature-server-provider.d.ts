@@ -1,4 +1,4 @@
-import { Provider, ProviderMetadata, ProviderStatus, EvaluationContext, ResolutionDetails, JsonValue } from '@openfeature/server-sdk';
+import { Provider, ProviderMetadata, ProviderStatus, EvaluationContext, ResolutionDetails, JsonValue, TrackingEventDetails } from '@openfeature/server-sdk';
 import { ConfidenceClient, Logger } from '@spotify-confidence/sdk';
 
 /**
@@ -28,6 +28,14 @@ declare class ConfidenceServerProvider implements Provider {
     resolveObjectEvaluation<T extends JsonValue>(flagKey: string, defaultValue: T, context: EvaluationContext): Promise<ResolutionDetails<T>>;
     /** Resolves with an evaluation of a String flag */
     resolveStringEvaluation(flagKey: string, defaultValue: string, context: EvaluationContext): Promise<ResolutionDetails<string>>;
+    /**
+     * Sends an event to Confidence.
+     *
+     * The OpenFeature signature is synchronous, so this cannot report back: the
+     * request is fired and forgotten. `publish` never rejects and logs its own
+     * failures, so nothing is lost silently.
+     */
+    track(trackingEventName: string, context?: EvaluationContext, trackingEventDetails?: TrackingEventDetails): void;
 }
 
 /**
@@ -38,10 +46,8 @@ type ConfidenceProviderFactoryOptions = {
     clientSecret: string;
     /** Milliseconds to wait for a resolve. Past it, flags evaluate to their defaults */
     timeout: number;
-    /** Sets the resolver region. Defaults to the global region */
+    /** Pins flag resolution and event publishing to a region. Defaults to the global region */
     region?: 'eu' | 'us';
-    /** Sets an alternative resolve url */
-    resolveBaseUrl?: string;
     /** fetch-compatible transport. Defaults to the global fetch */
     fetchImplementation?: typeof fetch;
     /** Reports resolve failures. Defaults to the console in development */

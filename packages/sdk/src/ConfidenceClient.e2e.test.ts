@@ -42,7 +42,7 @@ const CONTROL_VALUE = {
 // Every test here makes at least one network round trip.
 const TIMEOUT = 20_000;
 
-const client = new ConfidenceClient({ flagClientSecret: process.env.CONFIDENCE_CLIENT_SECRET! });
+const client = new ConfidenceClient({ clientSecret: process.env.CONFIDENCE_CLIENT_SECRET! });
 
 describe('ConfidenceClient E2E (resolve)', () => {
   it(
@@ -101,7 +101,7 @@ describe('ConfidenceClient E2E (resolve)', () => {
   it(
     'returns an errored bundle carrying the resolver diagnostic for an unknown client secret',
     async () => {
-      const bogus = new ConfidenceClient({ flagClientSecret: 'not-a-real-client-secret' });
+      const bogus = new ConfidenceClient({ clientSecret: 'not-a-real-client-secret' });
 
       const bundle = await bogus.resolve([FLAG], CONTEXT, { apply: false });
 

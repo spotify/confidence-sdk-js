@@ -13,10 +13,8 @@ export type ConfidenceProviderFactoryOptions = {
   clientSecret: string;
   /** Milliseconds to wait for a resolve. Past it, flags evaluate to their defaults */
   timeout: number;
-  /** Sets the resolver region. Defaults to the global region */
+  /** Pins flag resolution and event publishing to a region. Defaults to the global region */
   region?: 'eu' | 'us';
-  /** Sets an alternative resolve url */
-  resolveBaseUrl?: string;
   /** fetch-compatible transport. Defaults to the global fetch */
   fetchImplementation?: typeof fetch;
   /** Reports resolve failures. Defaults to the console in development */
@@ -29,19 +27,13 @@ export type ConfidenceProviderFactoryOptions = {
  * @public */
 export function createConfidenceServerProvider(options: ConfidenceProviderFactoryOptions): Provider {
   const client = new ConfidenceClient({
-    flagClientSecret: options.clientSecret,
-    url: resolverUrl(options),
+    clientSecret: options.clientSecret,
+    region: options.region,
     fetch: options.fetchImplementation,
     logger: options.logger ?? defaultLogger(),
     sdk: { name: 'JS_SERVER_PROVIDER', version: SDK_VERSION },
   });
   return new ConfidenceServerProvider(client, { timeout: options.timeout });
-}
-
-/** Undefined leaves the client on its default, the global resolver */
-function resolverUrl({ region, resolveBaseUrl }: ConfidenceProviderFactoryOptions): string | undefined {
-  if (resolveBaseUrl) return resolveBaseUrl;
-  return region && `https://resolver.${region}.confidence.dev`;
 }
 
 /**

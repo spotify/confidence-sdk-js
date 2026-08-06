@@ -44,9 +44,4 @@ describe('createConfidenceWebProvider', () => {
     const { url } = await resolveOnce({ region: 'eu' });
     expect(url).toBe('https://resolver.eu.confidence.dev/v1/flags:resolve');
   });
-
-  it('prefers an explicit resolve url over the region', async () => {
-    const { url } = await resolveOnce({ region: 'eu', resolveBaseUrl: 'https://resolver.internal' });
-    expect(url).toBe('https://resolver.internal/v1/flags:resolve');
-  });
 });

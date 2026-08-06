@@ -69,7 +69,7 @@ function createProvider(
   fetchImpl: jest.Mock | typeof fetch,
   { timeout = 1000, applyDebounce = 10 }: { timeout?: number; applyDebounce?: number } = {},
 ): ConfidenceWebProvider {
-  const client = new ConfidenceClient({ flagClientSecret: SECRET, fetch: fetchImpl as unknown as typeof fetch });
+  const client = new ConfidenceClient({ clientSecret: SECRET, fetch: fetchImpl as unknown as typeof fetch });
   return new ConfidenceWebProvider(client, { timeout, applyDebounce });
 }
 
@@ -366,6 +366,80 @@ describe('ConfidenceWebProvider', () => {
       // The abandoned change announces nothing: only the resolve that owns the
       // state reports it ready.
       expect(events).toEqual(['stale', 'stale', 'ready', 'changed']);
+    });
+  });
+
+  describe('track', () => {
+    const EVENTS_URL = 'https://events.confidence.dev/v1/events:publish';
+
+    /** Every request the provider made to the events service. */
+    function eventRequests(fetchImpl: jest.Mock): any[] {
+      return fetchImpl.mock.calls
+        .filter(([url]) => String(url) === EVENTS_URL)
+        .map(([, init]) => JSON.parse(init.body));
+    }
+
+    it('sends the event with the context OpenFeature passed in', async () => {
+      const fetchImpl = mockFetch();
+      const provider = createProvider(fetchImpl);
+      await provider.initialize({ targetingKey: 'user-1' });
+
+      // OpenFeature hands the provider the effective context on every call, so
+      // the event is attributed to that rather than to the last resolve.
+      provider.track('order-completed', { targetingKey: 'user-2', country: 'SE' }, { value: 42 });
+
+      expect(eventRequests(fetchImpl)).toEqual([
+        {
+          clientSecret: SECRET,
+          sendTime: expect.any(String),
+          events: [
+            {
+              eventDefinition: 'eventDefinitions/order-completed',
+              eventTime: expect.any(String),
+              payload: { context: { targeting_key: 'user-2', country: 'SE' }, value: 42 },
+            },
+          ],
+        },
+      ]);
+    });
+
+    it('returns synchronously, as the OpenFeature signature requires', () => {
+      const fetchImpl = mockFetch();
+      expect(createProvider(fetchImpl).track('order-completed', {})).toBeUndefined();
+    });
+
+    it('tracks without a resolve having happened', () => {
+      // Tracking does not read flag state, so it does not need a ready provider.
+      const fetchImpl = mockFetch();
+      createProvider(fetchImpl).track('page-viewed', { targetingKey: 'user-1' });
+      expect(eventRequests(fetchImpl)).toHaveLength(1);
+    });
+
+    it('sends the event with keepalive so it survives a page unload', () => {
+      const fetchImpl = mockFetch();
+      createProvider(fetchImpl).track('order-completed', {});
+      const [, init] = fetchImpl.mock.calls.find(([url]) => String(url) === EVENTS_URL)!;
+      expect(init.keepalive).toBe(true);
+    });
+
+    it('does not let tracking details displace the attribution context', () => {
+      // TrackingEventDetails is an open record, so `context` is a legal key in
+      // it — but the context OpenFeature passed is the authoritative one.
+      const fetchImpl = mockFetch();
+      createProvider(fetchImpl).track('order-completed', { targetingKey: 'user-1' }, {
+        context: 'not-a-context',
+      } as any);
+
+      expect(eventRequests(fetchImpl)[0].events[0].payload).toEqual({ context: { targeting_key: 'user-1' } });
+    });
+
+    it('does not throw when the event fails to send', async () => {
+      const fetchImpl = jest.fn(async () => {
+        throw new Error('network down');
+      });
+      expect(() => createProvider(fetchImpl).track('order-completed', {})).not.toThrow();
+      // Let the fire-and-forget promise settle so a rejection would surface.
+      await new Promise(resolve => setTimeout(resolve, 0));
     });
   });
 });

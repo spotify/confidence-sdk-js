@@ -24,7 +24,7 @@ yarn add @spotify-confidence/sdk
 
 # ConfidenceClient
 
-`ConfidenceClient` is a thin, stateless client for a remote Confidence resolver. It does flag resolution and exposure only — no event tracking, no context management, no caching.
+`ConfidenceClient` is a thin, stateless client for a remote Confidence resolver. It does flag resolution, exposure and event publishing only — no context management, no caching, no batching.
 
 ## When to use it
 
@@ -40,7 +40,7 @@ There is no lifecycle, no background work and no cached state, so constructing o
 ```ts
 import { ConfidenceClient, FlagBundle } from '@spotify-confidence/sdk';
 
-const client = new ConfidenceClient({ flagClientSecret: 'my secret' });
+const client = new ConfidenceClient({ clientSecret: 'my secret' });
 
 const bundle = await client.resolve(['tutorial-feature'], { targeting_key: 'user-1' });
 const { value } = FlagBundle.evaluate(bundle, 'tutorial-feature.title', 'default title');
@@ -71,20 +71,30 @@ if (showBanner.shouldApply) {
 
 The bundle's `resolveToken` only permits applying the flags it was minted for, which is what makes it safe to round-trip through the browser.
 
-## Pointing at your own resolver
+## Region
 
-`url` defaults to `https://resolver.confidence.dev`. Set it to target a resolver you run yourself, and pass a `fetch`-compatible transport to reach it — a Cloudflare service binding, for instance:
+By default both flag resolution and event publishing go to the global region. Set `region` to pin them for data residency — it places both services, since events carry data of their own:
 
 ```ts
 const client = new ConfidenceClient({
-  flagClientSecret: env.CONFIDENCE_CLIENT_SECRET,
-  fetch: env.RESOLVER.fetch.bind(env.RESOLVER),
-  url: 'https://resolver.internal',
+  clientSecret: 'my secret',
+  region: 'eu', // or 'us'
+});
+```
+
+## Pointing at your own resolver
+
+There is no url option. To reach a resolver you run yourself, rewrite the URL in `fetch` — which is also how you reach a Cloudflare service binding:
+
+```ts
+const client = new ConfidenceClient({
+  clientSecret: env.CONFIDENCE_CLIENT_SECRET,
+  fetch: (...args) => env.RESOLVER.fetch(...args),
 });
 ```
 
 > [!NOTE]
-> The `url` option is still used with a service binding: bindings route by binding rather than by hostname, but the request path is taken from the URL, so it has to be a valid absolute URL.
+> Wrap the binding rather than passing `env.RESOLVER.fetch` itself: a detached `fetch` loses its receiver and Workers rejects it with "Illegal invocation". A binding routes by binding rather than by hostname, so the Confidence hostname in the request is ignored and only its path is used.
 
 ## Resolving flags
 
@@ -121,6 +131,30 @@ const result = await client.apply(bundle.resolveToken, ['promo-banner']);
 
 Flags whose `shouldApply` is false can be skipped — applying them has no observable effect.
 
+## Publishing events
+
+`publish` sends an event, or a batch of them in a single request:
+
+```ts
+await client.publish({
+  name: 'order-completed',
+  payload: { context: { targeting_key: 'user-1' }, item_count: 2 },
+});
+```
+
+`payload.context` is what Confidence attributes an event by — it joins the event to the flag exposures for the same targeting context. Nothing enforces it, but an event published without it cannot be attributed.
+
+Nothing is queued: the request goes out on call, and in a browser it uses `keepalive` so an event fired just before a navigation still arrives. If you want batching, build the queue on top and publish an array:
+
+```ts
+await client.publish([
+  { name: 'page-viewed', payload, eventTime: whenItHappened },
+  { name: 'order-completed', payload, eventTime: whenItHappened },
+]);
+```
+
+Set `eventTime` per event when doing so. It defaults to the time the request is sent, which is right for a direct publish but would restamp a queued batch with the flush time.
+
 ## Errors
 
 Neither `resolve` nor `apply` rejects.
@@ -134,7 +168,7 @@ if (bundle.errorCode) {
 }
 ```
 
-`apply` returns an `ApplyResult` instead of rejecting, because the natural call site is fire-and-forget and an unhandled rejection terminates the process on Node:
+`apply` and `publish` return a `WriteResult` instead of rejecting, because the natural call site is fire-and-forget and an unhandled rejection terminates the process on Node:
 
 ```ts
 const result = await client.apply(token, 'promo-banner');
@@ -142,6 +176,8 @@ if (!result.ok) {
   // result.errorCode, result.errorMessage, and result.status for HTTP failures
 }
 ```
+
+The events endpoint can also reject an individual event within an otherwise successful HTTP 200. A `publish` result then carries `errors` naming which events of the batch were rejected, by index — everything else in it was recorded.
 
 Failures are reported through the `logger` if one was passed.
 
@@ -152,9 +188,10 @@ There is no `timeout` option — pass an `AbortSignal`, which covers both deadli
 ```ts
 await client.resolve(flags, context, { signal: AbortSignal.timeout(1000) });
 await client.apply(token, flags, { signal: AbortSignal.timeout(1000) });
+await client.publish(event, { signal: AbortSignal.timeout(1000) });
 ```
 
-A signal that aborts on a deadline is reported as `TIMEOUT`; a deliberate `controller.abort()` is not. Neither call retries — for `apply`, inspect `status` to tell a permanent failure (4xx) from a transient one and retry at your own cadence.
+A signal that aborts on a deadline is reported as `TIMEOUT`; a deliberate `controller.abort()` is not. No call retries — for `apply` and `publish`, inspect `status` to tell a permanent failure (4xx) from a transient one and retry at your own cadence.
 
 # The Confidence class
 

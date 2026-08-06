@@ -40,26 +40,9 @@ client
   });
 ```
 
-## Tracking
-
-With `@openfeature/server-sdk` 1.16.0 or later, events can be tracked with a request-specific evaluation context:
-
-```ts
-client.track(
-  'checkout',
-  { targetingKey: 'your targeting key' },
-  {
-    value: 42,
-    currency: 'SEK',
-  },
-);
-```
-
-Tracking details are added to the Confidence event payload. `context` is reserved for the evaluation context and is ignored when used as a tracking detail key.
-
 ## Region
 
-The region option is used to set the region for the network request to the Confidence backend. When the region is not set, the default (global) region will be used.
+The region option is used to set the region for the network requests to the Confidence backend — both flag resolution and event publishing. When the region is not set, the default (global) region will be used.
 The current regions are: `eu` and `us`, the region can be set as follows:
 
 ```ts
@@ -91,3 +74,22 @@ const provider = createConfidenceServerProvider({
 See [apply concept](../../concepts/apply.md).
 
 Backend apply is the only supported method in the `ConfidenceServerProvider`.
+
+## Event tracking
+
+Tracking details are added to the Confidence event payload. `context` is reserved for the evaluation context and is ignored when used as a tracking detail key.
+
+The provider implements the OpenFeature tracking API, so `client.track()` sends an
+event to Confidence:
+
+```ts
+const client = OpenFeature.getClient();
+client.track('order-completed', { targetingKey: 'user-1' }, { value: 42, currency: 'SEK' });
+```
+
+As with flag evaluation in the dynamic paradigm, the evaluation context is passed
+per call.
+
+Events are sent one request per event, immediately, with no batching. The tracking
+API returns `void`, so failures cannot be reported back to the caller; they are
+written to the [logger](#logging) instead.

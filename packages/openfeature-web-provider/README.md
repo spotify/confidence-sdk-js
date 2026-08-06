@@ -51,22 +51,9 @@ Notes:
 
 - In the above example we first set the context and then set the provider and await for the provider to become ready before getting the flag value. Other ways of arranging these calls might make more sense depending on what app framework you are using. See the example apps for more inspiration.
 
-## Tracking
-
-With `@openfeature/web-sdk` 1.3.0 or later, events can be tracked using the context set on OpenFeature:
-
-```ts
-client.track('checkout', {
-  value: 42,
-  currency: 'SEK',
-});
-```
-
-Tracking details are added to the Confidence event payload. `context` is reserved for the evaluation context and is ignored when used as a tracking detail key.
-
 ## Region
 
-The region option is used to set the region for the network request to the Confidence backend. When the region is not set, the default (global) region will be used.
+The region option is used to set the region for the network requests to the Confidence backend — both flag resolution and event publishing. When the region is not set, the default (global) region will be used.
 The current regions are: `eu` and `us`, the region can be set as follows:
 
 ```ts
@@ -108,3 +95,24 @@ const provider = createConfidenceWebProvider({
   // ... other options
 });
 ```
+
+## Event tracking
+
+Tracking details are added to the Confidence event payload. `context` is reserved for the evaluation context and is ignored when used as a tracking detail key.
+
+The provider implements the OpenFeature tracking API, so `client.track()` sends an
+event to Confidence:
+
+```ts
+const client = OpenFeature.getClient();
+client.track('order-completed', { value: 42, currency: 'SEK' });
+```
+
+The OpenFeature client passes the current evaluation context along, so events are
+attributed to the same context flags are resolved against — there is no separate
+context to keep in sync.
+
+Events are sent one request per event, immediately, with no batching. In a browser
+the request uses `keepalive`, so an event fired just before a navigation still
+arrives. The tracking API returns `void`, so failures cannot be reported back to
+the caller; they are written to the [logger](#logging) instead.
