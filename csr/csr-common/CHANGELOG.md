@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.18.5](https://github.com/spotify/confidence-sdk-js/compare/csr-common-v0.18.4...csr-common-v0.18.5) (2026-08-12)
+
+
+### ✨ New Features
+
+* **csr-common:** type incremental interaction data ([#430](https://github.com/spotify/confidence-sdk-js/issues/430)) ([43db5d9](https://github.com/spotify/confidence-sdk-js/commit/43db5d91f5368fab10eb5c97ba116575bc728672))
+
 ## [0.18.4](https://github.com/spotify/confidence-sdk-js/compare/csr-common-v0.18.3...csr-common-v0.18.4) (2026-08-05)
 
 
