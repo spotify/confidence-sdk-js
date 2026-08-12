@@ -62,6 +62,44 @@ export enum MouseInteractions {
   TouchCancel = 10,
 }
 
+/**
+ * Incremental mouse-interaction data emitted by rrweb.
+ */
+export type MouseInteractionData = {
+  source: IncrementalSource.MouseInteraction;
+  type: MouseInteractions;
+  id: number;
+  x?: number;
+  y?: number;
+  pointerType?: number;
+};
+
+export type SelectionRange = {
+  start: number;
+  startOffset: number;
+  end: number;
+  endOffset: number;
+};
+
+/**
+ * Incremental text-selection data emitted by rrweb.
+ */
+export type SelectionData = {
+  source: IncrementalSource.Selection;
+  ranges: SelectionRange[];
+};
+
+/**
+ * Incremental sources that csr-common does not model yet. The source remains
+ * discriminated so consumers can narrow the known mouse and selection shapes.
+ */
+export type OpaqueIncrementalData = {
+  source: Exclude<IncrementalSource, IncrementalSource.MouseInteraction | IncrementalSource.Selection>;
+  [key: string]: unknown;
+};
+
+export type IncrementalSnapshotData = MouseInteractionData | SelectionData | OpaqueIncrementalData;
+
 export type RageClickCustomData = {
   tag: 'csr:rageClick';
   payload: {
@@ -312,7 +350,12 @@ export type RecordingEvent =
       data: CustomEventData;
     }
   | {
-      type: Exclude<RecordingEventType, RecordingEventType.Custom>;
+      type: RecordingEventType.IncrementalSnapshot;
+      timestamp: number;
+      data: IncrementalSnapshotData;
+    }
+  | {
+      type: Exclude<RecordingEventType, RecordingEventType.Custom | RecordingEventType.IncrementalSnapshot>;
       timestamp: number;
       data: unknown;
     };
