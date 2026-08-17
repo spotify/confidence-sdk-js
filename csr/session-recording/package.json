@@ -10,12 +10,16 @@
   "type": "module",
   "main": "src/index.ts",
   "types": "src/index.ts",
+  "bin": {
+    "confidence-copy-worker": "bin/confidence-copy-worker.mjs"
+  },
   "scripts": {
     "prebuild": "node sync-version.mjs",
     "build": "yarn run -T tsdown && node scripts/emit-worker-file.mjs",
     "typecheck": "tsc --noEmit"
   },
   "files": [
+    "bin",
     "dist",
     "src"
   ],

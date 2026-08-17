@@ -5115,6 +5115,8 @@ __metadata:
   dependencies:
     "@spotify-confidence/csr-common": "workspace:*"
     "@spotify-confidence/csr-recorder": "workspace:*"
+  bin:
+    confidence-copy-worker: bin/confidence-copy-worker.mjs
   languageName: unknown
   linkType: soft
 

@@ -162,36 +162,37 @@ The SDK automatically falls back to a `blob:` URL. Most CSPs already allow `blob
 
 ### If both `data:` and `blob:` are blocked
 
-Self-host the worker script. The package ships a standalone file you can copy to your static assets:
+Self-host the worker script. The package ships a standalone file and a cross-platform command for copying it to your static assets.
 
-**Option A: copy from `node_modules`**
+**Vite**
 
-```bash
-# After install, copy the worker to your public directory
-cp node_modules/@spotify-confidence/session-recording/dist/confidence-worker.js public/
-```
-
-**Option B: build-tool integration (Vite, webpack, etc.)**
+Let Vite emit and version the worker as a build asset:
 
 ```typescript
-import { workerScript } from '@spotify-confidence/session-recording/worker';
-import { writeFileSync } from 'fs';
+import confidenceWorkerUrl from '@spotify-confidence/session-recording/confidence-worker.js?url';
+import { initSessionRecorder } from '@spotify-confidence/session-recording';
 
-// In a build plugin or script — write the worker to your output directory
-writeFileSync('dist/confidence-worker.js', workerScript);
-```
-
-**Option C: serve via a route (Express, Next.js API route, etc.)**
-
-```typescript
-import { workerScript } from '@spotify-confidence/session-recording/worker';
-
-app.get('/confidence-worker.js', (req, res) => {
-  res.type('application/javascript').send(workerScript);
+const recorder = initSessionRecorder({
+  clientSecret: '<your-client-secret>',
+  workerUrl: confidenceWorkerUrl,
 });
 ```
 
-Then pass the URL:
+Vite's default asset inline limit keeps the worker as a separate file. If you increase `build.assetsInlineLimit`, make sure the worker is not emitted as a `data:` URL, since that would still require `data:` in `worker-src`.
+
+**Next.js: copy to `public`**
+
+Run the package-owned command before development and production builds:
+
+```json
+{
+  "scripts": {
+    "copy:confidence-worker": "confidence-copy-worker public/confidence-worker.js",
+    "predev": "npm run copy:confidence-worker",
+    "prebuild": "npm run copy:confidence-worker"
+  }
+}
+```
 
 ```typescript
 const recorder = initSessionRecorder({
@@ -200,7 +201,44 @@ const recorder = initSessionRecorder({
 });
 ```
 
-Your CSP only needs `worker-src 'self'` with this setup.
+The command creates parent directories and works without relying on a `node_modules` layout. You can also detect a stale or missing copy in CI:
+
+```bash
+confidence-copy-worker --check public/confidence-worker.js
+```
+
+If the app uses Next.js `basePath`, include it in `workerUrl` (for example, `/docs/confidence-worker.js`). A static filename should be served with revalidation rather than immutable caching so SDK upgrades can replace it.
+
+**Next.js App Router: route handler**
+
+As a no-copy alternative, serve the worker from a route handler:
+
+```typescript
+import { workerScript } from '@spotify-confidence/session-recording/worker';
+
+export const dynamic = 'force-static';
+
+export function GET() {
+  return new Response(workerScript, {
+    headers: {
+      'Content-Type': 'application/javascript; charset=utf-8',
+      'Cache-Control': 'public, max-age=0, must-revalidate',
+    },
+  });
+}
+```
+
+Place this in `app/confidence-worker.js/route.ts` and use `/confidence-worker.js` as above. `force-static` also emits the route during a static export; the deployment host controls response headers for exported files.
+
+**Other frameworks**
+
+Copy the worker into your framework's static assets directory:
+
+```bash
+confidence-copy-worker path/to/static/confidence-worker.js
+```
+
+Then pass its same-origin public URL as `workerUrl`. Your CSP only needs `worker-src 'self'` with this setup.
 
 > **Note:** The worker version must match the SDK version. After upgrading `@spotify-confidence/session-recording`, re-copy or re-deploy the worker file.
 
