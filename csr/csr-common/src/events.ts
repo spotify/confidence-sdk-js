@@ -230,6 +230,10 @@ export type ConsoleLogPluginData = {
 
 export type NetworkRequestInitiator = 'fetch' | 'xhr';
 
+export type GraphQLRequestMetadata = {
+  operationName: string;
+};
+
 /**
  * Plugin event data emitted by the recorder for network requests.
  */
@@ -243,6 +247,7 @@ export type NetworkRequestPluginData = {
     durationMs: number;
     requestSize?: number;
     responseSize?: number;
+    graphql?: GraphQLRequestMetadata;
   };
 };
 
