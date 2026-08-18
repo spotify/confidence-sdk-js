@@ -1,9 +1,12 @@
+// @vitest-environment happy-dom
+
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { RrwebEngine } from './rrweb-engine';
 
 const recordSpy = vi.fn().mockReturnValue(() => {});
 
-vi.mock('rrweb', () => ({
+vi.mock('rrweb', async importOriginal => ({
+  ...(await importOriginal<typeof import('rrweb')>()),
   record: (opts: unknown) => recordSpy(opts),
 }));
 
@@ -59,5 +62,67 @@ describe('RrwebEngine', () => {
   it('enables slimDOMOptions to strip head noise', () => {
     new RrwebEngine().start({}, () => {});
     expect(recordSpy.mock.calls[0][0].slimDOMOptions).toBe('all');
+  });
+
+  it('adds native click modifier keys to the rrweb click event', () => {
+    new RrwebEngine().start({}, () => {});
+    const plugin = recordSpy.mock.calls[0][0].plugins.find(
+      ({ name }: { name: string }) => name === 'csr/click-modifiers@1',
+    );
+    const removeObserver = plugin.observer(() => {}, window);
+
+    document.dispatchEvent(
+      new MouseEvent('click', {
+        button: 0,
+        altKey: true,
+        ctrlKey: true,
+        metaKey: true,
+        shiftKey: true,
+      }),
+    );
+
+    expect(
+      plugin.eventProcessor({
+        type: 3,
+        timestamp: 1,
+        data: { source: 2, type: 2, id: 7, x: 10, y: 20 },
+      }),
+    ).toEqual({
+      type: 3,
+      timestamp: 1,
+      data: {
+        source: 2,
+        type: 2,
+        id: 7,
+        x: 10,
+        y: 20,
+        button: 0,
+        altKey: true,
+        ctrlKey: true,
+        metaKey: true,
+        shiftKey: true,
+      },
+    });
+
+    removeObserver();
+  });
+
+  it('does not add stale modifiers to a later click', async () => {
+    new RrwebEngine().start({}, () => {});
+    const plugin = recordSpy.mock.calls[0][0].plugins.find(
+      ({ name }: { name: string }) => name === 'csr/click-modifiers@1',
+    );
+    const removeObserver = plugin.observer(() => {}, window);
+    document.dispatchEvent(new MouseEvent('click', { metaKey: true }));
+    await Promise.resolve();
+
+    const event = {
+      type: 3,
+      timestamp: 1,
+      data: { source: 2, type: 2, id: 7 },
+    };
+    expect(plugin.eventProcessor(event)).toBe(event);
+
+    removeObserver();
   });
 });
