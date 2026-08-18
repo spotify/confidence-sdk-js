@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.18.7](https://github.com/spotify/confidence-sdk-js/compare/csr-common-v0.18.6...csr-common-v0.18.7) (2026-08-18)
+
+
+### ✨ New Features
+
+* **csr-recorder:** capture click modifier keys ([#435](https://github.com/spotify/confidence-sdk-js/issues/435)) ([a1e7a96](https://github.com/spotify/confidence-sdk-js/commit/a1e7a96996cd2f361f3b44cc924d6b4d5ff0b003))
+
 ## [0.18.6](https://github.com/spotify/confidence-sdk-js/compare/csr-common-v0.18.5...csr-common-v0.18.6) (2026-08-18)
 
 
