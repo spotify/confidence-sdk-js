@@ -59,6 +59,15 @@ export interface InitSessionRecorderOptions {
    * `'manual'` — does nothing until `start()` is called, bypassing sampling and targeting rules.
    */
   mode?: 'automatic' | 'manual';
+  /**
+   * URL of a self-hosted worker script. Required when your Content Security Policy
+   * blocks `data:` and `blob:` in `worker-src`. Serve the file exported from
+   * `@spotify-confidence/session-recording/worker` at a same-origin route and pass
+   * its URL here.
+   *
+   * The worker version must match the SDK version — a mismatch may cause silent failures.
+   */
+  workerUrl?: string;
   /** Verbose tracer for debugging — called with one-line lifecycle/transport messages. */
   debugLogger?: (msg: string) => void;
 }
@@ -129,6 +138,7 @@ export function initSessionRecorder(options: InitSessionRecorderOptions): Sessio
           _csr_sdk_version: SDK_VERSION,
           ...(options.appVersion ? { _app_version: options.appVersion } : {}),
         },
+        workerUrl: options.workerUrl,
         forceRecord,
         debugLogger,
         onTerminate: ({ reason }) => {

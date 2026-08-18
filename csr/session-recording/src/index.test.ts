@@ -103,6 +103,21 @@ describe('initSessionRecorder', () => {
     expect(logger).toHaveBeenCalledWith(expect.stringContaining('worker-load-failed'));
   });
 
+  it('forwards workerUrl to createUploader', async () => {
+    createUploader.mockResolvedValueOnce(mockUploader());
+    record.mockReturnValueOnce(() => {});
+
+    initSessionRecorder({
+      clientSecret: 'secret',
+      workerUrl: '/assets/confidence-worker.js',
+    });
+    await flushPromises();
+
+    expect(createUploader.mock.calls[0][0]).toMatchObject({
+      workerUrl: '/assets/confidence-worker.js',
+    });
+  });
+
   it('manual mode does not init until start is called', async () => {
     createUploader.mockResolvedValueOnce(mockUploader());
     record.mockReturnValueOnce(() => {});
