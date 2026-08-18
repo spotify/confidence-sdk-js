@@ -1,5 +1,20 @@
 # Changelog
 
+## [0.18.7](https://github.com/spotify/confidence-sdk-js/compare/session-recording-v0.18.6...session-recording-v0.18.7) (2026-08-18)
+
+
+### ✨ New Features
+
+* **csr:** ship standalone worker file and expose workerUrl option ([#412](https://github.com/spotify/confidence-sdk-js/issues/412)) ([7b38441](https://github.com/spotify/confidence-sdk-js/commit/7b38441e439d28496ee72b2d5a2fdfe6f6ab9b40))
+
+
+### Dependencies
+
+* The following workspace dependencies were updated
+  * dependencies
+    * @spotify-confidence/csr-common bumped to 0.18.6
+    * @spotify-confidence/csr-recorder bumped to 0.17.12
+
 ## [0.18.6](https://github.com/spotify/confidence-sdk-js/compare/session-recording-v0.18.5...session-recording-v0.18.6) (2026-08-12)
 
 
