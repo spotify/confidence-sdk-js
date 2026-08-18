@@ -1,5 +1,13 @@
 # Changelog
 
+## [0.18.6](https://github.com/spotify/confidence-sdk-js/compare/csr-common-v0.18.5...csr-common-v0.18.6) (2026-08-18)
+
+
+### ✨ New Features
+
+* **csr-recorder:** capture GraphQL operation names ([#434](https://github.com/spotify/confidence-sdk-js/issues/434)) ([c4610ef](https://github.com/spotify/confidence-sdk-js/commit/c4610ef2945cecf632a3027b58ec373bc8b562e7))
+* **csr:** ship standalone worker file and expose workerUrl option ([#412](https://github.com/spotify/confidence-sdk-js/issues/412)) ([7b38441](https://github.com/spotify/confidence-sdk-js/commit/7b38441e439d28496ee72b2d5a2fdfe6f6ab9b40))
+
 ## [0.18.5](https://github.com/spotify/confidence-sdk-js/compare/csr-common-v0.18.4...csr-common-v0.18.5) (2026-08-12)
 
 

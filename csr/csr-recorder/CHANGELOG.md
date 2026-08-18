@@ -1,5 +1,19 @@
 # Changelog
 
+## [0.17.12](https://github.com/spotify/confidence-sdk-js/compare/csr-recorder-v0.17.11...csr-recorder-v0.17.12) (2026-08-18)
+
+
+### ✨ New Features
+
+* **csr-recorder:** capture GraphQL operation names ([#434](https://github.com/spotify/confidence-sdk-js/issues/434)) ([c4610ef](https://github.com/spotify/confidence-sdk-js/commit/c4610ef2945cecf632a3027b58ec373bc8b562e7))
+
+
+### Dependencies
+
+* The following workspace dependencies were updated
+  * dependencies
+    * @spotify-confidence/csr-common bumped to 0.18.6
+
 ## [0.17.11](https://github.com/spotify/confidence-sdk-js/compare/csr-recorder-v0.17.10...csr-recorder-v0.17.11) (2026-08-12)
 
 
