@@ -72,6 +72,12 @@ export type MouseInteractionData = {
   x?: number;
   y?: number;
   pointerType?: number;
+  /** Mouse button and modifier keys present on click events. */
+  button?: number;
+  altKey?: boolean;
+  ctrlKey?: boolean;
+  metaKey?: boolean;
+  shiftKey?: boolean;
 };
 
 export type SelectionRange = {
@@ -148,6 +154,11 @@ export type ClickCustomData = {
     targetId: number;
     element?: ElementDescriptor;
     pathname?: string;
+    button?: number;
+    altKey?: boolean;
+    ctrlKey?: boolean;
+    metaKey?: boolean;
+    shiftKey?: boolean;
   };
 };
 
