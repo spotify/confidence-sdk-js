@@ -23,6 +23,7 @@ export {
   type ConsoleLogLevel,
   type ConsoleLogPluginData,
   type NetworkRequestInitiator,
+  type GraphQLRequestMetadata,
   type NetworkRequestPluginData,
   type RouteChangeTrigger,
   type RouteChangePayload,

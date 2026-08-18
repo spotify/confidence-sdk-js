@@ -204,4 +204,32 @@ describe('Recorder network request capture', () => {
 
     recorder.stop();
   });
+
+  it('captures only the GraphQL operation name', async () => {
+    globalThis.fetch = vi.fn().mockResolvedValue(new Response('{}', { status: 500 }));
+
+    const engine = new MockEngine();
+    const onEvent = vi.fn();
+    const recorder = new Recorder({ engine, onEvent });
+    recorder.start({ captureNetworkRequests: true });
+
+    await globalThis.fetch('https://api.example.com/graphql', {
+      method: 'POST',
+      body: JSON.stringify({
+        operationName: 'GetUser',
+        query: `query GetUser($id: ID!) {
+          viewer { id }
+          selectedUser: user(id: $id) { ...UserDetails }
+        }
+        fragment UserDetails on User { name email }`,
+        variables: { id: 'private-user-id' },
+      }),
+    });
+
+    const data = onEvent.mock.calls[0][0].data as NetworkRequestPluginData;
+    expect(data.payload.graphql).toEqual({ operationName: 'GetUser' });
+    expect(JSON.stringify(data.payload)).not.toContain('private-user-id');
+
+    recorder.stop();
+  });
 });

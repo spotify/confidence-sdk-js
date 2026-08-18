@@ -9,6 +9,7 @@ import {
 import { RecorderOptions, RecorderState, RecordingConfig } from './types';
 import { RecordingEngine } from './engine';
 import { defaultParameterizeRoute } from './route-parameterizer';
+import { extractGraphQLRequestMetadata } from './graphql-request';
 
 export class Recorder {
   private readonly engine: RecordingEngine;
@@ -107,6 +108,7 @@ export class Recorder {
         url = String(input);
       }
       const requestSize = init?.body ? new Blob([init.body as BlobPart]).size : undefined;
+      const graphql = extractGraphQLRequestMetadata(url, init?.body);
       const start = Date.now();
 
       return originalFetch.call(globalThis, input, init).then(
@@ -120,6 +122,7 @@ export class Recorder {
             durationMs: Date.now() - start,
             ...(requestSize !== null && requestSize !== undefined ? { requestSize } : {}),
             ...(contentLength ? { responseSize: Number(contentLength) } : {}),
+            ...(graphql ? { graphql } : {}),
           });
           return response;
         },
@@ -131,6 +134,7 @@ export class Recorder {
             status: 0,
             durationMs: Date.now() - start,
             ...(requestSize !== null && requestSize !== undefined ? { requestSize } : {}),
+            ...(graphql ? { graphql } : {}),
           });
           throw error;
         },
@@ -165,6 +169,7 @@ export class Recorder {
       const method = (meta.__csr_method as string) ?? 'GET';
       const url = (meta.__csr_url as string) ?? '';
       const requestSize = body !== null && body !== undefined ? new Blob([body as BlobPart]).size : undefined;
+      const graphql = extractGraphQLRequestMetadata(url, body);
       const start = Date.now();
 
       this.addEventListener('loadend', function csrLoadend(this: XMLHttpRequest) {
@@ -177,6 +182,7 @@ export class Recorder {
           durationMs: Date.now() - start,
           ...(requestSize !== null && requestSize !== undefined ? { requestSize } : {}),
           ...(contentLength ? { responseSize: Number(contentLength) } : {}),
+          ...(graphql ? { graphql } : {}),
         });
       });
 
