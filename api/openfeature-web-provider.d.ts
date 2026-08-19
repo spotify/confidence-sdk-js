@@ -1,4 +1,4 @@
-import { Provider, ProviderMetadata, OpenFeatureEventEmitter, EvaluationContext, ResolutionDetails, JsonValue } from '@openfeature/web-sdk';
+import { Provider, ProviderMetadata, OpenFeatureEventEmitter, EvaluationContext, ResolutionDetails, JsonValue, EvaluationContextValue } from '@openfeature/web-sdk';
 import { FlagResolver, Confidence } from '@spotify-confidence/sdk';
 
 /**
@@ -30,6 +30,12 @@ declare class ConfidenceWebProvider implements Provider {
     resolveObjectEvaluation<T extends JsonValue>(flagKey: string, defaultValue: T): ResolutionDetails<T>;
     /** Resolves with an evaluation of a String flag */
     resolveStringEvaluation(flagKey: string, defaultValue: string): ResolutionDetails<string>;
+    /** Tracks an event */
+    track(trackingEventName: string, context?: EvaluationContext, trackingEventDetails?: {
+        [key: string]: EvaluationContextValue;
+    } & {
+        context?: never;
+    }): void;
 }
 
 /**

@@ -11,7 +11,7 @@ import {
 } from '@openfeature/web-sdk';
 import equal from 'fast-deep-equal';
 
-import { Value, Context, FlagResolver, FlagEvaluation } from '@spotify-confidence/sdk';
+import { Value, Context, EventData, EventSender, FlagResolver, FlagEvaluation } from '@spotify-confidence/sdk';
 
 type Mutable<T> = { -readonly [K in keyof T]: T[K] };
 
@@ -132,6 +132,27 @@ export class ConfidenceWebProvider implements Provider {
   resolveStringEvaluation(flagKey: string, defaultValue: string): ResolutionDetails<string> {
     return this.evaluateFlag(flagKey, defaultValue);
   }
+
+  /** Tracks an event */
+  track(
+    trackingEventName: string,
+    context: EvaluationContext = {},
+    trackingEventDetails: { [key: string]: EvaluationContextValue } & { context?: never } = {},
+  ): void {
+    const scopedConfidence = this.confidence.withContext(convertContext(context));
+    // The public constructor still accepts custom FlagResolvers created before tracking support was added.
+    if (!isEventSender(scopedConfidence)) {
+      throw new TypeError(
+        'The configured FlagResolver does not support event tracking; construct the provider with a full Confidence instance',
+      );
+    }
+    // Dynamic event details can bypass the public type; do not let them replace the evaluation context.
+    scopedConfidence.track(trackingEventName, convertStruct(trackingEventDetails, 'context') as EventData);
+  }
+}
+
+function isEventSender(confidence: FlagResolver): confidence is FlagResolver & EventSender {
+  return 'track' in confidence && typeof confidence.track === 'function';
 }
 
 function contextChanges(oldContext: EvaluationContext, newContext: EvaluationContext): EvaluationContext {
@@ -166,10 +187,10 @@ function convertValue(value: EvaluationContextValue): Value {
   return value;
 }
 
-function convertStruct(value: { [key: string]: EvaluationContextValue }): Value.Struct {
+function convertStruct(value: { [key: string]: EvaluationContextValue }, ignoredKey?: string): Value.Struct {
   const struct: Mutable<Value.Struct> = {};
   for (const key of Object.keys(value)) {
-    if (typeof value[key] === 'undefined') continue;
+    if (key === ignoredKey || typeof value[key] === 'undefined') continue;
     struct[key] = convertValue(value[key]);
   }
   return struct;

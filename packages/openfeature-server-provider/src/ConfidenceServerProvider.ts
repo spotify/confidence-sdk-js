@@ -9,7 +9,7 @@ import {
   ResolutionDetails,
 } from '@openfeature/server-sdk';
 
-import { Context, FlagEvaluation, FlagResolver, Value } from '@spotify-confidence/sdk';
+import { Context, EventData, EventSender, FlagEvaluation, FlagResolver, Value } from '@spotify-confidence/sdk';
 
 type Mutable<T> = { -readonly [K in keyof T]: T[K] };
 
@@ -94,9 +94,30 @@ export class ConfidenceServerProvider implements Provider {
     return this.fetchFlag(flagKey, defaultValue, context);
   }
 
+  /** Tracks an event */
+  track(
+    trackingEventName: string,
+    context: EvaluationContext = {},
+    trackingEventDetails: { [key: string]: EvaluationContextValue } & { context?: never } = {},
+  ): void {
+    const scopedConfidence = this.confidence.withContext(convertContext(context));
+    // The public constructor still accepts custom FlagResolvers created before tracking support was added.
+    if (!isEventSender(scopedConfidence)) {
+      throw new TypeError(
+        'The configured FlagResolver does not support event tracking; construct the provider with a full Confidence instance',
+      );
+    }
+    // Dynamic event details can bypass the public type; do not let them replace the evaluation context.
+    scopedConfidence.track(trackingEventName, convertStruct(trackingEventDetails, 'context') as EventData);
+  }
+
   async onClose(): Promise<void> {
     this.confidence.close?.();
   }
+}
+
+function isEventSender(confidence: FlagResolver): confidence is FlagResolver & EventSender {
+  return 'track' in confidence && typeof confidence.track === 'function';
 }
 
 function convertContext({ targetingKey, ...context }: EvaluationContext): Context {
@@ -115,10 +136,10 @@ function convertValue(value: EvaluationContextValue): Value {
   return value;
 }
 
-function convertStruct(value: { [key: string]: EvaluationContextValue }): Value.Struct {
+function convertStruct(value: { [key: string]: EvaluationContextValue }, ignoredKey?: string): Value.Struct {
   const struct: Mutable<Value.Struct> = {};
   for (const key of Object.keys(value)) {
-    if (typeof value[key] === 'undefined') continue;
+    if (key === ignoredKey || typeof value[key] === 'undefined') continue;
     struct[key] = convertValue(value[key]);
   }
   return struct;

@@ -51,6 +51,19 @@ Notes:
 
 - In the above example we first set the context and then set the provider and await for the provider to become ready before getting the flag value. Other ways of arranging these calls might make more sense depending on what app framework you are using. See the example apps for more inspiration.
 
+## Tracking
+
+With `@openfeature/web-sdk` 1.3.0 or later, events can be tracked using the context set on OpenFeature:
+
+```ts
+client.track('checkout', {
+  value: 42,
+  currency: 'SEK',
+});
+```
+
+Tracking details are added to the Confidence event payload. `context` is reserved for the evaluation context and is ignored when used as a tracking detail key.
+
 ## Region
 
 The region option is used to set the region for the network request to the Confidence backend. When the region is not set, the default (global) region will be used.
