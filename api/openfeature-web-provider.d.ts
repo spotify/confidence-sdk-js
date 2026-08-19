@@ -33,6 +33,8 @@ declare class ConfidenceWebProvider implements Provider {
     /** Tracks an event */
     track(trackingEventName: string, context?: EvaluationContext, trackingEventDetails?: {
         [key: string]: EvaluationContextValue;
+    } & {
+        context?: never;
     }): void;
 }
 

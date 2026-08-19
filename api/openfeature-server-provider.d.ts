@@ -25,6 +25,8 @@ declare class ConfidenceServerProvider implements Provider {
     /** Tracks an event */
     track(trackingEventName: string, context?: EvaluationContext, trackingEventDetails?: {
         [key: string]: EvaluationContextValue;
+    } & {
+        context?: never;
     }): void;
     onClose(): Promise<void>;
 }

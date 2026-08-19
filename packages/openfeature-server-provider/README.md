@@ -55,7 +55,7 @@ client.track(
 );
 ```
 
-Tracking details are added to the Confidence event payload. `context` is reserved for the evaluation context and must not be used as a tracking detail key.
+Tracking details are added to the Confidence event payload. `context` is reserved for the evaluation context and is ignored when used as a tracking detail key.
 
 ## Region
 

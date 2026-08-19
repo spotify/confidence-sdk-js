@@ -137,14 +137,17 @@ export class ConfidenceWebProvider implements Provider {
   track(
     trackingEventName: string,
     context: EvaluationContext = {},
-    trackingEventDetails: { [key: string]: EvaluationContextValue } = {},
+    trackingEventDetails: { [key: string]: EvaluationContextValue } & { context?: never } = {},
   ): void {
     const scopedConfidence = this.confidence.withContext(convertContext(context));
     // The public constructor still accepts custom FlagResolvers created before tracking support was added.
     if (!isEventSender(scopedConfidence)) {
-      throw new TypeError('Confidence instance does not support event tracking');
+      throw new TypeError(
+        'The configured FlagResolver does not support event tracking; construct the provider with a Confidence instance',
+      );
     }
-    scopedConfidence.track(trackingEventName, convertStruct(trackingEventDetails) as EventData);
+    // Dynamic event details can bypass the public type; do not let them replace the evaluation context.
+    scopedConfidence.track(trackingEventName, convertStruct(trackingEventDetails, 'context') as EventData);
   }
 }
 
@@ -184,10 +187,10 @@ function convertValue(value: EvaluationContextValue): Value {
   return value;
 }
 
-function convertStruct(value: { [key: string]: EvaluationContextValue }): Value.Struct {
+function convertStruct(value: { [key: string]: EvaluationContextValue }, ignoredKey?: string): Value.Struct {
   const struct: Mutable<Value.Struct> = {};
   for (const key of Object.keys(value)) {
-    if (typeof value[key] === 'undefined') continue;
+    if (key === ignoredKey || typeof value[key] === 'undefined') continue;
     struct[key] = convertValue(value[key]);
   }
   return struct;

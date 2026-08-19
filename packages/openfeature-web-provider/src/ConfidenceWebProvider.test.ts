@@ -51,6 +51,21 @@ describe('ConfidenceProvider', () => {
       expect(confidenceMock.subscribe).not.toHaveBeenCalled();
     });
 
+    it('ignores a reserved context event detail', () => {
+      instanceUnderTest.track(
+        'checkout',
+        { targetingKey: 'user-a' },
+        {
+          value: 42,
+          // @ts-expect-error context is reserved for the evaluation context
+          context: { source: 'event-details' },
+        },
+      );
+
+      expect(confidenceMock.withContext).toHaveBeenCalledWith({ targeting_key: 'user-a' });
+      expect(confidenceMock.track).toHaveBeenCalledWith('checkout', { value: 42 });
+    });
+
     it('tracks through the OpenFeature client with global context', async () => {
       try {
         await OpenFeature.setContext({ targetingKey: 'user-a', plan: 'premium' });
