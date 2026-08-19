@@ -8,8 +8,8 @@
     "directory": "packages/openfeature-server-provider"
   },
   "devDependencies": {
-    "@openfeature/core": "^1.1.0",
-    "@openfeature/server-sdk": "^1.13.5",
+    "@openfeature/core": "^1.5.0",
+    "@openfeature/server-sdk": "^1.16.0",
     "@spotify-confidence/sdk": "workspace:*",
     "rollup": "4.24.0",
     "typescript": "5.1.6"

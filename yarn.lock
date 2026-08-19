@@ -4027,28 +4027,28 @@ __metadata:
   languageName: node
   linkType: hard
 
-"@openfeature/core@npm:^1.1.0":
-  version: 1.1.0
-  resolution: "@openfeature/core@npm:1.1.0"
-  checksum: 10c0/fbb248ad415ae72efebf135c827164bf9ca703b12f26753b3a009bbc87674b9aceed59566b47161ae0a27dac3d8aad28108562877bd6534384ef53e12d002859
+"@openfeature/core@npm:^1.1.0, @openfeature/core@npm:^1.5.0":
+  version: 1.12.0
+  resolution: "@openfeature/core@npm:1.12.0"
+  checksum: 10c0/561aa31810b6bad7c787a61dfeef11615b3151773f751548b0d3bc894cf50d863ef45832f9b92f390bc7da7ba1c41be12ce6226a78c36a504dfd5e7fb97120bd
   languageName: node
   linkType: hard
 
-"@openfeature/server-sdk@npm:^1.13.5":
-  version: 1.13.5
-  resolution: "@openfeature/server-sdk@npm:1.13.5"
+"@openfeature/server-sdk@npm:^1.13.5, @openfeature/server-sdk@npm:^1.16.0":
+  version: 1.23.0
+  resolution: "@openfeature/server-sdk@npm:1.23.0"
   peerDependencies:
-    "@openfeature/core": 1.1.0
-  checksum: 10c0/1d9f3ebf86c10c70693f563aab184c9bb9fd8e0673e19d89c8cac78ee6ad4ef5070b1285835137e7aa5f261a5d1386665a19f9dffc486381e8cc35f5968fb3f4
+    "@openfeature/core": ^1.12.0
+  checksum: 10c0/2e9a5b57dece1d08a37a80f9a4118f1b22978693b865b4d8f9f89a97272aa9b125c5f94aa908670e3d83411252a43f2a9379c6b81d94f9361e8739740c1226e0
   languageName: node
   linkType: hard
 
-"@openfeature/web-sdk@npm:^1.0.3":
-  version: 1.0.3
-  resolution: "@openfeature/web-sdk@npm:1.0.3"
+"@openfeature/web-sdk@npm:^1.3.0":
+  version: 1.10.0
+  resolution: "@openfeature/web-sdk@npm:1.10.0"
   peerDependencies:
-    "@openfeature/core": 1.1.0
-  checksum: 10c0/7917a2a73ffbf53adaa8d7ca3bd2a32ae49b9cc4d41007f698781d4aa70fc825ec82e8eed69746dcfdfb93f9b55ec2018d4b8c8922f19379c578bcdfc3744cba
+    "@openfeature/core": ^1.12.0
+  checksum: 10c0/70b2e470296a628d9e9ba4cff6d558487fff322e95bd68629606c7ba5be138194018865ccf33997488b39020e1466836072a22bd71e6a19f606bd4b07a867bfe
   languageName: node
   linkType: hard
 
@@ -5050,8 +5050,8 @@ __metadata:
   version: 0.0.0-use.local
   resolution: "@spotify-confidence/openfeature-server-provider@workspace:packages/openfeature-server-provider"
   dependencies:
-    "@openfeature/core": "npm:^1.1.0"
-    "@openfeature/server-sdk": "npm:^1.13.5"
+    "@openfeature/core": "npm:^1.5.0"
+    "@openfeature/server-sdk": "npm:^1.16.0"
     "@spotify-confidence/sdk": "workspace:*"
     rollup: "npm:4.24.0"
     typescript: "npm:5.1.6"
@@ -5065,8 +5065,8 @@ __metadata:
   version: 0.0.0-use.local
   resolution: "@spotify-confidence/openfeature-web-provider@workspace:packages/openfeature-web-provider"
   dependencies:
-    "@openfeature/core": "npm:^1.1.0"
-    "@openfeature/web-sdk": "npm:^1.0.3"
+    "@openfeature/core": "npm:^1.5.0"
+    "@openfeature/web-sdk": "npm:^1.3.0"
     "@spotify-confidence/sdk": "workspace:*"
     fast-deep-equal: "npm:^3.1.3"
     rollup: "npm:4.24.0"
