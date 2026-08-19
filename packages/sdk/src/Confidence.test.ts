@@ -10,7 +10,9 @@ const flagResolverClientMock: jest.Mocked<FlagResolverClient> = {
   resolve: jest.fn(),
 };
 
-const eventSenderEngineMock: jest.Mocked<EventSenderEngine> = {} as any; // TODO fix any by using an interface
+const eventSenderEngineMock: jest.Mocked<EventSenderEngine> = {
+  send: jest.fn(),
+} as any; // TODO fix any by using an interface
 
 describe('Confidence', () => {
   let confidence: Confidence;
@@ -136,6 +138,16 @@ describe('Confidence', () => {
   });
 
   describe('track', () => {
+    it('tracks with child context without resolving flags', () => {
+      confidence.setContext({ targeting_key: 'parent' });
+      flagResolverClientMock.resolve.mockClear();
+
+      confidence.withContext({ targeting_key: 'child' }).track('checkout', { value: 42 });
+
+      expect(eventSenderEngineMock.send).toHaveBeenCalledWith({ targeting_key: 'child' }, 'checkout', { value: 42 });
+      expect(flagResolverClientMock.resolve).not.toHaveBeenCalled();
+    });
+
     it('sets up a subscription that can be closed once', () => {
       const mockManager = jest.fn();
       const mockCloser = jest.fn();
