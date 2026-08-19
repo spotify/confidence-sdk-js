@@ -24,6 +24,8 @@ class MockEngine implements RecordingEngine {
     this.onEvent = null;
   }
 
+  takeFullSnapshot(): void {}
+
   emit(event: RecordingEvent): void {
     this.onEvent?.(event);
   }

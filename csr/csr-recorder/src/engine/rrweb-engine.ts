@@ -1,7 +1,7 @@
 import { type ConsoleLogLevel, type RecordingEvent } from '@spotify-confidence/csr-common';
 import { RecordingConfig, DEFAULT_MASK_SELECTORS, DEFAULT_BLOCK_SELECTORS } from '../types';
 import { RecordingEngine } from './index';
-import { EventType, IncrementalSource, MouseInteractions, record, type recordOptions } from 'rrweb';
+import { EventType, IncrementalSource, MouseInteractions, record, takeFullSnapshot, type recordOptions } from 'rrweb';
 import { getRecordConsolePlugin } from '@rrweb/rrweb-plugin-console-record';
 
 const ALL_CONSOLE_LEVELS: ConsoleLogLevel[] = ['log', 'warn', 'error', 'debug', 'info'];
@@ -93,6 +93,10 @@ export class RrwebEngine implements RecordingEngine {
         },
         slimDOMOptions: 'all',
       }) ?? null;
+  }
+
+  takeFullSnapshot(): void {
+    takeFullSnapshot(true);
   }
 
   stop(): void {

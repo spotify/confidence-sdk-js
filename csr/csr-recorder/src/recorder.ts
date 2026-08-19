@@ -16,6 +16,7 @@ export class Recorder {
   private readonly onEvent: (event: RecordingEvent) => void;
   private state: RecorderState = RecorderState.Idle;
   private visibilityHandler: (() => void) | null = null;
+  private pageShowHandler: ((event: PageTransitionEvent) => void) | null = null;
   private originalFetch: typeof globalThis.fetch | null = null;
   private originalXhrOpen: typeof XMLHttpRequest.prototype.open | null = null;
   private originalXhrSend: typeof XMLHttpRequest.prototype.send | null = null;
@@ -63,6 +64,15 @@ export class Recorder {
         });
       };
       document.addEventListener('visibilitychange', this.visibilityHandler);
+    }
+
+    if (typeof window !== 'undefined') {
+      this.pageShowHandler = event => {
+        if (event.persisted) {
+          this.engine.takeFullSnapshot();
+        }
+      };
+      window.addEventListener('pageshow', this.pageShowHandler);
     }
 
     if (config?.captureNetworkRequests) {
@@ -286,6 +296,10 @@ export class Recorder {
     if (this.visibilityHandler) {
       document.removeEventListener('visibilitychange', this.visibilityHandler);
       this.visibilityHandler = null;
+    }
+    if (this.pageShowHandler) {
+      window.removeEventListener('pageshow', this.pageShowHandler);
+      this.pageShowHandler = null;
     }
     this.restoreNetwork();
     this.restoreRouting();
