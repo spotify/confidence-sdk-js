@@ -381,7 +381,7 @@ describe('createUploader', () => {
       expect(logs.some(l => l.includes('WORKER MISMATCH'))).toBe(false);
     });
 
-    it('does not warn when workerHash is absent (old worker)', async () => {
+    it('warns when workerHash is absent (old worker)', async () => {
       (globalThis as Record<string, unknown>).Worker = workerThatReplies({ workerHash: undefined });
       delete (globalThis as Record<string, unknown>).SharedWorker;
 
@@ -394,7 +394,7 @@ describe('createUploader', () => {
         debugLogger: m => logs.push(m),
       });
 
-      expect(logs.some(l => l.includes('WORKER MISMATCH'))).toBe(false);
+      expect(logs.some(l => l.includes('WORKER MISMATCH'))).toBe(true);
     });
   });
 
