@@ -6,9 +6,11 @@ const withContextMock = jest.fn(function withContext() {
   return this;
 });
 const evaluateFlagMock = jest.fn();
+const trackMock = jest.fn();
 const mockConfidence = {
   withContext: withContextMock,
   evaluateFlag: evaluateFlagMock,
+  track: trackMock,
 } as unknown as Confidence;
 
 const evaluation = {
@@ -43,5 +45,23 @@ describe('ConfidenceServerProvider', () => {
     expect(withContextMock).toHaveBeenNthCalledWith(2, { another_context: 5 });
 
     expect(evaluateFlagMock).toHaveBeenCalledTimes(2);
+  });
+
+  it('should track with converted context and event details', () => {
+    instanceUnderTest.track(
+      'checkout',
+      { targetingKey: 'user-a', registeredAt: new Date('2026-01-02T03:04:05Z') },
+      { value: 42, currency: 'SEK', purchasedAt: new Date('2026-02-03T04:05:06Z') },
+    );
+
+    expect(withContextMock).toHaveBeenCalledWith({
+      targeting_key: 'user-a',
+      registeredAt: '2026-01-02T03:04:05.000Z',
+    });
+    expect(trackMock).toHaveBeenCalledWith('checkout', {
+      value: 42,
+      currency: 'SEK',
+      purchasedAt: '2026-02-03T04:05:06.000Z',
+    });
   });
 });
