@@ -40,6 +40,23 @@ client
   });
 ```
 
+## Tracking
+
+With `@openfeature/server-sdk` 1.16.0 or later, events can be tracked with a request-specific evaluation context:
+
+```ts
+client.track(
+  'checkout',
+  { targetingKey: 'your targeting key' },
+  {
+    value: 42,
+    currency: 'SEK',
+  },
+);
+```
+
+Tracking details are added to the Confidence event payload. `context` is reserved for the evaluation context and must not be used as a tracking detail key.
+
 ## Region
 
 The region option is used to set the region for the network request to the Confidence backend. When the region is not set, the default (global) region will be used.
