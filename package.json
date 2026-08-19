@@ -18,6 +18,7 @@
     "test": "jest --testPathIgnorePatterns '\\.e2e\\.test\\.ts'",
     "test:csr": "vitest run --config vitest.csr.config.ts",
     "test:e2e": "jest --testPathPattern '\\.e2e\\.test\\.ts'",
+    "verify:types": "./verify-types.sh",
     "prepare": "husky install",
     "cm": "git-cz"
   },
