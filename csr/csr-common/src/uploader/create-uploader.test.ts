@@ -4,9 +4,6 @@ import type { CreateUploaderOptions } from './types';
 vi.mock('./worker/worker-script', () => ({
   workerScript: 'console.log("worker")',
 }));
-vi.mock('./worker-hash', () => ({
-  WORKER_HASH: 'expected-hash',
-}));
 
 const DEFAULTS: CreateUploaderOptions = {
   apiUrl: 'https://api.example',
@@ -102,6 +99,7 @@ describe('createUploader', () => {
 
   async function loadCreateUploader() {
     vi.resetModules();
+    vi.doMock('./worker-hash', () => ({ WORKER_HASH: 'expected-hash' }));
     // .js extension is required by Node16 module resolution for dynamic imports
     // (static `import` lines work without it because the package is CJS — see package.json).
     // eslint-disable-next-line es/no-dynamic-import
