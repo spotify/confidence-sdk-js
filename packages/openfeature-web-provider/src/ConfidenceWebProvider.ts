@@ -8,10 +8,12 @@ import {
   ProviderEvents,
   ProviderMetadata,
   ResolutionDetails,
+  TrackingEventDetails,
+  TrackingEventValue,
 } from '@openfeature/web-sdk';
 import equal from 'fast-deep-equal';
 
-import { Value, Context, FlagResolver, FlagEvaluation } from '@spotify-confidence/sdk';
+import { Value, Context, EventData, EventSender, FlagResolver, FlagEvaluation } from '@spotify-confidence/sdk';
 
 type Mutable<T> = { -readonly [K in keyof T]: T[K] };
 
@@ -132,6 +134,24 @@ export class ConfidenceWebProvider implements Provider {
   resolveStringEvaluation(flagKey: string, defaultValue: string): ResolutionDetails<string> {
     return this.evaluateFlag(flagKey, defaultValue);
   }
+
+  /** Tracks an event */
+  track(
+    trackingEventName: string,
+    context: EvaluationContext = {},
+    trackingEventDetails: TrackingEventDetails = {},
+  ): void {
+    const scopedConfidence = this.confidence.withContext(convertContext(context));
+    // The public constructor still accepts custom FlagResolvers created before tracking support was added.
+    if (!isEventSender(scopedConfidence)) {
+      throw new TypeError('Confidence instance does not support event tracking');
+    }
+    scopedConfidence.track(trackingEventName, convertStruct(trackingEventDetails) as EventData);
+  }
+}
+
+function isEventSender(confidence: FlagResolver): confidence is FlagResolver & EventSender {
+  return 'track' in confidence && typeof confidence.track === 'function';
 }
 
 function contextChanges(oldContext: EvaluationContext, newContext: EvaluationContext): EvaluationContext {
@@ -155,7 +175,7 @@ function convertContext({ targetingKey, ...context }: EvaluationContext): Contex
   return { ...targetingContext, ...convertStruct(context) };
 }
 
-function convertValue(value: EvaluationContextValue): Value {
+function convertValue(value: EvaluationContextValue | TrackingEventValue): Value {
   if (typeof value === 'object') {
     if (value === null) return undefined;
     if (value instanceof Date) return value.toISOString();
@@ -166,7 +186,7 @@ function convertValue(value: EvaluationContextValue): Value {
   return value;
 }
 
-function convertStruct(value: { [key: string]: EvaluationContextValue }): Value.Struct {
+function convertStruct(value: { [key: string]: EvaluationContextValue | TrackingEventValue }): Value.Struct {
   const struct: Mutable<Value.Struct> = {};
   for (const key of Object.keys(value)) {
     if (typeof value[key] === 'undefined') continue;

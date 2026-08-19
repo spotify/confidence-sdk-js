@@ -1,8 +1,8 @@
 import { EvaluationContext, ProviderEvents } from '@openfeature/web-sdk';
 import { ConfidenceWebProvider } from './ConfidenceWebProvider';
-import { FlagResolver, StateObserver } from '@spotify-confidence/sdk';
+import { EventSender, FlagResolver, StateObserver } from '@spotify-confidence/sdk';
 
-const confidenceMock: jest.Mocked<FlagResolver> = {
+const confidenceMock: jest.Mocked<FlagResolver> & jest.Mocked<Pick<EventSender, 'track'>> = {
   getContext: jest.fn(),
   setContext: jest.fn(),
   withContext: jest.fn(),
@@ -10,6 +10,7 @@ const confidenceMock: jest.Mocked<FlagResolver> = {
   subscribe: jest.fn(),
   evaluateFlag: jest.fn(),
   getFlag: jest.fn(),
+  track: jest.fn(),
 };
 
 const dummyContext: EvaluationContext = { targetingKey: 'test' };
@@ -20,11 +21,34 @@ describe('ConfidenceProvider', () => {
   beforeEach(() => {
     jest.resetAllMocks();
     instanceUnderTest = new ConfidenceWebProvider(confidenceMock);
+    confidenceMock.withContext.mockReturnValue(confidenceMock);
 
     // subscribe will by default immediately emit READY
     confidenceMock.subscribe.mockImplementation(observer => {
       observer!('READY');
       return jest.fn();
+    });
+  });
+
+  describe('track', () => {
+    it('tracks with converted context and event details', () => {
+      instanceUnderTest.track(
+        'checkout',
+        { targetingKey: 'user-a', registeredAt: new Date('2026-01-02T03:04:05Z') },
+        { value: 42, currency: 'SEK', purchasedAt: new Date('2026-02-03T04:05:06Z') },
+      );
+
+      expect(confidenceMock.withContext).toHaveBeenCalledWith({
+        targeting_key: 'user-a',
+        registeredAt: '2026-01-02T03:04:05.000Z',
+      });
+      expect(confidenceMock.track).toHaveBeenCalledWith('checkout', {
+        value: 42,
+        currency: 'SEK',
+        purchasedAt: '2026-02-03T04:05:06.000Z',
+      });
+      // Tracking with a scoped context must not subscribe to flag state or trigger reconciliation.
+      expect(confidenceMock.subscribe).not.toHaveBeenCalled();
     });
   });
 
