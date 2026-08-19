@@ -120,6 +120,22 @@
   * devDependencies
     * @spotify-confidence/sdk bumped to 0.3.19
 
+## [0.2.21](https://github.com/spotify/confidence-sdk-js/compare/react-v0.2.20...react-v0.2.21) (2026-08-19)
+
+
+### 🐛 Bug Fixes
+
+* **build:** ship .d.cts so CJS TypeScript consumers can resolve types ([#424](https://github.com/spotify/confidence-sdk-js/issues/424)) ([4f5de22](https://github.com/spotify/confidence-sdk-js/commit/4f5de2299aa565b2aee06aa32ae76bdad2899f15)), closes [#422](https://github.com/spotify/confidence-sdk-js/issues/422)
+
+
+### Dependencies
+
+* The following workspace dependencies were updated
+  * devDependencies
+    * @spotify-confidence/sdk bumped to 0.3.22
+  * peerDependencies
+    * @spotify-confidence/sdk bumped from >=0.3.1 <0.4.0 to >=0.3.22
+
 ## [0.2.20](https://github.com/spotify/confidence-sdk-js/compare/react-v0.2.19...react-v0.2.20) (2026-08-04)
 
 
