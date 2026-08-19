@@ -8,8 +8,6 @@ import {
   ProviderEvents,
   ProviderMetadata,
   ResolutionDetails,
-  TrackingEventDetails,
-  TrackingEventValue,
 } from '@openfeature/web-sdk';
 import equal from 'fast-deep-equal';
 
@@ -139,7 +137,7 @@ export class ConfidenceWebProvider implements Provider {
   track(
     trackingEventName: string,
     context: EvaluationContext = {},
-    trackingEventDetails: TrackingEventDetails = {},
+    trackingEventDetails: { [key: string]: EvaluationContextValue } = {},
   ): void {
     const scopedConfidence = this.confidence.withContext(convertContext(context));
     // The public constructor still accepts custom FlagResolvers created before tracking support was added.
@@ -175,7 +173,7 @@ function convertContext({ targetingKey, ...context }: EvaluationContext): Contex
   return { ...targetingContext, ...convertStruct(context) };
 }
 
-function convertValue(value: EvaluationContextValue | TrackingEventValue): Value {
+function convertValue(value: EvaluationContextValue): Value {
   if (typeof value === 'object') {
     if (value === null) return undefined;
     if (value instanceof Date) return value.toISOString();
@@ -186,7 +184,7 @@ function convertValue(value: EvaluationContextValue | TrackingEventValue): Value
   return value;
 }
 
-function convertStruct(value: { [key: string]: EvaluationContextValue | TrackingEventValue }): Value.Struct {
+function convertStruct(value: { [key: string]: EvaluationContextValue }): Value.Struct {
   const struct: Mutable<Value.Struct> = {};
   for (const key of Object.keys(value)) {
     if (typeof value[key] === 'undefined') continue;

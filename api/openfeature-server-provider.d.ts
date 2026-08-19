@@ -1,4 +1,4 @@
-import { Provider, ProviderMetadata, ProviderStatus, EvaluationContext, ResolutionDetails, JsonValue } from '@openfeature/server-sdk';
+import { Provider, ProviderMetadata, ProviderStatus, EvaluationContext, ResolutionDetails, JsonValue, EvaluationContextValue } from '@openfeature/server-sdk';
 import { FlagResolver, Confidence } from '@spotify-confidence/sdk';
 
 /**
@@ -22,6 +22,10 @@ declare class ConfidenceServerProvider implements Provider {
     resolveObjectEvaluation<T extends JsonValue>(flagKey: string, defaultValue: T, context: EvaluationContext): Promise<ResolutionDetails<T>>;
     /** Resolves with an evaluation of a String flag */
     resolveStringEvaluation(flagKey: string, defaultValue: string, context: EvaluationContext): Promise<ResolutionDetails<string>>;
+    /** Tracks an event */
+    track(trackingEventName: string, context?: EvaluationContext, trackingEventDetails?: {
+        [key: string]: EvaluationContextValue;
+    }): void;
     onClose(): Promise<void>;
 }
 
