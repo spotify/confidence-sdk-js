@@ -159,7 +159,6 @@ export async function createUploader(opts: CreateUploaderOptions): Promise<Uploa
   if (
     welcome.type === 'welcome' &&
     urlScheme === 'custom' &&
-    welcome.workerHash &&
     welcome.workerHash !== WORKER_HASH
   ) {
     log?.(
