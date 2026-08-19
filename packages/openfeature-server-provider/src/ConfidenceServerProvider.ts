@@ -104,7 +104,7 @@ export class ConfidenceServerProvider implements Provider {
     // The public constructor still accepts custom FlagResolvers created before tracking support was added.
     if (!isEventSender(scopedConfidence)) {
       throw new TypeError(
-        'The configured FlagResolver does not support event tracking; construct the provider with a Confidence instance',
+        'The configured FlagResolver does not support event tracking; construct the provider with a full Confidence instance',
       );
     }
     // Dynamic event details can bypass the public type; do not let them replace the evaluation context.
