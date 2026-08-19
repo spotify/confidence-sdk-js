@@ -1,4 +1,4 @@
-import { EvaluationContext, ProviderEvents } from '@openfeature/web-sdk';
+import { EvaluationContext, OpenFeature, ProviderEvents } from '@openfeature/web-sdk';
 import { ConfidenceWebProvider } from './ConfidenceWebProvider';
 import { EventSender, FlagResolver, StateObserver } from '@spotify-confidence/sdk';
 
@@ -49,6 +49,27 @@ describe('ConfidenceProvider', () => {
       });
       // Tracking with a scoped context must not subscribe to flag state or trigger reconciliation.
       expect(confidenceMock.subscribe).not.toHaveBeenCalled();
+    });
+
+    it('tracks through the OpenFeature client with global context', async () => {
+      try {
+        await OpenFeature.setContext({ targetingKey: 'user-a', plan: 'premium' });
+        await OpenFeature.setProviderAndWait(instanceUnderTest);
+
+        OpenFeature.getClient().track('checkout', { value: 42, currency: 'SEK' });
+
+        expect(confidenceMock.withContext).toHaveBeenLastCalledWith({
+          targeting_key: 'user-a',
+          plan: 'premium',
+        });
+        expect(confidenceMock.track).toHaveBeenCalledWith('checkout', {
+          value: 42,
+          currency: 'SEK',
+        });
+      } finally {
+        await OpenFeature.clearProviders();
+        await OpenFeature.setContext({});
+      }
     });
   });
 

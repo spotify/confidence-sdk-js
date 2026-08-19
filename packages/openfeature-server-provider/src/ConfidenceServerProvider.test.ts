@@ -1,4 +1,4 @@
-import { ProviderStatus } from '@openfeature/web-sdk';
+import { OpenFeature, ProviderStatus } from '@openfeature/server-sdk';
 import { Confidence } from '@spotify-confidence/sdk';
 import { ConfidenceServerProvider } from './ConfidenceServerProvider';
 
@@ -63,5 +63,31 @@ describe('ConfidenceServerProvider', () => {
       currency: 'SEK',
       purchasedAt: '2026-02-03T04:05:06.000Z',
     });
+  });
+
+  it('should track through the OpenFeature client with merged context', async () => {
+    try {
+      OpenFeature.setContext({ targetingKey: 'global', plan: 'premium' });
+      await OpenFeature.setProviderAndWait(instanceUnderTest);
+
+      OpenFeature.getClient().track(
+        'checkout',
+        { targetingKey: 'user-a', requestId: 'request-a' },
+        { value: 42, currency: 'SEK' },
+      );
+
+      expect(withContextMock).toHaveBeenLastCalledWith({
+        targeting_key: 'user-a',
+        plan: 'premium',
+        requestId: 'request-a',
+      });
+      expect(trackMock).toHaveBeenCalledWith('checkout', {
+        value: 42,
+        currency: 'SEK',
+      });
+    } finally {
+      await OpenFeature.clearProviders();
+      OpenFeature.setContext({});
+    }
   });
 });
