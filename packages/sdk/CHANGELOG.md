@@ -1,5 +1,17 @@
 # Changelog
 
+## [0.3.22](https://github.com/spotify/confidence-sdk-js/compare/sdk-v0.3.21...sdk-v0.3.22) (2026-08-19)
+
+
+### 🐛 Bug Fixes
+
+* **build:** ship .d.cts so CJS TypeScript consumers can resolve types ([#424](https://github.com/spotify/confidence-sdk-js/issues/424)) ([4f5de22](https://github.com/spotify/confidence-sdk-js/commit/4f5de2299aa565b2aee06aa32ae76bdad2899f15)), closes [#422](https://github.com/spotify/confidence-sdk-js/issues/422)
+
+
+### ✨ New Features
+
+* support tracking in OpenFeature providers ([#438](https://github.com/spotify/confidence-sdk-js/issues/438)) ([93b89b4](https://github.com/spotify/confidence-sdk-js/commit/93b89b4a9a7c2cca89b2c7518523218a4f0fa800))
+
 ## [0.3.21](https://github.com/spotify/confidence-sdk-js/compare/sdk-v0.3.20...sdk-v0.3.21) (2026-08-04)
 
 

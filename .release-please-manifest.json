@@ -1,8 +1,8 @@
 {
-  "packages/openfeature-server-provider": "0.3.21",
-  "packages/openfeature-web-provider": "0.3.21",
-  "packages/sdk": "0.3.21",
-  "packages/react": "0.2.20",
+  "packages/openfeature-server-provider": "0.3.22",
+  "packages/openfeature-web-provider": "0.3.22",
+  "packages/sdk": "0.3.22",
+  "packages/react": "0.2.21",
   "csr/csr-common": "0.18.7",
   "csr/csr-recorder": "0.17.13",
   "csr/session-recording": "0.18.8"
