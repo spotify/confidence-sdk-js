@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.17.15](https://github.com/spotify/confidence-sdk-js/compare/csr-recorder-v0.17.14...csr-recorder-v0.17.15) (2026-08-20)
+
+
+### 🐛 Bug Fixes
+
+* **csr:** resnapshot pages restored from BFCache ([#439](https://github.com/spotify/confidence-sdk-js/issues/439)) ([5594d02](https://github.com/spotify/confidence-sdk-js/commit/5594d02b3b3141010f068e41ff0fff328115af4b))
+
 ## [0.17.14](https://github.com/spotify/confidence-sdk-js/compare/csr-recorder-v0.17.13...csr-recorder-v0.17.14) (2026-08-20)
 
 
