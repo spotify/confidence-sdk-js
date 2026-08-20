@@ -24,16 +24,17 @@ function clickModifiersPlugin(): RrwebPlugin {
     observer: (_callback, win) => {
       const onClick = (event: Event) => {
         const click = event as MouseEvent;
-        pendingClick = {
+        const modifiers = {
           button: click.button,
           altKey: click.altKey,
           ctrlKey: click.ctrlKey,
           metaKey: click.metaKey,
           shiftKey: click.shiftKey,
         };
-        queueMicrotask(() => {
-          pendingClick = null;
-        });
+        pendingClick = modifiers;
+        win.setTimeout(() => {
+          if (pendingClick === modifiers) pendingClick = null;
+        }, 0);
       };
 
       win.addEventListener('click', onClick, true);
