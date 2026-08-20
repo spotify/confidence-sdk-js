@@ -4,14 +4,19 @@ import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { RrwebEngine } from './rrweb-engine';
 
 const recordSpy = vi.fn().mockReturnValue(() => {});
+const takeFullSnapshotSpy = vi.fn();
 
 vi.mock('rrweb', async importOriginal => ({
   ...(await importOriginal<typeof import('rrweb')>()),
   record: (opts: unknown) => recordSpy(opts),
+  takeFullSnapshot: (isCheckout: boolean) => takeFullSnapshotSpy(isCheckout),
 }));
 
 describe('RrwebEngine', () => {
-  beforeEach(() => recordSpy.mockClear());
+  beforeEach(() => {
+    recordSpy.mockClear();
+    takeFullSnapshotSpy.mockClear();
+  });
 
   it('defaults maskAllInputs=true when maskInputs is omitted', () => {
     new RrwebEngine().start({}, () => {});
@@ -127,5 +132,13 @@ describe('RrwebEngine', () => {
     expect(plugin.eventProcessor(event)).toBe(event);
 
     removeObserver();
+  });
+
+  it('takes a checkout snapshot when requested', () => {
+    const engine = new RrwebEngine();
+
+    engine.takeFullSnapshot();
+
+    expect(takeFullSnapshotSpy).toHaveBeenCalledWith(true);
   });
 });

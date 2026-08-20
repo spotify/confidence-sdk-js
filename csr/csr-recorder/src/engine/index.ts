@@ -7,5 +7,6 @@ import { RecordingConfig } from '../types';
  */
 export interface RecordingEngine {
   start(config: RecordingConfig, onEvent: (event: RecordingEvent) => void): void;
+  takeFullSnapshot(): void;
   stop(): void;
 }
