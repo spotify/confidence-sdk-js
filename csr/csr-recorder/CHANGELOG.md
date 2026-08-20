@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.17.14](https://github.com/spotify/confidence-sdk-js/compare/csr-recorder-v0.17.13...csr-recorder-v0.17.14) (2026-08-20)
+
+
+### 🐛 Bug Fixes
+
+* **csr-recorder:** preserve native click modifiers ([#440](https://github.com/spotify/confidence-sdk-js/issues/440)) ([9575f1a](https://github.com/spotify/confidence-sdk-js/commit/9575f1a915a1a71ae16b1bd59053085d2456b0da))
+
 ## [0.17.13](https://github.com/spotify/confidence-sdk-js/compare/csr-recorder-v0.17.12...csr-recorder-v0.17.13) (2026-08-18)
 
 
