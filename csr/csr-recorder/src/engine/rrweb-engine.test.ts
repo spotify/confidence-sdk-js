@@ -64,7 +64,7 @@ describe('RrwebEngine', () => {
     expect(recordSpy.mock.calls[0][0].slimDOMOptions).toBe('all');
   });
 
-  it('adds native click modifier keys to the rrweb click event', () => {
+  it('keeps native click modifiers through a browser microtask checkpoint', async () => {
     new RrwebEngine().start({}, () => {});
     const plugin = recordSpy.mock.calls[0][0].plugins.find(
       ({ name }: { name: string }) => name === 'csr/click-modifiers@1',
@@ -80,6 +80,9 @@ describe('RrwebEngine', () => {
         shiftKey: true,
       }),
     );
+    // Browsers can run a microtask checkpoint between the window capture
+    // listener above and rrweb's document listener for a trusted click.
+    await Promise.resolve();
 
     expect(
       plugin.eventProcessor({
@@ -114,7 +117,7 @@ describe('RrwebEngine', () => {
     );
     const removeObserver = plugin.observer(() => {}, window);
     document.dispatchEvent(new MouseEvent('click', { metaKey: true }));
-    await Promise.resolve();
+    await new Promise(resolve => window.setTimeout(resolve, 0));
 
     const event = {
       type: 3,
