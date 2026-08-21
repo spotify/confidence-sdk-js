@@ -155,11 +155,7 @@ export async function createUploader(opts: CreateUploaderOptions): Promise<Uploa
       ? `tab: welcome (${'sessionId' in welcome.result ? `sessionId=${welcome.result.sessionId}` : 'skipRecording'})`
       : `tab: dead reason=${welcome.reason}`,
   );
-  if (
-    welcome.type === 'welcome' &&
-    urlScheme === 'custom' &&
-    welcome.workerHash !== WORKER_HASH
-  ) {
+  if (welcome.type === 'welcome' && urlScheme === 'custom' && welcome.workerHash !== WORKER_HASH) {
     log?.(
       'tab: WORKER MISMATCH — the self-hosted confidence-worker.js does not match the installed SDK. ' +
         'Copy the updated file from node_modules/@spotify-confidence/session-recording/dist/confidence-worker.js',
