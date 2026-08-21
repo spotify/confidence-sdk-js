@@ -202,7 +202,7 @@ const recorder = initSessionRecorder({
 
 Your CSP only needs `worker-src 'self'` with this setup.
 
-> **Note:** The worker version must match the SDK version. After upgrading `@spotify-confidence/session-recording`, re-copy or re-deploy the worker file.
+> **Note:** The worker file must stay in sync with the SDK. After upgrading `@spotify-confidence/session-recording`, re-copy or re-deploy the worker file. If they're out of sync, the SDK logs a `WORKER MISMATCH` warning via `debugLogger`.
 
 ### Troubleshooting
 
@@ -210,6 +210,7 @@ If recording silently fails, open DevTools and look for:
 
 - A `SecurityError` mentioning `worker-src` — your CSP blocks the worker. Use one of the options above.
 - A blocked `connect-src` request to `recording.confidence.dev` — add the hosts to your CSP.
+- A `WORKER MISMATCH` log — your self-hosted `confidence-worker.js` is outdated. Re-copy it from `node_modules/@spotify-confidence/session-recording/dist/`.
 
 Enable [debug logging](#debug-logging) to see the full lifecycle and pinpoint where it fails.
 

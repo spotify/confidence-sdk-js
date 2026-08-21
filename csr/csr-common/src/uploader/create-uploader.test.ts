@@ -95,6 +95,7 @@ describe('createUploader', () => {
 
   async function loadCreateUploader() {
     vi.resetModules();
+    vi.doMock('./worker-hash', () => ({ WORKER_HASH: 'expected-hash' }));
     // .js extension is required by Node16 module resolution for dynamic imports
     // (static `import` lines work without it because the package is CJS — see package.json).
     // eslint-disable-next-line es/no-dynamic-import
@@ -304,6 +305,110 @@ describe('createUploader', () => {
       const createUploader = await loadCreateUploader();
 
       await expect(createUploader({ ...DEFAULTS, workerMode: 'shared' })).rejects.toThrow(/worker-src/);
+    });
+  });
+
+  describe('worker hash mismatch', () => {
+    beforeEach(() => {
+      (globalThis as Record<string, unknown>).window = { addEventListener: vi.fn() };
+      (globalThis as Record<string, unknown>).document = { addEventListener: vi.fn() };
+    });
+
+    afterEach(() => {
+      delete (globalThis as Record<string, unknown>).window;
+      delete (globalThis as Record<string, unknown>).document;
+    });
+
+    function workerThatReplies(welcomeOverrides: Record<string, unknown> = {}) {
+      return class {
+        onerror: ((e: Event) => void) | null = null;
+        onmessage: ((e: MessageEvent) => void) | null = null;
+        postMessage(m: unknown) {
+          const msg = m as { type: string };
+          if (msg.type === 'hello') {
+            setTimeout(
+              () =>
+                this.onmessage?.({
+                  data: {
+                    type: 'welcome',
+                    result: { sessionId: 'sess-1', sessionToken: 'tok-1' },
+                    workerHash: 'stale-hash',
+                    ...welcomeOverrides,
+                  },
+                } as MessageEvent),
+              0,
+            );
+          }
+        }
+      };
+    }
+
+    async function loadCreateUploaderWithMockedContext() {
+      vi.doMock('./client-context', () => ({ collectUserAgentContext: () => null }));
+      return loadCreateUploader();
+    }
+
+    it('logs a warning when workerUrl is set and hashes mismatch', async () => {
+      (globalThis as Record<string, unknown>).Worker = workerThatReplies();
+      delete (globalThis as Record<string, unknown>).SharedWorker;
+
+      const createUploader = await loadCreateUploaderWithMockedContext();
+      const logs: string[] = [];
+      await createUploader({
+        ...DEFAULTS,
+        workerMode: 'dedicated',
+        workerUrl: '/confidence-worker.js',
+        debugLogger: m => logs.push(m),
+      });
+
+      expect(logs.some(l => l.includes('WORKER MISMATCH'))).toBe(true);
+    });
+
+    it('does not warn when using data: URL (inlined worker)', async () => {
+      (globalThis as Record<string, unknown>).Worker = workerThatReplies();
+      delete (globalThis as Record<string, unknown>).SharedWorker;
+
+      const createUploader = await loadCreateUploaderWithMockedContext();
+      const logs: string[] = [];
+      await createUploader({
+        ...DEFAULTS,
+        workerMode: 'dedicated',
+        debugLogger: m => logs.push(m),
+      });
+
+      expect(logs.some(l => l.includes('WORKER MISMATCH'))).toBe(false);
+    });
+
+    it('does not warn when hashes match', async () => {
+      (globalThis as Record<string, unknown>).Worker = workerThatReplies({ workerHash: 'expected-hash' });
+      delete (globalThis as Record<string, unknown>).SharedWorker;
+
+      const createUploader = await loadCreateUploaderWithMockedContext();
+      const logs: string[] = [];
+      await createUploader({
+        ...DEFAULTS,
+        workerMode: 'dedicated',
+        workerUrl: '/confidence-worker.js',
+        debugLogger: m => logs.push(m),
+      });
+
+      expect(logs.some(l => l.includes('WORKER MISMATCH'))).toBe(false);
+    });
+
+    it('warns when workerHash is absent (old worker)', async () => {
+      (globalThis as Record<string, unknown>).Worker = workerThatReplies({ workerHash: undefined });
+      delete (globalThis as Record<string, unknown>).SharedWorker;
+
+      const createUploader = await loadCreateUploaderWithMockedContext();
+      const logs: string[] = [];
+      await createUploader({
+        ...DEFAULTS,
+        workerMode: 'dedicated',
+        workerUrl: '/confidence-worker.js',
+        debugLogger: m => logs.push(m),
+      });
+
+      expect(logs.some(l => l.includes('WORKER MISMATCH'))).toBe(true);
     });
   });
 
