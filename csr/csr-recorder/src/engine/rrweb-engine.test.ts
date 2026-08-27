@@ -55,7 +55,7 @@ describe('RrwebEngine', () => {
 
   it('applies default blockSelector when blockSelectors is absent', () => {
     new RrwebEngine().start({}, () => {});
-    expect(recordSpy.mock.calls[0][0].blockSelector).toBe('[data-csr-block]');
+    expect(recordSpy.mock.calls[0][0].blockSelector).toBe('[data-csr-block],video');
   });
 
   it('rebuilds blocked elements as labelled inert placeholders', () => {
