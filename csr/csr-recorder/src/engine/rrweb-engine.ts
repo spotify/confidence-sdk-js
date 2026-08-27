@@ -10,6 +10,53 @@ type RrwebPlugin = NonNullable<recordOptions<RecordingEvent>['plugins']>[number]
 
 type ClickModifiers = Pick<MouseEvent, 'button' | 'altKey' | 'ctrlKey' | 'metaKey' | 'shiftKey'>;
 
+const BLOCKED_ELEMENT_ATTRIBUTE = 'data-csr-blocked-element';
+
+type SerializedNode = {
+  type: number;
+  tagName?: string;
+  attributes?: Record<string, unknown>;
+  childNodes?: SerializedNode[];
+};
+
+function labelBlockedElement(node: SerializedNode): void {
+  const isBlockedElement =
+    node.type === 2 &&
+    node.tagName !== undefined &&
+    node.attributes !== undefined &&
+    typeof node.attributes.rr_width === 'string' &&
+    typeof node.attributes.rr_height === 'string';
+
+  if (isBlockedElement) {
+    node.attributes![BLOCKED_ELEMENT_ATTRIBUTE] = node.tagName;
+    node.tagName = 'div';
+  }
+
+  node.childNodes?.forEach(labelBlockedElement);
+}
+
+/**
+ * rrweb strips blocked elements down to their dimensions, but retains their
+ * original tag name. Rebuild them as inert divs and keep the tag name as safe
+ * metadata so players can render a useful placeholder label.
+ */
+function blockedElementLabelsPlugin(): RrwebPlugin {
+  return {
+    name: 'csr/blocked-element-labels@1',
+    options: {},
+    observer: () => () => {},
+    eventProcessor: event => {
+      if (event.type === EventType.FullSnapshot) {
+        labelBlockedElement(event.data.node as SerializedNode);
+      } else if (event.type === EventType.IncrementalSnapshot && event.data.source === IncrementalSource.Mutation) {
+        event.data.adds.forEach(add => labelBlockedElement(add.node as SerializedNode));
+      }
+
+      return event;
+    },
+  };
+}
+
 /**
  * rrweb does not include modifier keys in mouse-interaction events. Capture
  * the native click first, then add its safe, non-text metadata to the rrweb
@@ -69,7 +116,7 @@ export class RrwebEngine implements RecordingEngine {
     const maskSelectors = config.maskSelectors ?? DEFAULT_MASK_SELECTORS;
     const blockSelectors = config.blockSelectors ?? DEFAULT_BLOCK_SELECTORS;
 
-    const plugins: RrwebPlugin[] = [clickModifiersPlugin()];
+    const plugins: RrwebPlugin[] = [clickModifiersPlugin(), blockedElementLabelsPlugin()];
     const { captureConsoleLogs } = config;
     if (captureConsoleLogs) {
       const levels = captureConsoleLogs === true ? ALL_CONSOLE_LEVELS : captureConsoleLogs.levels;
