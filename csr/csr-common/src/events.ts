@@ -171,6 +171,17 @@ export type InputCustomData = {
     pathname?: string;
     fieldType?: string;
     hasValue?: boolean;
+    source?: 'paste';
+  };
+};
+
+export type ClipboardAction = 'copy' | 'cut' | 'paste';
+
+export type ClipboardPluginData = {
+  plugin: 'csr/clipboard@1';
+  payload: {
+    action: ClipboardAction;
+    targetId: number;
   };
 };
 

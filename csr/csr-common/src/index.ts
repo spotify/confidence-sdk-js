@@ -12,6 +12,8 @@ export {
   type CustomEventData,
   type ClickCustomData,
   type InputCustomData,
+  type ClipboardAction,
+  type ClipboardPluginData,
   type RageClickCustomData,
   type FormFieldReEditCustomData,
   type ScrollBackCustomData,
