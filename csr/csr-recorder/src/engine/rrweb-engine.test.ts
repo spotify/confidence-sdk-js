@@ -69,6 +69,39 @@ describe('RrwebEngine', () => {
     expect(recordSpy.mock.calls[0][0].slimDOMOptions).toBe('all');
   });
 
+  it('records copy, cut, and paste actions without reading clipboard contents', () => {
+    new RrwebEngine().start({}, () => {});
+    const plugin = recordSpy.mock.calls[0][0].plugins.find(({ name }: { name: string }) => name === 'csr/clipboard@1');
+    const getId = vi.fn().mockReturnValue(42);
+    plugin.getMirror({ nodeMirror: { getId } });
+    const callback = vi.fn();
+    const removeObserver = plugin.observer(callback, window);
+    const input = document.createElement('input');
+    document.body.appendChild(input);
+
+    for (const action of ['copy', 'cut', 'paste']) {
+      const event = new Event(action, { bubbles: true });
+      Object.defineProperty(event, 'clipboardData', {
+        get: () => {
+          throw new Error('clipboard contents must not be read');
+        },
+      });
+      expect(() => input.dispatchEvent(event)).not.toThrow();
+    }
+
+    expect(callback.mock.calls.map(([payload]) => payload)).toEqual([
+      { action: 'copy', targetId: 42 },
+      { action: 'cut', targetId: 42 },
+      { action: 'paste', targetId: 42 },
+    ]);
+    expect(getId).toHaveBeenCalledTimes(3);
+
+    removeObserver();
+    input.dispatchEvent(new Event('paste', { bubbles: true }));
+    expect(callback).toHaveBeenCalledTimes(3);
+    input.remove();
+  });
+
   it('keeps native click modifiers through a browser microtask checkpoint', async () => {
     new RrwebEngine().start({}, () => {});
     const plugin = recordSpy.mock.calls[0][0].plugins.find(

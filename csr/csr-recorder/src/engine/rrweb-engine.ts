@@ -10,6 +10,39 @@ type RrwebPlugin = NonNullable<recordOptions<RecordingEvent>['plugins']>[number]
 
 type ClickModifiers = Pick<MouseEvent, 'button' | 'altKey' | 'ctrlKey' | 'metaKey' | 'shiftKey'>;
 
+type ClipboardAction = 'copy' | 'cut' | 'paste';
+
+/**
+ * Record clipboard actions and their DOM target without reading clipboard
+ * contents. The resulting rrweb Plugin events can explain otherwise
+ * surprising input changes during analysis.
+ */
+function clipboardActionsPlugin(): RrwebPlugin {
+  let getId: ((node: Node) => number) | undefined;
+
+  return {
+    name: 'csr/clipboard@1',
+    options: {},
+    getMirror: ({ nodeMirror }) => {
+      getId = node => nodeMirror.getId(node);
+    },
+    observer: (callback, win) => {
+      const actions: ClipboardAction[] = ['copy', 'cut', 'paste'];
+      const handlers = actions.map(action => {
+        const handler = (event: Event) => {
+          const targetId = event.target instanceof win.Node ? getId?.(event.target) ?? -1 : -1;
+          callback({ action, targetId });
+        };
+
+        win.document.addEventListener(action, handler, true);
+        return () => win.document.removeEventListener(action, handler, true);
+      });
+
+      return () => handlers.forEach(remove => remove());
+    },
+  };
+}
+
 /**
  * rrweb does not include modifier keys in mouse-interaction events. Capture
  * the native click first, then add its safe, non-text metadata to the rrweb
@@ -69,7 +102,7 @@ export class RrwebEngine implements RecordingEngine {
     const maskSelectors = config.maskSelectors ?? DEFAULT_MASK_SELECTORS;
     const blockSelectors = config.blockSelectors ?? DEFAULT_BLOCK_SELECTORS;
 
-    const plugins: RrwebPlugin[] = [clickModifiersPlugin()];
+    const plugins: RrwebPlugin[] = [clickModifiersPlugin(), clipboardActionsPlugin()];
     const { captureConsoleLogs } = config;
     if (captureConsoleLogs) {
       const levels = captureConsoleLogs === true ? ALL_CONSOLE_LEVELS : captureConsoleLogs.levels;
