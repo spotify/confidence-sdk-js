@@ -6,7 +6,7 @@ export interface RecorderOptions {
 }
 
 export const DEFAULT_MASK_SELECTORS: string[] = ['[data-csr-mask]'];
-export const DEFAULT_BLOCK_SELECTORS: string[] = ['[data-csr-block]'];
+export const DEFAULT_BLOCK_SELECTORS: string[] = ['[data-csr-block]', 'video'];
 
 export interface RecordingConfig {
   /**

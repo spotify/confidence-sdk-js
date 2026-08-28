@@ -55,7 +55,56 @@ describe('RrwebEngine', () => {
 
   it('applies default blockSelector when blockSelectors is absent', () => {
     new RrwebEngine().start({}, () => {});
-    expect(recordSpy.mock.calls[0][0].blockSelector).toBe('[data-csr-block]');
+    expect(recordSpy.mock.calls[0][0].blockSelector).toBe('[data-csr-block],video');
+  });
+
+  it('rebuilds blocked elements as labelled inert placeholders', () => {
+    new RrwebEngine().start({}, () => {});
+    const plugin = recordSpy.mock.calls[0][0].plugins.find(
+      ({ name }: { name: string }) => name === 'csr/blocked-element-labels@1',
+    );
+    const event = {
+      type: 2,
+      timestamp: 1,
+      data: {
+        node: {
+          type: 0,
+          id: 1,
+          childNodes: [
+            {
+              type: 2,
+              id: 2,
+              tagName: 'video',
+              attributes: { rr_width: '640px', rr_height: '360px' },
+              childNodes: [],
+            },
+          ],
+        },
+      },
+    };
+
+    expect(plugin.eventProcessor(event)).toEqual({
+      ...event,
+      data: {
+        node: {
+          type: 0,
+          id: 1,
+          childNodes: [
+            {
+              type: 2,
+              id: 2,
+              tagName: 'div',
+              attributes: {
+                rr_width: '640px',
+                rr_height: '360px',
+                'data-csr-blocked-element': 'video',
+              },
+              childNodes: [],
+            },
+          ],
+        },
+      },
+    });
   });
 
   it('throttles mousemove to 100ms and records only last input value', () => {
