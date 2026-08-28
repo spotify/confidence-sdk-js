@@ -4,14 +4,19 @@ import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { RrwebEngine } from './rrweb-engine';
 
 const recordSpy = vi.fn().mockReturnValue(() => {});
+const takeFullSnapshotSpy = vi.fn();
 
 vi.mock('rrweb', async importOriginal => ({
   ...(await importOriginal<typeof import('rrweb')>()),
   record: (opts: unknown) => recordSpy(opts),
+  takeFullSnapshot: (isCheckout: boolean) => takeFullSnapshotSpy(isCheckout),
 }));
 
 describe('RrwebEngine', () => {
-  beforeEach(() => recordSpy.mockClear());
+  beforeEach(() => {
+    recordSpy.mockClear();
+    takeFullSnapshotSpy.mockClear();
+  });
 
   it('defaults maskAllInputs=true when maskInputs is omitted', () => {
     new RrwebEngine().start({}, () => {});
@@ -97,7 +102,7 @@ describe('RrwebEngine', () => {
     input.remove();
   });
 
-  it('adds native click modifier keys to the rrweb click event', () => {
+  it('keeps native click modifiers through a browser microtask checkpoint', async () => {
     new RrwebEngine().start({}, () => {});
     const plugin = recordSpy.mock.calls[0][0].plugins.find(
       ({ name }: { name: string }) => name === 'csr/click-modifiers@1',
@@ -113,6 +118,9 @@ describe('RrwebEngine', () => {
         shiftKey: true,
       }),
     );
+    // Browsers can run a microtask checkpoint between the window capture
+    // listener above and rrweb's document listener for a trusted click.
+    await Promise.resolve();
 
     expect(
       plugin.eventProcessor({
@@ -147,7 +155,7 @@ describe('RrwebEngine', () => {
     );
     const removeObserver = plugin.observer(() => {}, window);
     document.dispatchEvent(new MouseEvent('click', { metaKey: true }));
-    await Promise.resolve();
+    await new Promise(resolve => window.setTimeout(resolve, 0));
 
     const event = {
       type: 3,
@@ -157,5 +165,13 @@ describe('RrwebEngine', () => {
     expect(plugin.eventProcessor(event)).toBe(event);
 
     removeObserver();
+  });
+
+  it('takes a checkout snapshot when requested', () => {
+    const engine = new RrwebEngine();
+
+    engine.takeFullSnapshot();
+
+    expect(takeFullSnapshotSpy).toHaveBeenCalledWith(true);
   });
 });
