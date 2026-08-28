@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.18.8](https://github.com/spotify/confidence-sdk-js/compare/csr-common-v0.18.7...csr-common-v0.18.8) (2026-08-28)
+
+
+### ✨ New Features
+
+* expose clipboard input provenance types ([#446](https://github.com/spotify/confidence-sdk-js/issues/446)) ([c955079](https://github.com/spotify/confidence-sdk-js/commit/c9550793998c8f2e043d926b9e5ec1690304da91))
+
 ## [0.18.7](https://github.com/spotify/confidence-sdk-js/compare/csr-common-v0.18.6...csr-common-v0.18.7) (2026-08-18)
 
 

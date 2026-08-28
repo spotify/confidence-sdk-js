@@ -1,5 +1,24 @@
 # Changelog
 
+## [0.17.16](https://github.com/spotify/confidence-sdk-js/compare/csr-recorder-v0.17.15...csr-recorder-v0.17.16) (2026-08-28)
+
+
+### 🐛 Bug Fixes
+
+* replace blocked videos with labelled placeholders ([#444](https://github.com/spotify/confidence-sdk-js/issues/444)) ([d1385b4](https://github.com/spotify/confidence-sdk-js/commit/d1385b4b19e267ba12e1a51890f085bf4746fb16))
+
+
+### ✨ New Features
+
+* record clipboard actions ([#445](https://github.com/spotify/confidence-sdk-js/issues/445)) ([7a4aed4](https://github.com/spotify/confidence-sdk-js/commit/7a4aed4bada3b38de513f50aad4224e54488bbbb))
+
+
+### Dependencies
+
+* The following workspace dependencies were updated
+  * dependencies
+    * @spotify-confidence/csr-common bumped to 0.18.8
+
 ## [0.17.15](https://github.com/spotify/confidence-sdk-js/compare/csr-recorder-v0.17.14...csr-recorder-v0.17.15) (2026-08-20)
 
 
