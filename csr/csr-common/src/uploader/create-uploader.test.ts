@@ -61,10 +61,6 @@ function installWorkerStubs(opts?: { workerThrows?: boolean; sharedWorkerThrows?
   }
 }
 
-function tick() {
-  return new Promise(r => setTimeout(r, 0));
-}
-
 describe('createUploader', () => {
   const blobUrls: string[] = [];
 
@@ -112,8 +108,14 @@ describe('createUploader', () => {
 
       const createUploader = await loadCreateUploader();
       const logs: string[] = [];
-      createUploader({ ...DEFAULTS, workerMode: 'dedicated', debugLogger: m => logs.push(m) });
-      await tick();
+      await expect(
+        createUploader({
+          ...DEFAULTS,
+          workerMode: 'dedicated',
+          debugLogger: m => logs.push(m),
+          _welcomeTimeoutMs: 0,
+        }),
+      ).rejects.toThrow(/welcome timeout/);
 
       expect(blobUrls).toHaveLength(0);
       expect(logs.some(l => l.includes('via data'))).toBe(true);
@@ -136,8 +138,14 @@ describe('createUploader', () => {
 
       const createUploader = await loadCreateUploader();
       const logs: string[] = [];
-      createUploader({ ...DEFAULTS, workerMode: 'dedicated', debugLogger: m => logs.push(m) });
-      await tick();
+      await expect(
+        createUploader({
+          ...DEFAULTS,
+          workerMode: 'dedicated',
+          debugLogger: m => logs.push(m),
+          _welcomeTimeoutMs: 0,
+        }),
+      ).rejects.toThrow(/welcome timeout/);
 
       expect(blobUrls).toHaveLength(1);
       expect(constructedUrl).toBe(blobUrls[0]);
@@ -163,8 +171,14 @@ describe('createUploader', () => {
 
       const createUploader = await loadCreateUploader();
       const logs: string[] = [];
-      createUploader({ ...DEFAULTS, workerMode: 'shared', debugLogger: m => logs.push(m) });
-      await tick();
+      await expect(
+        createUploader({
+          ...DEFAULTS,
+          workerMode: 'shared',
+          debugLogger: m => logs.push(m),
+          _welcomeTimeoutMs: 0,
+        }),
+      ).rejects.toThrow(/welcome timeout/);
 
       expect(blobUrls).toHaveLength(1);
       expect(constructedUrl).toBe(blobUrls[0]);

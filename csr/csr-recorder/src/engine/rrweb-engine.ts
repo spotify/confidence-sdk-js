@@ -1,7 +1,7 @@
 import { type ConsoleLogLevel, type RecordingEvent } from '@spotify-confidence/csr-common';
 import { RecordingConfig, DEFAULT_MASK_SELECTORS, DEFAULT_BLOCK_SELECTORS } from '../types';
 import { RecordingEngine } from './index';
-import { EventType, IncrementalSource, MouseInteractions, record, type recordOptions } from 'rrweb';
+import { EventType, IncrementalSource, MouseInteractions, record, takeFullSnapshot, type recordOptions } from 'rrweb';
 import { getRecordConsolePlugin } from '@rrweb/rrweb-plugin-console-record';
 
 const ALL_CONSOLE_LEVELS: ConsoleLogLevel[] = ['log', 'warn', 'error', 'debug', 'info'];
@@ -57,16 +57,17 @@ function clickModifiersPlugin(): RrwebPlugin {
     observer: (_callback, win) => {
       const onClick = (event: Event) => {
         const click = event as MouseEvent;
-        pendingClick = {
+        const modifiers = {
           button: click.button,
           altKey: click.altKey,
           ctrlKey: click.ctrlKey,
           metaKey: click.metaKey,
           shiftKey: click.shiftKey,
         };
-        queueMicrotask(() => {
-          pendingClick = null;
-        });
+        pendingClick = modifiers;
+        win.setTimeout(() => {
+          if (pendingClick === modifiers) pendingClick = null;
+        }, 0);
       };
 
       win.addEventListener('click', onClick, true);
@@ -126,6 +127,10 @@ export class RrwebEngine implements RecordingEngine {
         },
         slimDOMOptions: 'all',
       }) ?? null;
+  }
+
+  takeFullSnapshot(): void {
+    takeFullSnapshot(true);
   }
 
   stop(): void {
