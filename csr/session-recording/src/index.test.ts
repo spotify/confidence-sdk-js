@@ -42,9 +42,7 @@ describe('initSessionRecorder', () => {
     await flushPromises();
 
     expect(createUploader).toHaveBeenCalledOnce();
-    expect(createUploader.mock.calls[0][0]).toMatchObject({
-      forceRecord: false,
-    });
+    expect(createUploader.mock.calls[0][0]).not.toHaveProperty('forceRecord');
     expect(record).toHaveBeenCalledOnce();
   });
 
@@ -135,10 +133,29 @@ describe('initSessionRecorder', () => {
     await flushPromises();
 
     expect(createUploader).toHaveBeenCalledOnce();
+    expect(createUploader.mock.calls[0][0]).not.toHaveProperty('forceRecord');
     expect(createUploader.mock.calls[0][0]).toMatchObject({
-      forceRecord: true,
+      apiUrl: 'https://recording.confidence.dev',
+      websocketUrl: 'wss://recording-ws.confidence.dev/sessions/stream',
+      clientSecret: 'secret',
     });
     expect(record).toHaveBeenCalledOnce();
+  });
+
+  it('manual mode handles a backend skip without recording or throwing', async () => {
+    createUploader.mockResolvedValueOnce(null);
+
+    const recorder = initSessionRecorder({
+      clientSecret: 'secret',
+      mode: 'manual',
+    });
+
+    expect(() => recorder.start()).not.toThrow();
+    await flushPromises();
+
+    expect(createUploader).toHaveBeenCalledOnce();
+    expect(record).not.toHaveBeenCalled();
+    expect(recorder.isRecording).toBe(false);
   });
 
   it('start is a no-op in automatic mode', async () => {

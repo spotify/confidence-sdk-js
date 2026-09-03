@@ -57,7 +57,7 @@ export interface InitSessionRecorderOptions {
   context?: ClientContext;
   /**
    * `'automatic'` (default) — starts recording as soon as the session is established.
-   * `'manual'` — does nothing until `start()` is called, bypassing sampling and targeting rules.
+   * `'manual'` — does nothing until `start()` is called, then uses normal backend eligibility.
    */
   mode?: 'automatic' | 'manual';
   /**
@@ -128,7 +128,7 @@ export function initSessionRecorder(options: InitSessionRecorderOptions): Sessio
     userTriggeredOnInput: options.userTriggeredOnInput,
   };
 
-  async function initAndRecord(forceRecord: boolean) {
+  async function initAndRecord() {
     try {
       const uploader = await createUploader({
         apiUrl: options.apiUrl ?? DEFAULT_API_URL,
@@ -140,7 +140,6 @@ export function initSessionRecorder(options: InitSessionRecorderOptions): Sessio
           ...(options.appVersion ? { _app_version: options.appVersion } : {}),
         },
         workerUrl: options.workerUrl,
-        forceRecord,
         debugLogger,
         onTerminate: ({ reason }) => {
           debugLogger?.(`Recording terminated: ${reason}`);
@@ -194,14 +193,14 @@ export function initSessionRecorder(options: InitSessionRecorderOptions): Sessio
 
   if (mode === 'automatic') {
     started = true;
-    void initAndRecord(false);
+    void initAndRecord();
   }
 
   return {
     start() {
       if (started || stopped) return;
       started = true;
-      void initAndRecord(true);
+      void initAndRecord();
     },
     stop() {
       if (stopped) return;

@@ -37,8 +37,6 @@ export interface CreateUploaderOptions {
    * `csr-common/uploader` and pointing `workerUrl` at the route.
    */
   workerUrl?: string;
-  /** Force recording regardless of backend sampling and targeting rules. Included in the `initSession` request body. */
-  forceRecord?: boolean;
   /** Tab-side hint expiry; cached `sessionId`s older than this are discarded on init. */
   sessionTtlMs?: number;
   onStateChange?: (state: {

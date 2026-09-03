@@ -119,7 +119,6 @@ export async function createUploader(opts: CreateUploaderOptions): Promise<Uploa
     websocketUrl: opts.websocketUrl,
     clientSecret: opts.clientSecret,
     context,
-    forceRecord: opts.forceRecord,
     sessionIdHint: sessionHint?.id,
     sessionTokenHint: sessionHint?.token,
     tabId,
@@ -166,9 +165,6 @@ export async function createUploader(opts: CreateUploaderOptions): Promise<Uploa
     throw new Error(`uploader: ${welcome.reason}`);
   }
   if ('skipRecording' in welcome.result) {
-    if (opts.forceRecord) {
-      log?.('tab: forceRecord was set but backend still skipped — backend may not support forceRecord yet');
-    }
     return null;
   }
 

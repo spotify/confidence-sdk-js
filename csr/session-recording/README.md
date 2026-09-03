@@ -217,6 +217,7 @@ Enable [debug logging](#debug-logging) to see the full lifecycle and pinpoint wh
 ## Manual mode
 
 Use `manual` mode to control when recording starts — useful for gating on user consent or feature flags.
+Calling `start()` uses the same backend eligibility, targeting, allocation, sampling, and admission checks as automatic mode, so the backend may still decide not to record.
 
 ```typescript
 const recorder = initSessionRecorder({
