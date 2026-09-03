@@ -44,11 +44,9 @@ export class CsrClient implements Client {
   }
 
   async openTransport(sessionToken: string): Promise<Transport> {
-    const wsBase = this.websocketUrl ?? `${this.toWsScheme(this.trimSlash(this.apiUrl))}/sessions/stream`;
-    const sep = wsBase.includes('?') ? '&' : '?';
-    const url = `${wsBase}${sep}session_token=${encodeURIComponent(sessionToken)}`;
-    this.log(`WebSocket connect ${url.replace(/session_token=[^&]*/, 'session_token=[REDACTED]')}`);
-    const transport = new WebSocketTransport(url);
+    const url = this.websocketUrl ?? `${this.toWsScheme(this.trimSlash(this.apiUrl))}/sessions/stream`;
+    this.log(`WebSocket connect ${url}`);
+    const transport = new WebSocketTransport(url, sessionToken);
     await transport.ready();
     return transport;
   }

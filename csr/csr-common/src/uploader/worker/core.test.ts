@@ -1,8 +1,8 @@
 import { describe, expect, it, vi } from 'vitest';
-import { createMockPort, installMockFetch, installMockWsServer, jsonResponse } from '../../test-utils';
+import { createMockPort, installAuthenticatedMockWsServer, installMockFetch, jsonResponse } from '../../test-utils';
 
 const API_URL = 'https://api.example';
-const WS_URL = 'wss://api.example/sessions/stream?session_token=tok-1';
+const WS_URL = 'wss://api.example/sessions/stream';
 
 async function loadCore() {
   vi.resetModules();
@@ -39,7 +39,7 @@ interface DeadMessage {
 describe('worker/core', () => {
   function setupBackend(initBody: unknown = { sessionId: 'sess-1', sessionToken: 'tok-1' }) {
     const fetchHarness = installMockFetch(() => jsonResponse(initBody));
-    const wsHarness = installMockWsServer(WS_URL);
+    const wsHarness = installAuthenticatedMockWsServer(WS_URL);
     return { fetchHarness, wsHarness };
   }
 
@@ -168,7 +168,8 @@ describe('worker/core', () => {
         frame: { tabId: 'tab-A', eventCounter: 0, data: { kind: 'click' } },
       });
 
-      expect(JSON.parse(await wsHarness.nextMessage())).toEqual({
+      const [, frame] = await wsHarness.nextMessages(2);
+      expect(JSON.parse(frame)).toEqual({
         tabId: 'tab-A',
         eventCounter: 0,
         data: { kind: 'click' },
@@ -198,7 +199,7 @@ describe('worker/core', () => {
         type: 'frame',
         frame: { tabId: 'tab-A', eventCounter: 0, data: 'real' },
       });
-      const message = await wsHarness.nextMessage();
+      const [, message] = await wsHarness.nextMessages(2);
       expect(JSON.parse(message).data).toBe('real');
     });
   });

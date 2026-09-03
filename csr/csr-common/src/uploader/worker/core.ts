@@ -223,7 +223,7 @@ async function initializeSession(firstHello: HelloMessage): Promise<void> {
   );
 
   // Try to adopt the hint first. Need both sessionId (for tab-side state) and
-  // sessionToken (to authenticate the WS upgrade).
+  // sessionToken (to authenticate the WS as its first frame).
   if (firstHello.sessionIdHint && firstHello.sessionTokenHint) {
     log(`adopting sessionIdHint=${firstHello.sessionIdHint}`);
     try {

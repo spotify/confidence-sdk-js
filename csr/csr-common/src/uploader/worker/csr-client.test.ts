@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { installMockFetch, installMockWsServer, jsonResponse } from '../../test-utils';
+import { installAuthenticatedMockWsServer, installMockFetch, jsonResponse } from '../../test-utils';
 import { CsrClient } from './csr-client';
 
 describe('CsrClient.initSession', () => {
@@ -70,21 +70,21 @@ describe('CsrClient.initSession', () => {
 
 describe('CsrClient.openTransport', () => {
   it('derives a ws:// URL from an http:// apiUrl when websocketUrl is unset', async () => {
-    installMockWsServer('ws://api.example/sessions/stream?session_token=tok');
+    installAuthenticatedMockWsServer('ws://api.example/sessions/stream');
 
     const client = new CsrClient('http://api.example', 'secret', undefined);
     await expect(client.openTransport('tok')).resolves.toBeDefined();
   });
 
   it('derives a wss:// URL from an https:// apiUrl', async () => {
-    installMockWsServer('wss://api.example/sessions/stream?session_token=tok');
+    installAuthenticatedMockWsServer('wss://api.example/sessions/stream');
 
     const client = new CsrClient('https://api.example', 'secret', undefined);
     await expect(client.openTransport('tok')).resolves.toBeDefined();
   });
 
   it('uses websocketUrl verbatim when provided (split-host prod layout)', async () => {
-    installMockWsServer('wss://recording-ws.confidence.dev/sessions/stream?session_token=tok');
+    installAuthenticatedMockWsServer('wss://recording-ws.confidence.dev/sessions/stream');
 
     const client = new CsrClient(
       'https://recording.confidence.dev',
@@ -95,22 +95,16 @@ describe('CsrClient.openTransport', () => {
     await expect(client.openTransport('tok')).resolves.toBeDefined();
   });
 
-  it('redacts session_token from debug log', async () => {
-    installMockWsServer('wss://api/sessions/stream?session_token=secret-tok');
+  it('keeps the session token out of the URL and debug log', async () => {
+    const { nextMessage } = installAuthenticatedMockWsServer('wss://api/sessions/stream');
 
     const logs: string[] = [];
     const client = new CsrClient('https://api', 'secret', undefined, undefined, msg => logs.push(msg));
     await client.openTransport('secret-tok');
 
     expect(logs).toHaveLength(1);
-    expect(logs[0]).toContain('session_token=[REDACTED]');
+    expect(logs[0]).toBe('WebSocket connect wss://api/sessions/stream');
     expect(logs[0]).not.toContain('secret-tok');
-  });
-
-  it('URL-encodes the session token', async () => {
-    installMockWsServer('wss://api/sessions/stream?session_token=tok%2Fwith%3Dspecials');
-
-    const client = new CsrClient('https://api', 'secret', undefined);
-    await expect(client.openTransport('tok/with=specials')).resolves.toBeDefined();
+    expect(JSON.parse(await nextMessage())).toEqual({ type: 'authenticate', token: 'secret-tok' });
   });
 });

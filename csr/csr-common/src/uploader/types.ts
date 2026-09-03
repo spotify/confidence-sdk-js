@@ -10,9 +10,9 @@ export interface CreateUploaderOptions {
   apiUrl: string;
   /**
    * URL of the WebSocket ingest endpoint, including the path (e.g.
-   * `wss://recording-ws.confidence.dev/sessions/stream`) but **without** any query —
-   * the worker appends `?session_token=…`. Optional: when omitted the worker derives
-   * one from `apiUrl` by swapping `http(s)://` → `ws(s)://` and appending
+   * `wss://recording-ws.confidence.dev/sessions/stream`). The session token is sent
+   * as the first WebSocket frame rather than in the URL. Optional: when omitted the
+   * worker derives one from `apiUrl` by swapping `http(s)://` → `ws(s)://` and appending
    * `/sessions/stream`. Set this when the init endpoint and the WS ingest live on
    * different hosts (e.g. prod).
    */

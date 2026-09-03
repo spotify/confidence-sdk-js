@@ -76,3 +76,21 @@ export function installMockWsServer(url: string): {
     nextMessages,
   };
 }
+
+export function installAuthenticatedMockWsServer(url: string): ReturnType<typeof installMockWsServer> {
+  const harness = installMockWsServer(url);
+  harness.server.on('connection', (socket: Client) => {
+    socket.on('message', ((event: MessageEvent | string) => {
+      const data = typeof event === 'string' ? event : event.data;
+      if (typeof data !== 'string') return;
+      try {
+        if ((JSON.parse(data) as { type?: unknown }).type === 'authenticate') {
+          socket.send(JSON.stringify({ type: 'authenticated' }));
+        }
+      } catch (_error) {
+        // Ignore non-JSON recording payloads; the transport serializes its own frames.
+      }
+    }) as (m: string | Blob | ArrayBuffer | ArrayBufferView) => void);
+  });
+  return harness;
+}

@@ -6,9 +6,9 @@ import type { Frame, Transport } from '../types';
  * open) → fire `onClose` and stop. Frames received while a (re)connect is in progress are
  * buffered and flushed on open.
  *
- * `ready()` resolves on the first successful open and rejects on close-before-open. Callers
- * should await it before treating the Transport as live, so a failure to open can be caught
- * (e.g. 4404 unknown session) and recovered from.
+ * `ready()` resolves once the server acknowledges authentication and rejects if the connection
+ * closes first. Callers should await it before treating the Transport as live, so a stale token
+ * can be rejected and recovered from.
  */
 export class WebSocketTransport implements Transport {
   private ws: WebSocket | null = null;
@@ -16,11 +16,12 @@ export class WebSocketTransport implements Transport {
   private onStateChangeCb: ((info: { connected: boolean }) => void) | null = null;
   private intentionallyClosed = false;
   private dead = false;
+  private authenticated = false;
   /** Frames buffered while a (re)connect is in progress. */
   private pending: Frame[] = [];
   private readyPromise: Promise<void>;
 
-  constructor(private readonly url: string) {
+  constructor(private readonly url: string, private readonly sessionToken: string) {
     this.readyPromise = new Promise<void>((resolve, reject) => {
       this.connect(false, resolve, reject);
     });
@@ -35,7 +36,7 @@ export class WebSocketTransport implements Transport {
 
   send(frame: Frame): void {
     if (this.dead || this.intentionallyClosed) return;
-    if (this.ws?.readyState === WebSocket.OPEN) {
+    if (this.ws?.readyState === WebSocket.OPEN && this.authenticated) {
       this.ws.send(JSON.stringify(frame));
     } else {
       this.pending.push(frame);
@@ -58,10 +59,15 @@ export class WebSocketTransport implements Transport {
   private connect(isReconnect: boolean, onReady?: () => void, onReadyFail?: (err: Error) => void): void {
     const ws = new WebSocket(this.url);
     this.ws = ws;
-    let opened = false;
+    this.authenticated = false;
 
     ws.onopen = () => {
-      opened = true;
+      ws.send(JSON.stringify({ type: 'authenticate', token: this.sessionToken }));
+    };
+
+    ws.onmessage = event => {
+      if (this.authenticated || !this.isAuthenticationAck(event.data)) return;
+      this.authenticated = true;
       onReady?.();
       // Emit state on every successful open EXCEPT the very first one (welcome already
       // implies connected=true). isReconnect distinguishes those.
@@ -76,8 +82,8 @@ export class WebSocketTransport implements Transport {
 
     ws.onclose = event => {
       if (this.intentionallyClosed) return;
-      if (!opened) {
-        // Server rejected the connection before it opened (e.g. unknown session).
+      if (!this.authenticated) {
+        // Server rejected the connection before acknowledging authentication.
         const stage = isReconnect ? 'reconnect' : 'initial';
         const reason = `${stage}-failed code=${event.code}`;
         if (onReadyFail) {
@@ -109,5 +115,14 @@ export class WebSocketTransport implements Transport {
   private die(reason: string): void {
     this.dead = true;
     this.onCloseCb?.({ reason });
+  }
+
+  private isAuthenticationAck(data: unknown): boolean {
+    if (typeof data !== 'string') return false;
+    try {
+      return (JSON.parse(data) as { type?: unknown }).type === 'authenticated';
+    } catch (_error) {
+      return false;
+    }
   }
 }
