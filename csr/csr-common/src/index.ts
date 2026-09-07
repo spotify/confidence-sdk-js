@@ -42,7 +42,7 @@ export {
 
 export { stripUrl } from './url';
 
-export { isSessionActivityEvent, isUserInteractionEvent } from './session-activity';
+export { isSessionActivityEvent, isUserInteractionEvent, isUserInteractionMetric } from './session-activity';
 
 export {
   MAX_KEY_LENGTH,
