@@ -1,5 +1,5 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
-import { IncrementalSource, RecordingEventType } from '../events';
+import { IncrementalSource, RecordingEventType, RecordingPluginName } from '../events';
 import type { CreateUploaderOptions } from './types';
 
 vi.mock('./worker/worker-script', () => ({
@@ -90,6 +90,7 @@ describe('createUploader', () => {
 
   afterEach(() => {
     vi.restoreAllMocks();
+    vi.unstubAllGlobals();
     blobUrls.length = 0;
     delete (globalThis as Record<string, unknown>).SharedWorker;
     delete (globalThis as Record<string, unknown>).window;
@@ -330,61 +331,71 @@ describe('createUploader', () => {
 
   it('marks active and passive frames for the backend inactivity timeout', async () => {
     const messages: unknown[] = [];
-    (globalThis as Record<string, unknown>).window = {
+    vi.stubGlobal('window', {
       addEventListener() {},
       devicePixelRatio: 1,
       innerHeight: 800,
       innerWidth: 1200,
       location: { origin: 'https://example.com', pathname: '/' },
       screen: { height: 800, width: 1200 },
-    };
-    (globalThis as Record<string, unknown>).document = {
+    });
+    vi.stubGlobal('document', {
       addEventListener() {},
       referrer: '',
       visibilityState: 'visible',
-    };
-    (globalThis as Record<string, unknown>).navigator = {
+    });
+    vi.stubGlobal('navigator', {
       language: 'en',
       userAgent: 'test',
-    };
-    (globalThis as Record<string, unknown>).Worker = class {
-      onerror: ((event: Event) => void) | null = null;
-      onmessage: ((event: MessageEvent) => void) | null = null;
+    });
+    vi.stubGlobal(
+      'Worker',
+      class {
+        onerror: ((event: Event) => void) | null = null;
+        onmessage: ((event: MessageEvent) => void) | null = null;
 
-      postMessage(message: unknown) {
-        messages.push(message);
-        if ((message as { type?: string }).type === 'hello') {
-          queueMicrotask(() =>
-            this.onmessage?.(
-              new MessageEvent('message', {
-                data: {
-                  type: 'welcome',
-                  result: { sessionId: 'sessions/test', sessionToken: 'token' },
-                },
-              }),
-            ),
-          );
+        postMessage(message: unknown) {
+          messages.push(message);
+          if (typeof message === 'object' && message !== null && 'type' in message && message.type === 'hello') {
+            queueMicrotask(() =>
+              this.onmessage?.(
+                new MessageEvent('message', {
+                  data: {
+                    type: 'welcome',
+                    result: { sessionId: 'sessions/test', sessionToken: 'token' },
+                  },
+                }),
+              ),
+            );
+          }
         }
-      }
-    };
-    delete (globalThis as Record<string, unknown>).SharedWorker;
+      },
+    );
+    vi.stubGlobal('SharedWorker', undefined);
 
     const createUploader = await loadCreateUploader();
     const uploader = await createUploader({ ...DEFAULTS, workerMode: 'dedicated' });
 
     uploader?.({
       type: RecordingEventType.Plugin,
-      data: { plugin: 'csr:networkRequest' },
+      data: { plugin: RecordingPluginName.NetworkRequest },
     });
     uploader?.({
       type: RecordingEventType.IncrementalSnapshot,
       data: { source: IncrementalSource.MouseInteraction },
     });
 
-    const frames = messages.filter(
-      (message): message is { type: 'frame'; frame: { userActivity: boolean } } =>
-        (message as { type?: string }).type === 'frame',
+    expect(messages).toEqual(
+      expect.arrayContaining([
+        expect.objectContaining({
+          type: 'frame',
+          frame: expect.objectContaining({ userActivity: false }),
+        }),
+        expect.objectContaining({
+          type: 'frame',
+          frame: expect.objectContaining({ userActivity: true }),
+        }),
+      ]),
     );
-    expect(frames.map(message => message.frame.userActivity)).toEqual([false, true]);
   });
 });

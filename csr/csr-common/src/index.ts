@@ -6,6 +6,7 @@ export {
   IncrementalSource,
   MouseInteractions,
   type RecordingEvent,
+  type PluginEventData,
   type IncrementalSnapshotData,
   type MouseInteractionData,
   type OpaqueIncrementalData,

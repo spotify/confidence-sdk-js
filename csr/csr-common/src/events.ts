@@ -40,7 +40,9 @@ export const RecordingCustomEventTag = {
 } as const;
 
 export const RecordingPluginName = {
+  BlockedElementLabels: 'csr/blocked-element-labels@1',
   Clipboard: 'csr/clipboard@1',
+  ClickModifiers: 'csr/click-modifiers@1',
   TabVisibility: 'csr:tabVisibility',
   ConsoleLog: 'rrweb/console@1',
   NetworkRequest: 'csr:networkRequest',
@@ -330,6 +332,16 @@ export type FlagEvaluationPluginData = {
   };
 };
 
+export type PluginEventData =
+  | ClipboardPluginData
+  | TabVisibilityPluginData
+  | ConsoleLogPluginData
+  | NetworkRequestPluginData
+  | RouteChangePluginData
+  | TagPluginData
+  | MeasurePluginData
+  | FlagEvaluationPluginData;
+
 export type ErrorMessageCustomData = {
   tag: typeof RecordingCustomEventTag.ErrorMessage;
   payload: {
@@ -409,7 +421,15 @@ export type RecordingEvent =
       data: IncrementalSnapshotData;
     }
   | {
-      type: Exclude<RecordingEventType, RecordingEventType.Custom | RecordingEventType.IncrementalSnapshot>;
+      type: RecordingEventType.Plugin;
+      timestamp: number;
+      data: PluginEventData;
+    }
+  | {
+      type: Exclude<
+        RecordingEventType,
+        RecordingEventType.Custom | RecordingEventType.IncrementalSnapshot | RecordingEventType.Plugin
+      >;
       timestamp: number;
       data: unknown;
     };
