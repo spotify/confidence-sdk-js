@@ -42,6 +42,8 @@ export {
 
 export { stripUrl } from './url';
 
+export { isSessionActivityEvent, isUserInteractionEvent } from './session-activity';
+
 export {
   MAX_KEY_LENGTH,
   MAX_TAG_VALUE_LENGTH,

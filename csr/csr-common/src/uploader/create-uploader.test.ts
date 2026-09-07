@@ -1,4 +1,5 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
+import { IncrementalSource, RecordingEventType } from '../events';
 import type { CreateUploaderOptions } from './types';
 
 vi.mock('./worker/worker-script', () => ({
@@ -91,6 +92,9 @@ describe('createUploader', () => {
     vi.restoreAllMocks();
     blobUrls.length = 0;
     delete (globalThis as Record<string, unknown>).SharedWorker;
+    delete (globalThis as Record<string, unknown>).window;
+    delete (globalThis as Record<string, unknown>).document;
+    delete (globalThis as Record<string, unknown>).navigator;
   });
 
   async function loadCreateUploader() {
@@ -322,5 +326,65 @@ describe('createUploader', () => {
         /welcome timeout/,
       );
     });
+  });
+
+  it('marks active and passive frames for the backend inactivity timeout', async () => {
+    const messages: unknown[] = [];
+    (globalThis as Record<string, unknown>).window = {
+      addEventListener() {},
+      devicePixelRatio: 1,
+      innerHeight: 800,
+      innerWidth: 1200,
+      location: { origin: 'https://example.com', pathname: '/' },
+      screen: { height: 800, width: 1200 },
+    };
+    (globalThis as Record<string, unknown>).document = {
+      addEventListener() {},
+      referrer: '',
+      visibilityState: 'visible',
+    };
+    (globalThis as Record<string, unknown>).navigator = {
+      language: 'en',
+      userAgent: 'test',
+    };
+    (globalThis as Record<string, unknown>).Worker = class {
+      onerror: ((event: Event) => void) | null = null;
+      onmessage: ((event: MessageEvent) => void) | null = null;
+
+      postMessage(message: unknown) {
+        messages.push(message);
+        if ((message as { type?: string }).type === 'hello') {
+          queueMicrotask(() =>
+            this.onmessage?.(
+              new MessageEvent('message', {
+                data: {
+                  type: 'welcome',
+                  result: { sessionId: 'sessions/test', sessionToken: 'token' },
+                },
+              }),
+            ),
+          );
+        }
+      }
+    };
+    delete (globalThis as Record<string, unknown>).SharedWorker;
+
+    const createUploader = await loadCreateUploader();
+    const uploader = await createUploader({ ...DEFAULTS, workerMode: 'dedicated' });
+
+    uploader?.({
+      type: RecordingEventType.Plugin,
+      data: { plugin: 'csr:networkRequest' },
+    });
+    uploader?.({
+      type: RecordingEventType.IncrementalSnapshot,
+      data: { source: IncrementalSource.MouseInteraction },
+    });
+
+    const frames = messages.filter(
+      (message): message is { type: 'frame'; frame: { userActivity: boolean } } =>
+        (message as { type?: string }).type === 'frame',
+    );
+    expect(frames.map(message => message.frame.userActivity)).toEqual([false, true]);
   });
 });
