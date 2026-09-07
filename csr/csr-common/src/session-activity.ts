@@ -12,39 +12,29 @@ const USER_INTERACTION_SOURCES = new Set<number>([
   IncrementalSource.Selection,
 ]);
 
-type UserInteractionSignal = {
-  metricKey?: string;
-  tags?: readonly string[];
-  plugins?: readonly string[];
-};
+const USER_INTERACTION_TAGS = new Set<string>([
+  RecordingCustomEventTag.Click,
+  RecordingCustomEventTag.Input,
+  RecordingCustomEventTag.RageClick,
+  RecordingCustomEventTag.DeadClick,
+  RecordingCustomEventTag.ScrollBack,
+  RecordingCustomEventTag.TabUnfocus,
+  RecordingCustomEventTag.TabRefocus,
+  RecordingCustomEventTag.FormFieldReEdit,
+  RecordingCustomEventTag.RouteChange,
+]);
 
-const USER_INTERACTION_SIGNALS: readonly UserInteractionSignal[] = [
-  { metricKey: RecordingMetricKey.Click, tags: [RecordingCustomEventTag.Click] },
-  { metricKey: RecordingMetricKey.Input, tags: [RecordingCustomEventTag.Input] },
-  { metricKey: RecordingMetricKey.RageClick, tags: [RecordingCustomEventTag.RageClick] },
-  { metricKey: RecordingMetricKey.DeadClick, tags: [RecordingCustomEventTag.DeadClick] },
-  { metricKey: RecordingMetricKey.ScrollBack, tags: [RecordingCustomEventTag.ScrollBack] },
-  {
-    metricKey: RecordingMetricKey.TabUnfocus,
-    tags: [RecordingCustomEventTag.TabUnfocus],
-  },
-  {
-    metricKey: RecordingMetricKey.RouteChange,
-    tags: [RecordingCustomEventTag.RouteChange],
-    plugins: [RecordingPluginName.RouteChange],
-  },
-  {
-    tags: [RecordingCustomEventTag.FormFieldReEdit, RecordingCustomEventTag.TabRefocus],
-  },
-];
+const USER_INTERACTION_PLUGINS = new Set<string>([RecordingPluginName.RouteChange]);
 
-const USER_INTERACTION_TAGS = new Set(USER_INTERACTION_SIGNALS.flatMap(signal => signal.tags ?? []));
-
-const USER_INTERACTION_PLUGINS = new Set(USER_INTERACTION_SIGNALS.flatMap(signal => signal.plugins ?? []));
-
-const USER_INTERACTION_METRIC_KEYS = new Set(
-  USER_INTERACTION_SIGNALS.flatMap(signal => (signal.metricKey ? [signal.metricKey] : [])),
-);
+const USER_INTERACTION_METRIC_KEYS = new Set<string>([
+  RecordingMetricKey.Click,
+  RecordingMetricKey.Input,
+  RecordingMetricKey.RageClick,
+  RecordingMetricKey.DeadClick,
+  RecordingMetricKey.ScrollBack,
+  RecordingMetricKey.TabUnfocus,
+  RecordingMetricKey.RouteChange,
+]);
 
 const isObject = (value: unknown): value is Record<string, unknown> => typeof value === 'object' && value !== null;
 

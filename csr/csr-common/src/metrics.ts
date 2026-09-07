@@ -13,5 +13,3 @@ export const RecordingMetricKey = {
   ConsoleError: 'consoleErrors',
   RouteChange: 'routeChanges',
 } as const;
-
-export type RecordingMetricKeyValue = (typeof RecordingMetricKey)[keyof typeof RecordingMetricKey];

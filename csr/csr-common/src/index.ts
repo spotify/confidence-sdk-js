@@ -45,7 +45,7 @@ export {
 
 export { stripUrl } from './url';
 
-export { RecordingMetricKey, type RecordingMetricKeyValue } from './metrics';
+export { RecordingMetricKey } from './metrics';
 
 export { isSessionActivityEvent, isUserInteractionEvent, isUserInteractionMetric } from './session-activity';
 

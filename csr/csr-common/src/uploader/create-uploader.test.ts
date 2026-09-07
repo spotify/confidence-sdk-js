@@ -93,9 +93,6 @@ describe('createUploader', () => {
     vi.unstubAllGlobals();
     blobUrls.length = 0;
     delete (globalThis as Record<string, unknown>).SharedWorker;
-    delete (globalThis as Record<string, unknown>).window;
-    delete (globalThis as Record<string, unknown>).document;
-    delete (globalThis as Record<string, unknown>).navigator;
   });
 
   async function loadCreateUploader() {
