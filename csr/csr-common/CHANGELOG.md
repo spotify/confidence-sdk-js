@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.18.9](https://github.com/spotify/confidence-sdk-js/compare/csr-common-v0.18.8...csr-common-v0.18.9) (2026-09-07)
+
+
+### 🐛 Bug Fixes
+
+* stop passive recording frames extending sessions ([#449](https://github.com/spotify/confidence-sdk-js/issues/449)) ([df763a1](https://github.com/spotify/confidence-sdk-js/commit/df763a10d6f16ce5b871530ca3fe8b5c153c16d7))
+
 ## [0.18.8](https://github.com/spotify/confidence-sdk-js/compare/csr-common-v0.18.7...csr-common-v0.18.8) (2026-08-28)
 
 
