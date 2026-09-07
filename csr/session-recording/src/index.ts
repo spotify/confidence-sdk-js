@@ -2,6 +2,7 @@ import { record } from '@spotify-confidence/csr-recorder';
 import type { ConsoleLogLevel } from '@spotify-confidence/csr-common';
 import {
   RecordingEventType,
+  RecordingPluginName,
   type TagPluginData,
   type MeasurePluginData,
   type FlagEvaluationPluginData,
@@ -175,7 +176,7 @@ export function initSessionRecorder(options: InitSessionRecorderOptions): Sessio
 
       stopObservingFlags = observeFlags(({ flagKey, variant, assignmentOrigin }) => {
         const data: FlagEvaluationPluginData = {
-          plugin: 'csr:flagEvaluation',
+          plugin: RecordingPluginName.FlagEvaluation,
           payload: { flagKey, variant, assignmentOrigin },
         };
         sendEvent?.({
@@ -225,7 +226,7 @@ export function initSessionRecorder(options: InitSessionRecorderOptions): Sessio
         return;
       }
       const data: TagPluginData = {
-        plugin: 'csr:tag',
+        plugin: RecordingPluginName.Tag,
         payload: value !== undefined ? { key, value } : { key },
       };
       sendEvent?.({
@@ -246,7 +247,7 @@ export function initSessionRecorder(options: InitSessionRecorderOptions): Sessio
         return;
       }
       const data: MeasurePluginData = {
-        plugin: 'csr:measure',
+        plugin: RecordingPluginName.Measure,
         payload: value !== undefined ? { key, value } : { key },
       };
       sendEvent?.({

@@ -1,5 +1,6 @@
 import { describe, expect, it } from 'vitest';
-import { IncrementalSource, RecordingEventType } from './events';
+import { IncrementalSource, RecordingCustomEventTag, RecordingEventType, RecordingPluginName } from './events';
+import { RecordingMetricKey } from './metrics';
 import { isSessionActivityEvent, isUserInteractionEvent, isUserInteractionMetric } from './session-activity';
 
 describe('session activity', () => {
@@ -14,15 +15,15 @@ describe('session activity', () => {
     },
     {
       type: RecordingEventType.Custom,
-      data: { tag: 'csr:input' },
+      data: { tag: RecordingCustomEventTag.Input },
     },
     {
       type: RecordingEventType.Plugin,
-      data: { plugin: 'csr:routeChange' },
+      data: { plugin: RecordingPluginName.RouteChange },
     },
     {
       type: RecordingEventType.Custom,
-      data: { tag: 'csr:tabUnfocus' },
+      data: { tag: RecordingCustomEventTag.TabUnfocus },
     },
   ])('identifies user interaction events', event => {
     expect(isUserInteractionEvent(event)).toBe(true);
@@ -35,7 +36,7 @@ describe('session activity', () => {
     },
     {
       type: RecordingEventType.Plugin,
-      data: { plugin: 'csr:networkRequest' },
+      data: { plugin: RecordingPluginName.NetworkRequest },
     },
     null,
     {},
@@ -50,14 +51,22 @@ describe('session activity', () => {
     expect(isSessionActivityEvent(event)).toBe(true);
   });
 
-  it.each(['clicks', 'inputs', 'rageClicks', 'deadClicks', 'scrollBacks', 'tabUnfocuses', 'routeChanges'])(
-    'identifies user interaction metrics',
+  it.each([
+    RecordingMetricKey.Click,
+    RecordingMetricKey.Input,
+    RecordingMetricKey.RageClick,
+    RecordingMetricKey.DeadClick,
+    RecordingMetricKey.ScrollBack,
+    RecordingMetricKey.TabUnfocus,
+    RecordingMetricKey.RouteChange,
+  ])('identifies user interaction metrics', metricKey => {
+    expect(isUserInteractionMetric(metricKey)).toBe(true);
+  });
+
+  it.each([RecordingMetricKey.NetworkRequest, RecordingMetricKey.ConsoleError, 'unknownMetric'])(
+    'ignores passive metrics',
     metricKey => {
-      expect(isUserInteractionMetric(metricKey)).toBe(true);
+      expect(isUserInteractionMetric(metricKey)).toBe(false);
     },
   );
-
-  it.each(['networkRequests', 'consoleErrors', 'unknownMetric'])('ignores passive metrics', metricKey => {
-    expect(isUserInteractionMetric(metricKey)).toBe(false);
-  });
 });

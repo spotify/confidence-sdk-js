@@ -1,6 +1,8 @@
 export {
   SerializedNodeType,
   RecordingEventType,
+  RecordingCustomEventTag,
+  RecordingPluginName,
   IncrementalSource,
   MouseInteractions,
   type RecordingEvent,
@@ -41,6 +43,8 @@ export {
 } from './events';
 
 export { stripUrl } from './url';
+
+export { RecordingMetricKey, type RecordingMetricKeyValue } from './metrics';
 
 export { isSessionActivityEvent, isUserInteractionEvent, isUserInteractionMetric } from './session-activity';
 

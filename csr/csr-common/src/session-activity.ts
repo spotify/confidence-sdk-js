@@ -1,4 +1,5 @@
-import { IncrementalSource, RecordingEventType } from './events';
+import { IncrementalSource, RecordingCustomEventTag, RecordingEventType, RecordingPluginName } from './events';
+import { RecordingMetricKey } from './metrics';
 
 const USER_INTERACTION_SOURCES = new Set<number>([
   IncrementalSource.MouseMove,
@@ -18,18 +19,23 @@ type UserInteractionSignal = {
 };
 
 const USER_INTERACTION_SIGNALS: readonly UserInteractionSignal[] = [
-  { metricKey: 'clicks', tags: ['csr:click'] },
-  { metricKey: 'inputs', tags: ['csr:input'] },
-  { metricKey: 'rageClicks', tags: ['csr:rageClick'] },
-  { metricKey: 'deadClicks', tags: ['csr:deadClick'] },
-  { metricKey: 'scrollBacks', tags: ['csr:scrollBack'] },
-  { metricKey: 'tabUnfocuses', tags: ['csr:tabUnfocus'] },
+  { metricKey: RecordingMetricKey.Click, tags: [RecordingCustomEventTag.Click] },
+  { metricKey: RecordingMetricKey.Input, tags: [RecordingCustomEventTag.Input] },
+  { metricKey: RecordingMetricKey.RageClick, tags: [RecordingCustomEventTag.RageClick] },
+  { metricKey: RecordingMetricKey.DeadClick, tags: [RecordingCustomEventTag.DeadClick] },
+  { metricKey: RecordingMetricKey.ScrollBack, tags: [RecordingCustomEventTag.ScrollBack] },
   {
-    metricKey: 'routeChanges',
-    tags: ['csr:routeChange'],
-    plugins: ['csr:routeChange'],
+    metricKey: RecordingMetricKey.TabUnfocus,
+    tags: [RecordingCustomEventTag.TabUnfocus],
   },
-  { tags: ['csr:formFieldReEdit', 'csr:tabRefocus'] },
+  {
+    metricKey: RecordingMetricKey.RouteChange,
+    tags: [RecordingCustomEventTag.RouteChange],
+    plugins: [RecordingPluginName.RouteChange],
+  },
+  {
+    tags: [RecordingCustomEventTag.FormFieldReEdit, RecordingCustomEventTag.TabRefocus],
+  },
 ];
 
 const USER_INTERACTION_TAGS = new Set(USER_INTERACTION_SIGNALS.flatMap(signal => signal.tags ?? []));

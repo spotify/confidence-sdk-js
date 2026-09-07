@@ -1,6 +1,7 @@
 import {
   RecordingEvent,
   RecordingEventType,
+  RecordingPluginName,
   type TabVisibilityPluginData,
   type NetworkRequestPluginData,
   type RouteChangePluginData,
@@ -54,7 +55,7 @@ export class Recorder {
     if (typeof document !== 'undefined') {
       this.visibilityHandler = () => {
         const data: TabVisibilityPluginData = {
-          plugin: 'csr:tabVisibility',
+          plugin: RecordingPluginName.TabVisibility,
           payload: { hidden: document.hidden },
         };
         this.onEvent({
@@ -86,7 +87,7 @@ export class Recorder {
 
   private emitNetworkRequest(payload: NetworkRequestPluginData['payload']): void {
     const data: NetworkRequestPluginData = {
-      plugin: 'csr:networkRequest',
+      plugin: RecordingPluginName.NetworkRequest,
       payload,
     };
     this.onEvent({
@@ -216,7 +217,7 @@ export class Recorder {
     const paramTo = this.parameterizeRoute(to);
     if (paramFrom === paramTo) return;
     const data: RouteChangePluginData = {
-      plugin: 'csr:routeChange',
+      plugin: RecordingPluginName.RouteChange,
       payload: { from: paramFrom, to: paramTo, trigger },
     };
     this.onEvent({
