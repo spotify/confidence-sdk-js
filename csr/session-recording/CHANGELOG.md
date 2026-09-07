@@ -1,5 +1,20 @@
 # Changelog
 
+## [0.18.12](https://github.com/spotify/confidence-sdk-js/compare/session-recording-v0.18.11...session-recording-v0.18.12) (2026-09-07)
+
+
+### 🐛 Bug Fixes
+
+* stop passive recording frames extending sessions ([#449](https://github.com/spotify/confidence-sdk-js/issues/449)) ([df763a1](https://github.com/spotify/confidence-sdk-js/commit/df763a10d6f16ce5b871530ca3fe8b5c153c16d7))
+
+
+### Dependencies
+
+* The following workspace dependencies were updated
+  * dependencies
+    * @spotify-confidence/csr-common bumped to 0.18.9
+    * @spotify-confidence/csr-recorder bumped to 0.17.17
+
 ## [0.18.11](https://github.com/spotify/confidence-sdk-js/compare/session-recording-v0.18.10...session-recording-v0.18.11) (2026-08-28)
 
 
