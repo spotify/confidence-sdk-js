@@ -1,4 +1,4 @@
-import { type ConsoleLogLevel, type RecordingEvent } from '@spotify-confidence/csr-common';
+import { RecordingPluginName, type ConsoleLogLevel, type RecordingEvent } from '@spotify-confidence/csr-common';
 import { RecordingConfig, DEFAULT_MASK_SELECTORS, DEFAULT_BLOCK_SELECTORS } from '../types';
 import { RecordingEngine } from './index';
 import { EventType, IncrementalSource, MouseInteractions, record, takeFullSnapshot, type recordOptions } from 'rrweb';
@@ -42,7 +42,7 @@ function labelBlockedElement(node: SerializedNode): void {
  */
 function blockedElementLabelsPlugin(): RrwebPlugin {
   return {
-    name: 'csr/blocked-element-labels@1',
+    name: RecordingPluginName.BlockedElementLabels,
     options: {},
     observer: () => () => {},
     eventProcessor: event => {
@@ -68,7 +68,7 @@ function clipboardActionsPlugin(): RrwebPlugin {
   let getId: ((node: Node) => number) | undefined;
 
   return {
-    name: 'csr/clipboard@1',
+    name: RecordingPluginName.Clipboard,
     options: {},
     getMirror: ({ nodeMirror }) => {
       getId = node => nodeMirror.getId(node);
@@ -99,7 +99,7 @@ function clickModifiersPlugin(): RrwebPlugin {
   let pendingClick: ClickModifiers | null = null;
 
   return {
-    name: 'csr/click-modifiers@1',
+    name: RecordingPluginName.ClickModifiers,
     options: {},
     observer: (_callback, win) => {
       const onClick = (event: Event) => {

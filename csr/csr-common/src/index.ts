@@ -1,9 +1,12 @@
 export {
   SerializedNodeType,
   RecordingEventType,
+  RecordingCustomEventTag,
+  RecordingPluginName,
   IncrementalSource,
   MouseInteractions,
   type RecordingEvent,
+  type PluginEventData,
   type IncrementalSnapshotData,
   type MouseInteractionData,
   type OpaqueIncrementalData,
@@ -41,6 +44,10 @@ export {
 } from './events';
 
 export { stripUrl } from './url';
+
+export { RecordingMetricKey } from './metrics';
+
+export { isSessionActivityEvent, isUserInteractionEvent, isUserInteractionMetric } from './session-activity';
 
 export {
   MAX_KEY_LENGTH,

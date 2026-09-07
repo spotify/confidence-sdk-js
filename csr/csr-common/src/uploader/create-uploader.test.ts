@@ -1,4 +1,5 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
+import { IncrementalSource, RecordingEventType, RecordingPluginName } from '../events';
 import type { CreateUploaderOptions } from './types';
 
 vi.mock('./worker/worker-script', () => ({
@@ -89,6 +90,7 @@ describe('createUploader', () => {
 
   afterEach(() => {
     vi.restoreAllMocks();
+    vi.unstubAllGlobals();
     blobUrls.length = 0;
     delete (globalThis as Record<string, unknown>).SharedWorker;
   });
@@ -322,5 +324,75 @@ describe('createUploader', () => {
         /welcome timeout/,
       );
     });
+  });
+
+  it('marks active and passive frames for the backend inactivity timeout', async () => {
+    const messages: unknown[] = [];
+    vi.stubGlobal('window', {
+      addEventListener() {},
+      devicePixelRatio: 1,
+      innerHeight: 800,
+      innerWidth: 1200,
+      location: { origin: 'https://example.com', pathname: '/' },
+      screen: { height: 800, width: 1200 },
+    });
+    vi.stubGlobal('document', {
+      addEventListener() {},
+      referrer: '',
+      visibilityState: 'visible',
+    });
+    vi.stubGlobal('navigator', {
+      language: 'en',
+      userAgent: 'test',
+    });
+    vi.stubGlobal(
+      'Worker',
+      class {
+        onerror: ((event: Event) => void) | null = null;
+        onmessage: ((event: MessageEvent) => void) | null = null;
+
+        postMessage(message: unknown) {
+          messages.push(message);
+          if (typeof message === 'object' && message !== null && 'type' in message && message.type === 'hello') {
+            queueMicrotask(() =>
+              this.onmessage?.(
+                new MessageEvent('message', {
+                  data: {
+                    type: 'welcome',
+                    result: { sessionId: 'sessions/test', sessionToken: 'token' },
+                  },
+                }),
+              ),
+            );
+          }
+        }
+      },
+    );
+    vi.stubGlobal('SharedWorker', undefined);
+
+    const createUploader = await loadCreateUploader();
+    const uploader = await createUploader({ ...DEFAULTS, workerMode: 'dedicated' });
+
+    uploader?.({
+      type: RecordingEventType.Plugin,
+      data: { plugin: RecordingPluginName.NetworkRequest },
+    });
+    uploader?.({
+      type: RecordingEventType.IncrementalSnapshot,
+      data: { source: IncrementalSource.MouseInteraction },
+    });
+
+    expect(messages).toEqual(
+      expect.arrayContaining([
+        expect.objectContaining({
+          type: 'frame',
+          frame: expect.objectContaining({ userActivity: false }),
+        }),
+        expect.objectContaining({
+          type: 'frame',
+          frame: expect.objectContaining({ userActivity: true }),
+        }),
+      ]),
+    );
   });
 });

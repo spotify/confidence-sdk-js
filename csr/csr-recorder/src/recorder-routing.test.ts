@@ -1,6 +1,6 @@
 // @vitest-environment happy-dom
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
-import { RecordingEvent, RecordingEventType, type RouteChangePluginData } from '@spotify-confidence/csr-common';
+import { RecordingEvent, RecordingEventType, RecordingPluginName } from '@spotify-confidence/csr-common';
 import { Recorder } from './recorder';
 import { RecordingEngine } from './engine';
 
@@ -32,10 +32,11 @@ class MockEngine implements RecordingEngine {
 }
 
 function routeChangeEvents(onEvent: ReturnType<typeof vi.fn>) {
-  return (onEvent.mock.calls as [RecordingEvent][])
-    .map(([e]) => e)
-    .filter(e => e.type === RecordingEventType.Plugin && (e.data as RouteChangePluginData).plugin === 'csr:routeChange')
-    .map(e => (e.data as RouteChangePluginData).payload);
+  return onEvent.mock.calls.flatMap(([event]: [RecordingEvent]) =>
+    event.type === RecordingEventType.Plugin && event.data.plugin === RecordingPluginName.RouteChange
+      ? [event.data.payload]
+      : [],
+  );
 }
 
 describe('Recorder route change capture', () => {

@@ -94,6 +94,8 @@ export interface Frame {
   eventCounter: number;
   /** Opaque payload from the recorder. */
   data: unknown;
+  /** Whether the frame should refresh the backend's session inactivity timeout. */
+  userActivity?: boolean;
   /** Set only on the first frame emitted after the tab was adopted into a different session. */
   adoptedFromSessionId?: string;
   /** Epoch millis of the adoption event. */

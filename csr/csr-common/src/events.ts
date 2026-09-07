@@ -23,6 +23,35 @@ export enum RecordingEventType {
   Plugin = 6,
 }
 
+export const RecordingCustomEventTag = {
+  RageClick: 'csr:rageClick',
+  FormFieldReEdit: 'csr:formFieldReEdit',
+  ScrollBack: 'csr:scrollBack',
+  Click: 'csr:click',
+  Input: 'csr:input',
+  DeadClick: 'csr:deadClick',
+  TabUnfocus: 'csr:tabUnfocus',
+  TabRefocus: 'csr:tabRefocus',
+  RouteChange: 'csr:routeChange',
+  ErrorMessage: 'csr:errorMessage',
+  DialogOpened: 'csr:dialogOpened',
+  IdleGap: 'csr:idleGap',
+  AwayGap: 'csr:awayGap',
+} as const;
+
+export const RecordingPluginName = {
+  BlockedElementLabels: 'csr/blocked-element-labels@1',
+  Clipboard: 'csr/clipboard@1',
+  ClickModifiers: 'csr/click-modifiers@1',
+  TabVisibility: 'csr:tabVisibility',
+  ConsoleLog: 'rrweb/console@1',
+  NetworkRequest: 'csr:networkRequest',
+  RouteChange: 'csr:routeChange',
+  Tag: 'csr:tag',
+  Measure: 'csr:measure',
+  FlagEvaluation: 'csr:flagEvaluation',
+} as const;
+
 /**
  * Incremental snapshot sub-types.
  */
@@ -107,7 +136,7 @@ export type OpaqueIncrementalData = {
 export type IncrementalSnapshotData = MouseInteractionData | SelectionData | OpaqueIncrementalData;
 
 export type RageClickCustomData = {
-  tag: 'csr:rageClick';
+  tag: typeof RecordingCustomEventTag.RageClick;
   payload: {
     eventId?: string;
     targetId: number;
@@ -119,7 +148,7 @@ export type RageClickCustomData = {
 };
 
 export type FormFieldReEditCustomData = {
-  tag: 'csr:formFieldReEdit';
+  tag: typeof RecordingCustomEventTag.FormFieldReEdit;
   payload: {
     eventId?: string;
     targetId: number;
@@ -130,7 +159,7 @@ export type FormFieldReEditCustomData = {
 };
 
 export type ScrollBackCustomData = {
-  tag: 'csr:scrollBack';
+  tag: typeof RecordingCustomEventTag.ScrollBack;
   payload: {
     eventId?: string;
     scrollBackPx: number;
@@ -148,7 +177,7 @@ export type ElementDescriptor = {
 };
 
 export type ClickCustomData = {
-  tag: 'csr:click';
+  tag: typeof RecordingCustomEventTag.Click;
   payload: {
     eventId?: string;
     targetId: number;
@@ -163,7 +192,7 @@ export type ClickCustomData = {
 };
 
 export type InputCustomData = {
-  tag: 'csr:input';
+  tag: typeof RecordingCustomEventTag.Input;
   payload: {
     eventId?: string;
     targetId: number;
@@ -178,7 +207,7 @@ export type InputCustomData = {
 export type ClipboardAction = 'copy' | 'cut' | 'paste';
 
 export type ClipboardPluginData = {
-  plugin: 'csr/clipboard@1';
+  plugin: typeof RecordingPluginName.Clipboard;
   payload: {
     action: ClipboardAction;
     targetId: number;
@@ -186,7 +215,7 @@ export type ClipboardPluginData = {
 };
 
 export type DeadClickCustomData = {
-  tag: 'csr:deadClick';
+  tag: typeof RecordingCustomEventTag.DeadClick;
   payload: {
     eventId?: string;
     targetId: number;
@@ -196,7 +225,7 @@ export type DeadClickCustomData = {
 };
 
 export type TabUnfocusCustomData = {
-  tag: 'csr:tabUnfocus';
+  tag: typeof RecordingCustomEventTag.TabUnfocus;
   payload: {
     eventId?: string;
     pathname?: string;
@@ -204,7 +233,7 @@ export type TabUnfocusCustomData = {
 };
 
 export type TabRefocusCustomData = {
-  tag: 'csr:tabRefocus';
+  tag: typeof RecordingCustomEventTag.TabRefocus;
   payload: {
     eventId?: string;
     awayDurationMs: number;
@@ -221,7 +250,7 @@ export type RouteChangePayload = {
 };
 
 export type RouteChangeCustomData = {
-  tag: 'csr:routeChange';
+  tag: typeof RecordingCustomEventTag.RouteChange;
   // Intersected rather than added to RouteChangePayload so the plugin-event
   // shape (RouteChangePluginData) stays free of analyzer identity.
   payload: RouteChangePayload & { eventId?: string };
@@ -231,7 +260,7 @@ export type RouteChangeCustomData = {
  * Plugin event data emitted by the recorder for tab visibility changes.
  */
 export type TabVisibilityPluginData = {
-  plugin: 'csr:tabVisibility';
+  plugin: typeof RecordingPluginName.TabVisibility;
   payload: { hidden: boolean };
 };
 
@@ -242,7 +271,7 @@ export type ConsoleLogLevel = 'log' | 'warn' | 'error' | 'debug' | 'info';
  * Shape matches `@rrweb/rrweb-plugin-console-record` LogData.
  */
 export type ConsoleLogPluginData = {
-  plugin: 'rrweb/console@1';
+  plugin: typeof RecordingPluginName.ConsoleLog;
   payload: {
     level: ConsoleLogLevel;
     payload: string[];
@@ -260,7 +289,7 @@ export type GraphQLRequestMetadata = {
  * Plugin event data emitted by the recorder for network requests.
  */
 export type NetworkRequestPluginData = {
-  plugin: 'csr:networkRequest';
+  plugin: typeof RecordingPluginName.NetworkRequest;
   payload: {
     initiator: NetworkRequestInitiator;
     method: string;
@@ -274,12 +303,12 @@ export type NetworkRequestPluginData = {
 };
 
 export type RouteChangePluginData = {
-  plugin: 'csr:routeChange';
+  plugin: typeof RecordingPluginName.RouteChange;
   payload: RouteChangePayload;
 };
 
 export type TagPluginData = {
-  plugin: 'csr:tag';
+  plugin: typeof RecordingPluginName.Tag;
   payload: {
     key: string;
     value?: string;
@@ -287,7 +316,7 @@ export type TagPluginData = {
 };
 
 export type MeasurePluginData = {
-  plugin: 'csr:measure';
+  plugin: typeof RecordingPluginName.Measure;
   payload: {
     key: string;
     value?: number;
@@ -295,7 +324,7 @@ export type MeasurePluginData = {
 };
 
 export type FlagEvaluationPluginData = {
-  plugin: 'csr:flagEvaluation';
+  plugin: typeof RecordingPluginName.FlagEvaluation;
   payload: {
     flagKey: string;
     variant: string;
@@ -303,8 +332,18 @@ export type FlagEvaluationPluginData = {
   };
 };
 
+export type PluginEventData =
+  | ClipboardPluginData
+  | TabVisibilityPluginData
+  | ConsoleLogPluginData
+  | NetworkRequestPluginData
+  | RouteChangePluginData
+  | TagPluginData
+  | MeasurePluginData
+  | FlagEvaluationPluginData;
+
 export type ErrorMessageCustomData = {
-  tag: 'csr:errorMessage';
+  tag: typeof RecordingCustomEventTag.ErrorMessage;
   payload: {
     eventId?: string;
     text: string;
@@ -312,7 +351,7 @@ export type ErrorMessageCustomData = {
 };
 
 export type DialogOpenedCustomData = {
-  tag: 'csr:dialogOpened';
+  tag: typeof RecordingCustomEventTag.DialogOpened;
   payload: {
     eventId?: string;
     content: string[];
@@ -320,7 +359,7 @@ export type DialogOpenedCustomData = {
 };
 
 export type IdleGapCustomData = {
-  tag: 'csr:idleGap';
+  tag: typeof RecordingCustomEventTag.IdleGap;
   payload: {
     eventId?: string;
     visibleGapS: number;
@@ -331,7 +370,7 @@ export type IdleGapCustomData = {
 };
 
 export type AwayGapCustomData = {
-  tag: 'csr:awayGap';
+  tag: typeof RecordingCustomEventTag.AwayGap;
   payload: {
     eventId?: string;
     totalGapS: number;
@@ -382,7 +421,15 @@ export type RecordingEvent =
       data: IncrementalSnapshotData;
     }
   | {
-      type: Exclude<RecordingEventType, RecordingEventType.Custom | RecordingEventType.IncrementalSnapshot>;
+      type: RecordingEventType.Plugin;
+      timestamp: number;
+      data: PluginEventData;
+    }
+  | {
+      type: Exclude<
+        RecordingEventType,
+        RecordingEventType.Custom | RecordingEventType.IncrementalSnapshot | RecordingEventType.Plugin
+      >;
       timestamp: number;
       data: unknown;
     };

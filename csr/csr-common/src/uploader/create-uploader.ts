@@ -1,5 +1,6 @@
 import type { CreateUploaderOptions, Frame, Uploader } from './types';
 import { ClientContext, collectUserAgentContext } from './client-context';
+import { isSessionActivityEvent } from '../session-activity';
 import { workerScript } from './worker/worker-script';
 
 const STORAGE_TAB_ID = 'csr:tabId';
@@ -213,6 +214,7 @@ export async function createUploader(opts: CreateUploaderOptions): Promise<Uploa
       tabId: effectiveTabId,
       eventCounter: counter,
       data: event,
+      userActivity: isSessionActivityEvent(event),
       ...(nextAdoptionMeta ?? {}),
     };
     counter += 1;

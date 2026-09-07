@@ -1,8 +1,15 @@
 import { describe, it, expect, vi, afterEach } from 'vitest';
-import { RecordingEvent, RecordingEventType, type NetworkRequestPluginData } from '@spotify-confidence/csr-common';
+import { RecordingEvent, RecordingEventType, RecordingPluginName } from '@spotify-confidence/csr-common';
 import { Recorder } from './recorder';
 import { RecordingEngine } from './engine';
 import { RecorderState } from './types';
+
+const networkRequestEvents = (onEvent: ReturnType<typeof vi.fn>) =>
+  onEvent.mock.calls.flatMap(([event]: [RecordingEvent]) =>
+    event.type === RecordingEventType.Plugin && event.data.plugin === RecordingPluginName.NetworkRequest
+      ? [event.data]
+      : [],
+  );
 
 function makeEvent(timestamp: number): RecordingEvent {
   return { type: RecordingEventType.Meta, timestamp, data: {} };
@@ -130,12 +137,10 @@ describe('Recorder network request capture', () => {
 
     await globalThis.fetch('https://api.example.com/data');
 
-    const pluginEvents = onEvent.mock.calls
-      .map(([e]: [RecordingEvent]) => e)
-      .filter(e => e.type === RecordingEventType.Plugin);
-    expect(pluginEvents).toHaveLength(1);
-    const data = pluginEvents[0].data as NetworkRequestPluginData;
-    expect(data.plugin).toBe('csr:networkRequest');
+    const events = networkRequestEvents(onEvent);
+    expect(events).toHaveLength(1);
+    const data = events[0];
+    expect(data.plugin).toBe(RecordingPluginName.NetworkRequest);
     expect(data.payload.initiator).toBe('fetch');
     expect(data.payload.method).toBe('GET');
     expect(data.payload.url).toBe('https://api.example.com/data');
@@ -156,11 +161,9 @@ describe('Recorder network request capture', () => {
 
     await globalThis.fetch('https://api.example.com/data').catch(() => {});
 
-    const pluginEvents = onEvent.mock.calls
-      .map(([e]: [RecordingEvent]) => e)
-      .filter(e => e.type === RecordingEventType.Plugin);
-    expect(pluginEvents).toHaveLength(1);
-    const data = pluginEvents[0].data as NetworkRequestPluginData;
+    const events = networkRequestEvents(onEvent);
+    expect(events).toHaveLength(1);
+    const data = events[0];
     expect(data.payload.status).toBe(0);
 
     recorder.stop();
@@ -177,10 +180,7 @@ describe('Recorder network request capture', () => {
 
     await globalThis.fetch('https://api.example.com/data', { method: 'post' });
 
-    const pluginEvents = onEvent.mock.calls
-      .map(([e]: [RecordingEvent]) => e)
-      .filter(e => e.type === RecordingEventType.Plugin);
-    const data = pluginEvents[0].data as NetworkRequestPluginData;
+    const data = networkRequestEvents(onEvent)[0];
     expect(data.payload.method).toBe('POST');
 
     recorder.stop();
@@ -197,10 +197,7 @@ describe('Recorder network request capture', () => {
 
     await globalThis.fetch(new Request('https://api.example.com/data', { method: 'DELETE' }));
 
-    const pluginEvents = onEvent.mock.calls
-      .map(([e]: [RecordingEvent]) => e)
-      .filter(e => e.type === RecordingEventType.Plugin);
-    const data = pluginEvents[0].data as NetworkRequestPluginData;
+    const data = networkRequestEvents(onEvent)[0];
     expect(data.payload.method).toBe('DELETE');
     expect(data.payload.url).toBe('https://api.example.com/data');
 
@@ -228,7 +225,7 @@ describe('Recorder network request capture', () => {
       }),
     });
 
-    const data = onEvent.mock.calls[0][0].data as NetworkRequestPluginData;
+    const data = networkRequestEvents(onEvent)[0];
     expect(data.payload.graphql).toEqual({ operationName: 'GetUser' });
     expect(JSON.stringify(data.payload)).not.toContain('private-user-id');
 

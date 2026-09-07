@@ -1,0 +1,72 @@
+import { describe, expect, it } from 'vitest';
+import { IncrementalSource, RecordingCustomEventTag, RecordingEventType, RecordingPluginName } from './events';
+import { RecordingMetricKey } from './metrics';
+import { isSessionActivityEvent, isUserInteractionEvent, isUserInteractionMetric } from './session-activity';
+
+describe('session activity', () => {
+  it.each([
+    {
+      type: RecordingEventType.IncrementalSnapshot,
+      data: { source: IncrementalSource.MouseMove },
+    },
+    {
+      type: RecordingEventType.IncrementalSnapshot,
+      data: { source: IncrementalSource.MouseInteraction },
+    },
+    {
+      type: RecordingEventType.Custom,
+      data: { tag: RecordingCustomEventTag.Input },
+    },
+    {
+      type: RecordingEventType.Plugin,
+      data: { plugin: RecordingPluginName.RouteChange },
+    },
+    {
+      type: RecordingEventType.Custom,
+      data: { tag: RecordingCustomEventTag.TabUnfocus },
+    },
+  ])('identifies user interaction events', event => {
+    expect(isUserInteractionEvent(event)).toBe(true);
+  });
+
+  it.each([
+    {
+      type: RecordingEventType.IncrementalSnapshot,
+      data: { source: IncrementalSource.Mutation },
+    },
+    {
+      type: RecordingEventType.Plugin,
+      data: { plugin: RecordingPluginName.NetworkRequest },
+    },
+    null,
+    {},
+  ])('ignores passive and malformed events', event => {
+    expect(isUserInteractionEvent(event)).toBe(false);
+  });
+
+  it('treats page metadata as session activity without treating it as an interaction', () => {
+    const event = { type: RecordingEventType.Meta, data: {} };
+
+    expect(isUserInteractionEvent(event)).toBe(false);
+    expect(isSessionActivityEvent(event)).toBe(true);
+  });
+
+  it.each([
+    RecordingMetricKey.Click,
+    RecordingMetricKey.Input,
+    RecordingMetricKey.RageClick,
+    RecordingMetricKey.DeadClick,
+    RecordingMetricKey.ScrollBack,
+    RecordingMetricKey.TabUnfocus,
+    RecordingMetricKey.RouteChange,
+  ])('identifies user interaction metrics', metricKey => {
+    expect(isUserInteractionMetric(metricKey)).toBe(true);
+  });
+
+  it.each([RecordingMetricKey.NetworkRequest, RecordingMetricKey.ConsoleError, 'unknownMetric'])(
+    'ignores passive metrics',
+    metricKey => {
+      expect(isUserInteractionMetric(metricKey)).toBe(false);
+    },
+  );
+});

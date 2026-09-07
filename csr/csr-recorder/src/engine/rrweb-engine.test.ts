@@ -1,6 +1,7 @@
 // @vitest-environment happy-dom
 
 import { describe, it, expect, vi, beforeEach } from 'vitest';
+import { RecordingPluginName } from '@spotify-confidence/csr-common';
 import { RrwebEngine } from './rrweb-engine';
 
 const recordSpy = vi.fn().mockReturnValue(() => {});
@@ -61,7 +62,7 @@ describe('RrwebEngine', () => {
   it('rebuilds blocked elements as labelled inert placeholders', () => {
     new RrwebEngine().start({}, () => {});
     const plugin = recordSpy.mock.calls[0][0].plugins.find(
-      ({ name }: { name: string }) => name === 'csr/blocked-element-labels@1',
+      ({ name }: { name: string }) => name === RecordingPluginName.BlockedElementLabels,
     );
     const event = {
       type: 2,
@@ -120,7 +121,9 @@ describe('RrwebEngine', () => {
 
   it('records copy, cut, and paste actions without reading clipboard contents', () => {
     new RrwebEngine().start({}, () => {});
-    const plugin = recordSpy.mock.calls[0][0].plugins.find(({ name }: { name: string }) => name === 'csr/clipboard@1');
+    const plugin = recordSpy.mock.calls[0][0].plugins.find(
+      ({ name }: { name: string }) => name === RecordingPluginName.Clipboard,
+    );
     const getId = vi.fn().mockReturnValue(42);
     plugin.getMirror({ nodeMirror: { getId } });
     const callback = vi.fn();
@@ -154,7 +157,7 @@ describe('RrwebEngine', () => {
   it('keeps native click modifiers through a browser microtask checkpoint', async () => {
     new RrwebEngine().start({}, () => {});
     const plugin = recordSpy.mock.calls[0][0].plugins.find(
-      ({ name }: { name: string }) => name === 'csr/click-modifiers@1',
+      ({ name }: { name: string }) => name === RecordingPluginName.ClickModifiers,
     );
     const removeObserver = plugin.observer(() => {}, window);
 
@@ -200,7 +203,7 @@ describe('RrwebEngine', () => {
   it('does not add stale modifiers to a later click', async () => {
     new RrwebEngine().start({}, () => {});
     const plugin = recordSpy.mock.calls[0][0].plugins.find(
-      ({ name }: { name: string }) => name === 'csr/click-modifiers@1',
+      ({ name }: { name: string }) => name === RecordingPluginName.ClickModifiers,
     );
     const removeObserver = plugin.observer(() => {}, window);
     document.dispatchEvent(new MouseEvent('click', { metaKey: true }));
