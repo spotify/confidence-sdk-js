@@ -31,6 +31,7 @@ export type UserAgentContext = {
   devicePixelRatio?: number;
   /** Initial document URI — without query/hash to avoid leaking PII. */
   uri?: string;
+  /** Referrer origin and pathname only; empty when absent or invalid. */
   referrer?: string;
 };
 
@@ -51,6 +52,14 @@ export function collectUserAgentContext(): UserAgentContext | undefined {
     // Some embedded contexts throw.
   }
 
+  let referrer = '';
+  try {
+    const url = new URL(document.referrer);
+    referrer = `${url.origin}${url.pathname}`;
+  } catch (_e) {
+    // Empty or invalid referrers must not expose their raw value.
+  }
+
   return {
     userAgent: navigator.userAgent,
     os: parsed.os.name?.toLowerCase().replace(/\s+/g, ''),
@@ -65,6 +74,6 @@ export function collectUserAgentContext(): UserAgentContext | undefined {
     screenHeight: window.screen.height,
     devicePixelRatio: window.devicePixelRatio,
     uri: `${window.location.origin}${window.location.pathname}`,
-    referrer: document.referrer,
+    referrer,
   };
 }

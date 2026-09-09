@@ -205,9 +205,15 @@ export class Recorder {
     try {
       const url = new URL(href);
       url.pathname = this.parameterizeRoute(url.pathname);
+      // Route parameterization does not sanitize other URL components.
+      url.search = '';
+      url.hash = '';
+      url.username = '';
+      url.password = '';
       return url.toString();
     } catch (_e) {
-      return this.parameterizeRoute(href);
+      // Never emit an unparsed URL that could contain secrets.
+      return '';
     }
   }
 

@@ -84,6 +84,17 @@ describe('collectUserAgentContext', () => {
     });
   });
 
+  it.each([
+    ['https://example.com/reset?token=secret', 'https://example.com/reset'],
+    ['https://example.com/reset#private', 'https://example.com/reset'],
+    ['https://user:secret@example.com/reset?token=secret#private', 'https://example.com/reset'],
+    ['', ''],
+    ['invalid?token=secret', ''],
+  ])('sanitizes the referrer: %s', (referrer, expected) => {
+    stubBrowser({ document: { referrer } });
+    expect(collectUserAgentContext()?.referrer).toBe(expected);
+  });
+
   it('flags `mobile` platform type as mobile=true', () => {
     parse.mockReturnValueOnce({
       os: {},

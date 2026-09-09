@@ -259,6 +259,49 @@ describe('Recorder route change capture', () => {
     recorder.stop();
   });
 
+  it.each([
+    ['https://example.com/users/123?email=person%40example.com', 'https://example.com/users/:id'],
+    ['https://example.com/users/123#access_token=secret', 'https://example.com/users/:id'],
+    ['https://example.com/users/123?token=secret#private', 'https://example.com/users/:id'],
+    ['https://user:secret@example.com/users/123', 'https://example.com/users/:id'],
+    ['invalid?token=secret#private', ''],
+  ])('sanitizes initial and later Meta URLs: %s', (href, expected) => {
+    const engine = new MockEngine();
+    const event = { type: RecordingEventType.Meta, timestamp: 1, data: { href, width: 800, height: 600 } };
+    engine.eventsOnStart = [event];
+    const onEvent = vi.fn();
+    const recorder = new Recorder({ engine, onEvent });
+    recorder.start({ captureRouteChanges: false });
+    engine.emit(event);
+    recorder.stop();
+
+    expect(onEvent.mock.calls.map(([recorded]) => recorded.data)).toEqual([
+      { href: expected, width: 800, height: 600 },
+      { href: expected, width: 800, height: 600 },
+    ]);
+    expect(event.data.href).toBe(href);
+  });
+
+  it('removes URL secrets when a custom route parameterizer is used', () => {
+    const engine = new MockEngine();
+    engine.eventsOnStart = [
+      {
+        type: RecordingEventType.Meta,
+        timestamp: 1,
+        data: { href: 'https://example.com/teams/acme?token=secret#private' },
+      },
+    ];
+    const onEvent = vi.fn();
+    const recorder = new Recorder({ engine, onEvent });
+    recorder.start({
+      captureRouteChanges: false,
+      parameterizeRoute: route => route.replace('/acme', '/:team'),
+    });
+    recorder.stop();
+
+    expect(onEvent.mock.calls[0][0].data.href).toBe('https://example.com/teams/:team');
+  });
+
   it('removes popstate listener on stop', () => {
     const addSpy = vi.spyOn(window, 'addEventListener');
     const removeSpy = vi.spyOn(window, 'removeEventListener');
