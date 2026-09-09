@@ -76,7 +76,7 @@ describe('CsrClient.openTransport', () => {
     await expect(client.openTransport('tok-1')).resolves.toBeDefined();
 
     expect(ws.connections[0].url).toBe('ws://api.example/sessions/stream');
-    expect(ws.protocolOffers).toEqual([['recording.v1', 'auth.dG9rLTE']]);
+    expect(ws.protocolOffers).toEqual([['recording.v1', 'auth.tok-1']]);
   });
 
   it('derives a wss:// URL from an https:// apiUrl', async () => {
@@ -100,7 +100,7 @@ describe('CsrClient.openTransport', () => {
     expect(ws.connections[0].url).toBe('wss://recording-ws.confidence.dev/sessions/stream?region=eu');
   });
 
-  it('keeps the raw and encoded credential out of the URL and debug log', async () => {
+  it('keeps the credential out of the URL and debug log', async () => {
     const ws = installMockWsServer('wss://api/sessions/stream');
 
     const logs: string[] = [];
@@ -111,7 +111,6 @@ describe('CsrClient.openTransport', () => {
     expect(logs[0]).toBe('WebSocket connect wss://api/sessions/stream');
     for (const value of [ws.connections[0].url, ...logs]) {
       expect(value).not.toContain('sensitive-token');
-      expect(value).not.toContain('c2Vuc2l0aXZlLXRva2Vu');
     }
   });
 

@@ -63,7 +63,7 @@ describe('worker/core', () => {
         sessionToken: 'tok-1',
       });
       expect(wsHarness.connections[0].url).toBe(WS_URL);
-      expect(wsHarness.protocolOffers).toEqual([['recording.v1', 'auth.dG9rLTE']]);
+      expect(wsHarness.protocolOffers).toEqual([['recording.v1', 'auth.tok-1']]);
     });
 
     it('replies with skipRecording when the backend opts out', async () => {
@@ -279,8 +279,8 @@ describe('worker/core', () => {
       });
       expect(fetchHarness.calls).toHaveLength(1);
       expect(wsHarness.protocolOffers).toEqual([
-        ['recording.v1', 'auth.c3RhbGUtc2Vuc2l0aXZl'],
-        ['recording.v1', 'auth.ZnJlc2gtc2Vuc2l0aXZl'],
+        ['recording.v1', 'auth.stale-sensitive'],
+        ['recording.v1', 'auth.fresh-sensitive'],
       ]);
       expect(wsHarness.connections.every(connection => connection.url === WS_URL)).toBe(true);
       const logs = port.received.filter(isType('log')).map(message => (message as { msg: string }).msg);
@@ -309,8 +309,8 @@ describe('worker/core', () => {
       expect(dead.reason).toBe('reconnect-failed');
       expect(fetchHarness.calls).toHaveLength(1);
       expect(wsHarness.protocolOffers).toEqual([
-        ['recording.v1', 'auth.dG9rLTE'],
-        ['recording.v1', 'auth.dG9rLTE'],
+        ['recording.v1', 'auth.tok-1'],
+        ['recording.v1', 'auth.tok-1'],
       ]);
       expect(wsHarness.connections.every(connection => connection.url === WS_URL)).toBe(true);
     });

@@ -3,7 +3,7 @@ import { installMockWsServer } from '../../test-utils';
 import { WebSocketTransport } from './web-socket-transport';
 
 const URL = 'ws://localhost:1234/sessions/stream';
-const PROTOCOLS = ['recording.v1', 'auth.c2Vuc2l0aXZlLXRva2Vu'];
+const PROTOCOLS = ['recording.v1', 'auth.sensitive-token'];
 
 describe('WebSocketTransport', () => {
   const setup = () => installMockWsServer(URL);

@@ -5,8 +5,7 @@ import { workerScript } from './worker-script';
 const API_URL = 'https://api.example';
 const WS_URL = 'wss://api.example/sessions/stream?region=eu';
 const TOKEN = 'worker-marker-token';
-const ENCODED_TOKEN = 'd29ya2VyLW1hcmtlci10b2tlbg';
-const PROTOCOLS = ['recording.v1', `auth.${ENCODED_TOKEN}`];
+const PROTOCOLS = ['recording.v1', `auth.${TOKEN}`];
 
 interface WorkerMessage {
   type: string;
@@ -111,8 +110,6 @@ function createHarness(
   runInNewContext(workerScript, {
     URL,
     WebSocket: TestWebSocket,
-    TextEncoder,
-    btoa,
     clearTimeout,
     crypto,
     fetch: async (url: string) => {
@@ -178,7 +175,6 @@ describe('generated workerScript', () => {
       expect(logs.length).toBeGreaterThan(0);
       for (const value of [...harness.calls.map(call => call.url), ...logs]) {
         expect(value).not.toContain(TOKEN);
-        expect(value).not.toContain(ENCODED_TOKEN);
       }
     },
   );
@@ -203,7 +199,6 @@ describe('generated workerScript', () => {
       expect(logs.length).toBeGreaterThan(0);
       for (const log of logs) {
         expect(log).not.toContain(TOKEN);
-        expect(log).not.toContain(ENCODED_TOKEN);
       }
     },
   );
