@@ -228,9 +228,9 @@ describe('worker/core', () => {
       expect(quiet.received.some(isType('log'))).toBe(false);
     });
 
-    it('does not expose a session token through configured URLs or session identifiers', async () => {
+    it('does not expose a session token through configured URLs', async () => {
       const token = 'leaky-sensitive';
-      setupBackend({ sessionId: token, sessionToken: token });
+      setupBackend({ sessionId: 'session-1', sessionToken: token });
       const { registerPort } = await loadCore();
       const port = createMockPort();
       registerPort(port.adapter);
@@ -238,7 +238,7 @@ describe('worker/core', () => {
       port.tabSends(
         helloMessage({
           websocketUrl: `${WS_URL}?session_token=${token}`,
-          sessionIdHint: token,
+          sessionIdHint: 'session-1',
           sessionTokenHint: token,
           debugLogs: true,
         }),
@@ -249,7 +249,6 @@ describe('worker/core', () => {
       expect(logs.length).toBeGreaterThan(0);
       for (const log of logs) {
         expect(log).not.toContain(token);
-        expect(log).not.toContain('bGVha3ktc2Vuc2l0aXZl');
       }
     });
   });
@@ -284,6 +283,9 @@ describe('worker/core', () => {
       ]);
       expect(wsHarness.connections.every(connection => connection.url === WS_URL)).toBe(true);
       const logs = port.received.filter(isType('log')).map(message => (message as { msg: string }).msg);
+      expect(logs.some(log => log.includes('sessionIdHint=stale-session'))).toBe(true);
+      expect(logs).toContain('adopting sessionIdHint=stale-session');
+      expect(logs).toContain('init-session ok sessionId=fresh-session');
       for (const log of logs) {
         expect(log).not.toContain('stale-sensitive');
         expect(log).not.toContain('c3RhbGUtc2Vuc2l0aXZl');

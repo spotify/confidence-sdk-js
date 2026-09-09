@@ -172,7 +172,7 @@ describe('generated workerScript', () => {
       expect(harness.calls[1].protocols).toEqual(PROTOCOLS);
 
       const logs = harness.received.filter(message => message.type === 'log').map(message => message.msg ?? '');
-      expect(logs.length).toBeGreaterThan(0);
+      expect(logs).toContain('init-session ok sessionId=worker-session');
       for (const value of [...harness.calls.map(call => call.url), ...logs]) {
         expect(value).not.toContain(TOKEN);
       }
@@ -182,7 +182,7 @@ describe('generated workerScript', () => {
   it.each(['dedicated', 'shared'] as const)(
     'rejects a legacy credential without logging it in the %s worker',
     async mode => {
-      const harness = createHarness(mode, { sessionId: TOKEN, sessionToken: TOKEN });
+      const harness = createHarness(mode);
 
       harness.send({
         type: 'hello',
@@ -196,7 +196,7 @@ describe('generated workerScript', () => {
 
       expect(harness.calls).toEqual([]);
       const logs = harness.received.filter(message => message.type === 'log').map(message => message.msg ?? '');
-      expect(logs.length).toBeGreaterThan(0);
+      expect(logs).toContain('init-session ok sessionId=worker-session');
       for (const log of logs) {
         expect(log).not.toContain(TOKEN);
       }
