@@ -10,11 +10,12 @@ export interface CreateUploaderOptions {
   apiUrl: string;
   /**
    * URL of the WebSocket ingest endpoint, including the path (e.g.
-   * `wss://recording-ws.confidence.dev/sessions/stream`) but **without** any query —
-   * the worker appends `?session_token=…`. Optional: when omitted the worker derives
-   * one from `apiUrl` by swapping `http(s)://` → `ws(s)://` and appending
-   * `/sessions/stream`. Set this when the init endpoint and the WS ingest live on
-   * different hosts (e.g. prod).
+   * `wss://recording-ws.confidence.dev/sessions/stream`). The worker sends the session
+   * token through the WebSocket subprotocol header. A `session_token` query parameter is
+   * rejected. Other query parameters are retained. Optional: when omitted the worker
+   * derives one from `apiUrl` by swapping `http(s)://` → `ws(s)://` and appending
+   * `/sessions/stream`. Set this when the init endpoint and the WS ingest live on different
+   * hosts (e.g. prod).
    */
   websocketUrl?: string;
   /** Per-tenant secret. Hashed to scope the SharedWorker so different secrets never share a session, and sent in the `initSession` request body. */
@@ -55,7 +56,7 @@ export interface CreateUploaderOptions {
   onTerminate?: (info: { reason: string }) => void;
   /**
    * Optional verbose tracer. Called on key tab- and worker-side events
-   * (hello/welcome, init-session URL, ws connect URL, retries, transitions).
+   * (hello/welcome, init-session URL, credential-free ws connect URL, retries, transitions).
    * Worker messages are forwarded over the port and tagged so you can tell them apart.
    */
   debugLogger?: (msg: string) => void;

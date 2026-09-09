@@ -19,8 +19,10 @@ export class WebSocketTransport implements Transport {
   /** Frames buffered while a (re)connect is in progress. */
   private pending: Frame[] = [];
   private readyPromise: Promise<void>;
+  private readonly protocols: string[];
 
-  constructor(private readonly url: string) {
+  constructor(private readonly url: string, protocols: string[] = []) {
+    this.protocols = [...protocols];
     this.readyPromise = new Promise<void>((resolve, reject) => {
       this.connect(false, resolve, reject);
     });
@@ -56,11 +58,23 @@ export class WebSocketTransport implements Transport {
   }
 
   private connect(isReconnect: boolean, onReady?: () => void, onReadyFail?: (err: Error) => void): void {
-    const ws = new WebSocket(this.url);
+    let ws: WebSocket;
+    try {
+      ws = new WebSocket(this.url, [...this.protocols]);
+    } catch (_error) {
+      this.failConnection(isReconnect, onReadyFail);
+      return;
+    }
     this.ws = ws;
     let opened = false;
 
     ws.onopen = () => {
+      const expectedProtocol = this.protocols[0];
+      if (expectedProtocol !== undefined && ws.protocol !== expectedProtocol) {
+        this.failConnection(isReconnect, onReadyFail);
+        ws.close(1000, 'protocol-mismatch');
+        return;
+      }
       opened = true;
       onReady?.();
       // Emit state on every successful open EXCEPT the very first one (welcome already
@@ -75,20 +89,11 @@ export class WebSocketTransport implements Transport {
     };
 
     ws.onclose = event => {
-      if (this.intentionallyClosed) return;
+      if (this.intentionallyClosed || this.dead) return;
       if (!opened) {
-        // Server rejected the connection before it opened (e.g. unknown session).
-        const stage = isReconnect ? 'reconnect' : 'initial';
-        const reason = `${stage}-failed code=${event.code}`;
-        if (onReadyFail) {
-          // First attempt — surface the failure to whoever is awaiting `ready()` so they
-          // can decide whether to recover (e.g. fall back to a fresh initSession).
-          onReadyFail(new Error(reason));
-          this.dead = true;
-        } else {
-          // Reconnect failed; the consumer is past `ready()` and only learns about it via onClose.
-          this.die(reason);
-        }
+        // Browsers do not expose the HTTP status for a failed WebSocket handshake. Keep
+        // this failure generic and do not infer an authentication result from close 1006.
+        this.failConnection(isReconnect, onReadyFail);
         return;
       }
       // The WS opened and is now closing. Distinguish graceful drain (retry) from app
@@ -104,6 +109,16 @@ export class WebSocketTransport implements Transport {
         this.die(`close code=${event.code} wasClean=${event.wasClean}`);
       }
     };
+  }
+
+  private failConnection(isReconnect: boolean, onReadyFail?: (err: Error) => void): void {
+    const reason = isReconnect ? 'reconnect-failed' : 'initial-failed';
+    if (onReadyFail) {
+      this.dead = true;
+      onReadyFail(new Error(reason));
+    } else {
+      this.die(reason);
+    }
   }
 
   private die(reason: string): void {

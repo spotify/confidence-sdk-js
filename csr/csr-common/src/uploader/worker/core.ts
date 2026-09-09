@@ -173,8 +173,8 @@ function onHello(handle: PortHandle): void {
       };
       log(
         `hello received apiUrl=${handle.hello!.apiUrl} websocketUrl=${
-          handle.hello!.websocketUrl ?? '(derive)'
-        } sessionIdHint=${handle.hello!.sessionIdHint ?? '(none)'}`,
+          handle.hello!.websocketUrl ? '(configured)' : '(derive)'
+        } sessionHint=${handle.hello!.sessionIdHint ? '(present)' : '(none)'}`,
       );
       state = { phase: 'initializing' };
       void initializeSession(handle.hello!).then(flushPendingWelcomes);
@@ -225,7 +225,7 @@ async function initializeSession(firstHello: HelloMessage): Promise<void> {
   // Try to adopt the hint first. Need both sessionId (for tab-side state) and
   // sessionToken (to authenticate the WS upgrade).
   if (firstHello.sessionIdHint && firstHello.sessionTokenHint) {
-    log(`adopting sessionIdHint=${firstHello.sessionIdHint}`);
+    log('adopting session hint');
     try {
       const transport = await client.openTransport(firstHello.sessionTokenHint);
       wireTransport(transport);
@@ -262,7 +262,7 @@ async function initializeSession(firstHello: HelloMessage): Promise<void> {
     return;
   }
 
-  log(`init-session ok sessionId=${result.sessionId}`);
+  log('init-session ok');
   let transport: Transport;
   try {
     transport = await client.openTransport(result.sessionToken);
