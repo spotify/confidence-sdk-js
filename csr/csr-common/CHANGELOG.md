@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.18.10](https://github.com/spotify/confidence-sdk-js/compare/csr-common-v0.18.9...csr-common-v0.18.10) (2026-09-09)
+
+
+### 🐛 Bug Fixes
+
+* strip query and hash from recording URLs ([#452](https://github.com/spotify/confidence-sdk-js/issues/452)) ([1ce37f3](https://github.com/spotify/confidence-sdk-js/commit/1ce37f3f43c05bfea4a90839a6de42314096bb40))
+
 ## [0.18.9](https://github.com/spotify/confidence-sdk-js/compare/csr-common-v0.18.8...csr-common-v0.18.9) (2026-09-07)
 
 

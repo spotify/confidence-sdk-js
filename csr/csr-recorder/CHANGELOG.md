@@ -1,5 +1,19 @@
 # Changelog
 
+## [0.17.18](https://github.com/spotify/confidence-sdk-js/compare/csr-recorder-v0.17.17...csr-recorder-v0.17.18) (2026-09-09)
+
+
+### 🐛 Bug Fixes
+
+* strip query and hash from recording URLs ([#452](https://github.com/spotify/confidence-sdk-js/issues/452)) ([1ce37f3](https://github.com/spotify/confidence-sdk-js/commit/1ce37f3f43c05bfea4a90839a6de42314096bb40))
+
+
+### Dependencies
+
+* The following workspace dependencies were updated
+  * dependencies
+    * @spotify-confidence/csr-common bumped to 0.18.10
+
 ## [0.17.17](https://github.com/spotify/confidence-sdk-js/compare/csr-recorder-v0.17.16...csr-recorder-v0.17.17) (2026-09-07)
 
 
