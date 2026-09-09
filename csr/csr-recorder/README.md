@@ -53,7 +53,7 @@ const stop = record(event => {}, {
 });
 ```
 
-The same parameterization is also applied to the `href` in rrweb Meta events.
+The same parameterization is also applied to the `href` in rrweb Meta events. Query strings and fragments are removed from Meta event URLs and the session's document referrer before recording.
 
 ## rrweb version
 

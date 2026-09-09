@@ -43,7 +43,7 @@ export {
   type FlagEvaluationPluginData,
 } from './events';
 
-export { stripUrl } from './url';
+export { stripUrl, stripUrlQueryAndHash } from './url';
 
 export { RecordingMetricKey } from './metrics';
 
