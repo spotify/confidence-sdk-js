@@ -1,4 +1,4 @@
-import { describe, expect, it, vi } from 'vitest';
+import { describe, expect, it, onTestFinished, vi } from 'vitest';
 import { installMockWsServer } from '../../test-utils';
 import { WebSocketTransport } from './web-socket-transport';
 
@@ -120,6 +120,7 @@ describe('WebSocketTransport', () => {
         throw new Error(`synthetic constructor failure for ${protocolFromBrowserError}`);
       }
     }
+    onTestFinished(() => vi.unstubAllGlobals());
     vi.stubGlobal('WebSocket', ThrowingWebSocket);
 
     const t = new WebSocketTransport(URL, PROTOCOLS);
@@ -127,7 +128,6 @@ describe('WebSocketTransport', () => {
 
     expect(String(error)).toContain('initial-failed');
     expect(String(error)).not.toContain(protocolFromBrowserError);
-    vi.unstubAllGlobals();
   });
 
   it('fires onClose with reason on abrupt close after open', async () => {
