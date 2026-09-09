@@ -2,6 +2,7 @@ import {
   RecordingEvent,
   RecordingEventType,
   RecordingPluginName,
+  stripUrlQueryAndHash,
   type TabVisibilityPluginData,
   type NetworkRequestPluginData,
   type RouteChangePluginData,
@@ -202,12 +203,13 @@ export class Recorder {
   }
 
   private parameterizeHref(href: string): string {
+    const strippedHref = stripUrlQueryAndHash(href);
     try {
-      const url = new URL(href);
+      const url = new URL(strippedHref);
       url.pathname = this.parameterizeRoute(url.pathname);
       return url.toString();
     } catch (_e) {
-      return this.parameterizeRoute(href);
+      return this.parameterizeRoute(strippedHref);
     }
   }
 

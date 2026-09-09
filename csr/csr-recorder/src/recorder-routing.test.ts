@@ -234,20 +234,58 @@ describe('Recorder route change capture', () => {
     recorder.stop();
   });
 
+  it.each([
+    ['https://example.com/users/123?email=alice@example.com#token', 'https://example.com/users/:id'],
+    ['https://example.com/users/123#token?email=alice@example.com', 'https://example.com/users/:id'],
+    ['https://example.com/users/123?email=alice@example.com', 'https://example.com/users/:id'],
+    ['https://example.com/users/123#token', 'https://example.com/users/:id'],
+    ['/users/123?email=alice@example.com#token', '/users/:id'],
+    ['invalid-url?email=alice@example.com#token', 'invalid-url'],
+    ['', ''],
+  ])('strips query/hash from Meta href %s even with route capture disabled', (href, expected) => {
+    const engine = new MockEngine();
+    const event: RecordingEvent = {
+      type: RecordingEventType.Meta,
+      timestamp: 1,
+      data: { href, width: 1920, height: 1080 },
+    };
+    engine.eventsOnStart = [event];
+    const onEvent = vi.fn();
+    const recorder = new Recorder({ engine, onEvent });
+    recorder.start({ captureRouteChanges: false });
+    // Later snapshots must be sanitized too.
+    engine.emit(event);
+
+    expect(onEvent).toHaveBeenCalledTimes(2);
+    for (const [recorded] of onEvent.mock.calls) {
+      expect(recorded).toEqual({ ...event, data: { ...event.data, href: expected } });
+    }
+    expect(event.data).toEqual({ href, width: 1920, height: 1080 });
+
+    recorder.stop();
+  });
+
   it('parameterizes meta href using custom parameterizeRoute', () => {
     const engine = new MockEngine();
     engine.eventsOnStart = [
       {
         type: RecordingEventType.Meta,
         timestamp: 1,
-        data: { href: 'https://example.com/teams/acme-corp/dashboard', width: 1920, height: 1080 },
+        data: {
+          href: 'https://example.com/teams/acme-corp/dashboard?email=alice@example.com#token',
+          width: 1920,
+          height: 1080,
+        },
       },
     ];
     const onEvent = vi.fn();
     const recorder = new Recorder({ engine, onEvent });
+    const parameterizeRoute = vi.fn((route: string) => route.replace(/\/teams\/[^/]+/, '/teams/:slug'));
     recorder.start({
-      parameterizeRoute: route => route.replace(/\/teams\/[^/]+/, '/teams/:slug'),
+      parameterizeRoute,
     });
+
+    expect(parameterizeRoute).toHaveBeenCalledWith('/teams/acme-corp/dashboard');
 
     const metaEvents = (onEvent.mock.calls as [RecordingEvent][])
       .map(([e]) => e)

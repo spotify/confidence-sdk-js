@@ -84,6 +84,33 @@ describe('collectUserAgentContext', () => {
     });
   });
 
+  it.each([
+    ['https://referrer.example/path?email=alice@example.com#token', 'https://referrer.example/path'],
+    ['https://referrer.example/path#token?email=alice@example.com', 'https://referrer.example/path'],
+    ['https://referrer.example/path?email=alice@example.com', 'https://referrer.example/path'],
+    ['https://referrer.example/path#token', 'https://referrer.example/path'],
+    ['', ''],
+    ['invalid-url?email=alice@example.com#token', 'invalid-url'],
+  ])('strips query/hash from referrer %s', (referrer, expected) => {
+    stubBrowser({ document: { referrer } });
+    expect(collectUserAgentContext()?.referrer).toBe(expected);
+  });
+
+  it('excludes query/hash from the initial document URI', () => {
+    stubBrowser({
+      window: {
+        location: {
+          origin: 'https://example.com',
+          pathname: '/path',
+          search: '?email=alice@example.com',
+          hash: '#token',
+          href: 'https://example.com/path?email=alice@example.com#token',
+        },
+      },
+    });
+    expect(collectUserAgentContext()?.uri).toBe('https://example.com/path');
+  });
+
   it('flags `mobile` platform type as mobile=true', () => {
     parse.mockReturnValueOnce({
       os: {},

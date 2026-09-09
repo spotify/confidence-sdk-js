@@ -1,4 +1,5 @@
 import Bowser from 'bowser';
+import { stripUrlQueryAndHash } from '../url';
 
 /**
  * JSON-shaped values accepted in a Context — matches `google.protobuf.Struct`.
@@ -31,6 +32,7 @@ export type UserAgentContext = {
   devicePixelRatio?: number;
   /** Initial document URI — without query/hash to avoid leaking PII. */
   uri?: string;
+  /** Document referrer — without query/hash to avoid leaking PII. */
   referrer?: string;
 };
 
@@ -65,6 +67,6 @@ export function collectUserAgentContext(): UserAgentContext | undefined {
     screenHeight: window.screen.height,
     devicePixelRatio: window.devicePixelRatio,
     uri: `${window.location.origin}${window.location.pathname}`,
-    referrer: document.referrer,
+    referrer: stripUrlQueryAndHash(document.referrer),
   };
 }
