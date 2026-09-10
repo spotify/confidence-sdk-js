@@ -254,7 +254,7 @@ describe('worker/core', () => {
   });
 
   describe('lifecycle after active', () => {
-    it('uses a fresh header credential after a stale session hint fails', async () => {
+    it('uses a fresh header credential when a session hint fails protocol negotiation', async () => {
       const { fetchHarness, wsHarness } = setupBackend(
         { sessionId: 'fresh-session', sessionToken: 'fresh-sensitive' },
         (protocols, connectionIndex) => (connectionIndex === 0 ? '' : protocols[0]),
@@ -292,6 +292,29 @@ describe('worker/core', () => {
         expect(log).not.toContain('fresh-sensitive');
         expect(log).not.toContain('ZnJlc2gtc2Vuc2l0aXZl');
       }
+    });
+
+    it('stops when a hinted session upgrades with recording.v1 then immediately closes with 4401', async () => {
+      const { fetchHarness, wsHarness } = setupBackend();
+      // The API checks session state after the upgrade. A valid token for a missing or
+      // closed session therefore opens successfully before the server rejects it.
+      wsHarness.server.on('connection', () => {
+        setTimeout(() => wsHarness.server.close({ code: 4401, reason: 'Unauthorized', wasClean: true }), 0);
+      });
+      const { registerPort } = await loadCore();
+      const port = createMockPort();
+      registerPort(port.adapter);
+
+      port.tabSends(helloMessage({ sessionIdHint: 'stale-session', sessionTokenHint: 'stale-sensitive' }));
+      const welcome = await port.next<WelcomeMessage>(isType('welcome'));
+      const dead = await port.next<DeadMessage>(isType('dead'));
+
+      expect(welcome.result).toEqual({ sessionId: 'stale-session', sessionToken: 'stale-sensitive' });
+      expect(dead.reason).toBe('close code=4401 wasClean=true');
+      expect(fetchHarness.calls).toHaveLength(0);
+      expect(wsHarness.protocolOffers).toEqual([['recording.v1', 'auth.stale-sensitive']]);
+      expect(wsHarness.connections).toHaveLength(1);
+      expect(wsHarness.connections[0].url).toBe(WS_URL);
     });
 
     it('stops after one failed header-authenticated reconnect', async () => {
