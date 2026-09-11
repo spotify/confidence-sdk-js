@@ -11,13 +11,13 @@ const SDK_VERSION = '0.3.22'; // x-release-please-version
 export type ConfidenceProviderFactoryOptions = {
   /** Credentials identifying the client and the flags available to it */
   clientSecret: string;
-  /** Milliseconds to wait for a resolve. Past it, flags evaluate to their defaults */
+  /** Deadline in milliseconds for each resolve or event request */
   timeout: number;
   /** Pins flag resolution and event publishing to a region. Defaults to the global region */
   region?: 'eu' | 'us';
   /** fetch-compatible transport. Defaults to the global fetch */
   fetchImplementation?: typeof fetch;
-  /** Reports resolve failures. Defaults to the console in development */
+  /** Reports resolve and event failures. Defaults to the console in development */
   logger?: Logger;
 };
 

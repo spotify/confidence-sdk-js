@@ -1,11 +1,16 @@
 /**
  * @jest-environment jsdom
  */
-import { ErrorCode, ProviderEvents } from '@openfeature/web-sdk';
+import { ErrorCode, OpenFeature, ProviderEvents } from '@openfeature/web-sdk';
 import { ConfidenceClient } from '@spotify-confidence/sdk';
 import { ConfidenceWebProvider } from './ConfidenceWebProvider';
 
 const SECRET = 'test-client-secret';
+const providers: ConfidenceWebProvider[] = [];
+afterEach(async () => {
+  await OpenFeature.clearProviders();
+  await Promise.all(providers.splice(0).map(provider => provider.onClose()));
+});
 
 /** Canonical protobuf JSON, as the resolver emits it: defaults omitted. */
 const RESOLVE_RESPONSE = {
@@ -70,7 +75,9 @@ function createProvider(
   { timeout = 1000, applyDebounce = 10 }: { timeout?: number; applyDebounce?: number } = {},
 ): ConfidenceWebProvider {
   const client = new ConfidenceClient({ clientSecret: SECRET, fetch: fetchImpl as unknown as typeof fetch });
-  return new ConfidenceWebProvider(client, { timeout, applyDebounce });
+  const provider = new ConfidenceWebProvider(client, { timeout, applyDebounce });
+  providers.push(provider);
+  return provider;
 }
 
 describe('ConfidenceWebProvider', () => {
@@ -222,6 +229,121 @@ describe('ConfidenceWebProvider', () => {
   describe('exposure', () => {
     beforeEach(() => jest.useFakeTimers());
     afterEach(() => jest.useRealTimers());
+
+    it('flushes exposure on page hide and removes the handler on close', async () => {
+      const fetchImpl = mockFetch();
+      const provider = createProvider(fetchImpl);
+      await provider.initialize({});
+      provider.resolveStringEvaluation('tutorial-feature.title', 'default');
+      window.dispatchEvent(new Event('pagehide'));
+      expect(applyRequests(fetchImpl)).toHaveLength(1);
+      await provider.onClose();
+      window.dispatchEvent(new Event('pagehide'));
+      expect(applyRequests(fetchImpl)).toHaveLength(1);
+    });
+
+    it('retries a transient apply failure once using the original token', async () => {
+      const fetchImpl = mockFetch();
+      const provider = createProvider(fetchImpl);
+      await provider.initialize({});
+      fetchImpl.mockRejectedValueOnce(new Error('offline'));
+      provider.resolveStringEvaluation('tutorial-feature.title', 'default');
+      await jest.advanceTimersByTimeAsync(260);
+      expect(applyRequests(fetchImpl)).toHaveLength(2);
+      expect(applyRequests(fetchImpl).map(request => request.resolveToken)).toEqual(['AQIDBP8=', 'AQIDBP8=']);
+      provider.resolveStringEvaluation('tutorial-feature.title', 'default');
+      await jest.advanceTimersByTimeAsync(1000);
+      expect(applyRequests(fetchImpl)).toHaveLength(2);
+    });
+
+    it('waits for an in-flight exposure on close', async () => {
+      const fetchImpl = mockFetch();
+      const provider = createProvider(fetchImpl);
+      await provider.initialize({});
+      let finish!: (response: Response) => void;
+      fetchImpl.mockImplementationOnce(
+        () =>
+          new Promise(resolve => {
+            finish = resolve;
+          }),
+      );
+      provider.resolveStringEvaluation('tutorial-feature.title', 'default');
+      let closed = false;
+      const closing = provider.onClose().then(() => {
+        closed = true;
+      });
+      await Promise.resolve();
+      expect(closed).toBe(false);
+      finish(jsonResponse({}));
+      await closing;
+      expect(closed).toBe(true);
+    });
+
+    it('flushes on visibility loss', async () => {
+      const visibility = jest.spyOn(document, 'visibilityState', 'get').mockReturnValue('hidden');
+      try {
+        const fetchImpl = mockFetch();
+        const provider = createProvider(fetchImpl);
+        await provider.initialize({});
+        provider.resolveStringEvaluation('tutorial-feature.title', 'default');
+        document.dispatchEvent(new Event('visibilitychange'));
+        expect(applyRequests(fetchImpl)).toHaveLength(1);
+      } finally {
+        visibility.mockRestore();
+      }
+    });
+
+    it('does not automatically retry a permanent rejection', async () => {
+      const fetchImpl = mockFetch();
+      const provider = createProvider(fetchImpl);
+      await provider.initialize({});
+      fetchImpl.mockResolvedValueOnce({ ...jsonResponse({}), ok: false, status: 403 });
+      provider.resolveStringEvaluation('tutorial-feature.title', 'default');
+      await jest.advanceTimersByTimeAsync(1000);
+      expect(applyRequests(fetchImpl)).toHaveLength(1);
+    });
+
+    it('bounds retries and allows a later evaluation to retry failed exposure', async () => {
+      const fetchImpl = mockFetch();
+      const provider = createProvider(fetchImpl);
+      await provider.initialize({});
+      fetchImpl.mockRejectedValueOnce(new Error('offline')).mockRejectedValueOnce(new Error('offline'));
+      provider.resolveStringEvaluation('tutorial-feature.title', 'default');
+      await jest.advanceTimersByTimeAsync(1000);
+      expect(applyRequests(fetchImpl)).toHaveLength(2);
+      provider.resolveStringEvaluation('tutorial-feature.title', 'default');
+      await jest.advanceTimersByTimeAsync(1000);
+      expect(applyRequests(fetchImpl)).toHaveLength(3);
+    });
+
+    it('keeps outgoing exposure attached to its resolve while context changes', async () => {
+      const fetchImpl = mockFetch();
+      const provider = createProvider(fetchImpl);
+      await provider.initialize({ targetingKey: 'user-1' });
+      provider.resolveStringEvaluation('tutorial-feature.title', 'default');
+      fetchImpl.mockResolvedValueOnce(jsonResponse({ ...RESOLVE_RESPONSE, resolveToken: 'BQYH' }));
+      await provider.onContextChange({ targetingKey: 'user-1' }, { targetingKey: 'user-2' });
+      provider.resolveStringEvaluation('tutorial-feature.title', 'default');
+      await provider.onClose();
+      expect(applyRequests(fetchImpl).map(request => request.resolveToken)).toEqual(['AQIDBP8=', 'BQYH']);
+    });
+
+    it('bounds exposure attempts during shutdown', async () => {
+      const fetchImpl = mockFetch();
+      const provider = createProvider(fetchImpl, { timeout: 100 });
+      await provider.initialize({});
+      fetchImpl.mockImplementation(
+        (_url: any, init: any) =>
+          new Promise<Response>((_resolve, reject) => {
+            init.signal.addEventListener('abort', () => reject(init.signal.reason));
+          }),
+      );
+      provider.resolveStringEvaluation('tutorial-feature.title', 'default');
+      const closing = provider.onClose();
+      await jest.advanceTimersByTimeAsync(450);
+      await closing;
+      expect(applyRequests(fetchImpl)).toHaveLength(2);
+    });
 
     it('applies every flag evaluated within the debounce window in one request', async () => {
       const fetchImpl = mockFetch();
@@ -441,5 +563,35 @@ describe('ConfidenceWebProvider', () => {
       // Let the fire-and-forget promise settle so a rejection would surface.
       await new Promise(resolve => setTimeout(resolve, 0));
     });
+  });
+
+  it('evaluates, reconciles context, and tracks through an OpenFeature client', async () => {
+    const fetchImpl = mockFetch();
+    const provider = createProvider(fetchImpl, { applyDebounce: 0 });
+    await OpenFeature.setContext({ targetingKey: 'user-1' });
+    await OpenFeature.setProviderAndWait(provider);
+    const client = OpenFeature.getClient();
+    expect(client.getStringValue('tutorial-feature.title', 'default')).toBe('Hello');
+    await OpenFeature.setContext({ targetingKey: 'user-2' });
+    client.track('checkout', { value: 42 });
+    expect(resolveRequests(fetchImpl).at(-1).evaluationContext).toEqual({ targeting_key: 'user-2' });
+    expect(requestsTo(fetchImpl, '/v1/events:publish')[0].events[0].payload).toEqual({
+      value: 42,
+      context: { targeting_key: 'user-2' },
+    });
+  });
+
+  it('reports failure and recovers on a new context through OpenFeature', async () => {
+    const fetchImpl = mockFetch();
+    const provider = createProvider(fetchImpl);
+    OpenFeature.setLogger({ error: jest.fn(), warn: jest.fn(), info: jest.fn(), debug: jest.fn() });
+    fetchImpl.mockRejectedValueOnce(new Error('offline'));
+    await expect(OpenFeature.setProviderAndWait(provider)).rejects.toThrow();
+    const client = OpenFeature.getClient();
+    expect(client.providerStatus).toBe('ERROR');
+    expect(client.getStringValue('tutorial-feature.title', 'default')).toBe('default');
+    await OpenFeature.setContext({ targetingKey: 'recovered' });
+    expect(client.providerStatus).toBe('READY');
+    expect(client.getStringValue('tutorial-feature.title', 'default')).toBe('Hello');
   });
 });

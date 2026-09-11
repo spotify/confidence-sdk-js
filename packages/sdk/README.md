@@ -144,7 +144,7 @@ await client.publish({
 
 `payload.context` is what Confidence attributes an event by — it joins the event to the flag exposures for the same targeting context. Nothing enforces it, but an event published without it cannot be attributed.
 
-Nothing is queued: the request goes out on call, and in a browser it uses `keepalive` so an event fired just before a navigation still arrives. If you want batching, build the queue on top and publish an array:
+Nothing is queued: the request goes out on call. Small publish and apply requests use `keepalive` to allow delivery during navigation, subject to browser quotas and network availability. If you want batching, build the queue on top and publish an array:
 
 ```ts
 await client.publish([

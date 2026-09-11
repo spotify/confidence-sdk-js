@@ -11,7 +11,7 @@ const SDK_VERSION = '0.3.22'; // x-release-please-version
 export type ConfidenceWebProviderOptions = {
   /** Credentials identifying the client and the flags available to it */
   clientSecret: string;
-  /** Milliseconds to wait for a resolve. Past it, flags evaluate to their defaults */
+  /** Deadline in milliseconds for each resolve, exposure, or event request */
   timeout: number;
   /** Pins flag resolution and event publishing to a region. Defaults to the global region */
   region?: 'eu' | 'us';
@@ -24,7 +24,7 @@ export type ConfidenceWebProviderOptions = {
    * Defaults to 10.
    */
   applyDebounce?: number;
-  /** Reports resolve and apply failures. Defaults to the console in development */
+  /** Reports resolve, exposure, and event failures. Defaults to the console in development */
   logger?: Logger;
 };
 

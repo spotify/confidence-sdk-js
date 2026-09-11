@@ -29,6 +29,9 @@ declare class ConfidenceWebProvider implements Provider {
      * owns provider state: only the newest one may write it.
      */
     private pending?;
+    private readonly writes;
+    private readonly flushExposure;
+    private readonly onVisibilityChange;
     constructor(client: ConfidenceClient, { timeout, applyDebounce }: {
         timeout: number;
         applyDebounce?: number;
@@ -64,10 +67,11 @@ declare class ConfidenceWebProvider implements Provider {
      * which may be older than what the event should be attributed to.
      *
      * The OpenFeature signature is synchronous, so this cannot report back: the
-     * request is fired and forgotten. `publish` never rejects and logs its own
-     * failures, so nothing is lost silently.
+     * request is started immediately and drained on close. Failures are reported
+     * through the configured logger.
      */
     track(trackingEventName: string, context?: EvaluationContext, trackingEventDetails?: TrackingEventDetails): void;
+    private write;
 }
 
 /**
@@ -76,7 +80,7 @@ declare class ConfidenceWebProvider implements Provider {
 type ConfidenceWebProviderOptions = {
     /** Credentials identifying the client and the flags available to it */
     clientSecret: string;
-    /** Milliseconds to wait for a resolve. Past it, flags evaluate to their defaults */
+    /** Deadline in milliseconds for each resolve, exposure, or event request */
     timeout: number;
     /** Pins flag resolution and event publishing to a region. Defaults to the global region */
     region?: 'eu' | 'us';
@@ -89,7 +93,7 @@ type ConfidenceWebProviderOptions = {
      * Defaults to 10.
      */
     applyDebounce?: number;
-    /** Reports resolve and apply failures. Defaults to the console in development */
+    /** Reports resolve, exposure, and event failures. Defaults to the console in development */
     logger?: Logger;
 };
 /**

@@ -16,6 +16,7 @@ declare class ConfidenceServerProvider implements Provider {
     status: ProviderStatus;
     private readonly client;
     private readonly timeout;
+    private readonly writes;
     constructor(client: ConfidenceClient, { timeout }: {
         timeout: number;
     });
@@ -32,10 +33,11 @@ declare class ConfidenceServerProvider implements Provider {
      * Sends an event to Confidence.
      *
      * The OpenFeature signature is synchronous, so this cannot report back: the
-     * request is fired and forgotten. `publish` never rejects and logs its own
-     * failures, so nothing is lost silently.
+     * request is started immediately and drained on close. Failures are reported
+     * through the configured logger.
      */
     track(trackingEventName: string, context?: EvaluationContext, trackingEventDetails?: TrackingEventDetails): void;
+    onClose(): Promise<void>;
 }
 
 /**
@@ -44,13 +46,13 @@ declare class ConfidenceServerProvider implements Provider {
 type ConfidenceProviderFactoryOptions = {
     /** Credentials identifying the client and the flags available to it */
     clientSecret: string;
-    /** Milliseconds to wait for a resolve. Past it, flags evaluate to their defaults */
+    /** Deadline in milliseconds for each resolve or event request */
     timeout: number;
     /** Pins flag resolution and event publishing to a region. Defaults to the global region */
     region?: 'eu' | 'us';
     /** fetch-compatible transport. Defaults to the global fetch */
     fetchImplementation?: typeof fetch;
-    /** Reports resolve failures. Defaults to the console in development */
+    /** Reports resolve and event failures. Defaults to the console in development */
     logger?: Logger;
 };
 /**

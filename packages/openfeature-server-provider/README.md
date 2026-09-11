@@ -54,11 +54,11 @@ const provider = createConfidenceServerProvider({
 
 ## Timeout
 
-The timeout option is used to set the timeout for the network request to the Confidence backend. When the timeout is reached, default values will be returned.
+The timeout option bounds each resolve and event request. A timed-out resolve makes flag evaluations return defaults.
 
 ## Logging
 
-Resolve failures are reported to the console in development, and go unreported
+Resolve and event failures are reported to the console in development, and go unreported
 otherwise. Pass a `logger` — anything with a subset of `console`'s methods — to
 report them wherever you collect diagnostics:
 
@@ -93,3 +93,9 @@ per call.
 Events are sent one request per event, immediately, with no batching. The tracking
 API returns `void`, so failures cannot be reported back to the caller; they are
 written to the [logger](#logging) instead.
+
+Events are not automatically retried because an ambiguous failure could produce
+duplicates. Await `OpenFeature.clearProviders()` before shutting down to wait for
+pending event requests. In request-scoped runtimes, arrange for shutdown to be
+awaited or registered with the runtime's background-task mechanism before the
+request ends.

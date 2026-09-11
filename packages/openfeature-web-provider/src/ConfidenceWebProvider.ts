@@ -51,6 +51,13 @@ export class ConfidenceWebProvider implements Provider {
    * owns provider state: only the newest one may write it.
    */
   private pending?: AbortController;
+  private readonly writes = new Set<Promise<void>>();
+  private readonly flushExposure = () => {
+    void this.exposure?.flush();
+  };
+  private readonly onVisibilityChange = () => {
+    if (document.visibilityState === 'hidden') this.flushExposure();
+  };
 
   constructor(client: ConfidenceClient, { timeout, applyDebounce = 10 }: { timeout: number; applyDebounce?: number }) {
     this.client = client;
@@ -65,6 +72,8 @@ export class ConfidenceWebProvider implements Provider {
    * provider in ERROR.
    */
   async initialize(context?: EvaluationContext): Promise<void> {
+    if (typeof document !== 'undefined') document.addEventListener('visibilitychange', this.onVisibilityChange);
+    if (typeof window !== 'undefined') window.addEventListener('pagehide', this.flushExposure);
     await this.resolve(context ?? {}, 'Provider initialization failed');
   }
 
@@ -84,11 +93,14 @@ export class ConfidenceWebProvider implements Provider {
 
   /** Abandons any in-flight resolve and records exposure collected so far */
   async onClose(): Promise<void> {
+    if (typeof document !== 'undefined') document.removeEventListener('visibilitychange', this.onVisibilityChange);
+    if (typeof window !== 'undefined') window.removeEventListener('pagehide', this.flushExposure);
     this.pending?.abort();
     this.pending = undefined;
     this.exposure?.flush();
     this.exposure = undefined;
     this.bundle = undefined;
+    await Promise.all(this.writes);
   }
 
   /** Resolves and stores the result. False when a newer resolve took the state over. */
@@ -125,7 +137,10 @@ export class ConfidenceWebProvider implements Provider {
     this.exposure?.flush();
     this.bundle = bundle;
     this.exposure = bundle.resolveToken
-      ? new ExposureBatch(this.client, bundle.resolveToken, this.applyDebounce)
+      ? new ExposureBatch(
+          flags => this.write(signal => this.client.apply(bundle.resolveToken, flags, { signal }), true),
+          this.applyDebounce,
+        )
       : undefined;
   }
 
@@ -179,16 +194,58 @@ export class ConfidenceWebProvider implements Provider {
    * which may be older than what the event should be attributed to.
    *
    * The OpenFeature signature is synchronous, so this cannot report back: the
-   * request is fired and forgotten. `publish` never rejects and logs its own
-   * failures, so nothing is lost silently.
+   * request is started immediately and drained on close. Failures are reported
+   * through the configured logger.
    */
   track(trackingEventName: string, context?: EvaluationContext, trackingEventDetails?: TrackingEventDetails): void {
-    void this.client.publish({
-      name: trackingEventName,
-      // Context last: tracking details are an open record, so they may carry a
-      // `context` key of their own, which must not displace the real one.
-      payload: { ...trackingEventDetails, context: convertContext(context ?? {}) },
+    void this.write(signal =>
+      this.client.publish(
+        {
+          name: trackingEventName,
+          // Context last: tracking details are an open record, so they may carry a
+          // `context` key of their own, which must not displace the real one.
+          payload: { ...trackingEventDetails, context: convertContext(context ?? {}) },
+        },
+        { signal },
+      ),
+    );
+  }
+
+  private write(
+    operation: (signal: AbortSignal) => Promise<ConfidenceClient.WriteResult>,
+    retry = false,
+  ): Promise<ConfidenceClient.WriteResult> {
+    const run = async () => {
+      for (let attempt = 0; ; attempt++) {
+        const controller = new AbortController();
+        const timer = setTimeout(
+          () => controller.abort(new DOMException('Write timeout', 'TimeoutError')),
+          this.timeout,
+        );
+        let result: ConfidenceClient.WriteResult;
+        try {
+          result = await operation(controller.signal);
+        } finally {
+          clearTimeout(timer);
+        }
+        // Exposure is idempotent for a resolve token. Events are not retried:
+        // a lost response could otherwise create a duplicate event.
+        if (
+          result.ok ||
+          !retry ||
+          attempt >= 1 ||
+          (result.status !== undefined && result.status !== 429 && result.status < 500)
+        )
+          return result;
+        await new Promise(resolve => setTimeout(resolve, 250));
+      }
+    };
+    const result = run();
+    const pending = result.then(() => {
+      this.writes.delete(pending);
     });
+    this.writes.add(pending);
+    return result;
   }
 }
 
@@ -205,8 +262,7 @@ class ExposureBatch {
   private timer?: ReturnType<typeof setTimeout>;
 
   constructor(
-    private readonly client: ConfidenceClient,
-    private readonly resolveToken: string,
+    private readonly apply: (flags: string[]) => Promise<ConfidenceClient.WriteResult>,
     private readonly debounce: number,
   ) {}
 
@@ -226,15 +282,15 @@ class ExposureBatch {
     this.timer = setTimeout(() => this.flush(), this.debounce);
   }
 
-  flush(): void {
+  async flush(): Promise<void> {
     clearTimeout(this.timer);
     this.timer = undefined;
     if (this.pending.size === 0) return;
     const flagNames = Array.from(this.pending);
     this.pending.clear();
-    // Fire and forget: `apply` never rejects and logs its own failures, and no
-    // evaluation should wait on exposure being recorded.
-    void this.client.apply(this.resolveToken, flagNames);
+    const result = await this.apply(flagNames);
+    // A later evaluation may try again after the bounded retry was exhausted.
+    if (!result.ok) flagNames.forEach(name => this.applied.delete(name));
   }
 }
 

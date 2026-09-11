@@ -30,6 +30,7 @@ export class ConfidenceServerProvider implements Provider {
 
   private readonly client: ConfidenceClient;
   private readonly timeout: number;
+  private readonly writes = new Set<Promise<void>>();
 
   constructor(client: ConfidenceClient, { timeout }: { timeout: number }) {
     this.client = client;
@@ -93,16 +94,31 @@ export class ConfidenceServerProvider implements Provider {
    * Sends an event to Confidence.
    *
    * The OpenFeature signature is synchronous, so this cannot report back: the
-   * request is fired and forgotten. `publish` never rejects and logs its own
-   * failures, so nothing is lost silently.
+   * request is started immediately and drained on close. Failures are reported
+   * through the configured logger.
    */
   track(trackingEventName: string, context?: EvaluationContext, trackingEventDetails?: TrackingEventDetails): void {
-    void this.client.publish({
-      name: trackingEventName,
-      // Context last: tracking details are an open record, so they may carry a
-      // `context` key of their own, which must not displace the real one.
-      payload: { ...trackingEventDetails, context: convertContext(context ?? {}) },
-    });
+    const controller = new AbortController();
+    const timer = setTimeout(() => controller.abort(new DOMException('Write timeout', 'TimeoutError')), this.timeout);
+    const pending = this.client
+      .publish(
+        {
+          name: trackingEventName,
+          // Context last: tracking details are an open record, so they may carry a
+          // `context` key of their own, which must not displace the real one.
+          payload: { ...trackingEventDetails, context: convertContext(context ?? {}) },
+        },
+        { signal: controller.signal },
+      )
+      .then(() => {
+        clearTimeout(timer);
+        this.writes.delete(pending);
+      });
+    this.writes.add(pending);
+  }
+
+  async onClose(): Promise<void> {
+    await Promise.all(this.writes);
   }
 }
 

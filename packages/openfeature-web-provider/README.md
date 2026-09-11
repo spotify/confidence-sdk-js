@@ -65,11 +65,11 @@ const provider = createConfidenceWebProvider({
 
 ## Timeout
 
-The timeout option is used to set the timeout for the network request to the Confidence backend. When the timeout is reached, default values will be returned.
+The timeout option bounds each resolve, exposure, and event request. A timed-out resolve makes flag evaluations return defaults. Each exposure retry gets its own deadline.
 
 ## Logging
 
-Resolve and apply failures are reported to the console in development, and go
+Resolve, exposure, and event failures are reported to the console in development, and go
 unreported otherwise. Pass a `logger` — anything with a subset of `console`'s
 methods — to report them wherever you collect diagnostics:
 
@@ -112,7 +112,21 @@ The OpenFeature client passes the current evaluation context along, so events ar
 attributed to the same context flags are resolved against — there is no separate
 context to keep in sync.
 
-Events are sent one request per event, immediately, with no batching. In a browser
-the request uses `keepalive`, so an event fired just before a navigation still
-arrives. The tracking API returns `void`, so failures cannot be reported back to
-the caller; they are written to the [logger](#logging) instead.
+Events are sent immediately, one request per event, without automatic retries
+because an ambiguous failure could otherwise produce duplicates. Small event and
+exposure requests use `keepalive`; delivery remains subject to browser quotas and
+network availability. The tracking API returns `void`, so failures are reported
+through the [logger](#logging).
+
+## Exposure delivery and shutdown
+
+Pending exposure is flushed when the page becomes hidden or receives `pagehide`.
+An exposure request is retried once after 250ms on transport failures, timeouts,
+HTTP 429, or HTTP 5xx. Retries use the original resolve token. After a failed
+delivery, a later evaluation can attempt exposure again. Successful exposure is
+deduplicated per resolve.
+
+Provider shutdown flushes exposure and waits for pending exposure and event
+requests, including the bounded retry. Await `OpenFeature.clearProviders()` when
+explicitly shutting down. Browser lifecycle events cannot await shutdown and
+delivery during navigation is best effort.

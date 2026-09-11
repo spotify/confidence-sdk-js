@@ -1,4 +1,4 @@
-import { ErrorCode, ProviderStatus } from '@openfeature/server-sdk';
+import { ErrorCode, OpenFeature, ProviderStatus } from '@openfeature/server-sdk';
 import { ConfidenceClient } from '@spotify-confidence/sdk';
 import { ConfidenceServerProvider } from './ConfidenceServerProvider';
 
@@ -47,6 +47,54 @@ function createProvider(fetchImpl: jest.Mock | typeof fetch, timeout = 1000): Co
 }
 
 describe('ConfidenceServerProvider', () => {
+  it('evaluates and tracks with merged context through OpenFeature, then drains on close', async () => {
+    const fetchImpl = mockFetch();
+    const provider = createProvider(fetchImpl);
+    await OpenFeature.setProviderAndWait(provider);
+    OpenFeature.setContext({ country: 'SE' });
+    try {
+      const client = OpenFeature.getClient();
+      expect(await client.getStringValue('tutorial-feature.title', 'default', { targetingKey: 'user-1' })).toBe(
+        'Hello',
+      );
+      client.track('checkout', { targetingKey: 'user-1' }, { value: 42 });
+      await provider.onClose();
+      expect(resolveRequests(fetchImpl)[0].evaluationContext).toEqual({ country: 'SE', targeting_key: 'user-1' });
+      expect(resolveRequests(fetchImpl)[1].events[0].payload).toEqual({
+        value: 42,
+        context: { country: 'SE', targeting_key: 'user-1' },
+      });
+    } finally {
+      await OpenFeature.clearProviders();
+      OpenFeature.setContext({});
+    }
+  });
+
+  it('bounds pending tracking requests and waits for them on close', async () => {
+    jest.useFakeTimers();
+    try {
+      const fetchImpl = jest.fn(
+        (_url: any, init: any) =>
+          new Promise<Response>((_resolve, reject) => {
+            init.signal.addEventListener('abort', () => reject(init.signal.reason));
+          }),
+      );
+      const provider = createProvider(fetchImpl, 100);
+      provider.track('checkout', {});
+      let closed = false;
+      const closing = provider.onClose().then(() => {
+        closed = true;
+      });
+      await jest.advanceTimersByTimeAsync(99);
+      expect(closed).toBe(false);
+      await jest.advanceTimersByTimeAsync(1);
+      await closing;
+      expect(fetchImpl).toHaveBeenCalledTimes(1);
+    } finally {
+      jest.useRealTimers();
+    }
+  });
+
   it('is ready without initializing: each evaluation stands on its own', () => {
     expect(createProvider(mockFetch()).status).toEqual(ProviderStatus.READY);
   });

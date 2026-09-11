@@ -25,12 +25,11 @@ function serviceUrl(service: 'resolver' | 'events', region?: ConfidenceClient.Re
 /**
  * Browsers share one 64KB quota across all in-flight `keepalive` bodies and fail
  * the fetch outright when it is exceeded, so only bodies comfortably under it
- * are sent that way. Compared against a string length, which counts UTF-16 code
- * units rather than bytes — hence the margin.
+ * are sent that way. The quota is measured in encoded bytes.
  */
-const KEEPALIVE_MAX_BODY_LENGTH = 50_000;
+const KEEPALIVE_MAX_BODY_BYTES = 50_000;
 
-const DEFAULT_VERSION = '0.3.22'; // x-release-please-version
+const DEFAULT_VERSION = '0.4.0'; // x-release-please-version
 
 // TODO: a dedicated SDK id for the thin client would make its own resolve
 // traffic distinguishable from the rest of the JS SDK, the way the provider ids
@@ -111,7 +110,7 @@ export namespace ConfidenceClient {
   export type WriteResult =
     | { ok: true }
     | {
-        /** Nothing was recorded, or — when `errors` is set — not all of it was */
+        /** Delivery was not confirmed, or — when `errors` is set — some events were rejected */
         ok: false;
         /** `TIMEOUT` when the signal aborted with a `TimeoutError` */
         errorCode: 'TIMEOUT' | 'GENERAL';
@@ -285,7 +284,7 @@ export class ConfidenceClient {
         sendTime: now,
         sdk: this.sdk,
       };
-      await this.post(`${this.resolverUrl}/v1/flags:apply`, ApplyFlagsRequest.toJSON(request), options?.signal);
+      await this.post(`${this.resolverUrl}/v1/flags:apply`, ApplyFlagsRequest.toJSON(request), options?.signal, true);
       return { ok: true };
     } catch (err) {
       this.logger?.warn?.('Apply failed, exposure was not recorded. %s', String(err));
@@ -296,9 +295,9 @@ export class ConfidenceClient {
   /**
    * Publish one event, or a batch of them in a single request.
    *
-   * Nothing is queued: the request goes out on call, so nothing is lost when the
-   * page goes away — and in a browser it is made with `keepalive`, so it also
-   * survives a navigation that starts while it is in flight. A batching layer
+   * Nothing is queued: the request goes out on call. Small writes use
+   * `keepalive` to allow delivery during navigation, subject to browser quotas
+   * and network availability. A batching layer
    * built on top owns the queue, and should set each event's
    * {@link (ConfidenceClient:namespace).Event.eventTime | eventTime} so a flush
    * does not restamp the batch.
@@ -344,7 +343,20 @@ export class ConfidenceClient {
 
       // The publish endpoint answers 200 and reports per-event failures in the
       // body, so an ok response is not yet a recorded event.
-      const { errors } = (await response.json().catch(() => ({}))) as { errors?: PublishError[] };
+      const body = await response.text();
+      const result: unknown = body.trim() ? JSON.parse(body) : {};
+      if (!result || typeof result !== 'object' || Array.isArray(result)) {
+        throw new Error('Invalid publish response');
+      }
+      const { errors } = result as { errors?: PublishError[] };
+      if (errors !== undefined && !Array.isArray(errors)) throw new Error('Invalid publish errors');
+      if (
+        errors?.some(
+          error => !error || !Number.isInteger(error.index) || error.index < 0 || error.index >= events.length,
+        )
+      ) {
+        throw new Error('Invalid publish error index');
+      }
       if (errors?.length) {
         const rejected = errors.map(({ index, reason, message }) => ({
           index,
@@ -373,7 +385,7 @@ export class ConfidenceClient {
       headers: { 'Content-Type': 'application/json' },
       body: payload,
       signal,
-      keepalive: keepalive && payload.length <= KEEPALIVE_MAX_BODY_LENGTH,
+      keepalive: keepalive && new Blob([payload]).size <= KEEPALIVE_MAX_BODY_BYTES,
     });
     if (!response.ok) {
       // The resolver returns diagnostics as the body (e.g. "client secret not

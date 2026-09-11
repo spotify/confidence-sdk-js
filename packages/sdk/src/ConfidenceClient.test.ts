@@ -491,16 +491,34 @@ describe('ConfidenceClient', () => {
       expect((fetchImpl as any).mock.calls[0][1].keepalive).toBe(false);
     });
 
-    it('does not use keepalive for resolve or apply', async () => {
-      // Only publishing races page unload; a resolve nobody is waiting for is
-      // worth nothing, and keepalive would spend the shared browser quota.
+    it('uses keepalive for exposure but not resolution', async () => {
+      // Writes can outlive the page; resolution does not need to consume the
+      // shared keepalive quota.
       const fetchImpl = mockTransport();
       const instance = client(fetchImpl);
       await instance.resolve(['promo-banner'], {});
       await instance.apply('AQIDBP8=', 'promo-banner');
       expect((fetchImpl as any).mock.calls[0][1].keepalive).toBe(false);
-      expect((fetchImpl as any).mock.calls[1][1].keepalive).toBe(false);
+      expect((fetchImpl as any).mock.calls[1][1].keepalive).toBe(true);
     });
+
+    it('measures keepalive bodies in UTF-8 bytes', async () => {
+      const fetchImpl = mockTransport({});
+      await client(fetchImpl).publish({ name: 'test', payload: { text: '€'.repeat(20_000) } });
+      expect((fetchImpl as any).mock.calls[0][1].keepalive).toBe(false);
+    });
+
+    it('does not report success when the publish response is malformed', async () => {
+      const fetchImpl = mockTransport(undefined, { body: 'not json' });
+      await expect(client(fetchImpl).publish({ name: 'test' })).resolves.toMatchObject({ ok: false });
+    });
+
+    it.each([null, [], { errors: {} }, { errors: [{ index: 3 }] }])(
+      'rejects an invalid publish response: %j',
+      async body => {
+        await expect(client(mockTransport(body)).publish({ name: 'test' })).resolves.toMatchObject({ ok: false });
+      },
+    );
 
     it('reports an event the publisher rejected in an HTTP 200', async () => {
       // The publish endpoint answers 200 and lists per-event failures in the
