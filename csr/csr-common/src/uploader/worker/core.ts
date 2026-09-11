@@ -41,9 +41,26 @@ interface PortHandle {
   debugLogs: boolean;
   /** Set when the worker minted a fresh tabId for this port (tab duplication). Sent to the tab in welcome. */
   newTabId?: string;
+  /**
+   * Whether this port's hello has been answered with a welcome or a dead. A port still
+   * waiting must be answered before its tab's welcome timeout expires, and a port already
+   * answered must not be sent a late `dead` — the tab reads that as termination and
+   * dismantles a healthy recorder.
+   */
+  answered: boolean;
+  /**
+   * Set when this port is told its session was replaced, and cleared by the first frame the
+   * tab emits after resetting (`eventCounter === 0`, its fresh full snapshot). Frames posted
+   * before the tab processed `session-restarted` still carry the previous recording's
+   * counters and reference nodes from a snapshot the new recording never received, so they
+   * are dropped rather than forwarded.
+   */
+  awaitingReset: boolean;
 }
 
 const IDLE_GRACE_MS = 5_000;
+const RECOVERY_RETRY_MS = 5_000;
+const RECOVERY_RETRY_MAX_MS = 5 * 60_000;
 
 type State =
   | { phase: 'init' }
@@ -60,6 +77,18 @@ type State =
       client: Client;
       sessionId: string;
       sessionToken: string;
+    }
+  | {
+      phase: 'interrupted';
+      client: Client;
+      previousSessionId: string;
+      retryAt: number;
+      nextRetryDelayMs: number;
+    }
+  | {
+      phase: 'restarting';
+      client: Client;
+      previousSessionId: string;
     }
   | { phase: 'skipping' }
   | { phase: 'dead'; reason: string };
@@ -95,7 +124,13 @@ let lockedConfig: {
 
 export function registerPort(adapter: PortAdapter): void {
   cancelIdleTimer();
-  const handle: PortHandle = { port: adapter, hello: null, debugLogs: false };
+  const handle: PortHandle = {
+    port: adapter,
+    hello: null,
+    debugLogs: false,
+    answered: false,
+    awaitingReset: false,
+  };
   ports.push(handle);
   adapter.onmessage((data: unknown) => {
     handleMessage(handle, data as IncomingMessage);
@@ -115,7 +150,7 @@ function handleMessage(handle: PortHandle, message: IncomingMessage): void {
       onHello(handle);
       return;
     case 'frame':
-      onFrame(message.frame);
+      onFrame(handle, message.frame);
       return;
     case 'bye':
       onBye(handle);
@@ -140,10 +175,7 @@ function rejectIfIncompatible(handle: PortHandle): boolean {
   ) {
     return false;
   }
-  handle.port.postMessage({
-    type: 'dead',
-    reason: 'incompatible-options: apiUrl/websocketUrl/clientSecret differ from the worker session',
-  });
+  sendDead(handle, 'incompatible-options: apiUrl/websocketUrl/clientSecret differ from the worker session');
   const idx = ports.indexOf(handle);
   if (idx >= 0) ports.splice(idx, 1);
   return true;
@@ -193,15 +225,23 @@ function onHello(handle: PortHandle): void {
       void resumeTransport(client, sessionId, sessionToken).then(flushPendingWelcomes);
       return;
     }
+    case 'interrupted': {
+      // Deliberately not gated on `backoffPending`: a hello means a fresh page load, which
+      // is a stronger signal than a frame and would otherwise be answered with a `dead` and
+      // get no recording at all. The cost is one init per navigation during an outage,
+      // which is bounded by how fast a person can navigate.
+      const { client, previousSessionId, nextRetryDelayMs } = state;
+      state = { phase: 'restarting', client, previousSessionId };
+      void restartSession(client, previousSessionId, nextRetryDelayMs).then(flushPendingWelcomes);
+      return;
+    }
+    case 'restarting':
+      return;
     case 'skipping':
-      handle.port.postMessage({
-        type: 'welcome',
-        result: { skipRecording: true },
-        workerHash: WORKER_HASH,
-      });
+      sendSkipWelcome(handle);
       return;
     case 'dead':
-      handle.port.postMessage({ type: 'dead', reason: state.reason });
+      sendDead(handle, state.reason);
       return;
     default:
       break;
@@ -287,7 +327,8 @@ async function resumeTransport(client: Client, sessionId: string, sessionToken: 
     transport = await client.openTransport(sessionToken);
   } catch (err) {
     log(`resume-transport threw: ${String(err)}`);
-    transitionToDead(`resume-transport-failed: ${String(err)}`);
+    state = { phase: 'restarting', client, previousSessionId: sessionId };
+    await restartSession(client, sessionId);
     return;
   }
   wireTransport(transport);
@@ -298,23 +339,100 @@ async function resumeTransport(client: Client, sessionId: string, sessionToken: 
   }
 }
 
+async function restartSession(
+  client: Client,
+  previousSessionId: string,
+  nextRetryDelayMs: number = RECOVERY_RETRY_MS,
+): Promise<void> {
+  log(`restarting after session ${previousSessionId} ended`);
+  let result: { sessionId: string; sessionToken: string } | { skipRecording: true };
+  try {
+    result = await client.initSession();
+  } catch (err) {
+    awaitRecoveryRetry(client, previousSessionId, `init-session failed: ${String(err)}`, nextRetryDelayMs);
+    return;
+  }
+
+  if ('skipRecording' in result) {
+    transitionToDead('session-restart-skipped');
+    return;
+  }
+
+  let transport: Transport;
+  try {
+    transport = await client.openTransport(result.sessionToken);
+  } catch (err) {
+    awaitRecoveryRetry(client, previousSessionId, `open-transport failed: ${String(err)}`, nextRetryDelayMs);
+    return;
+  }
+
+  wireTransport(transport);
+  state = {
+    phase: 'active',
+    client,
+    transport,
+    sessionId: result.sessionId,
+    sessionToken: result.sessionToken,
+  };
+  log(`session restarted sessionId=${result.sessionId}`);
+  for (const handle of ports) {
+    // Only ports that already have a welcome can have posted frames, so only they need
+    // gating. A port still awaiting one ignores `session-restarted` entirely, so gating it
+    // would wait for a reset it never performs and drop every frame it ever sends.
+    handle.awaitingReset = handle.answered;
+    handle.port.postMessage({
+      type: 'session-restarted',
+      result,
+      adoptedFromSessionId: previousSessionId,
+    });
+  }
+}
+
+function backoffPending(state: Extract<State, { phase: 'interrupted' }>): boolean {
+  return Date.now() < state.retryAt;
+}
+
+function awaitRecoveryRetry(client: Client, previousSessionId: string, reason: string, retryDelayMs: number): void {
+  log(`${reason}; waiting for user activity to retry in ${retryDelayMs}ms`);
+  state = {
+    phase: 'interrupted',
+    client,
+    previousSessionId,
+    retryAt: Date.now() + retryDelayMs,
+    nextRetryDelayMs: Math.min(retryDelayMs * 2, RECOVERY_RETRY_MAX_MS),
+  };
+}
+
 function wireTransport(transport: Transport): void {
   transport.onClose(info => {
-    if (state.phase !== 'active') return;
-    transitionToDead(info.reason);
+    if (state.phase !== 'active' || state.transport !== transport) return;
+    const { client, sessionId } = state;
+    log(`transport ended (${info.reason}); waiting for user activity`);
+    state = {
+      phase: 'interrupted',
+      client,
+      previousSessionId: sessionId,
+      retryAt: 0,
+      nextRetryDelayMs: RECOVERY_RETRY_MS,
+    };
+    broadcastConnectionState(false);
   });
   transport.onStateChange(info => {
-    if (state.phase !== 'active') return;
-    for (const handle of ports) {
-      handle.port.postMessage({ type: 'state', connected: info.connected });
-    }
+    if (state.phase !== 'active' || state.transport !== transport) return;
+    broadcastConnectionState(info.connected);
   });
+}
+
+function broadcastConnectionState(connected: boolean): void {
+  for (const handle of ports) {
+    handle.port.postMessage({ type: 'state', connected });
+  }
 }
 
 function transitionToDead(reason: string): void {
   state = { phase: 'dead', reason };
   for (const handle of ports) {
-    handle.port.postMessage({ type: 'dead', reason });
+    sendDead(handle, reason);
   }
 }
 
@@ -324,20 +442,24 @@ function flushPendingWelcomes(): void {
     if (state.phase === 'active') {
       sendActiveWelcome(handle, state.sessionId, state.sessionToken);
     } else if (state.phase === 'skipping') {
-      handle.port.postMessage({
-        type: 'welcome',
-        result: { skipRecording: true },
-        workerHash: WORKER_HASH,
-      });
+      sendSkipWelcome(handle);
     } else if (state.phase === 'dead') {
-      handle.port.postMessage({ type: 'dead', reason: state.reason });
+      sendDead(handle, state.reason);
+    } else if (state.phase === 'interrupted' && !handle.answered) {
+      // Recovery failed and is now waiting on activity this tab cannot produce — it has no
+      // uploader yet, so leaving the hello unanswered would hang it until its welcome
+      // timeout and disable recording for the rest of the page's life.
+      sendDead(handle, 'session-restart-failed');
     }
   }
 }
 
 function sendActiveWelcome(handle: PortHandle, currentSessionId: string, currentSessionToken: string): void {
   const hint = handle.hello?.sessionIdHint;
-  const adopted = hint !== undefined && hint !== currentSessionId;
+  // Any tab not continuing the session named by its own hint starts a new Recording and
+  // must restart its counter. That includes a tab with no hint at all: `csr:counter` has no
+  // TTL, so an expired `csr:session` can leave a non-zero counter behind with no hint.
+  const adopted = hint !== currentSessionId;
   const newTabId = handle.newTabId;
   handle.port.postMessage({
     type: 'welcome',
@@ -347,15 +469,38 @@ function sendActiveWelcome(handle: PortHandle, currentSessionId: string, current
     newTabId,
     resetCounter: adopted || newTabId !== undefined,
   });
+  handle.answered = true;
 }
 
-function onFrame(frame: Frame): void {
+function sendSkipWelcome(handle: PortHandle): void {
+  handle.port.postMessage({ type: 'welcome', result: { skipRecording: true }, workerHash: WORKER_HASH });
+  handle.answered = true;
+}
+
+function sendDead(handle: PortHandle, reason: string): void {
+  handle.port.postMessage({ type: 'dead', reason });
+  handle.answered = true;
+}
+
+function onFrame(handle: PortHandle, frame: Frame): void {
   // In normal flow the tab can't send frames before receiving `welcome` (only sent in
   // 'active') and stops after `dead` (its uploader throws). The race we're guarding is a
   // frame already in flight at the instant we transition out of 'active' — e.g.
   // `transport.onClose` fires while the tab has just posted a frame to the port. Drop it.
-  if (state.phase !== 'active') return;
-  state.transport.send(frame);
+  if (state.phase === 'active') {
+    if (handle.awaitingReset) {
+      if (frame.eventCounter !== 0) return;
+      handle.awaitingReset = false;
+    }
+    state.transport.send(frame);
+    return;
+  }
+  // A stale frame is still evidence of user activity, so it may trigger recovery even
+  // though it will never be forwarded.
+  if (state.phase !== 'interrupted' || frame.userActivity !== true || backoffPending(state)) return;
+  const { client, previousSessionId, nextRetryDelayMs } = state;
+  state = { phase: 'restarting', client, previousSessionId };
+  void restartSession(client, previousSessionId, nextRetryDelayMs).then(flushPendingWelcomes);
 }
 
 function onBye(handle: PortHandle): void {

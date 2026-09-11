@@ -62,6 +62,26 @@ function installWorkerStubs(opts?: { workerThrows?: boolean; sharedWorkerThrows?
   }
 }
 
+function installBrowserGlobals() {
+  vi.stubGlobal('window', {
+    addEventListener() {},
+    devicePixelRatio: 1,
+    innerHeight: 800,
+    innerWidth: 1200,
+    location: { origin: 'https://example.com', pathname: '/' },
+    screen: { height: 800, width: 1200 },
+  });
+  vi.stubGlobal('document', {
+    addEventListener() {},
+    referrer: '',
+    visibilityState: 'visible',
+  });
+  vi.stubGlobal('navigator', {
+    language: 'en',
+    userAgent: 'test',
+  });
+}
+
 describe('createUploader', () => {
   const blobUrls: string[] = [];
 
@@ -433,23 +453,7 @@ describe('createUploader', () => {
 
   it('marks active and passive frames for the backend inactivity timeout', async () => {
     const messages: unknown[] = [];
-    vi.stubGlobal('window', {
-      addEventListener() {},
-      devicePixelRatio: 1,
-      innerHeight: 800,
-      innerWidth: 1200,
-      location: { origin: 'https://example.com', pathname: '/' },
-      screen: { height: 800, width: 1200 },
-    });
-    vi.stubGlobal('document', {
-      addEventListener() {},
-      referrer: '',
-      visibilityState: 'visible',
-    });
-    vi.stubGlobal('navigator', {
-      language: 'en',
-      userAgent: 'test',
-    });
+    installBrowserGlobals();
     vi.stubGlobal(
       'Worker',
       class {
@@ -499,5 +503,73 @@ describe('createUploader', () => {
         }),
       ]),
     );
+  });
+
+  it('adopts a restarted worker session and resets the frame counter', async () => {
+    const messages: unknown[] = [];
+    const onSessionRestart = vi.fn();
+    const workers: StubWorker[] = [];
+    installBrowserGlobals();
+    vi.stubGlobal(
+      'Worker',
+      class extends StubWorker {
+        constructor() {
+          super();
+          workers.push(this);
+        }
+
+        override postMessage(message: unknown) {
+          messages.push(message);
+          if (typeof message === 'object' && message !== null && 'type' in message && message.type === 'hello') {
+            queueMicrotask(() =>
+              this.onmessage?.(
+                new MessageEvent('message', {
+                  data: {
+                    type: 'welcome',
+                    result: { sessionId: 'sessions/first', sessionToken: 'first-token' },
+                  },
+                }),
+              ),
+            );
+          }
+        }
+      },
+    );
+    vi.stubGlobal('SharedWorker', undefined);
+
+    const createUploader = await loadCreateUploader();
+    const uploader = await createUploader({
+      ...DEFAULTS,
+      workerMode: 'dedicated',
+      onSessionRestart,
+    });
+    uploader?.({ type: RecordingEventType.Meta, data: {} });
+
+    workers[0]?.onmessage?.(
+      new MessageEvent('message', {
+        data: {
+          type: 'session-restarted',
+          result: { sessionId: 'sessions/second', sessionToken: 'second-token' },
+          adoptedFromSessionId: 'sessions/first',
+        },
+      }),
+    );
+    uploader?.({
+      type: RecordingEventType.Plugin,
+      data: { plugin: RecordingPluginName.NetworkRequest },
+    });
+
+    expect(onSessionRestart).toHaveBeenCalledOnce();
+    expect(messages.at(-1)).toEqual({
+      type: 'frame',
+      frame: expect.objectContaining({
+        eventCounter: 0,
+        adoptedFromSessionId: 'sessions/first',
+        data: {
+          type: RecordingEventType.Plugin,
+          data: { plugin: RecordingPluginName.NetworkRequest },
+        },
+      }),
+    });
   });
 });
