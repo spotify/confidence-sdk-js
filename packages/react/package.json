@@ -1,0 +1,59 @@
+{
+  "name": "@spotify-confidence/react",
+  "version": "0.3.0",
+  "license": "Apache-2.0",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/spotify/confidence-sdk-js.git",
+    "directory": "packages/react"
+  },
+  "type": "module",
+  "engines": {
+    "node": ">=18.17.0"
+  },
+  "peerDependencies": {
+    "@spotify-confidence/sdk": ">=0.5.0 <0.6.0",
+    "react": "^18 || ^19"
+  },
+  "devDependencies": {
+    "@spotify-confidence/sdk": "workspace:*",
+    "@types/react": "^18",
+    "react": "^18.3.1",
+    "rollup": "4.24.0",
+    "typescript": "5.1.6"
+  },
+  "files": [
+    "dist/index.*"
+  ],
+  "scripts": {
+    "prepack": "yarn build && yarn bundle",
+    "bundle": "rollup -c && ../../validate-api.sh && ../../emit-dcts.sh",
+    "build": "tsc",
+    "clean": "rm -rf {build,dist}"
+  },
+  "exports": {
+    ".": {
+      "import": "./build/index.js",
+      "types": "./build/index.d.ts"
+    }
+  },
+  "publishConfig": {
+    "registry": "https://registry.npmjs.org/",
+    "access": "public",
+    "exports": {
+      ".": {
+        "import": {
+          "types": "./dist/index.d.ts",
+          "default": "./dist/index.mjs"
+        },
+        "require": {
+          "types": "./dist/index.d.cts",
+          "default": "./dist/index.cjs"
+        }
+      }
+    },
+    "main": "dist/index.cjs",
+    "module": "dist/index.mjs",
+    "types": "dist/index.d.ts"
+  }
+}

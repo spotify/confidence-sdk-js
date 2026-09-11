@@ -1,6 +1,13 @@
 {
   "plugins": ["node-workspace"],
   "packages": {
+    "packages/react": {
+      "component": "react",
+      "release-as": "0.3.0",
+      "changelog-path": "CHANGELOG.md",
+      "bump-minor-pre-major": true,
+      "bump-patch-for-minor-pre-major": true
+    },
     "packages/openfeature-server-provider": {
       "component": "openfeature-server-provider",
       "changelog-path": "CHANGELOG.md",

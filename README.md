@@ -125,7 +125,7 @@ The SDK exposes a stateless transport and pure bundle evaluation for direct inte
 
 The package also provides `ConfidenceClient`, a thin stateless client for remote flag resolution, exposure, and event publishing. Both remote OpenFeature providers in this repository use it. It is also useful directly when resolving from a worker, or when resolving on the server and forwarding a `FlagBundle` to the browser for evaluation.
 
-The providers require SDK `>=0.4.0 <0.6.0`. Existing integrations should follow the [thin-client migration guide](./concepts/migrate-to-thin-client.md), which covers factory changes, custom endpoints, context updates, and shutdown. The legacy `Confidence` API and its React integration have been removed.
+The providers require SDK `>=0.4.0 <0.6.0`. Existing integrations should follow the [thin-client migration guide](./concepts/migrate-to-thin-client.md), which covers factory changes, custom endpoints, context updates, and shutdown. The legacy `Confidence` API has been removed. The [Confidence React integration](./packages/react/README.md) now provides bundle-based `useFlag` and `useFlagDetails` hooks, with application-supplied exposure callbacks for browser clients or server actions.
 
 > **Learn more**: [SDK Documentation](./packages/sdk/README.md) · [`ConfidenceClient`](./packages/sdk/README.md#confidenceclient)
 

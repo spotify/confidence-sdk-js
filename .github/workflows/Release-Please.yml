@@ -17,6 +17,7 @@ jobs:
       releases_created: ${{ steps.release.outputs.releases_created }}
       release_tag_name: ${{ steps.release.outputs.release_tag_name }}
       sdk-release_created: ${{ steps.release.outputs['packages/sdk--release_created'] }}
+      react-release_created: ${{ steps.release.outputs['packages/react--release_created'] }}
       web-provider-release_created: ${{ steps.release.outputs['packages/openfeature-web-provider--release_created'] }}
       server-provider-release_created: ${{ steps.release.outputs['packages/openfeature-server-provider--release_created'] }}
       csr-common-release_created: ${{ steps.release.outputs['csr/csr-common--release_created'] }}
@@ -64,6 +65,13 @@ jobs:
         if: ${{ needs.Release-Please.outputs.sdk-release_created }}
         shell: bash
         working-directory: packages/sdk
+        run: |
+          yarn pack -o package.tgz
+          npm publish package.tgz
+      - name: Publish React to NPM
+        if: ${{ needs.Release-Please.outputs.react-release_created }}
+        shell: bash
+        working-directory: packages/react
         run: |
           yarn pack -o package.tgz
           npm publish package.tgz

@@ -82,10 +82,10 @@ export namespace FlagBundle {
         value: T;
         variant?: string;
     }
-    export type ErrorCode = 'FLAG_NOT_FOUND' | 'TYPE_MISMATCH' | 'TIMEOUT' | 'GENERAL';
+    export type ErrorCode = 'FLAG_NOT_FOUND' | 'TYPE_MISMATCH' | 'TIMEOUT' | 'GENERAL' | 'PROVIDER_NOT_READY' | 'PROVIDER_FATAL';
     export function evaluate<T extends Value>(bundle: FlagBundle, flagKey: string, defaultValue: T, logger?: Logger): Details<T>;
     export type Primitive = null | boolean | string | number;
-    export type Reason = 'ERROR' | 'FLAG_ARCHIVED' | 'MATCH' | 'NO_SEGMENT_MATCH' | 'TARGETING_KEY_ERROR' | 'NO_TREATMENT_MATCH' | 'UNSPECIFIED';
+    export type Reason = 'ERROR' | 'FLAG_ARCHIVED' | 'MATCH' | 'NO_SEGMENT_MATCH' | 'TARGETING_KEY_ERROR' | 'NO_TREATMENT_MATCH' | 'MATERIALIZATION_NOT_SUPPORTED' | 'UNSPECIFIED';
     export type Struct = {
         [key: string]: Value;
     };

@@ -6,6 +6,12 @@
     "plugin:es/restrict-to-es2018"
   ],
   "plugins": ["@spotify/eslint-plugin"],
+  "overrides": [
+    {
+      "files": ["packages/react/src/**/*.{ts,tsx}"],
+      "extends": ["plugin:react-hooks/recommended"]
+    }
+  ],
   "rules": {
     "es/no-rest-spread-properties": "off",
     "es/no-optional-chaining": "off",

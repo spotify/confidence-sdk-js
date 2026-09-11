@@ -7,10 +7,10 @@ SDK `0.5.0`. Both providers require
 `@spotify-confidence/sdk >=0.4.0 <0.6.0`. OpenFeature peer ranges are
 `@openfeature/web-sdk >=1.3.2 <2` and `@openfeature/server-sdk >=1.16.0 <2`.
 
-The stateful `Confidence` class and `@spotify-confidence/react` integration have
-been removed, including their context observers, cache, trackers, and Next.js
-development patch. The separate local resolver provider is not based on this
-thin client.
+The stateful `Confidence` class has been removed, including its context observers,
+cache, trackers, and Next.js development patch. `@spotify-confidence/react` is
+replaced with bundle-based hooks. The separate local resolver provider is not
+based on this thin client.
 
 ## Replacing the Confidence API
 
@@ -40,10 +40,12 @@ const bundle = await client.resolve(['checkout'], { targeting_key: 'user-1' }, {
 const { value } = FlagBundle.evaluate(bundle, 'checkout.enabled', false);
 ```
 
-The retired React hooks are not replaced in this change. Applications can consume
-bundles through their own React context, or use OpenFeature's React integration
-with the web provider. Existing installations of the legacy React package must
-remain on a compatible older SDK until migrated; they cannot use this SDK release.
+For React, upgrade to `@spotify-confidence/react ^0.3.0` and SDK `^0.5.0`.
+Provide a resolved `bundle` and an `apply(flagName)` callback instead of a
+`Confidence` instance. Use `useFlag` or `useFlagDetails` to evaluate locally;
+resolution, context changes, and server actions belong to the application.
+See the [React guide](../packages/react/README.md) for browser and server examples.
+Legacy React `0.2` installations cannot use SDK `0.5` without migrating.
 
 ## Construct providers from configuration
 
