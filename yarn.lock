@@ -4027,14 +4027,30 @@ __metadata:
   languageName: node
   linkType: hard
 
-"@openfeature/core@npm:^1.1.0, @openfeature/core@npm:^1.5.0":
+"@openfeature/core@npm:1.5.0":
+  version: 1.5.0
+  resolution: "@openfeature/core@npm:1.5.0"
+  checksum: 10c0/6b455dac3bb2da3519e43c4fbf69c0d8b4e6aa9b566cc29fe574913f2b4b50134ca62c5ddb28d2e6c8222fbc96873b6187a29f3657c19008ea8910b9e564f87d
+  languageName: node
+  linkType: hard
+
+"@openfeature/core@npm:^1.5.0":
   version: 1.12.0
   resolution: "@openfeature/core@npm:1.12.0"
   checksum: 10c0/561aa31810b6bad7c787a61dfeef11615b3151773f751548b0d3bc894cf50d863ef45832f9b92f390bc7da7ba1c41be12ce6226a78c36a504dfd5e7fb97120bd
   languageName: node
   linkType: hard
 
-"@openfeature/server-sdk@npm:^1.13.5, @openfeature/server-sdk@npm:^1.16.0":
+"@openfeature/server-sdk@npm:1.16.0":
+  version: 1.16.0
+  resolution: "@openfeature/server-sdk@npm:1.16.0"
+  peerDependencies:
+    "@openfeature/core": 1.5.0
+  checksum: 10c0/210c8a5bcb3710de0959c1756a54f7f31ce205e3214e0b0bef4fefa5fa2d71440ec57a7d54bb47e6a3d7d5398ebd0430260fbf81ba78c5623290d2c9495c2559
+  languageName: node
+  linkType: hard
+
+"@openfeature/server-sdk@npm:^1.16.0":
   version: 1.23.0
   resolution: "@openfeature/server-sdk@npm:1.23.0"
   peerDependencies:
@@ -4043,12 +4059,12 @@ __metadata:
   languageName: node
   linkType: hard
 
-"@openfeature/web-sdk@npm:^1.3.0":
-  version: 1.10.0
-  resolution: "@openfeature/web-sdk@npm:1.10.0"
+"@openfeature/web-sdk@npm:1.3.2":
+  version: 1.3.2
+  resolution: "@openfeature/web-sdk@npm:1.3.2"
   peerDependencies:
-    "@openfeature/core": ^1.12.0
-  checksum: 10c0/70b2e470296a628d9e9ba4cff6d558487fff322e95bd68629606c7ba5be138194018865ccf33997488b39020e1466836072a22bd71e6a19f606bd4b07a867bfe
+    "@openfeature/core": ^1.5.0
+  checksum: 10c0/7e20bfb19bec3061045a37a52d9d6fb1631908bf6cba1ff925cfbcccb978a75939a20f6411766abce22a1d1ad61e2d6d12b3d73c982efd78c07e19efb0176bd3
   languageName: node
   linkType: hard
 
@@ -5050,14 +5066,14 @@ __metadata:
   version: 0.0.0-use.local
   resolution: "@spotify-confidence/openfeature-server-provider@workspace:packages/openfeature-server-provider"
   dependencies:
-    "@openfeature/core": "npm:^1.5.0"
-    "@openfeature/server-sdk": "npm:^1.16.0"
+    "@openfeature/core": "npm:1.5.0"
+    "@openfeature/server-sdk": "npm:1.16.0"
     "@spotify-confidence/sdk": "workspace:*"
     rollup: "npm:4.24.0"
     typescript: "npm:5.1.6"
   peerDependencies:
-    "@openfeature/server-sdk": ^1.13.5
-    "@spotify-confidence/sdk": ">=0.1.4 <0.4.0"
+    "@openfeature/server-sdk": ^1.16.0
+    "@spotify-confidence/sdk": ">=0.4.0 <0.5.0"
   languageName: unknown
   linkType: soft
 
@@ -5065,15 +5081,15 @@ __metadata:
   version: 0.0.0-use.local
   resolution: "@spotify-confidence/openfeature-web-provider@workspace:packages/openfeature-web-provider"
   dependencies:
-    "@openfeature/core": "npm:^1.5.0"
-    "@openfeature/web-sdk": "npm:^1.3.0"
+    "@openfeature/core": "npm:1.5.0"
+    "@openfeature/web-sdk": "npm:1.3.2"
     "@spotify-confidence/sdk": "workspace:*"
     fast-deep-equal: "npm:^3.1.3"
     rollup: "npm:4.24.0"
     typescript: "npm:5.1.6"
   peerDependencies:
-    "@openfeature/web-sdk": ^1.0.3
-    "@spotify-confidence/sdk": ">=0.1.4 <0.4.0"
+    "@openfeature/web-sdk": ^1.3.2
+    "@spotify-confidence/sdk": ">=0.4.0 <0.5.0"
   languageName: unknown
   linkType: soft
 
@@ -5088,7 +5104,7 @@ __metadata:
     server-only: "npm:^0.0.1"
     typescript: "npm:5.1.6"
   peerDependencies:
-    "@spotify-confidence/sdk": ">=0.3.1 <0.4.0"
+    "@spotify-confidence/sdk": ">=0.3.1 <0.5.0"
     react: ^18 || ^19
   bin:
     patch-next-dev: patch-next-dev.cjs
@@ -15036,8 +15052,8 @@ __metadata:
   version: 0.0.0-use.local
   resolution: "node-example-commonjs@workspace:examples/nodeCJS"
   dependencies:
-    "@openfeature/core": "npm:^1.1.0"
-    "@openfeature/server-sdk": "npm:^1.13.5"
+    "@openfeature/core": "npm:^1.5.0"
+    "@openfeature/server-sdk": "npm:^1.16.0"
     "@spotify-confidence/openfeature-server-provider": "workspace:*"
     "@spotify-confidence/sdk": "workspace:*"
   languageName: unknown

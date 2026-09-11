@@ -30,7 +30,7 @@
     "server-only": "^0.0.1"
   },
   "peerDependencies": {
-    "@spotify-confidence/sdk": ">=0.3.1 <0.4.0",
+    "@spotify-confidence/sdk": ">=0.3.1 <0.5.0",
     "react": "^18 || ^19"
   },
   "devDependencies": {

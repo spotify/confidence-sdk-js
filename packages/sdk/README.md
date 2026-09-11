@@ -8,7 +8,7 @@
 > - **Client-based (SPA)**: Use [@spotify-confidence/openfeature-web-provider](https://github.com/spotify/confidence-sdk-js/blob/main/packages/openfeature-web-provider/README.md)
 > - **Server**: Use [@spotify-confidence/openfeature-server-provider-local](https://github.com/spotify/confidence-resolver/tree/main/openfeature-provider/js/README.md), which resolves flags in-process with close to zero latency
 >
-> [`ConfidenceClient`](#confidenceclient) is a low-level client for a remote resolver, and will become the engine behind the providers above. Most integrations should use a provider rather than calling it directly.
+> [`ConfidenceClient`](#confidenceclient) powers this repository's remote [web](../openfeature-web-provider/README.md) and [server](../openfeature-server-provider/README.md) providers. The separate local resolver provider evaluates flags in-process and does not use this client.
 
 JavaScript implementation of the Confidence SDK, enables event tracking and feature flagging capabilities in conjunction with the OpenFeature Web SDK.
 
@@ -19,18 +19,21 @@ JavaScript implementation of the Confidence SDK, enables event tracking and feat
 To add the packages to your dependencies run:
 
 ```sh
-yarn add @spotify-confidence/sdk
+yarn add '@spotify-confidence/sdk@^0.4.0'
 ```
 
 # ConfidenceClient
 
-`ConfidenceClient` is a thin, stateless client for a remote Confidence resolver. It does flag resolution and exposure only — no event tracking, no context management, no caching.
+Upgrading an existing integration? See the [thin-client migration guide](../../concepts/migrate-to-thin-client.md) for renamed options, provider dependency requirements, and lifecycle changes.
+
+`ConfidenceClient` is a thin, stateless client for a remote Confidence resolver. It does flag resolution, exposure and event publishing only — no context management, no caching, no batching.
 
 ## When to use it
 
 Prefer a provider over calling this directly:
 
 - **Client-side (SPA)**: [@spotify-confidence/openfeature-web-provider](https://github.com/spotify/confidence-sdk-js/blob/main/packages/openfeature-web-provider/README.md)
+- **Server with remote resolution**: [@spotify-confidence/openfeature-server-provider](../openfeature-server-provider/README.md)
 - **Server**: [@spotify-confidence/openfeature-server-provider-local](https://github.com/spotify/confidence-resolver/tree/main/openfeature-provider/js/README.md), which resolves in-process with close to zero latency
 
 Reach for `ConfidenceClient` when you want the underlying primitive instead: resolving from a worker, forwarding a resolve to the browser, or anywhere a provider's lifecycle is more than you need.
@@ -40,7 +43,7 @@ There is no lifecycle, no background work and no cached state, so constructing o
 ```ts
 import { ConfidenceClient, FlagBundle } from '@spotify-confidence/sdk';
 
-const client = new ConfidenceClient({ flagClientSecret: 'my secret' });
+const client = new ConfidenceClient({ clientSecret: 'my secret' });
 
 const bundle = await client.resolve(['tutorial-feature'], { targeting_key: 'user-1' });
 const { value } = FlagBundle.evaluate(bundle, 'tutorial-feature.title', 'default title');
@@ -51,40 +54,78 @@ const { value } = FlagBundle.evaluate(bundle, 'tutorial-feature.title', 'default
 
 ## Resolve on the server, evaluate in the browser
 
-Resolving flags in the browser is generally not recommended. Instead resolve once on the server and forward the resulting `FlagBundle` to the client: it is plain JSON, and `FlagBundle.evaluate` is a pure function, so the browser can evaluate flags without a second round trip or a client secret.
+If your application renders on the server, resolve there and forward the resulting `FlagBundle` to the browser. It is plain JSON, and `FlagBundle.evaluate` is a pure function, so the browser can evaluate flags without another resolve or a client secret. Browser-only applications can resolve through the web provider instead.
 
 Defer exposure with `apply: false` so a flag counts as seen when it is actually used, rather than when it was resolved.
 
 ```ts
-// --- server ---
-const bundle = await client.resolve([], { targeting_key: userId }, { apply: false });
-return { props: { bundle } }; // serialize into the page
+// Server: serialize the returned bundle into your page data.
+async function loadFlags(userId: string) {
+  return client.resolve(['promo-banner'], { targeting_key: userId }, { apply: false });
+}
+```
 
-// --- browser ---
+The browser sends the resolve token along with the accessed flag to an application
+endpoint. `bundle` below is the page data returned by `loadFlags`:
+
+```ts
 import { FlagBundle } from '@spotify-confidence/sdk';
 
 const showBanner = FlagBundle.evaluate(bundle, 'promo-banner.enabled', false);
 if (showBanner.shouldApply) {
-  await fetch('/api/apply', { method: 'POST', body: JSON.stringify({ flag: 'promo-banner' }) });
+  await fetch('/api/apply', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ resolveToken: bundle.resolveToken, flag: 'promo-banner' }),
+  });
 }
 ```
 
-The bundle's `resolveToken` only permits applying the flags it was minted for, which is what makes it safe to round-trip through the browser.
+On the server, register an endpoint using your framework's routing API. For a
+framework using standard `Request` and `Response` objects, the handler can be:
 
-## Pointing at your own resolver
+```ts
+async function applyExposure(request: Request): Promise<Response> {
+  const body = await request.json();
+  if (!body || typeof body.resolveToken !== 'string' || !body.resolveToken || body.flag !== 'promo-banner') {
+    return new Response('Invalid exposure request', { status: 400 });
+  }
+  const result = await client.apply(body.resolveToken, body.flag, { signal: AbortSignal.timeout(1000) });
+  return new Response(null, { status: result.ok ? 204 : 502 });
+}
+```
 
-`url` defaults to `https://resolver.confidence.dev`. Set it to target a resolver you run yourself, and pass a `fetch`-compatible transport to reach it — a Cloudflare service binding, for instance:
+The client secret stays on the server. The remote resolver checks that the token
+covers the requested flag. Forward only the flags intended for the browser. You
+can also retain the token on the server and bind it to an action or server-side
+session instead of including it in page data.
+
+## Region
+
+By default both flag resolution and event publishing go to the global region. Set `region` to pin them for data residency — it places both services, since events carry data of their own:
 
 ```ts
 const client = new ConfidenceClient({
-  flagClientSecret: env.CONFIDENCE_CLIENT_SECRET,
-  fetch: env.RESOLVER.fetch.bind(env.RESOLVER),
-  url: 'https://resolver.internal',
+  clientSecret: 'my secret',
+  region: 'eu', // or 'us'
 });
 ```
 
-> [!NOTE]
-> The `url` option is still used with a service binding: bindings route by binding rather than by hostname, but the request path is taken from the URL, so it has to be a valid absolute URL.
+## Pointing at your own resolver
+
+There is no url option. To reach a resolver you run yourself, rewrite the URL in `fetch` — which is also how you reach a Cloudflare service binding:
+
+```ts
+const client = new ConfidenceClient({
+  clientSecret: env.CONFIDENCE_CLIENT_SECRET,
+  fetch: (input, init) => {
+    const url = new URL(input instanceof Request ? input.url : input);
+    return url.hostname === 'resolver.confidence.dev' ? env.RESOLVER.fetch(input, init) : globalThis.fetch(input, init);
+  },
+});
+```
+
+> [!NOTE] > `env.RESOLVER` is a binding supplied by your Worker application. Call its method with the binding as receiver: a detached `fetch` can fail with "Illegal invocation". This example routes flag operations to the binding and keeps event publishing on the events service. If you set `region`, match the corresponding regional resolver hostname.
 
 ## Resolving flags
 
@@ -121,9 +162,33 @@ const result = await client.apply(bundle.resolveToken, ['promo-banner']);
 
 Flags whose `shouldApply` is false can be skipped — applying them has no observable effect.
 
+## Publishing events
+
+`publish` sends an event, or a batch of them in a single request:
+
+```ts
+await client.publish({
+  name: 'order-completed',
+  payload: { context: { targeting_key: 'user-1' }, item_count: 2 },
+});
+```
+
+`payload.context` is what Confidence attributes an event by — it joins the event to the flag exposures for the same targeting context. Nothing enforces it, but an event published without it cannot be attributed.
+
+Nothing is queued: the request goes out on call. Small publish and apply requests use `keepalive` to allow delivery during navigation, subject to browser quotas and network availability. If you want batching, build the queue on top and publish an array:
+
+```ts
+await client.publish([
+  { name: 'page-viewed', payload, eventTime: whenItHappened },
+  { name: 'order-completed', payload, eventTime: whenItHappened },
+]);
+```
+
+Set `eventTime` per event when doing so. It defaults to the time the request is sent, which is right for a direct publish but would restamp a queued batch with the flush time.
+
 ## Errors
 
-Neither `resolve` nor `apply` rejects.
+`resolve`, `apply`, and `publish` report request failures as values instead of rejecting.
 
 A failed resolve returns an errored bundle rather than throwing, so the failure travels to the browser correctly labelled instead of looking like a missing flag. Evaluating against it yields your defaults with an `ERROR` reason:
 
@@ -134,7 +199,7 @@ if (bundle.errorCode) {
 }
 ```
 
-`apply` returns an `ApplyResult` instead of rejecting, because the natural call site is fire-and-forget and an unhandled rejection terminates the process on Node:
+`apply` and `publish` return a `WriteResult` instead of rejecting, because the natural call site is fire-and-forget and an unhandled rejection terminates the process on Node:
 
 ```ts
 const result = await client.apply(token, 'promo-banner');
@@ -143,7 +208,13 @@ if (!result.ok) {
 }
 ```
 
+The events endpoint can also reject an individual event within an otherwise successful HTTP 200. A `publish` result then carries `errors` naming which events of the batch were rejected, by index — everything else in it was recorded.
+
 Failures are reported through the `logger` if one was passed.
+
+Malformed publish responses are reported as failures. A transport failure or
+timeout means delivery was not confirmed; it does not prove the write was not
+recorded. Retrying an event after such a failure can create duplicates.
 
 ## Timeouts and cancellation
 
@@ -152,9 +223,10 @@ There is no `timeout` option — pass an `AbortSignal`, which covers both deadli
 ```ts
 await client.resolve(flags, context, { signal: AbortSignal.timeout(1000) });
 await client.apply(token, flags, { signal: AbortSignal.timeout(1000) });
+await client.publish(event, { signal: AbortSignal.timeout(1000) });
 ```
 
-A signal that aborts on a deadline is reported as `TIMEOUT`; a deliberate `controller.abort()` is not. Neither call retries — for `apply`, inspect `status` to tell a permanent failure (4xx) from a transient one and retry at your own cadence.
+A signal that aborts on a deadline is reported as `TIMEOUT`; a deliberate `controller.abort()` is not. The thin client never retries. Inspect the result and your endpoint's error semantics before deciding whether to retry: HTTP status alone does not always distinguish permanent from transient failures. The web provider adds its own bounded exposure retry, documented in its [delivery and shutdown guide](../openfeature-web-provider/README.md#exposure-delivery-and-shutdown).
 
 # The Confidence class
 
@@ -265,18 +337,14 @@ Flag evaluations are cached in memory on the Confidence instance with the evalua
 This is done to reduce network calls when evaluating multiple flags using the same context.
 
 ```ts
-const confidence = Confidence.create({...});
-const flag = confidence.getFlag('flag', {})
+const confidence = Confidence.create({ clientSecret: 'your-client-secret', timeout: 1000 });
+const flag = await confidence.getFlag('flag', {});
 // subsequent calls to getFlag will return the same value
 ```
 
-If you need to always fetch the latest flag values (e.g., for testing, debugging or an other use case),
-you can bypass the cache by always get a fresh Confidence instance (and an empty cache):
-
-```ts
-const confidence = Confidence.create({...});
-const flag = confidence.withContext({}).getFlag('flag', {})
-```
+Creating a child with `withContext({})` does not guarantee a fresh network
+request; the legacy API can share cached resolutions. For explicit uncached
+requests, use [`ConfidenceClient.resolve`](#resolving-flags).
 
 ## Event tracking
 

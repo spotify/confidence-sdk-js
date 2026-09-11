@@ -11,7 +11,7 @@ describe('publishFlagEvaluation', () => {
   it('writes { variant, assignmentOrigin } to window.__confidence.flags', () => {
     publishFlagEvaluation('my-flag', 'treatment-a', 'rule-1');
 
-    expect((window as any).__confidence.flags['my-flag']).toEqual({
+    expect((window as any).__confidence.flags['flags/my-flag']).toEqual({
       variant: 'treatment-a',
       assignmentOrigin: 'rule-1',
     });
@@ -24,18 +24,18 @@ describe('publishFlagEvaluation', () => {
 
     expect((window as any).__confidence).toBeDefined();
     expect((window as any).__confidence.flags).toBeDefined();
-    expect((window as any).__confidence.flags['my-flag']).toEqual({ variant: 'control', assignmentOrigin: '' });
+    expect((window as any).__confidence.flags['flags/my-flag']).toEqual({ variant: 'control', assignmentOrigin: '' });
   });
 
   it('preserves existing flags object', () => {
-    const existing = { 'other-flag': { variant: 'baseline', assignmentOrigin: '' } };
+    const existing = { 'flags/other-flag': { variant: 'baseline', assignmentOrigin: '' } };
     (window as any).__confidence = { flags: existing };
 
     publishFlagEvaluation('my-flag', 'treatment-a', 'rule-1');
 
     expect((window as any).__confidence.flags).toBe(existing);
-    expect(existing['other-flag']).toEqual({ variant: 'baseline', assignmentOrigin: '' });
-    expect((window as any).__confidence.flags['my-flag']).toEqual({
+    expect(existing['flags/other-flag']).toEqual({ variant: 'baseline', assignmentOrigin: '' });
+    expect((window as any).__confidence.flags['flags/my-flag']).toEqual({
       variant: 'treatment-a',
       assignmentOrigin: 'rule-1',
     });
@@ -64,7 +64,7 @@ describe('publishFlagEvaluation', () => {
     publishFlagEvaluation('my-flag', 'treatment-a', 'rule-1');
     publishFlagEvaluation('my-flag', 'treatment-b', 'rule-2');
 
-    expect((window as any).__confidence.flags['my-flag']).toEqual({
+    expect((window as any).__confidence.flags['flags/my-flag']).toEqual({
       variant: 'treatment-b',
       assignmentOrigin: 'rule-2',
     });
@@ -74,7 +74,13 @@ describe('publishFlagEvaluation', () => {
     publishFlagEvaluation('flag-a', 'variant-1', 'rule-1');
     publishFlagEvaluation('flag-b', 'variant-2', 'rule-2');
 
-    expect((window as any).__confidence.flags['flag-a']).toEqual({ variant: 'variant-1', assignmentOrigin: 'rule-1' });
-    expect((window as any).__confidence.flags['flag-b']).toEqual({ variant: 'variant-2', assignmentOrigin: 'rule-2' });
+    expect((window as any).__confidence.flags['flags/flag-a']).toEqual({
+      variant: 'variant-1',
+      assignmentOrigin: 'rule-1',
+    });
+    expect((window as any).__confidence.flags['flags/flag-b']).toEqual({
+      variant: 'variant-2',
+      assignmentOrigin: 'rule-2',
+    });
   });
 });

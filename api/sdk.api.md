@@ -72,21 +72,39 @@ export class Confidence implements EventSender, Trackable, FlagResolver {
 
 // @public
 export namespace ConfidenceClient {
-    export type ApplyResult = {
+    export interface Event {
+        eventTime?: Date;
+        name: string;
+        payload?: EventPayload;
+    }
+    export type EventPayload = {
+        context?: EvaluationContext;
+        [key: string]: unknown;
+    };
+    export interface Options {
+        clientSecret: string;
+        fetch?: typeof fetch;
+        logger?: Logger;
+        region?: Region;
+        sdk?: {
+            name: SdkName;
+            version: string;
+        };
+    }
+    export type Region = 'eu' | 'us';
+    export type SdkName = 'JS_CONFIDENCE' | 'JS_WEB_PROVIDER' | 'JS_SERVER_PROVIDER';
+    export type WriteResult = {
         ok: true;
     } | {
         ok: false;
         errorCode: 'TIMEOUT' | 'GENERAL';
         errorMessage: string;
         status?: number;
+        errors?: Array<{
+            index: number;
+            errorMessage: string;
+        }>;
     };
-    export interface Options {
-        fetch?: typeof fetch;
-        flagClientSecret: string;
-        // Warning: (ae-forgotten-export) The symbol "Logger" needs to be exported by the entry point index.d.ts
-        logger?: Logger;
-        url?: string;
-    }
 }
 
 // @public
@@ -94,7 +112,10 @@ export class ConfidenceClient {
     constructor(options: ConfidenceClient.Options);
     apply(resolveToken: string, flagNames: string | string[], options?: {
         signal?: AbortSignal;
-    }): Promise<ConfidenceClient.ApplyResult>;
+    }): Promise<ConfidenceClient.WriteResult>;
+    publish(event: ConfidenceClient.Event | ConfidenceClient.Event[], options?: {
+        signal?: AbortSignal;
+    }): Promise<ConfidenceClient.WriteResult>;
     resolve(flagNames: string[], context: EvaluationContext, options?: {
         apply?: boolean;
         signal?: AbortSignal;
@@ -259,7 +280,30 @@ export interface FlagResolver extends Contextual<FlagResolver> {
 }
 
 // @public
+export interface Logger {
+    // (undocumented)
+    readonly debug?: Logger.Fn;
+    // (undocumented)
+    readonly error?: Logger.Fn;
+    // (undocumented)
+    readonly info?: Logger.Fn;
+    // (undocumented)
+    readonly trace?: Logger.Fn;
+    // (undocumented)
+    readonly warn?: Logger.Fn;
+}
+
+// @public
+export namespace Logger {
+    export type Fn = (message: string, ...optionalParams: any[]) => void;
+    export type Level = 'trace' | 'debug' | 'info' | 'warn' | 'error';
+}
+
+// @public
 export function pageViews(): Trackable.Manager;
+
+// @public
+export function publishFlagEvaluation(flagName: string, variant: string, assignmentOrigin: string): void;
 
 // Warning: (ae-missing-release-tag) "SimpleFetch" is part of the package's API, but it is missing a release tag (@alpha, @beta, @public, or @internal)
 //

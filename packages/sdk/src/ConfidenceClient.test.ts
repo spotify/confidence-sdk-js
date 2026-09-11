@@ -48,8 +48,8 @@ function requestBody(fetchImpl: { mock: { calls: any[][] } }, call = 0): any {
   return JSON.parse(fetchImpl.mock.calls[call][1].body);
 }
 
-function client(fetchImpl: typeof fetch, url?: string) {
-  return new ConfidenceClient({ flagClientSecret: SECRET, url, fetch: fetchImpl });
+function client(fetchImpl: typeof fetch, region?: ConfidenceClient.Region) {
+  return new ConfidenceClient({ clientSecret: SECRET, region, fetch: fetchImpl });
 }
 
 function bytesFromBase64(b64: string): Uint8Array {
@@ -103,6 +103,32 @@ describe('ConfidenceClient', () => {
       const fetchImpl = mockTransport();
       await client(fetchImpl).resolve([], { targeting_key: 'user-1' });
       expect(requestBody(fetchImpl as any)).not.toHaveProperty('flags');
+    });
+
+    it('reports the calling sdk, so a provider is distinguishable from direct use', async () => {
+      const fetchImpl = mockTransport();
+      const provider = new ConfidenceClient({
+        clientSecret: SECRET,
+        fetch: fetchImpl,
+        sdk: { name: 'JS_WEB_PROVIDER', version: '1.2.3' },
+      });
+      await provider.resolve(['promo-banner'], {});
+
+      expect(requestBody(fetchImpl as any).sdk).toEqual({ id: 'SDK_ID_JS_WEB_PROVIDER', version: '1.2.3' });
+    });
+
+    it('falls back to its own id for a name it does not know', async () => {
+      const fetchImpl = mockTransport();
+      const client = new ConfidenceClient({
+        clientSecret: SECRET,
+        fetch: fetchImpl,
+        // Only a JS caller can get here, and an unknown id would leave the
+        // resolver with no sdk at all.
+        sdk: { name: 'JS_SOMETHING_ELSE' as any, version: '1.2.3' },
+      });
+      await client.resolve(['promo-banner'], {});
+
+      expect(requestBody(fetchImpl as any).sdk).toEqual({ id: 'SDK_ID_JS_CONFIDENCE', version: '1.2.3' });
     });
 
     it('converts the response into a FlagBundle keyed by unprefixed flag name', async () => {
@@ -216,17 +242,15 @@ describe('ConfidenceClient', () => {
       expect((await client(fetchImpl).resolve(['promo-banner'], {})).errorCode).toBe('GENERAL');
     });
 
-    it('normalizes trailing slashes on the base url', async () => {
+    it('resolves against a regional resolver', async () => {
       const fetchImpl = mockTransport();
-      await client(fetchImpl, 'https://my-resolver.example.com//').resolve(['promo-banner'], {});
-      expect((fetchImpl as any).mock.calls[0][0]).toBe('https://my-resolver.example.com/v1/flags:resolve');
+      await client(fetchImpl, 'eu').resolve(['promo-banner'], {});
+      expect((fetchImpl as any).mock.calls[0][0]).toBe('https://resolver.eu.confidence.dev/v1/flags:resolve');
     });
 
-    it('falls back to the default url for an empty one', async () => {
-      // A service binding ignores the hostname, which invites passing '' — but
-      // neither `fetch` nor a binding can send a relative URL.
+    it('resolves against the global resolver without a region', async () => {
       const fetchImpl = mockTransport();
-      await client(fetchImpl, '').resolve(['promo-banner'], {});
+      await client(fetchImpl).resolve(['promo-banner'], {});
       expect((fetchImpl as any).mock.calls[0][0]).toBe('https://resolver.confidence.dev/v1/flags:resolve');
     });
   });
@@ -247,6 +271,12 @@ describe('ConfidenceClient', () => {
       // Timestamps must be RFC3339 for pbjson to accept them
       expect(body.sendTime).toMatch(/^\d{4}-\d{2}-\d{2}T[\d:.]+Z$/);
       expect(Number.isNaN(Date.parse(body.flags[0].applyTime))).toBe(false);
+    });
+
+    it('applies against a regional resolver', async () => {
+      const fetchImpl = mockTransport({});
+      await client(fetchImpl, 'eu').apply('AQIDBP8=', 'promo-banner');
+      expect((fetchImpl as any).mock.calls[0][0]).toBe('https://resolver.eu.confidence.dev/v1/flags:apply');
     });
 
     it('accepts a single flag name', async () => {
@@ -340,6 +370,262 @@ describe('ConfidenceClient', () => {
     });
   });
 
+  describe('publish', () => {
+    const EVENTS_URL = 'https://events.confidence.dev/v1/events:publish';
+
+    it('posts a single event to the events service', async () => {
+      const fetchImpl = mockTransport({});
+      await client(fetchImpl).publish({
+        name: 'order-completed',
+        payload: { context: { targeting_key: 'user-1' }, item_count: 2 },
+      });
+
+      const [url, init] = (fetchImpl as any).mock.calls[0];
+      // Events have their own service, separate from the resolver.
+      expect(url).toBe(EVENTS_URL);
+      expect(init.method).toBe('POST');
+
+      expect(requestBody(fetchImpl as any)).toEqual({
+        clientSecret: SECRET,
+        sendTime: expect.any(String),
+        events: [
+          {
+            eventDefinition: 'eventDefinitions/order-completed',
+            eventTime: expect.any(String),
+            payload: { context: { targeting_key: 'user-1' }, item_count: 2 },
+          },
+        ],
+      });
+    });
+
+    it('publishes to a regional events service', async () => {
+      // Events are a separate service from the resolver, and carry data of their
+      // own — a region has to place both, which a single url option never could.
+      const fetchImpl = mockTransport({});
+      await client(fetchImpl, 'eu').publish({ name: 'order-completed' });
+      expect((fetchImpl as any).mock.calls[0][0]).toBe('https://events.eu.confidence.dev/v1/events:publish');
+    });
+
+    it('sends RFC3339 timestamps', async () => {
+      const fetchImpl = mockTransport({});
+      await client(fetchImpl).publish({ name: 'order-completed' });
+      const body = requestBody(fetchImpl as any);
+      expect(body.sendTime).toMatch(/^\d{4}-\d{2}-\d{2}T[\d:.]+Z$/);
+      // A direct publish happens as it is sent.
+      expect(body.events[0].eventTime).toBe(body.sendTime);
+    });
+
+    it('works with no payload at all', async () => {
+      const fetchImpl = mockTransport({});
+      await expect(client(fetchImpl).publish({ name: 'page-viewed' })).resolves.toEqual({ ok: true });
+      expect(requestBody(fetchImpl as any).events[0].payload).toEqual({});
+    });
+
+    it('accepts a payload without a context, unattributable though it is', async () => {
+      // Nothing enforces attribution — the client is a transport, not a schema.
+      const fetchImpl = mockTransport({});
+      await expect(client(fetchImpl).publish({ name: 'page-viewed', payload: { path: '/' } })).resolves.toEqual({
+        ok: true,
+      });
+      expect(requestBody(fetchImpl as any).events[0].payload).toEqual({ path: '/' });
+    });
+
+    it('publishes a batch in one request', async () => {
+      const fetchImpl = mockTransport({});
+      await client(fetchImpl).publish([
+        { name: 'a', payload: { i: 1 } },
+        { name: 'b', payload: { i: 2 } },
+      ]);
+
+      expect((fetchImpl as any).mock.calls).toHaveLength(1);
+      expect(requestBody(fetchImpl as any).events).toEqual([
+        { eventDefinition: 'eventDefinitions/a', eventTime: expect.any(String), payload: { i: 1 } },
+        { eventDefinition: 'eventDefinitions/b', eventTime: expect.any(String), payload: { i: 2 } },
+      ]);
+    });
+
+    it('does not call the network for an empty batch', async () => {
+      const fetchImpl = mockTransport({});
+      await expect(client(fetchImpl).publish([])).resolves.toEqual({ ok: true });
+      expect((fetchImpl as any).mock.calls).toHaveLength(0);
+    });
+
+    it("keeps each event's own eventTime, so a flush cannot restamp a batch", async () => {
+      // The whole point of the batch form: a queue that stamped everything at
+      // flush time would corrupt event timing.
+      const fetchImpl = mockTransport({});
+      const earlier = new Date('2024-01-01T00:00:00.000Z');
+      const later = new Date('2024-01-01T00:00:05.000Z');
+      await client(fetchImpl).publish([
+        { name: 'a', eventTime: earlier },
+        { name: 'b', eventTime: later },
+      ]);
+
+      const body = requestBody(fetchImpl as any);
+      expect(body.events.map((e: any) => e.eventTime)).toEqual([earlier.toISOString(), later.toISOString()]);
+      // sendTime is now, not the queued event times.
+      expect(body.sendTime).not.toBe(earlier.toISOString());
+    });
+
+    it('defaults only the events that have no eventTime', async () => {
+      const fetchImpl = mockTransport({});
+      const earlier = new Date('2024-01-01T00:00:00.000Z');
+      await client(fetchImpl).publish([{ name: 'a', eventTime: earlier }, { name: 'b' }]);
+
+      const body = requestBody(fetchImpl as any);
+      expect(body.events[0].eventTime).toBe(earlier.toISOString());
+      expect(body.events[1].eventTime).toBe(body.sendTime);
+    });
+
+    it('uses keepalive so an event survives a navigation', async () => {
+      const fetchImpl = mockTransport({});
+      await client(fetchImpl).publish({ name: 'order-completed' });
+      expect((fetchImpl as any).mock.calls[0][1].keepalive).toBe(true);
+    });
+
+    it('drops keepalive for a body over the browser quota', async () => {
+      // Browsers share a 64KB quota across in-flight keepalive bodies and fail
+      // the fetch outright past it — delivery without keepalive beats none.
+      const fetchImpl = mockTransport({});
+      await client(fetchImpl).publish({ name: 'order-completed', payload: { blob: 'x'.repeat(60_000) } });
+      expect((fetchImpl as any).mock.calls[0][1].keepalive).toBe(false);
+    });
+
+    it('uses keepalive for exposure but not resolution', async () => {
+      // Writes can outlive the page; resolution does not need to consume the
+      // shared keepalive quota.
+      const fetchImpl = mockTransport();
+      const instance = client(fetchImpl);
+      await instance.resolve(['promo-banner'], {});
+      await instance.apply('AQIDBP8=', 'promo-banner');
+      expect((fetchImpl as any).mock.calls[0][1].keepalive).toBe(false);
+      expect((fetchImpl as any).mock.calls[1][1].keepalive).toBe(true);
+    });
+
+    it('measures keepalive bodies in UTF-8 bytes', async () => {
+      const fetchImpl = mockTransport({});
+      await client(fetchImpl).publish({ name: 'test', payload: { text: '€'.repeat(20_000) } });
+      expect((fetchImpl as any).mock.calls[0][1].keepalive).toBe(false);
+    });
+
+    it('does not report success when the publish response is malformed', async () => {
+      const fetchImpl = mockTransport(undefined, { body: 'not json' });
+      await expect(client(fetchImpl).publish({ name: 'test' })).resolves.toMatchObject({ ok: false });
+    });
+
+    it.each([null, [], { errors: {} }, { errors: [{ index: 3 }] }])(
+      'rejects an invalid publish response: %j',
+      async body => {
+        await expect(client(mockTransport(body)).publish({ name: 'test' })).resolves.toMatchObject({ ok: false });
+      },
+    );
+
+    it('reports an event the publisher rejected in an HTTP 200', async () => {
+      // The publish endpoint answers 200 and lists per-event failures in the
+      // body, so an ok response is not yet a recorded event.
+      const fetchImpl = mockTransport({
+        errors: [{ index: 0, reason: 'EVENT_DEFINITION_NOT_FOUND', message: 'no such event definition' }],
+      });
+      await expect(client(fetchImpl).publish({ name: 'order-completed' })).resolves.toEqual({
+        ok: false,
+        errorCode: 'GENERAL',
+        errorMessage: expect.stringContaining('no such event definition'),
+        errors: [{ index: 0, errorMessage: expect.stringContaining('order-completed') }],
+      });
+    });
+
+    it('names which events of a batch were rejected, the rest having been recorded', async () => {
+      const fetchImpl = mockTransport({ errors: [{ index: 1, reason: 'INVALID_ARGUMENT', message: 'bad payload' }] });
+      const result = await client(fetchImpl).publish([{ name: 'a' }, { name: 'b' }, { name: 'c' }]);
+
+      expect(result).toMatchObject({ ok: false });
+      // The index locates the event in the batch that was handed in.
+      expect(result.ok === false && result.errors).toEqual([
+        { index: 1, errorMessage: expect.stringContaining('"b"') },
+      ]);
+    });
+
+    it('falls back to the reason when a rejection carries no message', async () => {
+      const fetchImpl = mockTransport({ errors: [{ index: 0, reason: 'INVALID_ARGUMENT', message: '' }] });
+      await expect(client(fetchImpl).publish({ name: 'order-completed' })).resolves.toMatchObject({
+        errorMessage: expect.stringContaining('INVALID_ARGUMENT'),
+      });
+    });
+
+    it('treats an empty errors array as success', async () => {
+      const fetchImpl = mockTransport({ errors: [] });
+      await expect(client(fetchImpl).publish({ name: 'order-completed' })).resolves.toEqual({ ok: true });
+    });
+
+    it('tolerates an empty response body', async () => {
+      const fetchImpl = mockTransport(undefined, { body: '' });
+      await expect(client(fetchImpl).publish({ name: 'order-completed' })).resolves.toEqual({ ok: true });
+    });
+
+    it('reports HTTP errors as a result, carrying the status', async () => {
+      const fetchImpl = mockTransport(undefined, { status: 403, statusText: 'Forbidden' });
+      await expect(client(fetchImpl).publish({ name: 'order-completed' })).resolves.toEqual({
+        ok: false,
+        errorCode: 'GENERAL',
+        errorMessage: expect.stringMatching(/403 Forbidden/),
+        status: 403,
+      });
+    });
+
+    it('reports transport errors as a result, with no status', async () => {
+      const fetchImpl = jest.fn(async () => {
+        throw new Error('connect ECONNREFUSED');
+      }) as unknown as typeof fetch;
+      await expect(client(fetchImpl).publish({ name: 'order-completed' })).resolves.toEqual({
+        ok: false,
+        errorCode: 'GENERAL',
+        errorMessage: expect.stringMatching('connect ECONNREFUSED'),
+        status: undefined,
+      });
+    });
+
+    it('never rejects, so an un-awaited publish cannot become an unhandled rejection', async () => {
+      // Node terminates the process on an unhandled rejection, and publishing is
+      // fire-and-forget at nearly every call site.
+      const fetchImpl = jest.fn(async () => {
+        throw new Error('connect ECONNREFUSED');
+      }) as unknown as typeof fetch;
+      await expect(client(fetchImpl).publish({ name: 'order-completed' })).resolves.toMatchObject({ ok: false });
+    });
+
+    it('forwards the abort signal to the transport', async () => {
+      const fetchImpl = mockTransport({});
+      const signal = AbortSignal.timeout(5_000);
+      await client(fetchImpl).publish({ name: 'order-completed' }, { signal });
+      expect((fetchImpl as any).mock.calls[0][1].signal).toBe(signal);
+    });
+
+    it('reports a timed-out publish as TIMEOUT', async () => {
+      const fetchImpl = jest.fn(async () => {
+        throw timeoutError();
+      }) as unknown as typeof fetch;
+      await expect(client(fetchImpl).publish({ name: 'order-completed' })).resolves.toMatchObject({
+        ok: false,
+        errorCode: 'TIMEOUT',
+      });
+    });
+
+    it('logs a failure, since nothing awaits the result', async () => {
+      const warn = jest.fn();
+      const fetchImpl = jest.fn(async () => {
+        throw new Error('connect ECONNREFUSED');
+      }) as unknown as typeof fetch;
+      await new ConfidenceClient({ clientSecret: SECRET, fetch: fetchImpl, logger: { warn } }).publish({
+        name: 'order-completed',
+      });
+      expect(warn).toHaveBeenCalledWith(
+        expect.stringContaining('not recorded'),
+        1,
+        expect.stringContaining('ECONNREFUSED'),
+      );
+    });
+  });
+
   describe('FlagBundle.evaluate', () => {
     const bundle = async () => client(mockTransport()).resolve(['promo-banner'], {});
 
@@ -381,6 +667,29 @@ describe('ConfidenceClient', () => {
       expect(details.reason).toBe('NO_SEGMENT_MATCH');
     });
 
+    it('substitutes the default for a dot path into a flag that did not match', async () => {
+      // There is no value to read a path out of, so this is a non-match rather
+      // than a type mismatch against a value that was never there.
+      const details = FlagBundle.evaluate(await bundle(), 'checkout-redesign.enabled', false);
+      expect(details.value).toBe(false);
+      expect(details.reason).toBe('NO_SEGMENT_MATCH');
+      expect(details.errorCode).toBeUndefined();
+    });
+
+    it('reports a flag the resolver failed on as an error', async () => {
+      const errored = await client(
+        mockTransport({
+          ...RESOLVE_RESPONSE,
+          resolvedFlags: [{ flag: 'flags/promo-banner', reason: 'RESOLVE_REASON_ERROR' }],
+        }),
+      ).resolve(['promo-banner'], {});
+
+      const details = FlagBundle.evaluate(errored, 'promo-banner.text', 'default');
+      expect(details.value).toBe('default');
+      expect(details.reason).toBe('ERROR');
+      expect(details.errorCode).toBe('GENERAL');
+    });
+
     it('logs evaluation failures when a logger is passed', async () => {
       const warn = jest.fn();
       FlagBundle.evaluate(await bundle(), 'no-such-flag', 'fallback', { warn });
@@ -391,7 +700,7 @@ describe('ConfidenceClient', () => {
   describe('statelessness', () => {
     it('does no work on construction', () => {
       const fetchImpl = mockTransport();
-      expect(new ConfidenceClient({ flagClientSecret: SECRET, fetch: fetchImpl })).toBeDefined();
+      expect(new ConfidenceClient({ clientSecret: SECRET, fetch: fetchImpl })).toBeDefined();
       expect((fetchImpl as any).mock.calls).toHaveLength(0);
     });
 
@@ -428,7 +737,7 @@ describe('ConfidenceClient', () => {
       const fetchImpl = mockTransport();
       const restore = installStrictReceiverFetch(fetchImpl);
       try {
-        const bundle = await new ConfidenceClient({ flagClientSecret: SECRET }).resolve(['promo-banner'], {});
+        const bundle = await new ConfidenceClient({ clientSecret: SECRET }).resolve(['promo-banner'], {});
 
         expect(bundle.errorCode).toBeUndefined();
         expect(bundle.flags['promo-banner']).toMatchObject({ reason: 'MATCH' });
@@ -442,7 +751,7 @@ describe('ConfidenceClient', () => {
       // @ts-expect-error — deliberately removing fetch to mimic a runtime without it
       delete globalThis.fetch;
       try {
-        const instance = new ConfidenceClient({ flagClientSecret: SECRET });
+        const instance = new ConfidenceClient({ clientSecret: SECRET });
         expect(instance).toBeDefined();
 
         const restore = installStrictReceiverFetch(mockTransport());

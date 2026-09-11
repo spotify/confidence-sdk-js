@@ -17,7 +17,7 @@ function createProvider(options: Partial<ConfidenceWebProviderOptions> = {}): Pr
 describe('ConfidenceWebProvider E2E tests', () => {
   describe('initialize fail', () => {
     beforeEach(async () => {
-      await expect(OpenFeature.setProviderAndWait(createProvider({ timeout: 0 }))).rejects.toThrow();
+      await expect(OpenFeature.setProviderAndWait(createProvider({ timeout: 0 }))).rejects.toThrow('Resolve timeout');
     });
     afterEach(() => OpenFeature.clearProviders());
 
@@ -29,11 +29,12 @@ describe('ConfidenceWebProvider E2E tests', () => {
     it('should resolve default values', () => {
       const client = OpenFeature.getClient();
 
-      expect(client.getStringDetails('web-sdk-e2e-flag.str', 'default')).toEqual({
+      // OpenFeature 1.3.2 rebuilds error details from the error code and drops
+      // the provider's message. The initialization rejection is checked above.
+      expect(client.getStringDetails('web-sdk-e2e-flag.str', 'default')).toMatchObject({
         errorCode: 'GENERAL',
         flagKey: 'web-sdk-e2e-flag.str',
         flagMetadata: {},
-        errorMessage: 'Resolve timeout',
         reason: 'ERROR',
         value: 'default',
       });
@@ -42,7 +43,7 @@ describe('ConfidenceWebProvider E2E tests', () => {
 
   describe('initialize success', () => {
     beforeEach(async () => {
-      OpenFeature.setContext({ targetingKey: 'test-a' }); // control
+      await OpenFeature.setContext({ targetingKey: 'test-a' }); // control
       await OpenFeature.setProviderAndWait(createProvider({ timeout: 1000 }));
     });
     afterEach(() => OpenFeature.clearProviders());
@@ -110,14 +111,14 @@ describe('ConfidenceWebProvider E2E tests', () => {
 
     it('should evaluate a flag with null context value', async () => {
       const client = OpenFeature.getClient();
-      OpenFeature.setContext({ targetingKey: 'test-a', pants: null });
+      await OpenFeature.setContext({ targetingKey: 'test-a', pants: null });
 
-      expect(client.getBooleanDetails('web-sdk-e2e-flag-2.enabled', false)).toEqual({
-        flagKey: 'web-sdk-e2e-flag-2.enabled',
+      expect(client.getBooleanDetails('web-sdk-e2e-flag.bool', true)).toEqual({
+        flagKey: 'web-sdk-e2e-flag.bool',
         flagMetadata: {},
         reason: 'MATCH',
-        variant: 'flags/web-sdk-e2e-flag-2/variants/enabled',
-        value: true,
+        variant: 'flags/web-sdk-e2e-flag/variants/control',
+        value: false,
       });
     });
   });
