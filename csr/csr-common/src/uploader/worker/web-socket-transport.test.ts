@@ -1,11 +1,23 @@
-import { describe, expect, it, vi } from 'vitest';
+import { describe, expect, it, onTestFinished, vi } from 'vitest';
 import { installMockWsServer } from '../../test-utils';
 import { WebSocketTransport } from './web-socket-transport';
 
-const URL = 'ws://localhost:1234/sessions/stream?session_token=abc';
+const URL = 'ws://localhost:1234/sessions/stream';
+const PROTOCOLS = ['recording.v1', 'auth.sensitive-token'];
 
 describe('WebSocketTransport', () => {
   const setup = () => installMockWsServer(URL);
+
+  it('copies and supplies the protocols on the first connection', async () => {
+    const ws = setup();
+    const protocols = [...PROTOCOLS];
+    const t = new WebSocketTransport(URL, protocols);
+    protocols[0] = 'changed-after-construction';
+
+    await expect(t.ready()).resolves.toBeUndefined();
+
+    expect(ws.protocolOffers).toEqual([PROTOCOLS]);
+  });
 
   it('resolves ready() once the server accepts the connection', async () => {
     setup();
@@ -48,8 +60,8 @@ describe('WebSocketTransport', () => {
   });
 
   it('reconnects on a graceful drain (code 1000) and emits state changes', async () => {
-    const { waitForConnection } = setup();
-    const t = new WebSocketTransport(URL);
+    const { protocolOffers, waitForConnection } = setup();
+    const t = new WebSocketTransport(URL, PROTOCOLS);
     const states: boolean[] = [];
     t.onStateChange(({ connected }) => states.push(connected));
     await t.ready();
@@ -61,6 +73,61 @@ describe('WebSocketTransport', () => {
     // First open → no state event (welcome implies connected).
     // Drain → state(false). Reconnect open → state(true).
     await vi.waitFor(() => expect(states).toEqual([false, true]));
+    expect(protocolOffers).toEqual([PROTOCOLS, PROTOCOLS]);
+  });
+
+  it.each([
+    ['no protocol', ''],
+    ['the authentication protocol', PROTOCOLS[1]],
+  ])('rejects readiness and keeps buffered frames when the server selects %s', async (_case, selectedProtocol) => {
+    const { messages } = installMockWsServer(URL, { selectProtocol: () => selectedProtocol });
+    const t = new WebSocketTransport(URL, PROTOCOLS);
+    t.send({ tabId: 'tab-1', eventCounter: 0, data: 'must-not-send' });
+
+    const error = await t.ready().catch((caught: unknown) => caught);
+
+    expect(String(error)).toContain('initial-failed');
+    expect(String(error)).not.toContain(PROTOCOLS[1]);
+    expect(messages).toEqual([]);
+  });
+
+  it('uses the protocols on reconnect and never flushes frames after wrong selection', async () => {
+    const ws = installMockWsServer(URL, {
+      selectProtocol: (_protocols, connectionIndex) => (connectionIndex === 0 ? PROTOCOLS[0] : PROTOCOLS[1]),
+    });
+    const t = new WebSocketTransport(URL, PROTOCOLS);
+    const closeReasons: string[] = [];
+    t.onClose(({ reason }) => closeReasons.push(reason));
+    t.onStateChange(({ connected }) => {
+      if (!connected) {
+        t.send({ tabId: 'tab-1', eventCounter: 0, data: 'must-not-send' });
+      }
+    });
+    await t.ready();
+
+    const first = await ws.waitForConnection();
+    first.close({ code: 1000, reason: 'drain', wasClean: true });
+
+    await vi.waitFor(() => expect(closeReasons).toEqual(['reconnect-failed']));
+    expect(ws.protocolOffers).toEqual([PROTOCOLS, PROTOCOLS]);
+    expect(ws.messages).toEqual([]);
+  });
+
+  it('hides protocol values from WebSocket constructor failures', async () => {
+    const protocolFromBrowserError = PROTOCOLS[1];
+    class ThrowingWebSocket {
+      constructor() {
+        throw new Error(`synthetic constructor failure for ${protocolFromBrowserError}`);
+      }
+    }
+    onTestFinished(() => vi.unstubAllGlobals());
+    vi.stubGlobal('WebSocket', ThrowingWebSocket);
+
+    const t = new WebSocketTransport(URL, PROTOCOLS);
+    const error = await t.ready().catch((caught: unknown) => caught);
+
+    expect(String(error)).toContain('initial-failed');
+    expect(String(error)).not.toContain(protocolFromBrowserError);
   });
 
   it('fires onClose with reason on abrupt close after open', async () => {

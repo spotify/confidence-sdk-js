@@ -173,7 +173,7 @@ function onHello(handle: PortHandle): void {
       };
       log(
         `hello received apiUrl=${handle.hello!.apiUrl} websocketUrl=${
-          handle.hello!.websocketUrl ?? '(derive)'
+          handle.hello!.websocketUrl ? '(configured)' : '(derive)'
         } sessionIdHint=${handle.hello!.sessionIdHint ?? '(none)'}`,
       );
       state = { phase: 'initializing' };

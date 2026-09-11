@@ -14,15 +14,30 @@ import { onTestFinished, vi } from 'vitest';
  * Must be called from within a test (or a helper called from one) so vitest
  * has a test context to attach the cleanup to.
  */
-export function installMockWsServer(url: string): {
+interface MockWsServerOptions {
+  selectProtocol?: (protocols: string[], connectionIndex: number) => string;
+}
+
+export function installMockWsServer(
+  url: string,
+  options: MockWsServerOptions = {},
+): {
   server: Server;
   connections: Client[];
   messages: string[];
+  protocolOffers: string[][];
   waitForConnection: () => Promise<Client>;
   nextMessage: () => Promise<string>;
   nextMessages: (n: number) => Promise<string[]>;
 } {
-  const server = new Server(url);
+  const protocolOffers: string[][] = [];
+  const server = new Server(url, {
+    selectProtocol: protocols => {
+      const offer = [...protocols];
+      protocolOffers.push(offer);
+      return options.selectProtocol?.(offer, protocolOffers.length - 1) ?? offer[0] ?? '';
+    },
+  });
   const connections: Client[] = [];
   const messages: string[] = [];
   let nextConnIndex = 0;
@@ -71,6 +86,7 @@ export function installMockWsServer(url: string): {
     server,
     connections,
     messages,
+    protocolOffers,
     waitForConnection,
     nextMessage,
     nextMessages,

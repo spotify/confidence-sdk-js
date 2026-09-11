@@ -1,6 +1,7 @@
 import type { ClientContext } from '../client-context';
 import type { Client, Transport } from '../types';
 import { WebSocketTransport } from './web-socket-transport';
+import { recordingProtocols } from './websocket-auth';
 
 /**
  * Single Client implementation that talks to the recording backend's REST + WS protocol.
@@ -45,10 +46,18 @@ export class CsrClient implements Client {
 
   async openTransport(sessionToken: string): Promise<Transport> {
     const wsBase = this.websocketUrl ?? `${this.toWsScheme(this.trimSlash(this.apiUrl))}/sessions/stream`;
-    const sep = wsBase.includes('?') ? '&' : '?';
-    const url = `${wsBase}${sep}session_token=${encodeURIComponent(sessionToken)}`;
-    this.log(`WebSocket connect ${url.replace(/session_token=[^&]*/, 'session_token=[REDACTED]')}`);
-    const transport = new WebSocketTransport(url);
+    let parsedUrl: URL;
+    try {
+      parsedUrl = new URL(wsBase);
+    } catch (_error) {
+      throw new Error('Invalid WebSocket URL');
+    }
+    if (parsedUrl.searchParams.has('session_token')) {
+      throw new Error('WebSocket URL must not include a session token');
+    }
+    const protocols = recordingProtocols(sessionToken);
+    this.log(`WebSocket connect ${wsBase}`);
+    const transport = new WebSocketTransport(wsBase, protocols);
     await transport.ready();
     return transport;
   }
