@@ -1,5 +1,13 @@
 # Changelog
 
+## [0.18.11](https://github.com/spotify/confidence-sdk-js/compare/csr-common-v0.18.10...csr-common-v0.18.11) (2026-09-11)
+
+
+### ✨ New Features
+
+* **csr:** authenticate recording WebSockets with subprotocols ([#455](https://github.com/spotify/confidence-sdk-js/issues/455)) ([250342f](https://github.com/spotify/confidence-sdk-js/commit/250342f015a70ba12e92ff9725d3c48180047786))
+* **csr:** log version drift between SDK and worker ([#415](https://github.com/spotify/confidence-sdk-js/issues/415)) ([4ce14ee](https://github.com/spotify/confidence-sdk-js/commit/4ce14eee2704fef6e514b1b5a3b1976705ea22ba))
+
 ## [0.18.10](https://github.com/spotify/confidence-sdk-js/compare/csr-common-v0.18.9...csr-common-v0.18.10) (2026-09-09)
 
 

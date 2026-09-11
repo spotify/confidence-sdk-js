@@ -1,5 +1,20 @@
 # Changelog
 
+## [0.18.14](https://github.com/spotify/confidence-sdk-js/compare/session-recording-v0.18.13...session-recording-v0.18.14) (2026-09-11)
+
+
+### ✨ New Features
+
+* **csr:** log version drift between SDK and worker ([#415](https://github.com/spotify/confidence-sdk-js/issues/415)) ([4ce14ee](https://github.com/spotify/confidence-sdk-js/commit/4ce14eee2704fef6e514b1b5a3b1976705ea22ba))
+
+
+### Dependencies
+
+* The following workspace dependencies were updated
+  * dependencies
+    * @spotify-confidence/csr-common bumped to 0.18.11
+    * @spotify-confidence/csr-recorder bumped to 0.17.19
+
 ## [0.18.13](https://github.com/spotify/confidence-sdk-js/compare/session-recording-v0.18.12...session-recording-v0.18.13) (2026-09-09)
 
 
