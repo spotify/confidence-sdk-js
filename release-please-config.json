@@ -15,18 +15,13 @@
       "bump-patch-for-minor-pre-major": true,
       "extra-files": ["src/factory.ts"]
     },
-    "packages/react": {
-      "component": "react",
-      "changelog-path": "CHANGELOG.md",
-      "bump-minor-pre-major": true,
-      "bump-patch-for-minor-pre-major": true
-    },
     "packages/sdk": {
       "component": "sdk",
+      "release-as": "0.5.0",
       "changelog-path": "CHANGELOG.md",
       "bump-minor-pre-major": true,
       "bump-patch-for-minor-pre-major": true,
-      "extra-files": ["src/Confidence.ts", "src/ConfidenceClient.ts"]
+      "extra-files": ["src/ConfidenceClient.ts"]
     },
     "csr/csr-common": {
       "component": "csr-common",

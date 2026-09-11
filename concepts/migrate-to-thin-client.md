@@ -2,13 +2,48 @@
 
 The remote OpenFeature providers now use `ConfidenceClient` and `FlagBundle`
 instead of the stateful `Confidence` API. Upgrade the SDK and providers together.
-The SDK's new API is released as `0.4.0`; both providers require
-`@spotify-confidence/sdk >=0.4.0 <0.5.0`. OpenFeature peer ranges are
+The thin-client API was introduced for SDK `0.4.0`; the legacy API removal targets
+SDK `0.5.0`. Both providers require
+`@spotify-confidence/sdk >=0.4.0 <0.6.0`. OpenFeature peer ranges are
 `@openfeature/web-sdk >=1.3.2 <2` and `@openfeature/server-sdk >=1.16.0 <2`.
 
-The existing `Confidence` class and `@spotify-confidence/react` integration remain
-available. This migration does not replace their context, caching, or React APIs.
-The separate local resolver provider is not based on this thin client.
+The stateful `Confidence` class and `@spotify-confidence/react` integration have
+been removed, including their context observers, cache, trackers, and Next.js
+development patch. The separate local resolver provider is not based on this
+thin client.
+
+## Replacing the Confidence API
+
+The SDK now exports `ConfidenceClient`, `FlagBundle`, `EvaluationContext`, logger
+types, and `publishFlagEvaluation`. It no longer exports `Confidence`,
+`ConfidenceOptions`, `Value`, `FlagEvaluation`, `FlagResolver`, `Trackable`,
+`Closer`, `CacheOptions`, `CacheScope`, `SimpleFetch`, or the automatic trackers.
+
+| Removed API                                            | Replacement                                                                               |
+| ------------------------------------------------------ | ----------------------------------------------------------------------------------------- |
+| `Confidence.create(options)`                           | `new ConfidenceClient({ clientSecret, region, fetch, logger })`                           |
+| `setContext`, `withContext`, and context subscriptions | Pass an explicit context to each `resolve`, or use OpenFeature context APIs               |
+| `getFlag`, `evaluateFlag`                              | `await client.resolve(...)`, then `FlagBundle.evaluate(bundle, key, defaultValue)`        |
+| `track(name, data)`                                    | `await client.publish({ name, payload: { ...data, context } })`, or OpenFeature `track()` |
+| `Value` and `FlagEvaluation` types                     | `FlagBundle.Value` and `FlagBundle.Details<T>`                                            |
+| Cached flag state and observers                        | Store bundles in the application, or use the web provider                                 |
+| `pageViews`, `visitorId`, and `webVitals` trackers     | Application-managed identity and event collection                                         |
+| `close()` and `waitUntil`                              | Await thin-client writes, or drain the provider at shutdown                               |
+
+For example, replace a context-scoped flag read with:
+
+```ts
+import { ConfidenceClient, FlagBundle } from '@spotify-confidence/sdk';
+
+const client = new ConfidenceClient({ clientSecret: 'your-client-secret' });
+const bundle = await client.resolve(['checkout'], { targeting_key: 'user-1' }, { signal: AbortSignal.timeout(1000) });
+const { value } = FlagBundle.evaluate(bundle, 'checkout.enabled', false);
+```
+
+The retired React hooks are not replaced in this change. Applications can consume
+bundles through their own React context, or use OpenFeature's React integration
+with the web provider. Existing installations of the legacy React package must
+remain on a compatible older SDK until migrated; they cannot use this SDK release.
 
 ## Construct providers from configuration
 

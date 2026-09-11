@@ -16,7 +16,7 @@
 set -e
 
 ROOT="$(cd "$(dirname "$0")" && pwd)"
-PACKAGES="sdk openfeature-web-provider openfeature-server-provider react"
+PACKAGES="sdk openfeature-web-provider openfeature-server-provider"
 
 # explicit template: BSD mktemp ignores TMPDIR
 WORK="$(mktemp -d "${TMPDIR:-/tmp}/verify-types.XXXXXX")"
@@ -39,9 +39,9 @@ echo "Installing into a scratch consumer project..."
 cd "$WORK"
 # hermetic cache: this must not depend on, or write to, the developer's shared npm cache
 npm install --no-audit --no-fund --cache "$WORK/.npm-cache" \
-  ./sdk.tgz ./openfeature-web-provider.tgz ./openfeature-server-provider.tgz ./react.tgz \
+  ./sdk.tgz ./openfeature-web-provider.tgz ./openfeature-server-provider.tgz \
   @openfeature/web-sdk@^1.0.3 @openfeature/server-sdk@^1.13.5 \
-  react@^19 @types/react@^19 @types/node@^22 typescript@5.1.6 >npm-install.log 2>&1 ||
+  @types/node@^22 typescript@5.1.6 >npm-install.log 2>&1 ||
   { cat npm-install.log; exit 1; }
 
 # One .mts and one .cts per package. The importing file's extension decides which export
@@ -49,16 +49,11 @@ npm install --no-audit --no-fund --cache "$WORK/.npm-cache" \
 for NAME in $PACKAGES; do
   case "$NAME" in
     sdk) SPECIFIER="@spotify-confidence/sdk" ;;
-    react) SPECIFIER="@spotify-confidence/react" ;;
     *) SPECIFIER="@spotify-confidence/$NAME" ;;
   esac
   printf "import * as m from '%s';\nexport type T = typeof m;\n" "$SPECIFIER" > "$WORK/$NAME.mts"
   printf "import * as m from '%s';\nexport type T = typeof m;\n" "$SPECIFIER" > "$WORK/$NAME.cts"
 done
-
-# react also publishes a ./server subpath
-printf "import * as m from '@spotify-confidence/react/server';\nexport type T = typeof m;\n" > "$WORK/react-server.mts"
-printf "import * as m from '@spotify-confidence/react/server';\nexport type T = typeof m;\n" > "$WORK/react-server.cts"
 
 cat > "$WORK/tsconfig.json" <<'EOF'
 {

@@ -1,18 +1,17 @@
-import { Confidence } from '@spotify-confidence/sdk';
+import { ConfidenceClient, FlagBundle } from '@spotify-confidence/sdk';
 
 if (!process.env.CLIENT_SECRET) {
-  console.log('CLIENT_SECRET is not set in .env');
+  throw new Error('Set CLIENT_SECRET before running the example');
 }
-const confidence = Confidence.create({
+
+const client = new ConfidenceClient({
   clientSecret: process.env.CLIENT_SECRET,
-  timeout: 1000,
   logger: console,
 });
-main();
 
-async function main() {
-  console.log('Starting example');
-  const fe = confidence.withContext({ targeting_key: 'user-a' }).evaluateFlag('tutorial-flag', {});
-  console.log(fe);
-  console.log(await fe);
-}
+const bundle = await client.resolve(
+  ['tutorial-feature'],
+  { targeting_key: 'user-a' },
+  { signal: AbortSignal.timeout(1000) },
+);
+console.log(FlagBundle.evaluate(bundle, 'tutorial-feature.title', 'Default'));
