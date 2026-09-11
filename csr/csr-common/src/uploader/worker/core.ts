@@ -2,6 +2,8 @@ import type { ClientContext } from '../client-context';
 import type { Client, Frame, Transport } from '../types';
 import { CsrClient } from './csr-client';
 
+const WORKER_HASH: string | undefined = (globalThis as Record<string, unknown>).__WORKER_HASH__ as string | undefined;
+
 /** Adapter so this module is unaware of whether it's running in a SharedWorker or a dedicated Worker. */
 export interface PortAdapter {
   postMessage(message: unknown): void;
@@ -202,6 +204,7 @@ function onHello(handle: PortHandle): void {
       handle.port.postMessage({
         type: 'welcome',
         result: { skipRecording: true },
+        workerHash: WORKER_HASH,
       });
       return;
     case 'dead':
@@ -332,6 +335,7 @@ function flushPendingWelcomes(): void {
       handle.port.postMessage({
         type: 'welcome',
         result: { skipRecording: true },
+        workerHash: WORKER_HASH,
       });
     } else if (state.phase === 'dead') {
       handle.port.postMessage({ type: 'dead', reason: state.reason });
@@ -346,6 +350,7 @@ function sendActiveWelcome(handle: PortHandle, currentSessionId: string, current
   handle.port.postMessage({
     type: 'welcome',
     result: { sessionId: currentSessionId, sessionToken: currentSessionToken },
+    workerHash: WORKER_HASH,
     adoptedFromSessionId: adopted ? hint : undefined,
     newTabId,
     resetCounter: adopted || newTabId !== undefined,
