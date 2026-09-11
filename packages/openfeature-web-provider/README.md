@@ -12,16 +12,19 @@ This implements the static paradigm of OpenFeature.
 To add the packages to your dependencies run:
 
 ```sh
-yarn add @openfeature/web-sdk @spotify-confidence/openfeature-web-provider
+yarn add '@openfeature/web-sdk@^1.3.2' @openfeature/core '@spotify-confidence/sdk@^0.4.0' @spotify-confidence/openfeature-web-provider
 ```
 
 ## Enabling the provider, setting the evaluation context and resolving flags
 
-`setProvider` makes the Provider launch a network request to initialize the flags. In cases of success the
-`ProviderEvents.Ready` event will be emitted. In cases of failure of the network request, the `ProviderEvent.Error`
-event will be emitted. The ProviderEvents events will be emitted only when we are done with the network request, either
-a successful or a failed network response. If the network response failed, default values will be returned on flag
-evaluation, if the network request is successful we update the flags and then emit `ProviderEvents.Ready`.
+Requires `@openfeature/web-sdk >=1.3.2 <2` and `@spotify-confidence/sdk >=0.4.0 <0.5.0`.
+For existing integrations, see the [migration guide](../../concepts/migrate-to-thin-client.md).
+
+`setProviderAndWait` resolves all available flags for the current context before
+returning. It rejects if initialization fails; subsequent evaluations return
+defaults with an error reason. Successful initialization puts the provider in
+READY. Configure a logger to retain resolve diagnostics: some OpenFeature SDK
+versions discard the provider's error message when producing evaluation details.
 
 ```ts
 import { createConfidenceWebProvider } from '@spotify-confidence/openfeature-web-provider';
@@ -33,13 +36,13 @@ const provider = createConfidenceWebProvider({
   timeout: 1000,
 });
 
-OpenFeature.setContext({
+await OpenFeature.setContext({
   targetingKey: 'myTargetingKey',
 });
 
 try {
   await OpenFeature.setProviderAndWait(provider);
-} (error) {
+} catch (error) {
   console.error('Failed to initialize Confidence provider:', error);
 }
 
@@ -49,7 +52,22 @@ const result = client.getBooleanValue('flagName.my-boolean', false);
 
 Notes:
 
-- In the above example we first set the context and then set the provider and await for the provider to become ready before getting the flag value. Other ways of arranging these calls might make more sense depending on what app framework you are using. See the example apps for more inspiration.
+- Set context before initialization, then await the provider before evaluating flags.
+
+## Changing context
+
+Context changes resolve a new bundle asynchronously. Await `setContext` before
+reading values or recording events that should correspond to the new assignments:
+
+```ts
+await OpenFeature.setContext({ targetingKey: 'another-user' });
+const enabled = client.getBooleanValue('flagName.my-boolean', false);
+```
+
+During reconciliation, evaluations may still read the previous bundle. A failed
+resolve replaces it with an error bundle, so evaluations return defaults. A
+superseded resolve cannot overwrite the latest bundle. Each bundle keeps its own
+exposure token, including when outgoing exposure is flushed during replacement.
 
 ## Region
 

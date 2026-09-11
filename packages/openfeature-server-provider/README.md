@@ -12,10 +12,18 @@ This implements the dynamic paradigm of OpenFeature.
 To add the packages to your dependencies run:
 
 ```sh
-yarn add @openfeature/server-sdk @openfeature/core @spotify-confidence/sdk @spotify-confidence/openfeature-server-provider
+yarn add '@openfeature/server-sdk@^1.16.0' @openfeature/core '@spotify-confidence/sdk@^0.4.0' @spotify-confidence/openfeature-server-provider
 ```
 
 ## Enabling the provider, setting the evaluation context and resolving flags
+
+Requires `@openfeature/server-sdk >=1.16.0 <2` and `@spotify-confidence/sdk >=0.4.0 <0.5.0`.
+For existing integrations, see the [migration guide](../../concepts/migrate-to-thin-client.md).
+
+The provider is ready immediately. Each evaluation resolves only the requested
+flag against the supplied context and records exposure in that request. It has no
+flag cache or background resolution loop. Use `targetingKey` in OpenFeature
+contexts; the provider converts it to Confidence's `targeting_key`.
 
 ```ts
 import { createConfidenceServerProvider } from '@spotify-confidence/openfeature-server-provider';
