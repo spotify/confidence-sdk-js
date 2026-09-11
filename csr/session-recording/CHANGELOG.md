@@ -1,5 +1,20 @@
 # Changelog
 
+## [0.18.15](https://github.com/spotify/confidence-sdk-js/compare/session-recording-v0.18.14...session-recording-v0.18.15) (2026-09-11)
+
+
+### ✨ New Features
+
+* **csr:** retire force recording semantics ([#451](https://github.com/spotify/confidence-sdk-js/issues/451)) ([b1088ba](https://github.com/spotify/confidence-sdk-js/commit/b1088ba7eaf9457f4f3554d6109be2b5f4c0bbf0))
+
+
+### Dependencies
+
+* The following workspace dependencies were updated
+  * dependencies
+    * @spotify-confidence/csr-common bumped to 0.18.12
+    * @spotify-confidence/csr-recorder bumped to 0.17.20
+
 ## [0.18.14](https://github.com/spotify/confidence-sdk-js/compare/session-recording-v0.18.13...session-recording-v0.18.14) (2026-09-11)
 
 
