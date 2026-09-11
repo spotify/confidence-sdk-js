@@ -68,7 +68,7 @@ jobs:
         run: |
           yarn pack -o package.tgz
           npm publish package.tgz
-      - name: Publish react to NPM
+      - name: Publish React to NPM
         if: ${{ needs.Release-Please.outputs.react-release_created }}
         shell: bash
         working-directory: packages/react

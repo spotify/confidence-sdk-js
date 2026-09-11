@@ -4,72 +4,6 @@
 
 ```ts
 
-import { BinaryReader } from '@bufbuild/protobuf/wire';
-import { BinaryWriter } from '@bufbuild/protobuf/wire';
-
-// @public
-export interface CacheOptions {
-    // Warning: (ae-forgotten-export) The symbol "CacheEntry" needs to be exported by the entry point index.d.ts
-    //
-    // (undocumented)
-    entries?: AsyncIterable<CacheEntry>;
-    scope?: CacheScope;
-}
-
-// Warning: (ae-forgotten-export) The symbol "CacheProvider" needs to be exported by the entry point index.d.ts
-// Warning: (ae-missing-release-tag) "CacheScope" is part of the package's API, but it is missing a release tag (@alpha, @beta, @public, or @internal)
-//
-// @public
-export type CacheScope = (provider: CacheProvider) => CacheProvider;
-
-// @public
-export namespace Closer {
-    export function combine(...closers: Closer[]): Closer;
-}
-
-// @public
-export type Closer = () => void;
-
-// @public
-export class Confidence implements EventSender, Trackable, FlagResolver {
-    // @internal
-    constructor({ context, ...config }: Configuration, parent?: Confidence);
-    clearContext(): void;
-    close(): void;
-    readonly config: Configuration;
-    // Warning: (ae-forgotten-export) The symbol "Subscribe" needs to be exported by the entry point index.d.ts
-    //
-    // @internal
-    readonly contextChanges: Subscribe<string[]>;
-    static create(options: ConfidenceOptions): Confidence;
-    get environment(): string;
-    evaluateFlag(path: string, defaultValue: string): FlagEvaluation<string>;
-    // (undocumented)
-    evaluateFlag(path: string, defaultValue: boolean): FlagEvaluation<boolean>;
-    // (undocumented)
-    evaluateFlag(path: string, defaultValue: number): FlagEvaluation<number>;
-    // (undocumented)
-    evaluateFlag<T extends Value>(path: string, defaultValue: T): FlagEvaluation<T>;
-    get flagState(): State;
-    getContext(): Context;
-    getFlag(path: string, defaultValue: string): Promise<string>;
-    // (undocumented)
-    getFlag(path: string, defaultValue: boolean): Promise<boolean>;
-    // (undocumented)
-    getFlag(path: string, defaultValue: number): Promise<number>;
-    // (undocumented)
-    getFlag<T extends Value>(path: string, defaultValue: T): Promise<T>;
-    // Warning: (ae-forgotten-export) The symbol "AccessiblePromise" needs to be exported by the entry point index.d.ts
-    protected resolveFlags(): AccessiblePromise<void>;
-    setContext(context: Context): boolean;
-    subscribe(onStateChange?: StateObserver): () => void;
-    // (undocumented)
-    toOptions(): ConfidenceOptions;
-    track(name: string, data?: EventData): void;
-    track(manager: Trackable.Manager): Closer;
-    withContext(context: Context): Confidence;
-}
-
 // @public
 export namespace ConfidenceClient {
     export interface Event {
@@ -123,90 +57,10 @@ export class ConfidenceClient {
 }
 
 // @public
-export interface ConfidenceOptions {
-    applyBaseUrl?: string;
-    applyDebounce?: number;
-    cache?: CacheOptions;
-    clientSecret: string;
-    // (undocumented)
-    context?: Context;
-    disableTelemetry?: boolean;
-    environment: 'client' | 'backend';
-    fetchImplementation?: SimpleFetch;
-    // @internal
-    library?: 'openfeature' | 'react';
-    logger?: Logger;
-    region?: 'eu' | 'us';
-    resolveBaseUrl?: string;
-    timeout: number;
-    waitUntil?: WaitUntil;
-}
-
-// Warning: (ae-missing-release-tag) "Configuration" is part of the package's API, but it is missing a release tag (@alpha, @beta, @public, or @internal)
-//
-// @public
-export interface Configuration extends ConfidenceOptions {
-    // (undocumented)
-    readonly cacheProvider: CacheProvider;
-    // (undocumented)
-    readonly clientSecret: string;
-    // Warning: (ae-forgotten-export) The symbol "EvaluationTrace" needs to be exported by the entry point index.d.ts
-    //
-    // @internal (undocumented)
-    readonly emitEvaluationTrace: (trace: EvaluationTrace) => void;
-    // Warning: (ae-forgotten-export) The symbol "EventSenderEngine" needs to be exported by the entry point index.d.ts
-    //
-    // @internal
-    readonly eventSenderEngine: EventSenderEngine;
-    // Warning: (ae-forgotten-export) The symbol "FlagResolverClient" needs to be exported by the entry point index.d.ts
-    //
-    // @internal
-    readonly flagResolverClient: FlagResolverClient;
-    readonly logger: Logger;
-    // @internal (undocumented)
-    readonly onClose?: () => void;
-    // Warning: (ae-forgotten-export) The symbol "TraceConsumer" needs to be exported by the entry point index.d.ts
-    //
-    // @internal (undocumented)
-    readonly staleFlagTraceConsumer: TraceConsumer;
-}
-
-// @public
-export interface Context extends Value.Struct {
-    page?: {
-        path: string;
-        referrer: string;
-        search: string;
-        title: string;
-        url: string;
-    };
-    targeting_key?: string;
-    visitor_id?: string;
-}
-
-// @public
-export interface Contextual<Self extends Contextual<Self>> {
-    clearContext(): void;
-    getContext(): Context;
-    setContext(context: Context): void;
-    withContext(context: Context): Self;
-}
-
-// @public
 export type EvaluationContext = {
     targeting_key?: string;
     [key: string]: unknown;
 };
-
-// @public
-export type EventData = Value.Struct & {
-    context?: never;
-};
-
-// @public
-export interface EventSender extends Contextual<EventSender> {
-    track(name: string, data?: EventData): void;
-}
 
 // @public
 export interface FlagBundle {
@@ -228,55 +82,14 @@ export namespace FlagBundle {
         value: T;
         variant?: string;
     }
-    export type ErrorCode = 'FLAG_NOT_FOUND' | 'TYPE_MISMATCH' | 'TIMEOUT' | 'GENERAL';
+    export type ErrorCode = 'FLAG_NOT_FOUND' | 'TYPE_MISMATCH' | 'TIMEOUT' | 'GENERAL' | 'PROVIDER_NOT_READY' | 'PROVIDER_FATAL';
     export function evaluate<T extends Value>(bundle: FlagBundle, flagKey: string, defaultValue: T, logger?: Logger): Details<T>;
     export type Primitive = null | boolean | string | number;
-    export type Reason = 'ERROR' | 'FLAG_ARCHIVED' | 'MATCH' | 'NO_SEGMENT_MATCH' | 'TARGETING_KEY_ERROR' | 'NO_TREATMENT_MATCH' | 'UNSPECIFIED';
+    export type Reason = 'ERROR' | 'FLAG_ARCHIVED' | 'MATCH' | 'NO_SEGMENT_MATCH' | 'TARGETING_KEY_ERROR' | 'NO_TREATMENT_MATCH' | 'MATERIALIZATION_NOT_SUPPORTED' | 'UNSPECIFIED';
     export type Struct = {
         [key: string]: Value;
     };
     export type Value = Primitive | Struct;
-}
-
-// Warning: (ae-missing-release-tag) "FlagEvaluation" is part of the package's API, but it is missing a release tag (@alpha, @beta, @public, or @internal)
-//
-// @public
-export namespace FlagEvaluation {
-    export type ErrorCode = 'FLAG_NOT_FOUND' | 'TYPE_MISMATCH' | 'NOT_READY' | 'TIMEOUT' | 'GENERAL';
-    export interface Failed<T> {
-        readonly errorCode: ErrorCode;
-        readonly errorMessage: string;
-        readonly reason: 'ERROR';
-        readonly value: T;
-    }
-    export interface Matched<T> {
-        readonly reason: 'MATCH';
-        readonly value: T;
-        readonly variant: string;
-    }
-    export type Resolved<T> = Matched<T> | Unmatched<T> | Failed<T>;
-    export type Stale<T> = Resolved<T> & PromiseLike<Resolved<T>>;
-    export interface Unmatched<T> {
-        readonly reason: 'UNSPECIFIED' | 'NO_SEGMENT_MATCH' | 'NO_TREATMENT_MATCH' | 'FLAG_ARCHIVED' | 'TARGETING_KEY_ERROR';
-        readonly value: T;
-    }
-}
-
-// @public
-export type FlagEvaluation<T> = FlagEvaluation.Resolved<T> | FlagEvaluation.Stale<T>;
-
-// @public
-export interface FlagResolver extends Contextual<FlagResolver> {
-    close?(): void;
-    evaluateFlag(path: string, defaultValue: string): FlagEvaluation<string>;
-    evaluateFlag(path: string, defaultValue: boolean): FlagEvaluation<boolean>;
-    evaluateFlag(path: string, defaultValue: number): FlagEvaluation<number>;
-    evaluateFlag<T extends Value>(path: string, defaultValue: T): FlagEvaluation<T>;
-    getFlag(path: string, defaultValue: string): Promise<string>;
-    getFlag(path: string, defaultValue: boolean): Promise<boolean>;
-    getFlag(path: string, defaultValue: number): Promise<number>;
-    getFlag<T extends Value>(path: string, defaultValue: T): Promise<T>;
-    subscribe(onStateChange?: StateObserver): () => void;
 }
 
 // @public
@@ -300,89 +113,7 @@ export namespace Logger {
 }
 
 // @public
-export function pageViews(): Trackable.Manager;
-
-// @public
 export function publishFlagEvaluation(flagName: string, variant: string, assignmentOrigin: string): void;
-
-// Warning: (ae-missing-release-tag) "SimpleFetch" is part of the package's API, but it is missing a release tag (@alpha, @beta, @public, or @internal)
-//
-// @public
-export type SimpleFetch = (request: Request) => Promise<Response>;
-
-// @public
-export type State = 'NOT_READY' | 'READY' | 'STALE' | 'ERROR';
-
-// @public
-export type StateObserver = (state: State) => void;
-
-// @public
-export namespace Trackable {
-    export type Cleanup = void | Closer;
-    export type Controller = Pick<Confidence, 'setContext' | 'track' | 'config'>;
-    export type Manager = (controller: Controller) => Cleanup;
-    export function setup(controller: Controller, manager: Manager): Closer;
-}
-
-// @public
-export interface Trackable {
-    track(manager: Trackable.Manager): Closer;
-}
-
-// Warning: (ae-missing-release-tag) "Value" is part of the package's API, but it is missing a release tag (@alpha, @beta, @public, or @internal)
-//
-// @public
-export namespace Value {
-    export function assertType(expected: 'undefined', found: Value): asserts found is undefined;
-    export function assertType(expected: 'string', found: Value): asserts found is string;
-    export function assertType(expected: 'number', found: Value): asserts found is number;
-    export function assertType(expected: 'boolean', found: Value): asserts found is boolean;
-    export function assertType(expected: 'List', found: Value): asserts found is List;
-    export function assertType(expected: 'Struct', found: Value): asserts found is Struct;
-    export function assertValue(value: unknown): asserts value is Value;
-    export function clone<T extends Value>(value: T): T;
-    export function deserialize(data: string): Value;
-    export function equal(value1: Value, value2: Value): boolean;
-    export function get(struct: Struct | undefined, path: string): Value;
-    export function get(struct: Struct | undefined, ...steps: string[]): Value;
-    export function getType(value: Value): TypeName;
-    export function isList(value: Value): value is List;
-    export function isStruct(value: Value): value is Struct;
-    export type List = ReadonlyArray<number> | ReadonlyArray<string> | ReadonlyArray<boolean>;
-    export type Primitive = number | string | boolean;
-    export function serialize(value: Value): string;
-    export type Struct = {
-        readonly [key: string]: Value;
-    };
-    export type TypeName = 'number' | 'string' | 'boolean' | 'Struct' | 'List' | 'undefined';
-}
-
-// @public
-export type Value = Value.Primitive | Value.Struct | Value.List | undefined;
-
-// @public
-export const visitorIdentity: ({ domain }?: VisitorIdentityOptions) => Trackable.Manager;
-
-// @public
-export type VisitorIdentityOptions = {
-    domain?: string;
-};
-
-// Warning: (ae-missing-release-tag) "WaitUntil" is part of the package's API, but it is missing a release tag (@alpha, @beta, @public, or @internal)
-//
-// @public (undocumented)
-export type WaitUntil = (promise: Promise<void>) => void;
-
-// @public
-export function webVitals({ lcp, inp, cls, ttfb, }?: WebVitalsOptions): Trackable.Manager;
-
-// @public
-export type WebVitalsOptions = {
-    lcp?: boolean;
-    inp?: boolean;
-    cls?: boolean;
-    ttfb?: boolean;
-};
 
 // (No @packageDocumentation comment for this package)
 

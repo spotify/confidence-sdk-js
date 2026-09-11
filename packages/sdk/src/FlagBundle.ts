@@ -4,7 +4,7 @@ import { Logger } from './logger';
  * The result of resolving a set of flags: plain JSON, so a server can resolve
  * once and forward the whole thing to a browser to evaluate.
  *
- * Bundles are produced by `ConfidenceClient.resolve`. This module is pure — it
+ * Bundles are produced by `ConfidenceClient.resolve` or a compatible local resolver. This module is pure — it
  * has no transport and no credentials — so it is safe to reach for from browser
  * code that only ever evaluates a forwarded bundle.
  * @public
@@ -32,7 +32,13 @@ export interface FlagBundle {
 // eslint-disable-next-line @typescript-eslint/no-redeclare
 export namespace FlagBundle {
   /** Error code for a flag that could not be evaluated */
-  export type ErrorCode = 'FLAG_NOT_FOUND' | 'TYPE_MISMATCH' | 'TIMEOUT' | 'GENERAL';
+  export type ErrorCode =
+    | 'FLAG_NOT_FOUND'
+    | 'TYPE_MISMATCH'
+    | 'TIMEOUT'
+    | 'GENERAL'
+    | 'PROVIDER_NOT_READY'
+    | 'PROVIDER_FATAL';
 
   /** Why a flag resolved the way it did */
   export type Reason =
@@ -42,6 +48,7 @@ export namespace FlagBundle {
     | 'NO_SEGMENT_MATCH'
     | 'TARGETING_KEY_ERROR'
     | 'NO_TREATMENT_MATCH'
+    | 'MATERIALIZATION_NOT_SUPPORTED'
     | 'UNSPECIFIED';
 
   /** Primitive flag value */
@@ -116,6 +123,16 @@ export namespace FlagBundle {
     // reason it did not match. Without this a dot path would report a type
     // mismatch against a value that was never there.
     if (flag.reason !== 'MATCH') {
+      if (flag.reason === 'MATERIALIZATION_NOT_SUPPORTED') {
+        return {
+          ...flag,
+          reason: 'ERROR',
+          value: defaultValue,
+          errorCode: 'GENERAL',
+          errorMessage: `Flag "${flagName}" requires materializations. Configure a materialization store.`,
+          shouldApply: false,
+        };
+      }
       if (flag.reason === 'ERROR') {
         return {
           ...flag,

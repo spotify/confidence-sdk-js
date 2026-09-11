@@ -2,6 +2,11 @@
   "name": "react19",
   "version": "0.1.0",
   "private": true,
+  "type": "module",
+  "scripts": {
+    "dev": "vite",
+    "build": "tsc --noEmit && vite build --outDir build"
+  },
   "dependencies": {
     "@spotify-confidence/react": "workspace:*",
     "@spotify-confidence/sdk": "workspace:*",
@@ -9,11 +14,9 @@
     "react-dom": "^19.0.0"
   },
   "devDependencies": {
-    "@vitejs/plugin-react": "^5.1.4",
+    "@types/react": "^19",
+    "@types/react-dom": "^19",
+    "typescript": "5.1.6",
     "vite": "^7.3.6"
-  },
-  "scripts": {
-    "dev": "vite",
-    "build": "vite build"
   }
 }

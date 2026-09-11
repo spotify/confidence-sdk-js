@@ -21,6 +21,19 @@ module.exports = {
   collectCoverageFrom: ['packages/**/*.{jsx,ts,tsx}', '!**/*.d.ts', '!**/*.{test,setup}.{jsx,ts,tsx}'],
   coverageProvider: 'v8',
   projects: [
+    ...[18, 19].map(version => ({
+      displayName: `react${version}`,
+      testEnvironment: 'jsdom',
+      testEnvironmentOptions: { customExportConditions: ['node', 'node-addons'] },
+      testMatch: ['<rootDir>/packages/react/src/**/*.test.ts*'],
+      ...projectCommonConfig,
+      moduleNameMapper: Object.fromEntries(
+        ['react', 'react-dom/client', 'react-dom/server'].map(name => [
+          `^${name}$`,
+          require.resolve(name, { paths: [path.join(__dirname, `examples/react${version}`)] }),
+        ]),
+      ),
+    })),
     {
       displayName: 'sdk',
       testMatch: ['<rootDir>/packages/sdk/src/**/*.test.ts*'],

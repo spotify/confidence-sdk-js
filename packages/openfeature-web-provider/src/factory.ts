@@ -47,8 +47,8 @@ export function createConfidenceWebProvider(options: ConfidenceWebProviderOption
 }
 
 /**
- * Matches the Confidence SDK: silent in production, but loud enough to debug a
- * failing resolve in development. `process` is absent in some browser bundles.
+ * Silent in production; reports failures in development.
+ * `process` is absent in some browser bundles.
  */
 function defaultLogger(): Logger | undefined {
   try {
