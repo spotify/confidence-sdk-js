@@ -14,7 +14,6 @@ export class CsrClient implements Client {
     private readonly context: ClientContext | undefined,
     private readonly websocketUrl?: string,
     private readonly log: (msg: string) => void = () => {},
-    private readonly forceRecord?: boolean,
   ) {}
 
   async initSession(): Promise<{ sessionId: string; sessionToken: string } | { skipRecording: true }> {
@@ -26,7 +25,6 @@ export class CsrClient implements Client {
       body: JSON.stringify({
         clientSecret: this.clientSecret,
         ...(this.context && Object.keys(this.context).length > 0 ? { context: this.context } : {}),
-        ...(this.forceRecord ? { forceRecord: true } : {}),
       }),
     });
     if (!res.ok) {

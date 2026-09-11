@@ -16,7 +16,6 @@ interface HelloMessage {
   websocketUrl?: string;
   clientSecret: string;
   context?: ClientContext;
-  forceRecord?: boolean;
   sessionIdHint?: string;
   sessionTokenHint?: string;
   tabId: string;
@@ -195,12 +194,6 @@ function onHello(handle: PortHandle): void {
       return;
     }
     case 'skipping':
-      if (handle.hello!.forceRecord) {
-        log('forceRecord set; re-initializing from skipping state');
-        state = { phase: 'initializing' };
-        void initializeSession(handle.hello!).then(flushPendingWelcomes);
-        return;
-      }
       handle.port.postMessage({
         type: 'welcome',
         result: { skipRecording: true },
@@ -222,7 +215,6 @@ async function initializeSession(firstHello: HelloMessage): Promise<void> {
     firstHello.context,
     firstHello.websocketUrl,
     log,
-    firstHello.forceRecord,
   );
 
   // Try to adopt the hint first. Need both sessionId (for tab-side state) and

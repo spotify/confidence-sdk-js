@@ -94,28 +94,44 @@ describe('worker/core', () => {
     });
 
     it('replies with skipRecording when the backend opts out', async () => {
-      setupBackend({ skipRecording: true });
+      const { fetchHarness } = setupBackend({ skipRecording: true });
       const { registerPort } = await loadCore();
-      const port = createMockPort();
-      registerPort(port.adapter);
+      const firstPort = createMockPort();
+      const secondPort = createMockPort();
+      registerPort(firstPort.adapter);
+      registerPort(secondPort.adapter);
 
-      port.tabSends(helloMessage());
-      const welcome = await port.next<WelcomeMessage>(isType('welcome'));
+      firstPort.tabSends(helloMessage());
+      const firstWelcome = await firstPort.next<WelcomeMessage>(isType('welcome'));
 
-      expect(welcome.result).toEqual({ skipRecording: true });
+      // A stale caller may still send the retired property at runtime. It must not
+      // turn an ordinary backend skip into a fresh InitSession attempt.
+      secondPort.tabSends(helloMessage({ tabId: 'tab-B', forceRecord: true }));
+      const secondWelcome = await secondPort.next<WelcomeMessage>(isType('welcome'));
+
+      expect(firstWelcome.result).toEqual({ skipRecording: true });
+      expect(secondWelcome.result).toEqual({ skipRecording: true });
+      expect(fetchHarness.calls).toHaveLength(1);
     });
 
-    it('transitions to dead when initSession throws', async () => {
-      installMockFetch(() => new Response(null, { status: 500 }));
+    it.each([429, 500, 503])('does not retry InitSession after HTTP %i', async status => {
+      const fetchHarness = installMockFetch(() => new Response(null, { status }));
 
       const { registerPort } = await loadCore();
-      const port = createMockPort();
-      registerPort(port.adapter);
+      const firstPort = createMockPort();
+      const secondPort = createMockPort();
+      registerPort(firstPort.adapter);
+      registerPort(secondPort.adapter);
 
-      port.tabSends(helloMessage());
-      const dead = await port.next<DeadMessage>(isType('dead'));
+      firstPort.tabSends(helloMessage());
+      const firstDead = await firstPort.next<DeadMessage>(isType('dead'));
 
-      expect(dead.reason).toMatch(/init-session-failed/);
+      secondPort.tabSends(helloMessage({ tabId: 'tab-B' }));
+      const secondDead = await secondPort.next<DeadMessage>(isType('dead'));
+
+      expect(firstDead.reason).toMatch(new RegExp(`init-session-failed:.*HTTP ${status}`));
+      expect(secondDead.reason).toBe(firstDead.reason);
+      expect(fetchHarness.calls).toHaveLength(1);
     });
   });
 
