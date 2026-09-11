@@ -10,7 +10,7 @@ import {
   validateTagValue,
   validateMeasureValue,
 } from '@spotify-confidence/csr-common';
-import { observeFlags } from './flag-observer';
+import { observeFlags, type FlagWrite } from './flag-observer';
 import { createUploader, type ClientContext } from '@spotify-confidence/csr-common/uploader';
 import { SDK_VERSION } from './version';
 
@@ -128,6 +128,18 @@ export function initSessionRecorder(options: InitSessionRecorderOptions): Sessio
     userTriggeredOnInput: options.userTriggeredOnInput,
   };
 
+  function emitFlagEvaluation({ flagKey, variant, assignmentOrigin }: FlagWrite): void {
+    const data: FlagEvaluationPluginData = {
+      plugin: RecordingPluginName.FlagEvaluation,
+      payload: { flagKey, variant, assignmentOrigin },
+    };
+    sendEvent?.({
+      type: RecordingEventType.Plugin,
+      timestamp: Date.now(),
+      data,
+    });
+  }
+
   async function initAndRecord() {
     try {
       const uploader = await createUploader({
@@ -148,6 +160,17 @@ export function initSessionRecorder(options: InitSessionRecorderOptions): Sessio
           stopRecorder?.();
           stopRecorder = null;
           stopped = true;
+        },
+        onSessionRestart: () => {
+          if (stopped || sendEvent === null) return;
+          stopRecorder?.();
+          stopRecorder = record(sendEvent, recordingConfig);
+          // `observeFlags` replays the already-evaluated flags on setup, so re-establishing
+          // it is what carries them into the replacement recording. Without this the new
+          // recording only sees flags evaluated after the restart, missing the assignments
+          // that shaped the experience being recorded.
+          stopObservingFlags?.();
+          stopObservingFlags = observeFlags(emitFlagEvaluation);
         },
       });
 
@@ -173,17 +196,7 @@ export function initSessionRecorder(options: InitSessionRecorderOptions): Sessio
 
       stopRecorder = record(sendEvent, recordingConfig);
 
-      stopObservingFlags = observeFlags(({ flagKey, variant, assignmentOrigin }) => {
-        const data: FlagEvaluationPluginData = {
-          plugin: RecordingPluginName.FlagEvaluation,
-          payload: { flagKey, variant, assignmentOrigin },
-        };
-        sendEvent?.({
-          type: RecordingEventType.Plugin,
-          timestamp: Date.now(),
-          data,
-        });
-      });
+      stopObservingFlags = observeFlags(emitFlagEvaluation);
     } catch (err) {
       debugLogger?.(`Recording disabled: ${err instanceof Error ? err.message : String(err)}`);
     }
