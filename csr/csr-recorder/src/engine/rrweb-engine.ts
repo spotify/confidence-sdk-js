@@ -13,13 +13,31 @@ type ClickModifiers = Pick<MouseEvent, 'button' | 'altKey' | 'ctrlKey' | 'metaKe
 const BLOCKED_ELEMENT_ATTRIBUTE = 'data-csr-blocked-element';
 
 type SerializedNode = {
+  id?: number;
   type: number;
   tagName?: string;
   attributes?: Record<string, unknown>;
   childNodes?: SerializedNode[];
 };
 
-function labelBlockedElement(node: SerializedNode): void {
+type SerializedNodeTracker = {
+  blockedIframeIds: Set<number>;
+  childIdsByParent: Map<number, Set<number>>;
+  parentIdByNode: Map<number, number>;
+};
+
+function labelBlockedElement(node: SerializedNode, tracker: SerializedNodeTracker, parentId?: number): void {
+  if (node.id !== undefined && parentId !== undefined) {
+    const previousParentId = tracker.parentIdByNode.get(node.id);
+    if (previousParentId !== undefined && previousParentId !== parentId) {
+      tracker.childIdsByParent.get(previousParentId)?.delete(node.id);
+    }
+    tracker.parentIdByNode.set(node.id, parentId);
+    const childIds = tracker.childIdsByParent.get(parentId) ?? new Set<number>();
+    childIds.add(node.id);
+    tracker.childIdsByParent.set(parentId, childIds);
+  }
+
   const isBlockedElement =
     node.type === 2 &&
     node.tagName !== undefined &&
@@ -28,11 +46,28 @@ function labelBlockedElement(node: SerializedNode): void {
     typeof node.attributes.rr_height === 'string';
 
   if (isBlockedElement) {
+    if (node.tagName === 'iframe' && node.id !== undefined) {
+      tracker.blockedIframeIds.add(node.id);
+    }
     node.attributes![BLOCKED_ELEMENT_ATTRIBUTE] = node.tagName;
     node.tagName = 'div';
   }
 
-  node.childNodes?.forEach(labelBlockedElement);
+  node.childNodes?.forEach(child => labelBlockedElement(child, tracker, node.id ?? parentId));
+}
+
+function removeSerializedSubtree(rootId: number, parentId: number, tracker: SerializedNodeTracker): void {
+  tracker.childIdsByParent.get(parentId)?.delete(rootId);
+  const pendingIds = [rootId];
+
+  while (pendingIds.length > 0) {
+    const id = pendingIds.pop()!;
+    const childIds = tracker.childIdsByParent.get(id);
+    if (childIds) pendingIds.push(...childIds);
+    tracker.blockedIframeIds.delete(id);
+    tracker.childIdsByParent.delete(id);
+    tracker.parentIdByNode.delete(id);
+  }
 }
 
 /**
@@ -41,15 +76,28 @@ function labelBlockedElement(node: SerializedNode): void {
  * metadata so players can render a useful placeholder label.
  */
 function blockedElementLabelsPlugin(): RrwebPlugin {
+  const tracker: SerializedNodeTracker = {
+    blockedIframeIds: new Set<number>(),
+    childIdsByParent: new Map<number, Set<number>>(),
+    parentIdByNode: new Map<number, number>(),
+  };
+
   return {
     name: RecordingPluginName.BlockedElementLabels,
     options: {},
     observer: () => () => {},
     eventProcessor: event => {
       if (event.type === EventType.FullSnapshot) {
-        labelBlockedElement(event.data.node as SerializedNode);
+        tracker.blockedIframeIds.clear();
+        tracker.childIdsByParent.clear();
+        tracker.parentIdByNode.clear();
+        labelBlockedElement(event.data.node as SerializedNode, tracker);
       } else if (event.type === EventType.IncrementalSnapshot && event.data.source === IncrementalSource.Mutation) {
-        event.data.adds.forEach(add => labelBlockedElement(add.node as SerializedNode));
+        if (event.data.isAttachIframe) {
+          event.data.adds = event.data.adds.filter(add => !tracker.blockedIframeIds.has(add.parentId));
+        }
+        event.data.removes.forEach(remove => removeSerializedSubtree(remove.id, remove.parentId, tracker));
+        event.data.adds.forEach(add => labelBlockedElement(add.node as SerializedNode, tracker, add.parentId));
       }
 
       return event;
