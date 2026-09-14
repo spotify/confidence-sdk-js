@@ -1,5 +1,17 @@
 # Changelog
 
+## [0.18.12](https://github.com/spotify/confidence-sdk-js/compare/csr-common-v0.18.11...csr-common-v0.18.12) (2026-09-14)
+
+
+### 🐛 Bug Fixes
+
+* revive expired recording sessions on activity ([#456](https://github.com/spotify/confidence-sdk-js/issues/456)) ([621d5cc](https://github.com/spotify/confidence-sdk-js/commit/621d5ccbb7f19e9545cbf36dc75ad1072f825d8a))
+
+
+### ✨ New Features
+
+* **csr:** retire force recording semantics ([#451](https://github.com/spotify/confidence-sdk-js/issues/451)) ([b1088ba](https://github.com/spotify/confidence-sdk-js/commit/b1088ba7eaf9457f4f3554d6109be2b5f4c0bbf0))
+
 ## [0.18.11](https://github.com/spotify/confidence-sdk-js/compare/csr-common-v0.18.10...csr-common-v0.18.11) (2026-09-11)
 
 
