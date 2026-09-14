@@ -13,6 +13,52 @@ vi.mock('rrweb', async importOriginal => ({
   takeFullSnapshot: (isCheckout: boolean) => takeFullSnapshotSpy(isCheckout),
 }));
 
+function blockedElementLabelsPlugin() {
+  new RrwebEngine().start({}, () => {});
+  return recordSpy.mock.calls[0][0].plugins.find(
+    ({ name }: { name: string }) => name === RecordingPluginName.BlockedElementLabels,
+  );
+}
+
+function fullSnapshotWithNode(node: unknown) {
+  return {
+    type: 2,
+    timestamp: 1,
+    data: {
+      node: {
+        type: 0,
+        id: 1,
+        childNodes: [node],
+      },
+    },
+  };
+}
+
+function fullSnapshotWithIframe(id: number, attributes: Record<string, string>) {
+  return fullSnapshotWithNode({ type: 2, id, tagName: 'iframe', attributes, childNodes: [] });
+}
+
+function attachIframeDocument(parentId: number, childNodes: unknown[] = []) {
+  return {
+    type: 3,
+    timestamp: 2,
+    data: {
+      source: 0,
+      adds: [
+        {
+          parentId,
+          nextId: null,
+          node: { type: 0, id: parentId + 1, childNodes },
+        },
+      ],
+      removes: [],
+      texts: [],
+      attributes: [],
+      isAttachIframe: true,
+    },
+  };
+}
+
 describe('RrwebEngine', () => {
   beforeEach(() => {
     recordSpy.mockClear();
@@ -106,6 +152,97 @@ describe('RrwebEngine', () => {
         },
       },
     });
+  });
+
+  it('drops iframe document attachments for blocked iframe placeholders', () => {
+    const plugin = blockedElementLabelsPlugin();
+    plugin.eventProcessor(fullSnapshotWithIframe(2, { rr_width: '640px', rr_height: '360px' }));
+    const attachIframeEvent = attachIframeDocument(2);
+
+    expect(plugin.eventProcessor(attachIframeEvent)).toEqual({
+      ...attachIframeEvent,
+      data: { ...attachIframeEvent.data, adds: [] },
+    });
+  });
+
+  it('keeps iframe document attachments for unblocked iframes', () => {
+    const plugin = blockedElementLabelsPlugin();
+    plugin.eventProcessor(fullSnapshotWithIframe(2, {}));
+    const attachIframeEvent = attachIframeDocument(2);
+    const result = plugin.eventProcessor(attachIframeEvent);
+
+    expect(result.data.adds).toHaveLength(1);
+    expect(result.data.adds[0].parentId).toBe(2);
+  });
+
+  it('stops filtering attachments after a blocked iframe is removed', () => {
+    const plugin = blockedElementLabelsPlugin();
+    plugin.eventProcessor(fullSnapshotWithIframe(2, { rr_width: '640px', rr_height: '360px' }));
+    plugin.eventProcessor({
+      type: 3,
+      timestamp: 2,
+      data: {
+        source: 0,
+        adds: [],
+        removes: [{ parentId: 1, id: 2 }],
+        texts: [],
+        attributes: [],
+      },
+    });
+
+    expect(plugin.eventProcessor(attachIframeDocument(2)).data.adds).toHaveLength(1);
+  });
+
+  it('stops filtering attachments after an ancestor of a blocked iframe is removed', () => {
+    const plugin = blockedElementLabelsPlugin();
+    plugin.eventProcessor(
+      fullSnapshotWithNode({
+        type: 2,
+        id: 2,
+        tagName: 'div',
+        attributes: {},
+        childNodes: [
+          {
+            type: 2,
+            id: 3,
+            tagName: 'iframe',
+            attributes: { rr_width: '640px', rr_height: '360px' },
+            childNodes: [],
+          },
+        ],
+      }),
+    );
+    plugin.eventProcessor({
+      type: 3,
+      timestamp: 2,
+      data: {
+        source: 0,
+        adds: [],
+        removes: [{ parentId: 1, id: 2 }],
+        texts: [],
+        attributes: [],
+      },
+    });
+
+    expect(plugin.eventProcessor(attachIframeDocument(3)).data.adds).toHaveLength(1);
+  });
+
+  it('does not track blocked iframes inside discarded iframe documents', () => {
+    const plugin = blockedElementLabelsPlugin();
+    plugin.eventProcessor(fullSnapshotWithIframe(2, { rr_width: '640px', rr_height: '360px' }));
+    plugin.eventProcessor(
+      attachIframeDocument(2, [
+        {
+          type: 2,
+          id: 4,
+          tagName: 'iframe',
+          attributes: { rr_width: '640px', rr_height: '360px' },
+          childNodes: [],
+        },
+      ]),
+    );
+
+    expect(plugin.eventProcessor(attachIframeDocument(4)).data.adds).toHaveLength(1);
   });
 
   it('throttles mousemove to 100ms and records only last input value', () => {
