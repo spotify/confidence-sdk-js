@@ -36,6 +36,17 @@ interface DeadMessage {
   type: 'dead';
   reason: string;
 }
+interface SessionRestartedMessage {
+  type: 'session-restarted';
+  result: { sessionId: string; sessionToken: string };
+  adoptedFromSessionId: string;
+}
+interface LogMessage {
+  type: 'log';
+  msg: string;
+}
+
+const asLog = (m: unknown) => m as LogMessage;
 
 describe('worker/core', () => {
   function setupBackend(
@@ -297,6 +308,61 @@ describe('worker/core', () => {
   });
 
   describe('lifecycle after active', () => {
+    it('starts a fresh session on user activity after the previous session ends', async () => {
+      let initCount = 0;
+      const fetchHarness = installMockFetch(() => {
+        initCount += 1;
+        return jsonResponse({
+          sessionId: `sess-${initCount}`,
+          sessionToken: `tok-${initCount}`,
+        });
+      });
+      const wsHarness = installMockWsServer(WS_URL);
+      const { registerPort } = await loadCore();
+
+      const port = createMockPort();
+      registerPort(port.adapter);
+
+      port.tabSends(helloMessage());
+      await port.next<WelcomeMessage>(isType('welcome'));
+
+      const ws = await wsHarness.waitForConnection();
+      ws.close({ code: 1011, reason: 'storage failure', wasClean: false });
+      await port.next(isType('state'));
+
+      port.tabSends({
+        type: 'frame',
+        frame: { tabId: 'tab-A', eventCounter: 1, data: 'mutation', userActivity: false },
+      });
+      expect(fetchHarness.calls).toHaveLength(1);
+
+      port.tabSends({
+        type: 'frame',
+        frame: { tabId: 'tab-A', eventCounter: 2, data: 'click', userActivity: true },
+      });
+
+      const restarted = await port.next<SessionRestartedMessage>(isType('session-restarted'));
+      expect(restarted).toEqual({
+        type: 'session-restarted',
+        result: { sessionId: 'sess-2', sessionToken: 'tok-2' },
+        adoptedFromSessionId: 'sess-1',
+      });
+      expect(fetchHarness.calls).toHaveLength(2);
+      await wsHarness.waitForConnection();
+
+      port.tabSends({
+        type: 'frame',
+        frame: { tabId: 'tab-A', eventCounter: 0, data: 'full-snapshot', userActivity: false },
+      });
+      expect(JSON.parse(await wsHarness.nextMessage())).toEqual({
+        tabId: 'tab-A',
+        eventCounter: 0,
+        data: 'full-snapshot',
+        userActivity: false,
+      });
+      expect(port.received.some(isType('dead'))).toBe(false);
+    });
+
     it('uses a fresh header credential when a session hint fails protocol negotiation', async () => {
       const { fetchHarness, wsHarness } = setupBackend(
         { sessionId: 'fresh-session', sessionToken: 'fresh-sensitive' },
@@ -337,7 +403,9 @@ describe('worker/core', () => {
       }
     });
 
-    it('stops when a hinted session upgrades with recording.v1 then immediately closes with 4401', async () => {
+    // Adapted from main: those assertions predate recovery, when a closed transport was
+    // terminal. The auth-path coverage is preserved; the expected outcome is now `interrupted`.
+    it('treats a 4401 after the upgrade as recoverable rather than terminal', async () => {
       const { fetchHarness, wsHarness } = setupBackend();
       // The API checks session state after the upgrade. A valid token for a missing or
       // closed session therefore opens successfully before the server rejects it.
@@ -350,17 +418,19 @@ describe('worker/core', () => {
 
       port.tabSends(helloMessage({ sessionIdHint: 'stale-session', sessionTokenHint: 'stale-sensitive' }));
       const welcome = await port.next<WelcomeMessage>(isType('welcome'));
-      const dead = await port.next<DeadMessage>(isType('dead'));
+      await port.next(isType('state'));
 
       expect(welcome.result).toEqual({ sessionId: 'stale-session', sessionToken: 'stale-sensitive' });
-      expect(dead.reason).toBe('close code=4401 wasClean=true');
+      // Recovery waits for user activity, so nothing is re-initialised yet and no tab is told
+      // to dismantle its recorder.
       expect(fetchHarness.calls).toHaveLength(0);
+      expect(port.received.some(isType('dead'))).toBe(false);
       expect(wsHarness.protocolOffers).toEqual([['recording.v1', 'auth.stale-sensitive']]);
       expect(wsHarness.connections).toHaveLength(1);
       expect(wsHarness.connections[0].url).toBe(WS_URL);
     });
 
-    it('stops after one failed header-authenticated reconnect', async () => {
+    it('recovers after one failed header-authenticated reconnect', async () => {
       const { fetchHarness, wsHarness } = setupBackend(undefined, (protocols, connectionIndex) =>
         connectionIndex === 0 ? protocols[0] : '',
       );
@@ -373,18 +443,24 @@ describe('worker/core', () => {
       const first = await wsHarness.waitForConnection();
       first.close({ code: 1000, reason: 'drain', wasClean: true });
 
-      const dead = await port.next<DeadMessage>(isType('dead'));
-      expect(dead.reason).toBe('reconnect-failed');
-      expect(fetchHarness.calls).toHaveLength(1);
+      // A second offer proves the drain was treated as recoverable and a reconnect attempted.
+      await vi.waitFor(() => expect(wsHarness.protocolOffers).toHaveLength(2));
       expect(wsHarness.protocolOffers).toEqual([
         ['recording.v1', 'auth.tok-1'],
         ['recording.v1', 'auth.tok-1'],
       ]);
+      expect(port.received.some(isType('dead'))).toBe(false);
+      expect(fetchHarness.calls).toHaveLength(1);
       expect(wsHarness.connections.every(connection => connection.url === WS_URL)).toBe(true);
     });
 
-    it('broadcasts dead to all ports when the transport closes abruptly', async () => {
-      const { wsHarness } = setupBackend();
+    it('broadcasts the restarted session to every attached port', async () => {
+      let initCount = 0;
+      installMockFetch(() => {
+        initCount += 1;
+        return jsonResponse({ sessionId: `sess-${initCount}`, sessionToken: `tok-${initCount}` });
+      });
+      const wsHarness = installMockWsServer(WS_URL);
       const { registerPort } = await loadCore();
 
       const portA = createMockPort();
@@ -397,9 +473,180 @@ describe('worker/core', () => {
       await Promise.all([portA.next<WelcomeMessage>(isType('welcome')), portB.next<WelcomeMessage>(isType('welcome'))]);
 
       const ws = await wsHarness.waitForConnection();
-      ws.close({ code: 1011, reason: 'server crash', wasClean: false });
+      ws.close({ code: 1011, reason: 'storage failure', wasClean: false });
+      await Promise.all([portA.next(isType('state')), portB.next(isType('state'))]);
 
-      await Promise.all([portA.next<DeadMessage>(isType('dead')), portB.next<DeadMessage>(isType('dead'))]);
+      portA.tabSends({
+        type: 'frame',
+        frame: { tabId: 'tab-A', eventCounter: 1, data: 'click', userActivity: true },
+      });
+
+      const [restartedA, restartedB] = await Promise.all([
+        portA.next<SessionRestartedMessage>(isType('session-restarted')),
+        portB.next<SessionRestartedMessage>(isType('session-restarted')),
+      ]);
+      expect(restartedA).toEqual({
+        type: 'session-restarted',
+        result: { sessionId: 'sess-2', sessionToken: 'tok-2' },
+        adoptedFromSessionId: 'sess-1',
+      });
+      expect(restartedB).toEqual(restartedA);
+    });
+
+    it('drops pre-restart frames until the tab emits its fresh snapshot', async () => {
+      let initCount = 0;
+      installMockFetch(() => {
+        initCount += 1;
+        return jsonResponse({ sessionId: `sess-${initCount}`, sessionToken: `tok-${initCount}` });
+      });
+      const wsHarness = installMockWsServer(WS_URL);
+      const { registerPort } = await loadCore();
+
+      const port = createMockPort();
+      registerPort(port.adapter);
+      port.tabSends(helloMessage());
+      await port.next<WelcomeMessage>(isType('welcome'));
+
+      const ws = await wsHarness.waitForConnection();
+      ws.close({ code: 1011, reason: 'storage failure', wasClean: false });
+      await port.next(isType('state'));
+
+      port.tabSends({
+        type: 'frame',
+        frame: { tabId: 'tab-A', eventCounter: 108, data: 'click', userActivity: true },
+      });
+      await port.next<SessionRestartedMessage>(isType('session-restarted'));
+      await wsHarness.waitForConnection();
+
+      // Posted by the tab before it processed `session-restarted`: previous recording's
+      // counter, and a mutation referencing a snapshot the new recording never received.
+      port.tabSends({
+        type: 'frame',
+        frame: { tabId: 'tab-A', eventCounter: 109, data: 'stale-mutation', userActivity: false },
+      });
+      // The tab has now reset and restarted capture, so its snapshot arrives at counter 0.
+      port.tabSends({
+        type: 'frame',
+        frame: { tabId: 'tab-A', eventCounter: 0, data: 'full-snapshot', userActivity: false },
+      });
+
+      expect(JSON.parse(await wsHarness.nextMessage())).toMatchObject({
+        eventCounter: 0,
+        data: 'full-snapshot',
+      });
+    });
+
+    it('does not strand a tab that was still awaiting welcome when the session restarted', async () => {
+      let initCount = 0;
+      installMockFetch(() => {
+        initCount += 1;
+        return jsonResponse({ sessionId: `sess-${initCount}`, sessionToken: `tok-${initCount}` });
+      });
+      const wsHarness = installMockWsServer(WS_URL);
+      const { registerPort } = await loadCore();
+
+      const portA = createMockPort();
+      registerPort(portA.adapter);
+      portA.tabSends(helloMessage());
+      await portA.next<WelcomeMessage>(isType('welcome'));
+
+      const ws = await wsHarness.waitForConnection();
+      ws.close({ code: 1011, reason: 'storage failure', wasClean: false });
+      await portA.next(isType('state'));
+
+      // A tab arriving now drives the restart, but it is still awaiting its welcome when
+      // `session-restarted` goes out — and a tab in that phase ignores everything except
+      // welcome/dead, so it never sees the reset.
+      const portB = createMockPort();
+      registerPort(portB.adapter);
+      portB.tabSends(helloMessage({ tabId: 'tab-B' }));
+
+      const welcomeB = await portB.next<WelcomeMessage>(isType('welcome'));
+      await wsHarness.waitForConnection();
+
+      // Its `csr:session` hint may have expired while `csr:counter` survived (the counter has
+      // no TTL), so the welcome has to reset the counter or the tab keeps a non-zero one.
+      expect(welcomeB.resetCounter).toBe(true);
+
+      portB.tabSends({
+        type: 'frame',
+        frame: { tabId: 'tab-B', eventCounter: 108, data: 'post-welcome', userActivity: true },
+      });
+
+      expect(JSON.parse(await wsHarness.nextMessage())).toMatchObject({
+        tabId: 'tab-B',
+        data: 'post-welcome',
+      });
+    });
+
+    it('answers a hello that arrives while recovery is failing', async () => {
+      let initCount = 0;
+      installMockFetch(() => {
+        initCount += 1;
+        return initCount === 1
+          ? jsonResponse({ sessionId: 'sess-1', sessionToken: 'tok-1' })
+          : jsonResponse({ error: 'unavailable' }, 503);
+      });
+      const wsHarness = installMockWsServer(WS_URL);
+      const { registerPort } = await loadCore();
+
+      const portA = createMockPort();
+      registerPort(portA.adapter);
+      portA.tabSends(helloMessage());
+      await portA.next<WelcomeMessage>(isType('welcome'));
+
+      const ws = await wsHarness.waitForConnection();
+      ws.close({ code: 1011, reason: 'storage failure', wasClean: false });
+      await portA.next(isType('state'));
+
+      // A tab arriving now has no uploader, so it cannot emit the activity frame that
+      // would drive recovery. Left unanswered it would hang until its welcome timeout.
+      const portB = createMockPort();
+      registerPort(portB.adapter);
+      portB.tabSends(helloMessage({ tabId: 'tab-B' }));
+
+      const dead = await portB.next<DeadMessage>(isType('dead'));
+      expect(dead.reason).toBe('session-restart-failed');
+      // The established tab keeps its recorder — a late dead would dismantle it.
+      expect(portA.received.some(isType('dead'))).toBe(false);
+    });
+
+    it('backs off after a failed restart instead of retrying on every active frame', async () => {
+      let initCount = 0;
+      const fetchHarness = installMockFetch(() => {
+        initCount += 1;
+        return initCount === 1
+          ? jsonResponse({ sessionId: 'sess-1', sessionToken: 'tok-1' })
+          : jsonResponse({ error: 'unavailable' }, 503);
+      });
+      const wsHarness = installMockWsServer(WS_URL);
+      const { registerPort } = await loadCore();
+
+      const port = createMockPort();
+      registerPort(port.adapter);
+      port.tabSends(helloMessage({ debugLogs: true }));
+      await port.next<WelcomeMessage>(isType('welcome'));
+
+      const ws = await wsHarness.waitForConnection();
+      ws.close({ code: 1011, reason: 'storage failure', wasClean: false });
+      await port.next(isType('state'));
+
+      const activeFrame = {
+        type: 'frame',
+        frame: { tabId: 'tab-A', eventCounter: 1, data: 'click', userActivity: true },
+      };
+      port.tabSends(activeFrame);
+      // Wait for the failed restart to settle back into `interrupted`, otherwise the
+      // follow-up frames land during `restarting` and are dropped for the wrong reason.
+      await port.next<LogMessage>(m => isType('log')(m) && /waiting for user activity to retry/.test(asLog(m).msg));
+      expect(fetchHarness.calls).toHaveLength(2);
+
+      // Still inside the backoff window, so these must not spend another initSession.
+      port.tabSends(activeFrame);
+      port.tabSends(activeFrame);
+      await new Promise(resolve => setTimeout(resolve, 0));
+      expect(fetchHarness.calls).toHaveLength(2);
+      expect(port.received.some(isType('dead'))).toBe(false);
     });
   });
 });

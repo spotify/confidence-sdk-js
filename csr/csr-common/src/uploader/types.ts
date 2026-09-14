@@ -53,6 +53,12 @@ export interface CreateUploaderOptions {
   /** Called once when recording is permanently dead. SDK should dismantle the recorder. */
   onTerminate?: (info: { reason: string }) => void;
   /**
+   * Called after an expired backend session is replaced so capture can emit a fresh full
+   * snapshot. Required: a consumer that ignores this produces a replacement recording of
+   * incremental mutations with no snapshot to apply them to, which cannot be replayed.
+   */
+  onSessionRestart: () => void;
+  /**
    * Optional verbose tracer. Called on key tab- and worker-side events
    * (hello/welcome, init-session URL, credential-free ws connect URL, retries, transitions).
    * Worker messages are forwarded over the port and tagged so you can tell them apart.

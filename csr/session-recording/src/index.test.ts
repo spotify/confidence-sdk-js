@@ -10,6 +10,8 @@ vi.mock('@spotify-confidence/csr-recorder', () => ({
   record,
 }));
 
+import { RecordingPluginName } from '@spotify-confidence/csr-common';
+
 import { initSessionRecorder } from './index';
 
 function flushPromises() {
@@ -22,7 +24,10 @@ function mockUploader() {
 }
 
 describe('initSessionRecorder', () => {
-  afterEach(() => vi.resetAllMocks());
+  afterEach(() => {
+    vi.resetAllMocks();
+    vi.unstubAllGlobals();
+  });
 
   it('always returns a SessionRecorder', () => {
     createUploader.mockResolvedValueOnce(mockUploader());
@@ -231,5 +236,50 @@ describe('initSessionRecorder', () => {
     await flushPromises();
 
     expect(record).not.toHaveBeenCalled();
+  });
+
+  it('restarts capture with a fresh snapshot when the uploader replaces an expired session', async () => {
+    const firstStop = vi.fn();
+    const secondStop = vi.fn();
+    createUploader.mockResolvedValueOnce(mockUploader());
+    record.mockReturnValueOnce(firstStop).mockReturnValueOnce(secondStop);
+
+    const recorder = initSessionRecorder({ clientSecret: 'secret' });
+    await flushPromises();
+
+    createUploader.mock.calls[0][0].onSessionRestart();
+
+    expect(firstStop).toHaveBeenCalledOnce();
+    expect(record).toHaveBeenCalledTimes(2);
+    expect(record.mock.calls[1]).toEqual(record.mock.calls[0]);
+    expect(recorder.isRecording).toBe(true);
+  });
+
+  it('replays already-evaluated flags into the replacement recording', async () => {
+    vi.stubGlobal('window', {
+      __confidence: { flags: { checkout: { variant: 'treatment', assignmentOrigin: 'resolver' } } },
+    });
+    const uploader = mockUploader();
+    createUploader.mockResolvedValueOnce(uploader);
+    record.mockReturnValue(vi.fn());
+
+    initSessionRecorder({ clientSecret: 'secret' });
+    await flushPromises();
+
+    const flagEvaluations = () =>
+      uploader.mock.calls.filter(
+        ([event]) => (event as { data?: { plugin?: string } })?.data?.plugin === RecordingPluginName.FlagEvaluation,
+      );
+
+    expect(flagEvaluations()).toHaveLength(1);
+
+    createUploader.mock.calls[0][0].onSessionRestart();
+
+    // The replacement recording needs the assignment too, not just evaluations that happen
+    // to occur after the restart.
+    expect(flagEvaluations()).toHaveLength(2);
+    expect(flagEvaluations()[1][0]).toMatchObject({
+      data: { payload: { flagKey: 'checkout', variant: 'treatment' } },
+    });
   });
 });

@@ -33,12 +33,17 @@ interface StateMessage {
   type: 'state';
   connected: boolean;
 }
+interface SessionRestartedMessage {
+  type: 'session-restarted';
+  result: { sessionId: string; sessionToken: string };
+  adoptedFromSessionId: string;
+}
 interface LogMessage {
   type: 'log';
   msg: string;
 }
 type WelcomeOrDead = WelcomeMessage | DeadMessage;
-type IncomingMessage = WelcomeMessage | DeadMessage | StateMessage | LogMessage;
+type IncomingMessage = WelcomeMessage | DeadMessage | StateMessage | SessionRestartedMessage | LogMessage;
 
 export async function createUploader(opts: CreateUploaderOptions): Promise<Uploader | null> {
   const log = opts.debugLogger;
@@ -66,6 +71,8 @@ export async function createUploader(opts: CreateUploaderOptions): Promise<Uploa
   let sessionId: string | null = null;
   let sessionToken: string | null = null;
   let effectiveTabId: string = tabId;
+  let counter = counterHint;
+  let nextAdoptionMeta: Pick<Frame, 'adoptedFromSessionId' | 'adoptedAt'> | undefined;
   let resolveWelcome!: (msg: WelcomeOrDead) => void;
   const welcomePromise = new Promise<WelcomeOrDead>(res => {
     resolveWelcome = res;
@@ -91,6 +98,24 @@ export async function createUploader(opts: CreateUploaderOptions): Promise<Uploa
         connected: msg.connected,
         sessionToken,
       });
+      return;
+    }
+    if (msg.type === 'session-restarted') {
+      sessionId = msg.result.sessionId;
+      sessionToken = msg.result.sessionToken;
+      counter = 0;
+      nextAdoptionMeta = {
+        adoptedFromSessionId: msg.adoptedFromSessionId,
+        adoptedAt: Date.now(),
+      };
+      writeSession(sessionId, sessionToken);
+      opts.onStateChange?.({
+        sessionId,
+        tabId: effectiveTabId,
+        connected: true,
+        sessionToken,
+      });
+      opts.onSessionRestart?.();
       return;
     }
     if (msg.type === 'dead') {
@@ -178,8 +203,8 @@ export async function createUploader(opts: CreateUploaderOptions): Promise<Uploa
     sessionStorage.setItem(STORAGE_TAB_ID, effectiveTabId);
   }
 
-  let counter = welcome.resetCounter ? 0 : counterHint;
-  let nextAdoptionMeta: Pick<Frame, 'adoptedFromSessionId' | 'adoptedAt'> | undefined =
+  counter = welcome.resetCounter ? 0 : counterHint;
+  nextAdoptionMeta =
     welcome.adoptedFromSessionId !== undefined
       ? {
           adoptedFromSessionId: welcome.adoptedFromSessionId,

@@ -130,6 +130,25 @@ describe('WebSocketTransport', () => {
     expect(String(error)).not.toContain(protocolFromBrowserError);
   });
 
+  // The backend closes a session with 1001 (ENDPOINT_UNAVAILABLE), which is a graceful
+  // drain, so the drain alone must not be terminal — it is the refused reconnect, whose
+  // token now names a closed session, that ends the transport.
+  it('survives a 1001 drain and only dies once the reconnect is refused', async () => {
+    const { server } = setup();
+    const t = new WebSocketTransport(URL);
+    const closeReasons: string[] = [];
+    t.onClose(({ reason }) => closeReasons.push(reason));
+    await t.ready();
+
+    // `Server.close` deregisters the server before notifying, so the drain-triggered
+    // reconnect has nothing to connect to — the `reconnect-failed` reason proves the
+    // transport attempted one rather than dying on the drain itself.
+    server.close({ code: 1001, reason: 'session closed', wasClean: true });
+
+    await vi.waitFor(() => expect(closeReasons).toHaveLength(1));
+    expect(closeReasons[0]).toMatch(/^reconnect-failed/);
+  });
+
   it('fires onClose with reason on abrupt close after open', async () => {
     const { waitForConnection } = setup();
     const t = new WebSocketTransport(URL);
