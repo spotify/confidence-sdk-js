@@ -12,10 +12,18 @@ This implements the dynamic paradigm of OpenFeature.
 To add the packages to your dependencies run:
 
 ```sh
-yarn add @openfeature/server-sdk @openfeature/core @spotify-confidence/sdk @spotify-confidence/openfeature-server-provider
+yarn add '@openfeature/server-sdk@^1.16.0' @openfeature/core '@spotify-confidence/sdk@^0.4.0' @spotify-confidence/openfeature-server-provider
 ```
 
 ## Enabling the provider, setting the evaluation context and resolving flags
+
+Requires `@openfeature/server-sdk >=1.16.0 <2` and `@spotify-confidence/sdk >=0.4.0 <0.5.0`.
+For existing integrations, see the [migration guide](../../concepts/migrate-to-thin-client.md).
+
+The provider is ready immediately. Each evaluation resolves only the requested
+flag against the supplied context and records exposure in that request. It has no
+flag cache or background resolution loop. Use `targetingKey` in OpenFeature
+contexts; the provider converts it to Confidence's `targeting_key`.
 
 ```ts
 import { createConfidenceServerProvider } from '@spotify-confidence/openfeature-server-provider';
@@ -40,26 +48,9 @@ client
   });
 ```
 
-## Tracking
-
-With `@openfeature/server-sdk` 1.16.0 or later, events can be tracked with a request-specific evaluation context:
-
-```ts
-client.track(
-  'checkout',
-  { targetingKey: 'your targeting key' },
-  {
-    value: 42,
-    currency: 'SEK',
-  },
-);
-```
-
-Tracking details are added to the Confidence event payload. `context` is reserved for the evaluation context and is ignored when used as a tracking detail key.
-
 ## Region
 
-The region option is used to set the region for the network request to the Confidence backend. When the region is not set, the default (global) region will be used.
+The region option is used to set the region for the network requests to the Confidence backend — both flag resolution and event publishing. When the region is not set, the default (global) region will be used.
 The current regions are: `eu` and `us`, the region can be set as follows:
 
 ```ts
@@ -71,10 +62,48 @@ const provider = createConfidenceServerProvider({
 
 ## Timeout
 
-The timeout option is used to set the timeout for the network request to the Confidence backend. When the timeout is reached, default values will be returned.
+The timeout option bounds each resolve and event request. A timed-out resolve makes flag evaluations return defaults.
+
+## Logging
+
+Resolve and event failures are reported to the console in development, and go unreported
+otherwise. Pass a `logger` — anything with a subset of `console`'s methods — to
+report them wherever you collect diagnostics:
+
+```ts
+const provider = createConfidenceServerProvider({
+  logger: { warn: message => myTelemetry.warn(message) },
+  // ... other options
+});
+```
 
 ## Configuring Apply
 
 See [apply concept](../../concepts/apply.md).
 
 Backend apply is the only supported method in the `ConfidenceServerProvider`.
+
+## Event tracking
+
+Tracking details are added to the Confidence event payload. `context` is reserved for the evaluation context and is ignored when used as a tracking detail key.
+
+The provider implements the OpenFeature tracking API, so `client.track()` sends an
+event to Confidence:
+
+```ts
+const client = OpenFeature.getClient();
+client.track('order-completed', { targetingKey: 'user-1' }, { value: 42, currency: 'SEK' });
+```
+
+As with flag evaluation in the dynamic paradigm, the evaluation context is passed
+per call.
+
+Events are sent one request per event, immediately, with no batching. The tracking
+API returns `void`, so failures cannot be reported back to the caller; they are
+written to the [logger](#logging) instead.
+
+Events are not automatically retried because an ambiguous failure could produce
+duplicates. Await `OpenFeature.clearProviders()` before shutting down to wait for
+pending event requests. In request-scoped runtimes, arrange for shutdown to be
+awaited or registered with the runtime's background-task mechanism before the
+request ends.

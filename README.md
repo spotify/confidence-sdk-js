@@ -45,7 +45,7 @@ Set up Confidence as an OpenFeature provider in your Node.js application with th
 ### 1. Install Dependencies
 
 ```sh
-yarn add @openfeature/server-sdk @openfeature/core @spotify-confidence/openfeature-server-provider
+yarn add '@openfeature/server-sdk@^1.16.0' @openfeature/core '@spotify-confidence/sdk@^0.4.0' @spotify-confidence/openfeature-server-provider
 ```
 
 ### 2. Initialize and Set the Provider
@@ -79,7 +79,7 @@ const isEnabled = await client.getBooleanValue('feature.enabled', false, {
 The following shows how to set up the client-side provider:
 
 ```sh
-yarn add @openfeature/web-sdk @openfeature/core @spotify-confidence/openfeature-web-provider
+yarn add '@openfeature/web-sdk@^1.3.2' @openfeature/core '@spotify-confidence/sdk@^0.4.0' @spotify-confidence/openfeature-web-provider
 ```
 
 ```ts
@@ -92,7 +92,7 @@ const provider = createConfidenceWebProvider({
   timeout: 1000,
 });
 
-OpenFeature.setContext({
+await OpenFeature.setContext({
   visitor_id: `<unique id per visitor>`,
 });
 
@@ -127,7 +127,9 @@ You can check out the example application, which is built with Next.js and uses 
 
 The vanilla sdk can be used in cases where you want direct access to the Confidence SDK, including event tracking and custom context management.
 
-The package also provides `ConfidenceClient`, a thin stateless client for a remote resolver that does flag resolution and exposure only. It is the primitive the providers above are moving onto, and is useful directly when resolving from a worker, or when resolving on the server and forwarding the result to the browser to evaluate.
+The package also provides `ConfidenceClient`, a thin stateless client for remote flag resolution, exposure, and event publishing. Both remote OpenFeature providers in this repository use it. It is also useful directly when resolving from a worker, or when resolving on the server and forwarding a `FlagBundle` to the browser for evaluation.
+
+The providers require SDK `>=0.4.0 <0.5.0`. Existing integrations should follow the [thin-client migration guide](./concepts/migrate-to-thin-client.md), which covers factory changes, custom endpoints, context updates, and shutdown. The existing `Confidence` class and React integration remain available in this release.
 
 > **Learn more**: [SDK Documentation](./packages/sdk/README.md) · [`ConfidenceClient`](./packages/sdk/README.md#confidenceclient)
 
@@ -167,8 +169,8 @@ This covers:
 
 ### Additional Considerations
 
-- **Custom resolve URLs**: If you use a custom `resolveBaseUrl` in your configuration, make sure to include that domain in your `connect-src` directive
-- **Web Vitals**: The SDK includes optional web vitals tracking that uses the `web-vitals` library, but this doesn't require additional CSP permissions as it only uses browser APIs
+- **Custom endpoints**: If your provider's `fetchImplementation` or thin client's `fetch` routes requests to another domain, include it in `connect-src`. The legacy `Confidence` class still supports its own `resolveBaseUrl` option.
+- **Web Vitals**: The legacy `Confidence` API includes optional web vitals tracking using `web-vitals`. The thin client and OpenFeature providers do not install automatic trackers.
 - **No inline scripts**: The SDK doesn't inject any inline scripts or styles, so you don't need `unsafe-inline` permissions
 
 # Next.js Pages Router Development Patch

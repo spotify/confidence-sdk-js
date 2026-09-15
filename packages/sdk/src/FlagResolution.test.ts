@@ -38,7 +38,7 @@ describe('FlagResolution', () => {
 
       resolution.evaluate('test-flag.my_bool', false);
 
-      expect(publishFlagEvaluation).toHaveBeenCalledWith('flags/test-flag', 'flags/test-flag/variants/treatment', '');
+      expect(publishFlagEvaluation).toHaveBeenCalledWith('test-flag', 'flags/test-flag/variants/treatment', '');
     });
 
     it('does not publish on NO_SEGMENT_MATCH', () => {

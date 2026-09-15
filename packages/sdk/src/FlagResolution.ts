@@ -130,7 +130,7 @@ export class ReadyFlagResolution implements FlagResolution {
 
       const value = (rawValue === null || rawValue === undefined ? defaultValue : rawValue) as T;
 
-      publishFlagEvaluation(FLAG_PREFIX + name, flag.variant, flag.assignmentOrigin);
+      publishFlagEvaluation(name, flag.variant, flag.assignmentOrigin);
 
       result = {
         reason,
