@@ -105,12 +105,14 @@ export class ConfidenceClient {
 export interface ConfidenceOptions {
     applyBaseUrl?: string;
     applyDebounce?: number;
+    baseUrl?: string;
     cache?: CacheOptions;
     clientSecret: string;
     // (undocumented)
     context?: Context;
     disableTelemetry?: boolean;
     environment: 'client' | 'backend';
+    eventBaseUrl?: string;
     fetchImplementation?: SimpleFetch;
     // @internal
     library?: 'openfeature' | 'react';

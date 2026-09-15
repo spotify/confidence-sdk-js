@@ -167,7 +167,7 @@ This covers:
 
 ### Additional Considerations
 
-- **Custom resolve URLs**: If you use a custom `resolveBaseUrl` in your configuration, make sure to include that domain in your `connect-src` directive
+- **Custom URLs**: If you use `baseUrl` or an endpoint-specific base URL, make sure to include that domain in your `connect-src` directive
 - **Web Vitals**: The SDK includes optional web vitals tracking that uses the `web-vitals` library, but this doesn't require additional CSP permissions as it only uses browser APIs
 - **No inline scripts**: The SDK doesn't inject any inline scripts or styles, so you don't need `unsafe-inline` permissions
 

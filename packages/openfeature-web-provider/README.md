@@ -76,6 +76,11 @@ const provider = createConfidenceWebProvider({
 });
 ```
 
+## Custom base URLs
+
+Set `baseUrl` to route flag resolution, apply, events, and telemetry through one origin. The endpoint-specific
+`resolveBaseUrl`, `applyBaseUrl`, and `eventBaseUrl` options take precedence when both are set.
+
 ## Timeout
 
 The timeout option is used to set the timeout for the network request to the Confidence backend. When the timeout is reached, default values will be returned.

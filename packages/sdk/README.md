@@ -175,8 +175,12 @@ const confidence = Confidence.create({
   region: 'eu', // or 'us'
   environment: 'client', // or 'backend'
   timeout: 1000,
+  baseUrl: 'https://confidence.example.com', // optional reverse proxy
 });
 ```
+
+`baseUrl` routes flag resolution, apply, events, and telemetry through one origin. The endpoint-specific
+`resolveBaseUrl`, `applyBaseUrl`, and `eventBaseUrl` options take precedence when both are set.
 
 ### Region
 

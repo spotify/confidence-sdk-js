@@ -44,15 +44,19 @@ const fetchImplementation = async (request: Request): Promise<Response> => {
 
   let handler: (reqBody: any) => any;
   switch (request.url) {
+    case 'https://proxy.dev/v1/flags:resolve':
     case 'https://custom.dev/v1/flags:resolve':
     case 'https://resolver.confidence.dev/v1/flags:resolve':
       handler = resolveHandlerMock;
       break;
+    case 'https://proxy.dev/v1/flags:apply':
     case 'https://custom-apply.dev/v1/flags:apply':
     case 'https://resolver.confidence.dev/v1/flags:apply':
       handler = applyHandlerMock;
       break;
+    case 'https://proxy.dev/v1/events:publish':
     case 'https://events.confidence.dev/v1/events:publish':
+    case 'https://custom-events.dev/v1/events:publish':
       handler = publishHandlerMock;
       break;
     case 'https://resolver.confidence.dev/v1/telemetry:upload':
@@ -123,6 +127,68 @@ describe('Confidence integration tests', () => {
         flags: [expect.objectContaining({ flag: 'flags/flag1' })],
       }),
     );
+  });
+
+  it('should publish against provided event base url', async () => {
+    const customConfidence = Confidence.create({
+      clientSecret: '<client-secret>',
+      timeout: 100,
+      environment: 'client',
+      fetchImplementation,
+      eventBaseUrl: 'https://custom-events.dev',
+      disableTelemetry: true,
+    });
+    const nextPublish = nextMockArgs(publishHandlerMock);
+
+    customConfidence.track('checkout');
+    await customConfidence.config.eventSenderEngine.flush();
+
+    expect(await nextPublish).toEqual([
+      expect.objectContaining({ events: [expect.objectContaining({ eventDefinition: 'eventDefinitions/checkout' })] }),
+    ]);
+  });
+
+  it('should use a common base url for resolve, apply, and events', async () => {
+    const customConfidence = Confidence.create({
+      clientSecret: '<client-secret>',
+      timeout: 100,
+      environment: 'client',
+      fetchImplementation,
+      baseUrl: 'https://proxy.dev/',
+      disableTelemetry: true,
+    });
+
+    expect(await customConfidence.getFlag('flag1.str', 'goodbye')).toBe('hello');
+    await nextMockArgs(applyHandlerMock);
+    const nextPublish = nextMockArgs(publishHandlerMock);
+    customConfidence.track('checkout');
+    await customConfidence.config.eventSenderEngine.flush();
+
+    expect(await nextPublish).toEqual([
+      expect.objectContaining({ events: [expect.objectContaining({ eventDefinition: 'eventDefinitions/checkout' })] }),
+    ]);
+  });
+
+  it('should prefer endpoint-specific base urls over the common base url', async () => {
+    const customConfidence = Confidence.create({
+      clientSecret: '<client-secret>',
+      timeout: 100,
+      environment: 'client',
+      fetchImplementation,
+      baseUrl: 'https://proxy.dev',
+      resolveBaseUrl: 'https://custom.dev',
+      applyBaseUrl: 'https://custom-apply.dev',
+      eventBaseUrl: 'https://custom-events.dev',
+      disableTelemetry: true,
+    });
+
+    expect(await customConfidence.getFlag('flag1.str', 'goodbye')).toBe('hello');
+    await nextMockArgs(applyHandlerMock);
+    const nextPublish = nextMockArgs(publishHandlerMock);
+    customConfidence.track('checkout');
+    await customConfidence.config.eventSenderEngine.flush();
+
+    expect(await nextPublish).toBeDefined();
   });
 
   it('should resolve a value and send apply', async () => {

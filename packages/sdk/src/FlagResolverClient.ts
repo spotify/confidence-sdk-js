@@ -3,6 +3,7 @@ import { AccessiblePromise } from './AccessiblePromise';
 import { Applier, EvaluationObserver, FlagResolution } from './FlagResolution';
 import { Telemetry, TraceConsumer } from './Telemetry';
 import { CacheProvider } from './flag-cache';
+import { withApiV1 } from './utils';
 import { Context } from './context';
 import { FetchBuilder, InternalFetch, SimpleFetch, TimeUnit } from './fetch-util';
 import {
@@ -93,6 +94,7 @@ export type FlagResolverClientOptions = {
   resolveTimeout: number;
   environment: 'client' | 'backend';
   region?: 'eu' | 'us';
+  baseUrl?: string;
   resolveBaseUrl?: string;
   applyBaseUrl?: string;
   telemetry: Telemetry;
@@ -110,6 +112,7 @@ export class FetchingFlagResolverClient implements FlagResolverClient {
   private readonly resolveTimeout: number;
   private readonly baseUrl: string;
   private readonly applyBaseUrl: string;
+  private readonly telemetryBaseUrl: string;
   private readonly telemetry: Telemetry;
   private readonly traceConsumer: TraceConsumer;
   private readonly onEvaluation: EvaluationObserver | undefined;
@@ -129,6 +132,7 @@ export class FetchingFlagResolverClient implements FlagResolverClient {
     // todo refactor to move out environment
     environment,
     region,
+    baseUrl,
     resolveBaseUrl,
     applyBaseUrl,
     telemetry,
@@ -156,16 +160,11 @@ export class FetchingFlagResolverClient implements FlagResolverClient {
     this.applyDebounce = applyDebounce;
     this.onEvaluation = onEvaluation;
     this.logger = logger;
-    if (resolveBaseUrl) {
-      this.baseUrl = `${resolveBaseUrl}/v1`;
-    } else {
-      this.baseUrl = region ? `https://resolver.${region}.confidence.dev/v1` : 'https://resolver.confidence.dev/v1';
-    }
-    if (applyBaseUrl) {
-      this.applyBaseUrl = `${applyBaseUrl}/v1`;
-    } else {
-      this.applyBaseUrl = this.baseUrl;
-    }
+    const defaultBaseUrl = region ? `https://resolver.${region}.confidence.dev` : 'https://resolver.confidence.dev';
+    this.baseUrl = withApiV1(resolveBaseUrl || baseUrl || defaultBaseUrl);
+    const configuredApplyBaseUrl = applyBaseUrl || baseUrl;
+    this.applyBaseUrl = configuredApplyBaseUrl ? withApiV1(configuredApplyBaseUrl) : this.baseUrl;
+    this.telemetryBaseUrl = baseUrl ? withApiV1(baseUrl) : this.baseUrl;
     this.resolveTimeout = resolveTimeout;
     this.waitUntil = waitUntil;
     if (cacheProvider) {
@@ -241,7 +240,7 @@ export class FetchingFlagResolverClient implements FlagResolverClient {
   }
 
   async uploadTelemetry(monitoring: Monitoring, { keepalive }: { keepalive?: boolean } = {}): Promise<void> {
-    const resp = await this.fetchImplementation(`${this.baseUrl}/telemetry:upload`, {
+    const resp = await this.fetchImplementation(`${this.telemetryBaseUrl}/telemetry:upload`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({

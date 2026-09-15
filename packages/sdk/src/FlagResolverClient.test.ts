@@ -144,6 +144,33 @@ describe('Client environment Evaluation', () => {
   });
 });
 
+describe('base URL configuration', () => {
+  const createClient = (fetchImplementation: SimpleFetch, options = {}) =>
+    new FetchingFlagResolverClient({
+      fetchImplementation,
+      clientSecret: 'secret',
+      applyDebounce: 0,
+      sdk: { id: SdkId.SDK_ID_JS_CONFIDENCE, version: 'test' },
+      environment: 'backend',
+      resolveTimeout: 10,
+      telemetry: new Telemetry({ disabled: true, logger: {}, environment: 'backend' }),
+      logger: {},
+      ...options,
+    });
+
+  it('should use the common base URL for telemetry when resolve has an override', async () => {
+    const fetchMock = jest.fn(async (_request: Request) => new Response('{}'));
+    const client = createClient(fetchMock, {
+      baseUrl: 'https://proxy.dev/',
+      resolveBaseUrl: 'https://resolver.example.com',
+    });
+
+    await client.uploadTelemetry({ libraryTraces: [], platform: 0 });
+
+    expect(fetchMock.mock.calls[0][0].url).toBe('https://proxy.dev/v1/telemetry:upload');
+  });
+});
+
 describe('Backend environment Evaluation', () => {
   const instanceUnderTest = new FetchingFlagResolverClient({
     fetchImplementation,
