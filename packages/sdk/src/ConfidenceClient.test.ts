@@ -641,6 +641,33 @@ describe('ConfidenceClient', () => {
       expect(FlagBundle.evaluate(await bundle(), 'promo-banner.nested.count', 0).value).toBe(3);
     });
 
+    it('evaluates list values', async () => {
+      const withList: FlagBundle = {
+        flags: {
+          'promo-banner': {
+            value: { audiences: ['beta', 'early-access'] },
+            reason: 'MATCH',
+            shouldApply: false,
+          },
+        },
+        resolveId: 'resolve-with-list',
+        resolveToken: '',
+      };
+
+      expect(FlagBundle.evaluate(withList, 'promo-banner.audiences', [] as string[]).value).toEqual([
+        'beta',
+        'early-access',
+      ]);
+    });
+
+    it('returns a null default for a missing dot path', async () => {
+      expect(FlagBundle.evaluate(await bundle(), 'promo-banner.missing', null)).toMatchObject({
+        value: null,
+        reason: 'ERROR',
+        errorCode: 'TYPE_MISMATCH',
+      });
+    });
+
     it('returns the default with an ERROR reason on type mismatch', async () => {
       const details = FlagBundle.evaluate(await bundle(), 'promo-banner.text', 42);
       expect(details.value).toBe(42);

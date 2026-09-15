@@ -46,10 +46,12 @@ export namespace FlagBundle {
 
   /** Primitive flag value */
   export type Primitive = null | boolean | string | number;
+  /** List flag value */
+  export type List = ReadonlyArray<boolean> | ReadonlyArray<string> | ReadonlyArray<number>;
   /** Object flag value */
   export type Struct = { [key: string]: Value };
-  /** A flag value. The resolver never returns arrays */
-  export type Value = Primitive | Struct;
+  /** A flag value */
+  export type Value = Primitive | List | Struct;
 
   /** The outcome of resolving or evaluating a single flag */
   export interface Details<T> {
@@ -129,12 +131,21 @@ export namespace FlagBundle {
 
     let value: Value = flag.value;
     for (let i = 0; i < path.length; i++) {
-      if (value === null || typeof value !== 'object') {
+      if (value === null || typeof value !== 'object' || isList(value)) {
         return {
           reason: 'ERROR',
           value: defaultValue,
           errorCode: 'TYPE_MISMATCH',
           errorMessage: `resolved value is not an object at ${[flagName, ...path.slice(0, i)].join('.')}`,
+          shouldApply: false,
+        };
+      }
+      if (!Object.prototype.hasOwnProperty.call(value, path[i])) {
+        return {
+          reason: 'ERROR',
+          value: defaultValue,
+          errorCode: 'TYPE_MISMATCH',
+          errorMessage: `resolved value is missing field "${path[i]}" at ${[flagName, ...path.slice(0, i)].join('.')}`,
           shouldApply: false,
         };
       }
@@ -166,22 +177,19 @@ function evaluateAssignment<T extends FlagBundle.Value>(
   const resolvedType = typeof resolvedValue;
   const defaultType = typeof defaultValue;
 
-  // Guards JS callers; TypeScript rejects array defaults at compile time.
-  if (Array.isArray(defaultValue)) {
-    throw new Error(`arrays are not supported as flag values at ${path.join('.')}`);
-  }
-
   // If default is null, any value is acceptable
   if (defaultValue === null) return resolvedValue as T;
 
   // If resolved is null, substitute default
   if (resolvedValue === null) return defaultValue;
 
-  if (resolvedType !== defaultType) {
+  if (resolvedType !== defaultType || Array.isArray(resolvedValue) !== Array.isArray(defaultValue)) {
     throw new Error(
       `resolved value (${resolvedType}) isn't assignable to default type (${defaultType}) at ${path.join('.')}`,
     );
   }
+
+  if (isList(resolvedValue)) return resolvedValue as unknown as T;
 
   if (typeof resolvedValue === 'object') {
     const result: FlagBundle.Struct = { ...resolvedValue };
@@ -196,4 +204,8 @@ function evaluateAssignment<T extends FlagBundle.Value>(
 
   // Primitives — type match already validated
   return resolvedValue as T;
+}
+
+function isList(value: FlagBundle.Value): value is FlagBundle.List {
+  return Array.isArray(value);
 }
