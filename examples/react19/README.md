@@ -1,19 +1,5 @@
-# Example of using Confidence in React 19
+# React 19 bundle example
 
-This is a barebones client-side React 19 app using Vite, with no server-side rendering or extra tooling.
+Run `yarn install` and `yarn build` at the repository root, then `yarn workspace react19 dev` with `VITE_CONFIDENCE_CLIENT_SECRET` set to a browser-distributable client secret. Vite requires Node 20.19+ or 22.12+.
 
-## Getting started
-
-1. Install dependencies:
-   ```sh
-   yarn install
-   ```
-2. Start the dev server:
-   ```sh
-   yarn dev
-   ```
-
-## Notes
-
-- Uses @spotify-confidence/react and @spotify-confidence/sdk from the monorepo.
-- No SSR, no testing libraries, no extra tooling.
+The example resolves before rendering and demonstrates automatic and manual exposure. Edit the checkout flag paths for your configuration. Do not put a server-only credential in a Vite environment variable. See the [React guide](../../packages/react/README.md) for server-forwarded bundles and server actions.

@@ -276,8 +276,7 @@ class ExposureBatch {
       this.flush();
       return;
     }
-    // Debounced rather than throttled, matching the Confidence SDK: the window
-    // restarts on each evaluation so a burst leaves as one request.
+    // The window restarts on each new flag so a burst leaves as one request.
     clearTimeout(this.timer);
     this.timer = setTimeout(() => this.flush(), this.debounce);
   }

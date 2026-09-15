@@ -37,8 +37,7 @@ export function createConfidenceServerProvider(options: ConfidenceProviderFactor
 }
 
 /**
- * Matches the Confidence SDK: silent in production, but loud enough to debug a
- * failing resolve in development.
+ * Silent in production; reports failures in development.
  */
 function defaultLogger(): Logger | undefined {
   try {

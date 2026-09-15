@@ -12,12 +12,12 @@ This implements the dynamic paradigm of OpenFeature.
 To add the packages to your dependencies run:
 
 ```sh
-yarn add '@openfeature/server-sdk@^1.16.0' @openfeature/core '@spotify-confidence/sdk@^0.4.0' @spotify-confidence/openfeature-server-provider
+yarn add '@openfeature/server-sdk@^1.16.0' @openfeature/core '@spotify-confidence/sdk@^0.5.0' @spotify-confidence/openfeature-server-provider
 ```
 
 ## Enabling the provider, setting the evaluation context and resolving flags
 
-Requires `@openfeature/server-sdk >=1.16.0 <2` and `@spotify-confidence/sdk >=0.4.0 <0.5.0`.
+Requires `@openfeature/server-sdk >=1.16.0 <2` and `@spotify-confidence/sdk >=0.4.0 <0.6.0`.
 For existing integrations, see the [migration guide](../../concepts/migrate-to-thin-client.md).
 
 The provider is ready immediately. Each evaluation resolves only the requested

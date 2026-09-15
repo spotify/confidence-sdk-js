@@ -48,44 +48,17 @@ module.exports = defineConfig({
       // package.json invariants
       workspace.set('type', 'module');
 
-      if (workspace.cwd === 'packages/react') {
-        workspace.set('files', ['./index.*', './server.*', './patch-next-dev.cjs']);
-        workspace.set('scripts.prepack', 'yarn build && yarn bundle && cp dist/* .');
-        workspace.set('scripts.postpack', 'rm server.* & rm index.*');
-        workspace.set(
-          'exports',
-          buildExports({
-            '.': 'index',
-            './server': 'server',
-          }),
-        );
-        workspace.set('publishConfig', {
-          registry: 'https://registry.npmjs.org/',
-          access: 'public',
-          main: 'index.cjs',
-          module: 'index.mjs',
-          types: 'index.d.ts',
-          exports: conditionalExports(
-            {
-              '.': 'index',
-              './server': 'server',
-            },
-            './',
-          ),
-        });
-      } else {
-        workspace.set('files', ['dist/index.*']);
-        workspace.set('scripts.prepack', 'yarn build && yarn bundle');
-        workspace.set('exports', buildExports({ '.': 'index' }));
-        workspace.set('publishConfig', {
-          registry: 'https://registry.npmjs.org/',
-          access: 'public',
-          exports: distExports({ '.': 'index' }),
-          main: 'dist/index.cjs',
-          module: 'dist/index.mjs',
-          types: 'dist/index.d.ts',
-        });
-      }
+      workspace.set('files', ['dist/index.*']);
+      workspace.set('scripts.prepack', 'yarn build && yarn bundle');
+      workspace.set('exports', buildExports({ '.': 'index' }));
+      workspace.set('publishConfig', {
+        registry: 'https://registry.npmjs.org/',
+        access: 'public',
+        exports: distExports({ '.': 'index' }),
+        main: 'dist/index.cjs',
+        module: 'dist/index.mjs',
+        types: 'dist/index.d.ts',
+      });
 
       if (workspace.cwd === 'packages/sdk') {
         workspace.set('scripts.bundle', 'rollup -c && api-extractor run && ../../emit-dcts.sh');

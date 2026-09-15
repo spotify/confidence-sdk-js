@@ -1,18 +1,5 @@
-# Example of using Confidence in React 18
+# React 18 bundle example
 
-This project was bootstrapped with [Create React App](https://github.com/facebook/create-react-app).
+Run `yarn install` and `yarn build` at the repository root, then `yarn workspace react18 dev` with `VITE_CONFIDENCE_CLIENT_SECRET` set to a browser-distributable client secret. Vite requires Node 20.19+ or 22.12+.
 
-### `yarn dev`
-
-Runs the app in the development mode.\
-Open [http://localhost:3000](http://localhost:3000) to view it in the browser.
-
-#### Note:
-
-You must build the packages first by running `yarn build` at the root of the repository.
-
-## The basics
-
-In `App.tsx` we configure the `Confidence Web Provider` and setup the Context in Openfeature.
-We are resolving a string value from a flag and displaying it on the page, the context can be changed by pressing the
-button, showing how the SDK reacts to changes of the context.
+The example resolves before rendering and demonstrates automatic and manual exposure. Edit the checkout flag paths for your configuration. Do not put a server-only credential in a Vite environment variable. See the [React guide](../../packages/react/README.md) for server-forwarded bundles and server actions.

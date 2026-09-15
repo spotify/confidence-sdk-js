@@ -1,9 +1,7 @@
 /**
  * Isomorphic base64 for binary data, used for the resolve token on the wire.
  *
- * Distinct from `utf8ToBase64` in `./utils`, which encodes a string and works in
- * the browser only. These take and return bytes, and work in Node.js, browsers
- * and Workers.
+ * These take and return bytes, and work in Node.js, browsers and Workers.
  *
  * This module has no imports on purpose: it is reached for from code that must
  * not depend on the rest of the package.

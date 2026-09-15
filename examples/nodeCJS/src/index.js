@@ -1,42 +1,37 @@
 const { OpenFeature } = require('@openfeature/server-sdk');
-const { Confidence } = require('@spotify-confidence/sdk');
+const { ConfidenceClient, FlagBundle } = require('@spotify-confidence/sdk');
 const { createConfidenceServerProvider } = require('@spotify-confidence/openfeature-server-provider');
 
 if (!process.env.CLIENT_SECRET) {
-  console.log('CLIENT_SECRET is not set in .env');
+  throw new Error('Set CLIENT_SECRET before running the example');
 }
-main();
 
 async function main() {
-  const confidence = Confidence.create({
-    clientSecret: process.env.CLIENT_SECRET,
-    region: 'eu',
-    fetchImplementation: fetch,
-    timeout: 1000,
-    environment: 'backend',
-  });
-
   const provider = createConfidenceServerProvider({
     clientSecret: process.env.CLIENT_SECRET,
     region: 'eu',
-    fetchImplementation: fetch,
     timeout: 1000,
   });
-
-  OpenFeature.setProvider(provider);
-
-  const client = OpenFeature.getClient();
-
-  client
-    .getStringValue('tutorial-feature.title', 'Default', {
-      targetingKey: `user-${Math.random()}`,
-    })
-    .then(result => {
-      console.log('result from open feature:', result);
+  await OpenFeature.setProviderAndWait(provider);
+  try {
+    const result = await OpenFeature.getClient().getStringValue('tutorial-feature.title', 'Default', {
+      targetingKey: 'user-a',
     });
+    console.log('from OpenFeature:', result);
 
-  const fe = await confidence
-    .withContext({ targeting_key: 'user-a' })
-    .evaluateFlag('tutorial-feature.title', 'Default');
-  console.log('from confidence API: ', fe);
+    const client = new ConfidenceClient({ clientSecret: process.env.CLIENT_SECRET, region: 'eu' });
+    const bundle = await client.resolve(
+      ['tutorial-feature'],
+      { targeting_key: 'user-a' },
+      { signal: AbortSignal.timeout(1000) },
+    );
+    console.log('from the thin client:', FlagBundle.evaluate(bundle, 'tutorial-feature.title', 'Default'));
+  } finally {
+    await OpenFeature.clearProviders();
+  }
 }
+
+main().catch(error => {
+  console.error(error);
+  process.exitCode = 1;
+});

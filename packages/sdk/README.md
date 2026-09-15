@@ -3,7 +3,7 @@
 ![](https://img.shields.io/badge/lifecycle-beta-a0c3d2.svg)
 
 > [!NOTE]
-> The standalone `Confidence` class is being phased out. For new integrations, we recommend using the OpenFeature APIs directly:
+> The stateful `Confidence` class has been removed. Use `ConfidenceClient` directly or an OpenFeature provider:
 >
 > - **Client-based (SPA)**: Use [@spotify-confidence/openfeature-web-provider](https://github.com/spotify/confidence-sdk-js/blob/main/packages/openfeature-web-provider/README.md)
 > - **Server**: Use [@spotify-confidence/openfeature-server-provider-local](https://github.com/spotify/confidence-resolver/tree/main/openfeature-provider/js/README.md), which resolves flags in-process with close to zero latency
@@ -19,7 +19,7 @@ JavaScript implementation of the Confidence SDK, enables event tracking and feat
 To add the packages to your dependencies run:
 
 ```sh
-yarn add '@spotify-confidence/sdk@^0.4.0'
+yarn add '@spotify-confidence/sdk@^0.5.0'
 ```
 
 # ConfidenceClient
@@ -227,168 +227,3 @@ await client.publish(event, { signal: AbortSignal.timeout(1000) });
 ```
 
 A signal that aborts on a deadline is reported as `TIMEOUT`; a deliberate `controller.abort()` is not. The thin client never retries. Inspect the result and your endpoint's error semantics before deciding whether to retry: HTTP status alone does not always distinguish permanent from transient failures. The web provider adds its own bounded exposure retry, documented in its [delivery and shutdown guide](../openfeature-web-provider/README.md#exposure-delivery-and-shutdown).
-
-# The Confidence class
-
-> [!NOTE]
-> Being phased out — see the recommendations at the top of this page.
-
-## Initializing the SDK
-
-Run the `Confidence.create` function to obtain a root instance of `Confidence`.
-
-The SDK initialization requires an API key (`clientSecret`) to work. This key obtained through the [Confidence console](https://app.confidence.spotify.com/).
-
-```ts
-import { Confidence } from '@spotify-confidence/sdk';
-
-const confidence = Confidence.create({
-  clientSecret: 'my secret',
-  region: 'eu', // or 'us'
-  environment: 'client', // or 'backend'
-  timeout: 1000,
-});
-```
-
-### Region
-
-The region option is used to set the region for the network request to the Confidence backend. When the region is not set, the default (global) region will be used.
-The current regions are: `eu` and `us`.
-
-### Timeout
-
-The timeout option is used to set the timeout for the feature flag resolve network request to the Confidence backend. When the timeout is reached, default values will be returned.
-
-### Logging
-
-During your integration and when debugging, you can get helpful logging information by defining a `logger` when creating the Confidence instance. The `Logger` is an interface for you to implement. It's very similar to the console object, but all the logging functions (`debug`, `info`, `warn` etc) are optional, so you just provide the ones you are interested in. Providing console as the logger will log everything to the console. If you don't want any logging you can provide `{}` which is also a valid `Logger` implementation. If no logger is provided it will default to logging `info` or higher in development, but no logging in production.
-
-```ts
-import { Confidence } from '@spotify-confidence/sdk';
-
-const myLogger = {
-  warn: message => {
-    console.log('Confidence warning: ', message);
-  },
-  error: message => {
-    console.log('Confidence error: ', message);
-  },
-};
-
-const confidence = Confidence.create({
-  clientSecret: 'mysecret',
-  region: 'eu',
-  environment: 'client',
-  logger: myLogger,
-  timeout: 1000,
-});
-```
-
-## Setting the context
-
-You can set the context manually by using `setContext({})`:
-
-```ts
-confidence.setContext({ 'pants-color': 'yellow' });
-```
-
-or obtain a "child instance" of Confidence with a modified context by using `withContext({})`
-
-```ts
-const childInstance = confidence.withContext({ 'pants-color': 'blue', 'pants-fit': 'slim' });
-```
-
-At this point, the context of `childInstance` is `'pants-color': 'blue', 'pants-fit': 'slim'` while the context of `confidence` remains `{'pants-color': 'yellow'}`.
-
-> [!IMPORTANT]
-> When using the SDK in a server environment, you should call `withContext` rather than `setContext`. This will give you a new instance scoped to the request and prevent context from leaking between requests.
->
-> Call `confidence.close()` on shutdown to flush any pending telemetry before the process exits.
-
-## Accessing flags
-
-Flags can be accessed with two different API's.
-
-The flag value API returns the Confidence assigned flag value or the passed in default value if no value was returned.
-The evaluate API returns a `FlagEvaluation` type that also contain information about `variant`, `reason` and possible error details.
-
-```ts
-const flag = await confidence.getFlag('tutorial-feature', {});
-const flagEvaluation = await confidence.evaluateFlag('tutorial-feature', {});
-```
-
-### Dot notation
-
-Both the "flag value", and the "evaluate" API's support dot notation, meaning that if the Confidence flag has a property `enabled` or `title` on the flag, you can access them directly:
-
-```ts
-const enabled = await confidence.getFlag('tutorial-feature.enabled', false);
-const messageEvaluation = await confidence.evaluateFlag('tutorial-feature.message', 'default message');
-const message = messageEvaluation.value;
-```
-
-### Synchronous access
-
-In a client application (where `environment` is set to `client`), the SDK fetches and caches all flags when the context is updated. This means the flags can be accessed synchronously after that.
-
-### Caching
-
-Flag evaluations are cached in memory on the Confidence instance with the evaluation context and flag name as a cache key.
-This is done to reduce network calls when evaluating multiple flags using the same context.
-
-```ts
-const confidence = Confidence.create({ clientSecret: 'your-client-secret', timeout: 1000 });
-const flag = await confidence.getFlag('flag', {});
-// subsequent calls to getFlag will return the same value
-```
-
-Creating a child with `withContext({})` does not guarantee a fresh network
-request; the legacy API can share cached resolutions. For explicit uncached
-requests, use [`ConfidenceClient.resolve`](#resolving-flags).
-
-## Event tracking
-
-Use `confidence.track()` from any Confidence instance to track an event in Confidence. Any context data set on the instance will be appended to the tracking event.
-
-```ts
-confidence.track('event_name', { 'message-detail1': 'something interesting' });
-```
-
-### Auto track
-
-Confidence supports automatically tracking certain things out of the box and supports API's for you to extend that functionality.
-
-#### Visitor ID (web)
-
-Confidence can provide all flag resolves and tracking events with a browser specific identifier. We call this `visitor_id`.  
-The `visitor_id` is stored in a cookie named `cnfdVisitorId`. To add a generated `visitor_id` to the context, use the following:
-
-```ts
-import { visitorIdentity } from '@spotify-confidence/sdk';
-confidence.track(visitorIdentity());
-```
-
-To share the visitor ID across subdomains, set the `domain` option:
-
-```ts
-confidence.track(visitorIdentity({ domain: '.example.com' }));
-```
-
-#### Page Views (web)
-
-Confidence can automatically track `page views` on events such as `load`, `pushState`, `replaceState`, `popstate` and `hashchange`.
-To automatically track `page views`, use the following:
-
-```ts
-import { Confidence, pageViews } from '@spotify-confidence/sdk';
-confidence.track(pageViews());
-```
-
-#### Web vitals (web)
-
-To automatically send tracking events containing [web vitals data](https://web.dev/articles/vitals), use:
-
-```ts
-import { Confidence, webVitals } from '@spotify-confidence/sdk';
-confidence.track(webVitals());
-```

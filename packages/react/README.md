@@ -1,294 +1,89 @@
-# Confidence React SDK
+# Confidence React
 
-![](https://img.shields.io/badge/lifecycle-beta-a0c3d2.svg)
-
-> [!NOTE]
-> This Confidence standalone React SDK is being phased out. For new integrations, we recommend using the OpenFeature APIs directly:
->
-> - **Client SPA**: Use the [OpenFeature React SDK](https://openfeature.dev/docs/reference/sdks/client/web/react/) with our [@spotify-confidence/openfeature-web-provider](https://github.com/spotify/confidence-sdk-js/blob/main/packages/openfeature-web-provider/README.md)
-> - **SSR (e.g., Next.js)**: Resolve all flags server-side using [@spotify-confidence/openfeature-server-provider-local](https://github.com/spotify/confidence-resolver/tree/main/openfeature-provider/js/README.md) and propagate values to the client. This gives optimal performance, avoids the complexity of managing context across the client/server boundary, and keeps flag logic and sensitive context data securely private.
-
-This package contains helper functionality to make the Confidence SDK work well in a React environment. **Note:** This package is only relevant if you are using the Confidence SDK directly. If you are using OpenFeature, please use the [OpenFeature React SDK](https://github.com/open-feature/js-sdk/tree/main/packages/react-sdk) instead.
-
-# Usage
-
-## Adding the dependencies
-
-To add the packages to your dependencies run:
+React 18/19 hooks over an immutable `FlagBundle`. No OpenFeature singleton, client lifecycle, or fetching during render.
 
 ```sh
-yarn add @spotify-confidence/react
+yarn add @spotify-confidence/react@^0.3.0 @spotify-confidence/sdk@^0.5.0
 ```
 
-## Initializing the ConfidenceProvider
+## Browser applications
 
-The Confidence React integration has a Provider that needs to be initialized. It accepts a Confidence instance and should wrap your component tree. Here's an example for client-side rendering:
+Resolve outside React (or in your application's data-loading layer), then provide the snapshot:
 
-```ts
-import { Confidence } from '@spotify-confidence/sdk/';
+```tsx
+import { ConfidenceClient } from '@spotify-confidence/sdk';
+import { ConfidenceProvider, useFlag, useFlagDetails } from '@spotify-confidence/react';
+
+const client = new ConfidenceClient({ clientSecret: 'your-browser-client-secret' });
+const bundle = await client.resolve(['checkout'], { targeting_key: 'user-123' }, { apply: false });
+
+function Checkout() {
+  const enabled = useFlag('checkout.enabled', false);
+  return <button disabled={!enabled}>Checkout</button>;
+}
+
+// Pass this tree to createRoot(...).render(...).
+const app = (
+  <ConfidenceProvider bundle={bundle} apply={flag => client.apply(bundle.resolveToken, flag)}>
+    <Checkout />
+  </ConfidenceProvider>
+);
+```
+
+Only use credentials intended for browser distribution here. For server-only credentials, resolve on the server and supply an exposure callback that calls your server.
+
+`useFlag` exposes after React commits the component. For conditional usage:
+
+```tsx
+const { value, reason, errorCode, expose } = useFlagDetails('checkout.enabled', false, { expose: false });
+// Call when the feature is actually used; handle delivery failures.
+const onClick = () => {
+  void expose().catch(console.error);
+};
+```
+
+Exposure is deduplicated by base flag name within each provider snapshot, including concurrent calls, multiple dot paths, and StrictMode effects. Failed writes can be retried by calling `expose()` again. Automatic failures call `onExposureError` (or `console.warn`); there is no automatic retry loop. An `apply` callback may return `void`, a promise, or the thin client's `{ ok, errorMessage }` result. It must throw/reject or return `ok: false` to report failure.
+
+Missing providers, missing flags, resolution failures, and type mismatches return defaults without exposure. An already-applied assignment (`shouldApply: false`) still reports its variant to browser developer tooling without sending another apply request.
+
+## Server rendering and server actions
+
+The provider and hooks work with server-forwarded JSON and hydrate using the same snapshot. The React package has no `/server` entry point: application loaders/server components own resolution and transport.
+
+```tsx
+// app/page.tsx — an application-owned server component
+import { ConfidenceClient } from '@spotify-confidence/sdk';
 import { ConfidenceProvider } from '@spotify-confidence/react';
+import { Checkout } from './Checkout'; // a client component using useFlag
 
-// Client-side initialization
-const confidence = Confidence.create({
-  clientSecret: 'mysecret',
-  region: 'eu',
-  environment: 'client', // Note: For client-side rendering
-  timeout: 1000,
-});
+export default async function Page() {
+  const client = new ConfidenceClient({ clientSecret: process.env.CONFIDENCE_CLIENT_SECRET! });
+  // Derive context from the authenticated request in your application.
+  const bundle = await client.resolve(['checkout'], { targeting_key: 'user-123' }, { apply: false });
+  const token = bundle.resolveToken;
 
-function App() {
+  async function apply(flag: string) {
+    'use server';
+    const serverClient = new ConfidenceClient({ clientSecret: process.env.CONFIDENCE_CLIENT_SECRET! });
+    return serverClient.apply(token, flag);
+  }
+
   return (
-    <ConfidenceProvider confidence={confidence}>
-      <React.Suspense fallback={<p>Loading... </p>}>
-        <MyComponent />
-      </React.Suspense>
+    <ConfidenceProvider bundle={{ ...bundle, resolveToken: '' }} apply={apply}>
+      <Checkout />
     </ConfidenceProvider>
   );
 }
 ```
 
-For server-side rendering setup, see the [Server-Side Rendering Support](#server-side-rendering-support) section below.
+Keep tokens on the server when using server-side resolution: local-resolver tokens may contain targeting context. Secure exposure endpoints/actions using your application's authorization and rate limiting, and bind them to the original token. Outside an RSC framework, send the token-free bundle with the page and provide a browser callback to your own exposure endpoint.
 
-Anywhere in the sub-tree under the `ConfidenceProvider` you can now access the confidence instance with the `useConfidence()` hook to access context modification API's. For flag resolves we suggest using `useFlag()`.
+For the local resolver, the same client provider accepts its bundle and a callback bound to `provider.applyFlag(bundle.resolveToken, flag)`. Its existing server wrapper can retain that action while switching its client provider to this package. The shared evaluator accepts local materialization and provider error reasons; replacing the separate repository's imports is follow-up work. This does not imply tokens can be applied through a different resolver backend.
 
-## Managing context
+## Context changes
 
-The `ConfidenceProvider` API supports a `useWithContext()` hook to achieve the [standard context API](https://github.com/spotify/confidence-sdk-js/blob/main/packages/sdk/README.md#setting-the-context).
+Bundles are immutable snapshots, not live clients. Resolve again when context changes and pass the new bundle with its corresponding `apply` callback. A new bundle object starts a new exposure scope; preserve its identity during ordinary rerenders. Cancel or discard stale resolve requests in your data-loading layer, and avoid rendering an old user's snapshot while loading a new one.
 
-## Accessing flags
+## Migrating from 0.2
 
-Flags are accessed with a set of hooks exported from `@spotify-confidence/react`:
-
-```ts
-import { useFlag, useEvaluateFlag } from '@spotify-confidence/react';
-
-function MyComponent() {
-  // Simple flag access - returns the flag value or default
-  const color = useFlag('my-feature-flag.color', 'blue');
-
-  // Detailed flag evaluation - returns evaluation details
-  const { value, reason } = useEvaluateFlag('my-feature-flag.size', 12);
-
-  return (
-    <div style={{ color, fontSize: value }}>
-      <p>Color: {color}</p>
-      <p>Size: {value}</p>
-      <p>Reason: {reason}</p>
-    </div>
-  );
-}
-```
-
-### Hook Behavior
-
-- `useFlag(flagName, defaultValue)`
-
-  - Returns the flag value or default
-  - Simplest way to access flag values
-  - Type-safe with TypeScript
-  - Example: `const isEnabled = useFlag('feature.enabled', false)`
-
-- `useEvaluateFlag(flagName, defaultValue)`
-  - Returns an object with:
-    - `value`: The flag value or default
-    - `reason`: The evaluation reason (e.g., "DEFAULT", "TARGETING_MATCH")
-    - `variant`: The variant assigned
-  - Useful for debugging or when you need evaluation details
-  - Example: `const { value, reason } = useEvaluateFlag('feature.color', 'blue')`
-
-### Important Notes
-
-1. **Suspense Integration**
-
-   - Both hooks integrate with React Suspense
-   - Wrap components using these hooks in a Suspense boundary
-   - Example:
-
-   ```tsx
-   <Suspense fallback={<LoadingSpinner />}>
-     <MyComponent />
-   </Suspense>
-   ```
-
-2. **Reactivity**
-
-   - Hooks automatically re-render when context changes
-   - No need to manually trigger updates
-   - Example:
-
-   ```tsx
-   function MyComponent() {
-     const confidence = useConfidence();
-     const theme = useFlag('app.theme', 'light');
-
-     return <button onClick={() => confidence.setContext({ user_type: 'premium' })}>Switch to Premium</button>;
-   }
-   ```
-
-3. **Type Safety**
-   - Both hooks are fully typed with TypeScript
-   - The return type matches the default value type
-   - Example:
-   ```ts
-   const count: number = useFlag('counter.value', 0);
-   const name: string = useFlag('user.name', '');
-   ```
-
-## Server-Side Rendering (experimental)
-
-For applications using SSR frameworks such as [Next.js](https://nextjs.org/docs), feature flags can be fetched on the server using the [web sdk](packages/sdk/README.md) `@spotify-confidence/sdk` and resolved values can be passed down to client components. Flag fetching can be user-specific by using `withContext()` (to avoid mutating a globally shared Confidence instance) and loading the user context from cookies, headers, or the request object. If many client components need the same flag, consider using a Context Provider to avoid prop drilling and centralize flag access.
-
-### Using Flags in a Server Component
-
-When using the SDK in a server environment:
-
-1. Create a global Confidence instance for the server using React.cache as the scope in CacheOptions.
-2. Whenever accessing flags in server components, use `withContext` to provide the context for the flag evaluation. Like shown in the example below you can simplify this by using a `getConfidence` helper function exported from the same file where you configure the Confidence instance.
-3. Use direct flag evaluation with `await` in server components.
-
-```ts
-// app/confidence.ts (Server-side configuration)
-import { Confidence } from '@spotify-confidence/sdk';
-import { cookies } from 'next/headers';
-
-import React from 'react';
-
-const confidence = Confidence.create({
-  clientSecret: process.env.CONFIDENCE_CLIENT_SECRET!,
-  environment: 'backend',
-  timeout: 1000,
-  logger: console,
-  cache: {
-    scope: React.cache, // Use React.cache for server-side caching
-  },
-});
-
-export async function getConfidence() {
-  const cookieStore = await cookies();
-  const targeting_key = cookieStore.get('visitorId')?.value; // a unique targeting value of your choice
-
-  return confidence.withContext({ targeting_key });
-}
-```
-
-```tsx
-// app/components/ServerComponent.tsx
-import { getConfidence } from '../confidence';
-
-export const ServerComponent = async () => {
-  const confidence = await getConfidence();
-
-  // Direct flag evaluation in server components
-  const color = await confidence.getFlag('my-feature-flag.color', 'blue');
-
-  return <div style={{ color }}>Server rendered content</div>;
-};
-```
-
-### Using Flags in a Client Component
-
-```tsx
-// app/components/ClientComponent.tsx
-'use client';
-
-type ClientComponentProps = {
-  color: string;
-};
-
-export default function ClientComponent({ color }: ClientComponentProps) {
-  return <div style={{ color }}>Client rendered content</div>;
-}
-```
-
-```tsx
-// app/components/ServerComponent.tsx
-import { getConfidence } from '../confidence';
-import ClientComponent from './ClientComponent';
-
-export default async function ServerComponent() {
-  const confidence = await getConfidence();
-
-  // Fetch the flag value server-side with user context
-  const color = await confidence.getFlag('my-feature-flag.color', 'blue');
-
-  // Pass the flag value as a prop to the client component
-  return <ClientComponent color={color} />;
-}
-```
-
-### Server and Client (experimental)
-
-If you also have interactive (client-side) components that benefit from feature flagging support, you can use the pattern below together with the server-side approach described above.
-This allows flag evaluations to be seamlessly transferred from server components to client components.
-
-Please note:
-
-- Server components use direct flag evaluation with `evaluateFlag` or `getFlag`
-- Client components use hooks (`useFlag`, `useConfidence`) for interactive features
-- Use React.cache for efficient server-side caching
-- The SDK automatically handles synchronization from server to client
-- Mutating the context in a client side component does not affect the server side confidence instance.
-
-> [!IMPORTANT]
-> Be aware that if you are constructing the Confidence instance using a custom `fetchImplementation` this will only be used on the server side. Client side the SDK will use the default `fetch` implementation.
-
-> [!IMPORTANT]
-> Combined server and client support currently doesn't work well in Next.js dev mode with Turbopack enabled.
-> This is due to a number of open bugs in Turbopack. We'll soon provide a list with the specific issues to track progress.
-> In the meantime you can opt out of using Turbopack by making sure the `dev` script in your `package.json` is just `next dev`, and not `next dev --turbopack`.
-
-```tsx
-// app/layout.tsx
-import { ConfidenceProvider } from '@spotify-confidence/react/server';
-import { getConfidence } from '../confidence';
-import { ClientComponent } from 'components/ClientComponent';
-import { ServerComponent } from 'components/ServerComponent';
-
-export default async function Layout() {
-  const confidence = await getConfidence();
-
-  return (
-    <div>
-      <ConfidenceProvider confidence={confidence}>
-        <Suspense fallback={<h1>Loading...</h1>}>
-          <ClientComponent>
-            <ServerComponent>
-              <ClientComponent />
-            </ServerComponent>
-          </ClientComponent>
-        </Suspense>
-      </ConfidenceProvider>
-    </div>
-  );
-}
-
-// app/components/ClientComponent.tsx
-('use client');
-import { useConfidence, useFlag } from '@spotify-confidence/react/client';
-
-export const ClientComponent = () => {
-  // Use hooks in client components
-  const confidence = useConfidence();
-  const fontSize = useFlag('my-feature-flag.size', '12pt');
-
-  return (
-    <div>
-      <div style={{ fontSize }}>Client rendered content</div>
-      <button onClick={() => confidence.setContext({ locale: 'sv-SE' })}>Choose Swedish</button>
-    </div>
-  );
-};
-```
-
-## Example Application
-
-For a more extensive example application, see the [confidence-sdk-demos](https://github.com/spotify/confidence-sdk-demos) repository.
-
-## Tracking events
-
-The event tracking API is available on the Confidence instance as usual. See the [SDK Readme](https://github.com/spotify/confidence-sdk-js/blob/main/packages/sdk/README.md#event-tracking) for details.
-
-```ts
-const confidence = useConfidence();
-confidence.track('my-event-name', { my_data: 4 });
-```
+Replace the old `confidence` provider prop with `bundle` and `apply`. Replace legacy flag hooks with `useFlag` / `useFlagDetails`; the latter returns `FlagBundle.Details` plus async `expose()`, not OpenFeature evaluation details. Resolve before rendering instead of relying on the old client's subscriptions or suspense behavior. The old server helpers and Next.js development patch are removed. Upgrade React integration to `0.3` together with SDK `0.5`.

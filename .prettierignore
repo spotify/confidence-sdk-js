@@ -1,6 +1,7 @@
 node_modules/
 packages/*/build
 packages/*/dist
+examples/*/build
 .idea
 coverage/*
 *.log

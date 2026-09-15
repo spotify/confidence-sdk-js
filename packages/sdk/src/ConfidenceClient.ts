@@ -29,7 +29,7 @@ function serviceUrl(service: 'resolver' | 'events', region?: ConfidenceClient.Re
  */
 const KEEPALIVE_MAX_BODY_BYTES = 50_000;
 
-const DEFAULT_VERSION = '0.4.0'; // x-release-please-version
+const DEFAULT_VERSION = '0.5.0'; // x-release-please-version
 
 // TODO: a dedicated SDK id for the thin client would make its own resolve
 // traffic distinguishable from the rest of the JS SDK, the way the provider ids

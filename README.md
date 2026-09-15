@@ -12,12 +12,11 @@ Feature flag resolution via [OpenFeature](https://github.com/open-feature/js-sdk
 
 > **💡 For server-side use cases**, consider the [Confidence Local Resolver Provider for JavaScript](https://github.com/spotify/confidence-resolver/tree/main/openfeature-provider/js), which evaluates flags locally via WebAssembly for increased resilience and lower latency.
 
-| Package                                                                 | Description                                            |
-| ----------------------------------------------------------------------- | ------------------------------------------------------ |
-| [`openfeature-server-provider`](./packages/openfeature-server-provider) | OpenFeature provider for server-side environments      |
-| [`openfeature-web-provider`](./packages/openfeature-web-provider)       | OpenFeature provider for client-side web applications  |
-| [`sdk`](./packages/sdk)                                                 | Core SDK for flag resolution, context, and tracking    |
-| [`react`](./packages/react)                                             | React hooks and providers for client-side applications |
+| Package                                                                 | Description                                           |
+| ----------------------------------------------------------------------- | ----------------------------------------------------- |
+| [`openfeature-server-provider`](./packages/openfeature-server-provider) | OpenFeature provider for server-side environments     |
+| [`openfeature-web-provider`](./packages/openfeature-web-provider)       | OpenFeature provider for client-side web applications |
+| [`sdk`](./packages/sdk)                                                 | Stateless client, flag bundles, and event publishing  |
 
 ### Session Recording
 
@@ -45,7 +44,7 @@ Set up Confidence as an OpenFeature provider in your Node.js application with th
 ### 1. Install Dependencies
 
 ```sh
-yarn add '@openfeature/server-sdk@^1.16.0' @openfeature/core '@spotify-confidence/sdk@^0.4.0' @spotify-confidence/openfeature-server-provider
+yarn add '@openfeature/server-sdk@^1.16.0' @openfeature/core '@spotify-confidence/sdk@^0.5.0' @spotify-confidence/openfeature-server-provider
 ```
 
 ### 2. Initialize and Set the Provider
@@ -79,7 +78,7 @@ const isEnabled = await client.getBooleanValue('feature.enabled', false, {
 The following shows how to set up the client-side provider:
 
 ```sh
-yarn add '@openfeature/web-sdk@^1.3.2' @openfeature/core '@spotify-confidence/sdk@^0.4.0' @spotify-confidence/openfeature-web-provider
+yarn add '@openfeature/web-sdk@^1.3.2' @openfeature/core '@spotify-confidence/sdk@^0.5.0' @spotify-confidence/openfeature-web-provider
 ```
 
 ```ts
@@ -122,27 +121,13 @@ You can check out the example application, which is built with Next.js and uses 
 
 # Direct SDK Usage
 
-> [!NOTE]
-> The standalone `Confidence` class is being phased out. For new integrations, we recommend using the OpenFeature APIs described above.
-
-The vanilla sdk can be used in cases where you want direct access to the Confidence SDK, including event tracking and custom context management.
+The SDK exposes a stateless transport and pure bundle evaluation for direct integrations. The previous stateful `Confidence` class has been removed.
 
 The package also provides `ConfidenceClient`, a thin stateless client for remote flag resolution, exposure, and event publishing. Both remote OpenFeature providers in this repository use it. It is also useful directly when resolving from a worker, or when resolving on the server and forwarding a `FlagBundle` to the browser for evaluation.
 
-The providers require SDK `>=0.4.0 <0.5.0`. Existing integrations should follow the [thin-client migration guide](./concepts/migrate-to-thin-client.md), which covers factory changes, custom endpoints, context updates, and shutdown. The existing `Confidence` class and React integration remain available in this release.
+The providers require SDK `>=0.4.0 <0.6.0`. Existing integrations should follow the [thin-client migration guide](./concepts/migrate-to-thin-client.md), which covers factory changes, custom endpoints, context updates, and shutdown. The legacy `Confidence` API has been removed. The [Confidence React integration](./packages/react/README.md) now provides bundle-based `useFlag` and `useFlagDetails` hooks, with application-supplied exposure callbacks for browser clients or server actions.
 
 > **Learn more**: [SDK Documentation](./packages/sdk/README.md) · [`ConfidenceClient`](./packages/sdk/README.md#confidenceclient)
-
-## React Integration
-
-> [!NOTE]
-> The standalone React SDK is being phased out. For new integrations, see the [OpenFeature React SDK](https://openfeature.dev/docs/reference/sdks/client/web/react/) section above, or consider server-side flag resolution for SSR applications.
-
-For React applications, use the dedicated React package that provides hooks and providers for seamless integration. This package is built on top of the direct SDK usage.
-
-> **Learn more**: [React Integration Documentation](./packages/react/README.md)
-
----
 
 # Content Security Policy (CSP)
 
@@ -169,15 +154,9 @@ This covers:
 
 ### Additional Considerations
 
-- **Custom endpoints**: If your provider's `fetchImplementation` or thin client's `fetch` routes requests to another domain, include it in `connect-src`. The legacy `Confidence` class still supports its own `resolveBaseUrl` option.
-- **Web Vitals**: The legacy `Confidence` API includes optional web vitals tracking using `web-vitals`. The thin client and OpenFeature providers do not install automatic trackers.
+- **Custom endpoints**: If your provider's `fetchImplementation` or thin client's `fetch` routes requests to another domain, include it in `connect-src`.
+- **Automatic tracking**: The thin client and OpenFeature providers do not install page-view, visitor-ID, or web-vitals trackers. Applications provide context and publish events explicitly.
 - **No inline scripts**: The SDK doesn't inject any inline scripts or styles, so you don't need `unsafe-inline` permissions
-
-# Next.js Pages Router Development Patch
-
-When using the Confidence React SDK with Next.js **Pages Router** _in development mode_, you may need to apply a patch to the Next.js development server to improve error handling during server-side rendering. Run `yarn patch-next-dev apply` from the `@spotify-confidence/react` package to apply this patch, which helps prevent development server visual crash overlay when using SSR with feature flags.
-
-Please note that this is purely a development issue and not something that affects production builds.
 
 # Contributions and Development
 

@@ -12,12 +12,12 @@ This implements the static paradigm of OpenFeature.
 To add the packages to your dependencies run:
 
 ```sh
-yarn add '@openfeature/web-sdk@^1.3.2' @openfeature/core '@spotify-confidence/sdk@^0.4.0' @spotify-confidence/openfeature-web-provider
+yarn add '@openfeature/web-sdk@^1.3.2' @openfeature/core '@spotify-confidence/sdk@^0.5.0' @spotify-confidence/openfeature-web-provider
 ```
 
 ## Enabling the provider, setting the evaluation context and resolving flags
 
-Requires `@openfeature/web-sdk >=1.3.2 <2` and `@spotify-confidence/sdk >=0.4.0 <0.5.0`.
+Requires `@openfeature/web-sdk >=1.3.2 <2` and `@spotify-confidence/sdk >=0.4.0 <0.6.0`.
 For existing integrations, see the [migration guide](../../concepts/migrate-to-thin-client.md).
 
 `setProviderAndWait` resolves all available flags for the current context before

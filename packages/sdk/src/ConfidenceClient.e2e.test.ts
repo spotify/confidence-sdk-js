@@ -12,8 +12,7 @@ import { FlagBundle } from './FlagBundle';
  * `resolve(..., { apply: false })` -> `resolveToken` -> `apply()` round trip
  * actually works against a server rather than against our own assumptions.
  *
- * They use the same `web-sdk-e2e-flag` and context as `Confidence.e2e.test.ts`,
- * so the two are directly comparable.
+ * They use the configured `web-sdk-e2e-flag` fixture and deterministic context.
  *
  * Note that the applies below record real exposures for `web-sdk-e2e-flag`.
  */
