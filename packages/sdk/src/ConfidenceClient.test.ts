@@ -85,6 +85,29 @@ describe('ConfidenceClient', () => {
       });
     });
 
+    it('uses baseUrl for resolver requests', async () => {
+      const fetchImpl = mockTransport();
+      await new ConfidenceClient({
+        flagClientSecret: SECRET,
+        baseUrl: 'https://resolver.example.com/',
+        fetch: fetchImpl,
+      }).resolve([], {});
+
+      expect((fetchImpl as any).mock.calls[0][0]).toBe('https://resolver.example.com/v1/flags:resolve');
+    });
+
+    it('prefers baseUrl over the deprecated url option', async () => {
+      const fetchImpl = mockTransport();
+      await new ConfidenceClient({
+        flagClientSecret: SECRET,
+        baseUrl: 'https://resolver.example.com',
+        url: 'https://deprecated.example.com',
+        fetch: fetchImpl,
+      }).resolve([], {});
+
+      expect((fetchImpl as any).mock.calls[0][0]).toBe('https://resolver.example.com/v1/flags:resolve');
+    });
+
     it('applies by default so naive usage never loses exposure data', async () => {
       const fetchImpl = mockTransport();
       await client(fetchImpl).resolve(['promo-banner'], {});

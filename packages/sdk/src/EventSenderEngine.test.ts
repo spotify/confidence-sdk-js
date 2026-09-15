@@ -91,6 +91,26 @@ describe('EventSenderEngine unit tests', () => {
     await jest.runAllTimersAsync();
     expect(uploadSpy).toHaveBeenCalledTimes(0);
   });
+  it('should publish events against a provided base url', async () => {
+    const customFetch = jest.fn(async (_request: Request) => new Response(JSON.stringify({ errors: [] })));
+    const customEngine = new EventSenderEngine({
+      clientSecret: 'my_secret',
+      maxBatchSize: 1,
+      flushTimeoutMilliseconds: FLUSH_TIMEOUT,
+      fetchImplementation: customFetch as any,
+      baseUrl: 'https://proxy.example.com',
+      eventBaseUrl: 'https://events.example.com/',
+      maxOpenRequests: MAX_OPEN_REQUESTS,
+      logger: {},
+    });
+
+    customEngine.send({}, 'some-event');
+    await jest.runAllTimersAsync();
+
+    const [request] = customFetch.mock.calls[0];
+    expect(request.url).toBe('https://events.example.com/v1/events:publish');
+    expect(request.method).toBe('POST');
+  });
   it('should handle a lot of events', async () => {
     const eventCount = BATCH_SIZE * MAX_OPEN_REQUESTS * 2;
     for (let i = 0; i < eventCount; i++) {

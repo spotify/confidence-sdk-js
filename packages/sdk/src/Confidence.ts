@@ -44,10 +44,14 @@ export interface ConfidenceOptions {
   timeout: number;
   /** Debug logger */
   logger?: Logger;
+  /** Sets an alternative base URL for all network requests */
+  baseUrl?: string;
   /** Sets an alternative resolve url */
   resolveBaseUrl?: string;
   /** Sets an alternative apply url */
   applyBaseUrl?: string;
+  /** Sets an alternative events url */
+  eventBaseUrl?: string;
   /** Disable telemetry */
   disableTelemetry?: boolean;
   /** Allows you to debounce the apply message. Set in ms. 0 is treated as synchronous */
@@ -387,6 +391,10 @@ export class Confidence implements EventSender, Trackable, FlagResolver {
       region: this.config.region,
       timeout: this.config.timeout,
       environment: this.config.environment,
+      baseUrl: this.config.baseUrl,
+      resolveBaseUrl: this.config.resolveBaseUrl,
+      applyBaseUrl: this.config.applyBaseUrl,
+      eventBaseUrl: this.config.eventBaseUrl,
       cache,
       context: this.getContext(),
     };
@@ -400,7 +408,9 @@ export class Confidence implements EventSender, Trackable, FlagResolver {
    * @param environment - can be either "client" or "backend"
    * @param fetchImplementation - fetch implementation
    * @param logger - debug logger
+   * @param baseUrl - custom URL for all network requests
    * @param resolveBaseUrl - custom backend resolve URL
+   * @param eventBaseUrl - custom events URL
    * @returns
    */
   static create(options: ConfidenceOptions): Confidence {
@@ -411,8 +421,10 @@ export class Confidence implements EventSender, Trackable, FlagResolver {
       environment,
       fetchImplementation = defaultFetchImplementation(),
       logger = defaultLogger(),
+      baseUrl,
       resolveBaseUrl,
       applyBaseUrl,
+      eventBaseUrl,
       disableTelemetry = false,
       applyDebounce = 10,
       waitUntil,
@@ -464,6 +476,7 @@ export class Confidence implements EventSender, Trackable, FlagResolver {
       environment,
       resolveTimeout: timeout,
       region,
+      baseUrl,
       resolveBaseUrl,
       applyBaseUrl,
       telemetry,
@@ -483,6 +496,8 @@ export class Confidence implements EventSender, Trackable, FlagResolver {
       flushTimeoutMilliseconds,
       fetchImplementation,
       region,
+      baseUrl,
+      eventBaseUrl,
       // we set rate limit to support the flushTimeout
       // on backend, the rate limit would be ∞
       rateLimitRps: environment === 'client' ? 1000 / flushTimeoutMilliseconds : Number.POSITIVE_INFINITY,
