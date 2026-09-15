@@ -230,12 +230,13 @@ export namespace FlagBundle {
     }
     export type ErrorCode = 'FLAG_NOT_FOUND' | 'TYPE_MISMATCH' | 'TIMEOUT' | 'GENERAL';
     export function evaluate<T extends Value>(bundle: FlagBundle, flagKey: string, defaultValue: T, logger?: Logger): Details<T>;
+    export type List = ReadonlyArray<boolean> | ReadonlyArray<string> | ReadonlyArray<number>;
     export type Primitive = null | boolean | string | number;
     export type Reason = 'ERROR' | 'FLAG_ARCHIVED' | 'MATCH' | 'NO_SEGMENT_MATCH' | 'TARGETING_KEY_ERROR' | 'NO_TREATMENT_MATCH' | 'UNSPECIFIED';
     export type Struct = {
         [key: string]: Value;
     };
-    export type Value = Primitive | Struct;
+    export type Value = Primitive | List | Struct;
 }
 
 // Warning: (ae-missing-release-tag) "FlagEvaluation" is part of the package's API, but it is missing a release tag (@alpha, @beta, @public, or @internal)
