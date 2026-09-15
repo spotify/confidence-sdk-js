@@ -81,10 +81,12 @@ export namespace ConfidenceClient {
         status?: number;
     };
     export interface Options {
+        baseUrl?: string;
         fetch?: typeof fetch;
         flagClientSecret: string;
         // Warning: (ae-forgotten-export) The symbol "Logger" needs to be exported by the entry point index.d.ts
         logger?: Logger;
+        // @deprecated
         url?: string;
     }
 }

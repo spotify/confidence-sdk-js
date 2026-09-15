@@ -73,18 +73,18 @@ The bundle's `resolveToken` only permits applying the flags it was minted for, w
 
 ## Pointing at your own resolver
 
-`url` defaults to `https://resolver.confidence.dev`. Set it to target a resolver you run yourself, and pass a `fetch`-compatible transport to reach it — a Cloudflare service binding, for instance:
+`baseUrl` defaults to `https://resolver.confidence.dev`. Set it to target a resolver you run yourself, and pass a `fetch`-compatible transport to reach it — a Cloudflare service binding, for instance:
 
 ```ts
 const client = new ConfidenceClient({
   flagClientSecret: env.CONFIDENCE_CLIENT_SECRET,
   fetch: env.RESOLVER.fetch.bind(env.RESOLVER),
-  url: 'https://resolver.internal',
+  baseUrl: 'https://resolver.internal',
 });
 ```
 
 > [!NOTE]
-> The `url` option is still used with a service binding: bindings route by binding rather than by hostname, but the request path is taken from the URL, so it has to be a valid absolute URL.
+> The `baseUrl` option is still used with a service binding: bindings route by binding rather than by hostname, but the request path is taken from the URL, so it has to be a valid absolute URL. The previous `url` option remains available as a deprecated alias.
 
 ## Resolving flags
 
