@@ -2,6 +2,7 @@ import { Value } from './Value';
 import { Logger } from './logger';
 import { FetchBuilder, InternalFetch, SimpleFetch, TimeUnit } from './fetch-util';
 import { EventData } from './events';
+import { withApiV1 } from './utils';
 interface Event {
   eventDefinition: string;
   eventTime: string;
@@ -26,6 +27,8 @@ export interface EventSenderEngineOptions {
   rateLimitRps?: number;
   fetchImplementation: SimpleFetch;
   region?: 'eu' | 'us';
+  baseUrl?: string;
+  eventBaseUrl?: string;
   maxOpenRequests: number;
   logger: Logger;
 }
@@ -50,13 +53,14 @@ export class EventSenderEngine {
     flushTimeoutMilliseconds,
     fetchImplementation,
     region,
+    baseUrl,
+    eventBaseUrl,
     rateLimitRps = 1000 / flushTimeoutMilliseconds,
     maxOpenRequests,
     logger,
   }: EventSenderEngineOptions) {
-    this.publishUrl = region
-      ? `https://events.${region}.confidence.dev/v1/events:publish`
-      : 'https://events.confidence.dev/v1/events:publish';
+    const defaultBaseUrl = region ? `https://events.${region}.confidence.dev` : 'https://events.confidence.dev';
+    this.publishUrl = `${withApiV1(eventBaseUrl || baseUrl || defaultBaseUrl)}/events:publish`;
     this.clientSecret = clientSecret;
     this.maxBatchSize = maxBatchSize;
     this.flushTimeoutMilliseconds = flushTimeoutMilliseconds;

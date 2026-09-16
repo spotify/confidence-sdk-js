@@ -49,6 +49,12 @@ export namespace ConfidenceClient {
      *
      * Defaults to `https://resolver.confidence.dev`.
      */
+    baseUrl?: string;
+    /**
+     * Resolver base URL.
+     *
+     * @deprecated Use `baseUrl` instead.
+     */
     url?: string;
     /**
      * fetch-compatible transport. To use a Cloudflare service binding, wrap it
@@ -100,7 +106,7 @@ export class ConfidenceClient {
     // `??` so an empty string falls back too: over a service binding the
     // hostname is ignored, which invites passing '' — and a relative URL is not
     // something `fetch` or a binding can send.
-    this.baseUrl = (options.url || DEFAULT_URL).replace(/\/+$/, '');
+    this.baseUrl = (options.baseUrl || options.url || DEFAULT_URL).replace(/\/+$/, '');
     // Wrapped, not `globalThis.fetch` directly: Cloudflare Workers reject a
     // detached `fetch` with "Illegal invocation: function called with incorrect
     // `this` reference", so capturing the bare function breaks every request

@@ -132,8 +132,18 @@ describe('Confidence', () => {
         environment: 'client',
         fetchImplementation: {} as any,
         timeout: 10,
+        baseUrl: 'https://proxy.example.com',
+        resolveBaseUrl: 'https://resolve.example.com',
+        applyBaseUrl: 'https://apply.example.com',
+        eventBaseUrl: 'https://events.example.com',
       });
       expect(c.getContext()).toEqual({});
+      expect(c.toOptions()).toMatchObject({
+        baseUrl: 'https://proxy.example.com',
+        resolveBaseUrl: 'https://resolve.example.com',
+        applyBaseUrl: 'https://apply.example.com',
+        eventBaseUrl: 'https://events.example.com',
+      });
     });
   });
 

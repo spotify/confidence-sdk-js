@@ -44,6 +44,10 @@ export function utf8ToBase64(str: string): string {
   return btoa(binary);
 }
 
+export function withApiV1(baseUrl: string): string {
+  return `${baseUrl.replace(/\/+$/, '')}/v1`;
+}
+
 export namespace Cookie {
   type Options = {
     sameSite?: boolean;

@@ -39,10 +39,14 @@ type ConfidenceProviderFactoryOptions = {
     fetchImplementation?: typeof fetch;
     clientSecret: string;
     timeout: number;
+    /** Sets an alternative base URL for all network requests */
+    baseUrl?: string;
     /** Sets an alternative resolve url */
     resolveBaseUrl?: string;
     /** Sets an alternative apply url */
     applyBaseUrl?: string;
+    /** Sets an alternative events url */
+    eventBaseUrl?: string;
 };
 /**
  * Creates an OpenFeature-adhering Confidence Provider
