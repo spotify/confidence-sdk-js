@@ -114,6 +114,22 @@
   * devDependencies
     * @spotify-confidence/sdk bumped to 0.3.19
 
+## [0.3.23](https://github.com/spotify/confidence-sdk-js/compare/openfeature-web-provider-v0.3.22...openfeature-web-provider-v0.3.23) (2026-09-17)
+
+
+### ✨ New Features
+
+* support custom base URLs for events ([#465](https://github.com/spotify/confidence-sdk-js/issues/465)) ([e298d49](https://github.com/spotify/confidence-sdk-js/commit/e298d497d646f332d326ad2215c53863421bdc6b))
+
+
+### Dependencies
+
+* The following workspace dependencies were updated
+  * devDependencies
+    * @spotify-confidence/sdk bumped to 0.3.23
+  * peerDependencies
+    * @spotify-confidence/sdk bumped from >=0.1.4 <0.4.0 to >=0.3.23
+
 ## [0.3.22](https://github.com/spotify/confidence-sdk-js/compare/openfeature-web-provider-v0.3.21...openfeature-web-provider-v0.3.22) (2026-08-19)
 
 
