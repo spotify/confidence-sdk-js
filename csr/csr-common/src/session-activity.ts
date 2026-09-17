@@ -30,6 +30,7 @@ const USER_INTERACTION_METRIC_KEYS = new Set<string>([
   RecordingMetricKey.Click,
   RecordingMetricKey.Input,
   RecordingMetricKey.RageClick,
+  RecordingMetricKey.FormFieldReEdit,
   RecordingMetricKey.DeadClick,
   RecordingMetricKey.ScrollBack,
   RecordingMetricKey.TabUnfocus,

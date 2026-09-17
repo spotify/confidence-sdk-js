@@ -55,6 +55,7 @@ describe('session activity', () => {
     RecordingMetricKey.Click,
     RecordingMetricKey.Input,
     RecordingMetricKey.RageClick,
+    RecordingMetricKey.FormFieldReEdit,
     RecordingMetricKey.DeadClick,
     RecordingMetricKey.ScrollBack,
     RecordingMetricKey.TabUnfocus,

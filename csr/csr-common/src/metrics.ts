@@ -2,6 +2,7 @@ export const RecordingMetricKey = {
   Click: 'clicks',
   Input: 'inputs',
   RageClick: 'rageClicks',
+  FormFieldReEdit: 'formFieldReEdits',
   DeadClick: 'deadClicks',
   ScrollBack: 'scrollBacks',
   TabUnfocus: 'tabUnfocuses',
