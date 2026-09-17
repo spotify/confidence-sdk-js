@@ -12,6 +12,7 @@ import { RecorderOptions, RecorderState, RecordingConfig } from './types';
 import { RecordingEngine } from './engine';
 import { defaultParameterizeRoute } from './route-parameterizer';
 import { extractGraphQLRequestMetadata } from './graphql-request';
+import { createOnceCaptureLogger, sanitizeCapturedValue, type CaptureSanitizer } from './capture-sanitizer';
 
 export class Recorder {
   private readonly engine: RecordingEngine;
@@ -26,6 +27,8 @@ export class Recorder {
   private originalReplaceState: typeof history.replaceState | null = null;
   private popstateHandler: (() => void) | null = null;
   private parameterizeRoute!: (route: string) => string;
+  private networkSanitizer: CaptureSanitizer | undefined;
+  private networkSanitizerLogger: ((message: string) => void) | undefined;
 
   constructor(options: RecorderOptions) {
     this.engine = options.engine;
@@ -42,6 +45,9 @@ export class Recorder {
     }
     this.state = RecorderState.Recording;
     this.parameterizeRoute = config?.parameterizeRoute ?? defaultParameterizeRoute;
+    this.networkSanitizer =
+      typeof config?.captureNetworkRequests === 'object' ? config.captureNetworkRequests.sanitize : undefined;
+    this.networkSanitizerLogger = this.networkSanitizer ? createOnceCaptureLogger(config?.debugLogger) : undefined;
 
     this.engine.start(config ?? {}, event => {
       if (event.type === RecordingEventType.Meta) {
@@ -87,6 +93,16 @@ export class Recorder {
   }
 
   private emitNetworkRequest(payload: NetworkRequestPluginData['payload']): void {
+    if (!this.networkSanitizer) {
+      this.emitNetworkRequestEvent(payload);
+      return;
+    }
+    const url = sanitizeCapturedValue(payload.url, this.networkSanitizer, 'network', this.networkSanitizerLogger);
+    if (url === undefined) return;
+    this.emitNetworkRequestEvent({ ...payload, url });
+  }
+
+  private emitNetworkRequestEvent(payload: NetworkRequestPluginData['payload']): void {
     const data: NetworkRequestPluginData = {
       plugin: RecordingPluginName.NetworkRequest,
       payload,
@@ -305,6 +321,8 @@ export class Recorder {
       this.pageShowHandler = null;
     }
     this.restoreNetwork();
+    this.networkSanitizer = undefined;
+    this.networkSanitizerLogger = undefined;
     this.restoreRouting();
     this.engine.stop();
     this.state = RecorderState.Stopped;

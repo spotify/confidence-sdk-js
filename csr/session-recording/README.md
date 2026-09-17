@@ -80,8 +80,8 @@ const recorder = initSessionRecorder({
   maskInputs: true, // default: true
 
   // Capture options
-  captureConsoleLogs: true, // capture browser console output (default: false)
-  captureNetworkRequests: false, // capture fetch/XHR metadata (default: false)
+  captureConsoleLogs: true, // capture raw browser console output (default: false)
+  captureNetworkRequests: false, // capture raw fetch/XHR metadata (default: false)
   captureRouteChanges: true, // capture client-side route changes (default: true)
 
   // Recording mode
@@ -94,6 +94,40 @@ const recorder = initSessionRecorder({
   debugLogger: msg => console.log(msg), // lifecycle/transport messages (default: off, or console.log when CSR_DEBUG is set in sessionStorage)
 });
 ```
+
+### Sanitizing console and network capture
+
+Existing capture settings preserve their current behavior and record raw values. To remove query strings and fragments
+from captured network URLs and from URLs in console payloads and stack traces, enable the built-in sanitizer:
+
+Raw URLs and console output can contain sensitive data from first-party or third-party code. Select a sanitization policy
+before you enable these capture channels in production.
+
+```typescript
+const recorder = initSessionRecorder({
+  clientSecret: '<your-client-secret>',
+  captureNetworkRequests: { sanitize: true },
+  captureConsoleLogs: { levels: ['warn', 'error'], sanitize: true },
+});
+```
+
+For application-specific data, provide a function. Network sanitizers receive the request URL. Console sanitizers run
+once for each captured payload and trace string. The built-in sanitizer changes only URL-like text. Use a function to
+remove secrets stored in other console data.
+
+```typescript
+const redactSecrets = (value: string) => value.replace(/client_secret=[^&\s]+/g, 'client_secret=[REDACTED]');
+
+const recorder = initSessionRecorder({
+  clientSecret: '<your-client-secret>',
+  captureNetworkRequests: { sanitize: redactSecrets },
+  captureConsoleLogs: { levels: ['warn', 'error'], sanitize: redactSecrets },
+});
+```
+
+Sanitizers run before captured data leaves the recorder. If a sanitizer throws or returns a non-string value, the
+affected capture event is dropped. The application request or console call continues unchanged. When `CSR_DEBUG` is set
+in `sessionStorage`, the SDK logs a prominent `SECURITY` warning without logging the unsanitized value.
 
 ## Using with the Confidence flags SDK
 
