@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.18.13](https://github.com/spotify/confidence-sdk-js/compare/csr-common-v0.18.12...csr-common-v0.18.13) (2026-09-17)
+
+
+### 🐛 Bug Fixes
+
+* **csr-common:** export form field re-edit metric key ([#467](https://github.com/spotify/confidence-sdk-js/issues/467)) ([37a4dff](https://github.com/spotify/confidence-sdk-js/commit/37a4dfff1b93bf916a30c16f85adaa82be53dc24))
+
 ## [0.18.12](https://github.com/spotify/confidence-sdk-js/compare/csr-common-v0.18.11...csr-common-v0.18.12) (2026-09-14)
 
 
