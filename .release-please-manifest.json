@@ -4,6 +4,6 @@
   "packages/sdk": "0.3.23",
   "packages/react": "0.2.22",
   "csr/csr-common": "0.18.13",
-  "csr/csr-recorder": "0.17.21",
-  "csr/session-recording": "0.18.16"
+  "csr/csr-recorder": "0.17.22",
+  "csr/session-recording": "0.18.17"
 }

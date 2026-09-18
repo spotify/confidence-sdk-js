@@ -1,5 +1,19 @@
 # Changelog
 
+## [0.18.17](https://github.com/spotify/confidence-sdk-js/compare/session-recording-v0.18.16...session-recording-v0.18.17) (2026-09-18)
+
+
+### ✨ New Features
+
+* add capture sanitization controls ([#468](https://github.com/spotify/confidence-sdk-js/issues/468)) ([971a9d9](https://github.com/spotify/confidence-sdk-js/commit/971a9d9d6ef6db8e82126e9caf91f7403512d3e2))
+
+
+### Dependencies
+
+* The following workspace dependencies were updated
+  * dependencies
+    * @spotify-confidence/csr-recorder bumped to 0.17.22
+
 ## [0.18.16](https://github.com/spotify/confidence-sdk-js/compare/session-recording-v0.18.15...session-recording-v0.18.16) (2026-09-17)
 
 

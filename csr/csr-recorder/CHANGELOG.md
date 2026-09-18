@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.17.22](https://github.com/spotify/confidence-sdk-js/compare/csr-recorder-v0.17.21...csr-recorder-v0.17.22) (2026-09-18)
+
+
+### ✨ New Features
+
+* add capture sanitization controls ([#468](https://github.com/spotify/confidence-sdk-js/issues/468)) ([971a9d9](https://github.com/spotify/confidence-sdk-js/commit/971a9d9d6ef6db8e82126e9caf91f7403512d3e2))
+
 ## [0.17.21](https://github.com/spotify/confidence-sdk-js/compare/csr-recorder-v0.17.20...csr-recorder-v0.17.21) (2026-09-17)
 
 
