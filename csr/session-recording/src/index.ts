@@ -1,5 +1,4 @@
-import { record } from '@spotify-confidence/csr-recorder';
-import type { ConsoleLogLevel } from '@spotify-confidence/csr-common';
+import { record, type ConsoleCaptureOptions, type NetworkCaptureOptions } from '@spotify-confidence/csr-recorder';
 import {
   RecordingEventType,
   RecordingPluginName,
@@ -25,10 +24,19 @@ export interface InitSessionRecorderOptions {
   blockSelectors?: string[];
   /** Mask values of every `<input>` / `<textarea>` / `contenteditable`. Defaults to `true`. */
   maskInputs?: boolean;
-  /** Capture browser console output. Defaults to `false`. Pass `true` for all levels or `{ levels: [...] }` for specific ones. */
-  captureConsoleLogs?: boolean | { levels: ConsoleLogLevel[] };
-  /** Capture fetch/XHR metadata (method, URL, status, duration). Defaults to `false`. */
-  captureNetworkRequests?: boolean;
+  /**
+   * Capture browser console output. Defaults to `false`.
+   * Pass `true` for raw output, or use `sanitize: true` to remove query
+   * strings and fragments from URLs. A sanitizer function can apply a
+   * customer-defined policy to each payload and trace string.
+   */
+  captureConsoleLogs?: boolean | ConsoleCaptureOptions;
+  /**
+   * Capture fetch/XHR metadata (method, URL, status, duration). Defaults to
+   * `false`. Pass `true` for raw URLs, or use `sanitize: true` to remove query
+   * strings and fragments. A sanitizer function can apply a custom policy.
+   */
+  captureNetworkRequests?: boolean | NetworkCaptureOptions;
   /** Capture client-side route changes (pathname only). Defaults to `true`. */
   captureRouteChanges?: boolean;
   /**
@@ -126,6 +134,7 @@ export function initSessionRecorder(options: InitSessionRecorderOptions): Sessio
     captureRouteChanges: options.captureRouteChanges,
     parameterizeRoute: options.parameterizeRoute,
     userTriggeredOnInput: options.userTriggeredOnInput,
+    debugLogger,
   };
 
   function emitFlagEvaluation({ flagKey, variant, assignmentOrigin }: FlagWrite): void {

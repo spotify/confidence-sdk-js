@@ -27,6 +27,23 @@ const stop = record(
 stop();
 ```
 
+Raw URLs and console output can contain sensitive data from first-party or third-party code. Both capture options record
+raw values when set to `true`. Select a sanitization policy before you enable these channels in production.
+
+Set `sanitize: true` to remove query strings and fragments from network URLs and from URLs inside console payloads and
+traces:
+
+```typescript
+const stop = record(event => {}, {
+  captureNetworkRequests: { sanitize: true },
+  captureConsoleLogs: { levels: ['warn', 'error'], sanitize: true },
+});
+```
+
+Set `sanitize` to `(value: string) => string` for a custom policy. See
+[`@spotify-confidence/session-recording`](../session-recording/README.md#sanitizing-console-and-network-capture) for the
+full description, including the fail-closed behavior.
+
 ## Route parameterization
 
 Routes containing dynamic segments (such as IDs in the URL) are automatically normalized into patterns — for example, `/users/123/profile` becomes `/users/:id/profile`. This ensures that per-page metrics are grouped by route rather than by individual page visit, keeping dashboards meaningful and query performance fast.

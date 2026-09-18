@@ -25,6 +25,7 @@ function mockUploader() {
 
 describe('initSessionRecorder', () => {
   afterEach(() => {
+    vi.restoreAllMocks();
     vi.resetAllMocks();
     vi.unstubAllGlobals();
   });
@@ -104,6 +105,23 @@ describe('initSessionRecorder', () => {
     await flushPromises();
 
     expect(logger).toHaveBeenCalledWith(expect.stringContaining('worker-load-failed'));
+  });
+
+  it('forwards the CSR_DEBUG logger to capture sanitizers', async () => {
+    createUploader.mockResolvedValueOnce(mockUploader());
+    record.mockReturnValueOnce(() => {});
+    vi.stubGlobal('sessionStorage', { getItem: vi.fn().mockReturnValue('true') });
+    const consoleLogger = vi.spyOn(console, 'log').mockImplementation(() => {});
+
+    initSessionRecorder({
+      clientSecret: 'secret',
+      captureNetworkRequests: { sanitize: true },
+    });
+    await flushPromises();
+    const debugLogger = record.mock.calls[0][1].debugLogger;
+    debugLogger('SECURITY: network sanitizer failed; captured event dropped');
+
+    expect(consoleLogger).toHaveBeenCalledWith('[CSR] SECURITY: network sanitizer failed; captured event dropped');
   });
 
   it('forwards workerUrl to createUploader', async () => {

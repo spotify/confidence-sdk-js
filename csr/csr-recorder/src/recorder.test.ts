@@ -97,6 +97,7 @@ describe('Recorder network request capture', () => {
 
   afterEach(() => {
     globalThis.fetch = originalFetch;
+    vi.unstubAllGlobals();
   });
 
   it('does not patch fetch by default', () => {
@@ -148,6 +149,201 @@ describe('Recorder network request capture', () => {
     expect(data.payload.responseSize).toBe(2);
     expect(data.payload.durationMs).toBeGreaterThanOrEqual(0);
 
+    recorder.stop();
+  });
+
+  it('keeps raw network URLs when sanitization is not configured', async () => {
+    globalThis.fetch = vi.fn().mockResolvedValue(new Response('', { status: 200 }));
+
+    const onEvent = vi.fn();
+    const recorder = new Recorder({ engine: new MockEngine(), onEvent });
+    recorder.start({ captureNetworkRequests: true });
+
+    await globalThis.fetch('https://api.example.com/payment?client_secret=secret#result');
+
+    expect(networkRequestEvents(onEvent)[0].payload.url).toBe(
+      'https://api.example.com/payment?client_secret=secret#result',
+    );
+    recorder.stop();
+  });
+
+  it('strips query strings and fragments with built-in network sanitization', async () => {
+    globalThis.fetch = vi.fn().mockResolvedValue(new Response('', { status: 200 }));
+
+    const onEvent = vi.fn();
+    const recorder = new Recorder({ engine: new MockEngine(), onEvent });
+    recorder.start({ captureNetworkRequests: { sanitize: true } });
+
+    await globalThis.fetch('https://api.example.com/payment?client_secret=secret#result');
+
+    expect(networkRequestEvents(onEvent)[0].payload.url).toBe('https://api.example.com/payment');
+    recorder.stop();
+  });
+
+  it('uses a custom network sanitizer', async () => {
+    globalThis.fetch = vi.fn().mockResolvedValue(new Response('', { status: 200 }));
+
+    const onEvent = vi.fn();
+    const recorder = new Recorder({ engine: new MockEngine(), onEvent });
+    recorder.start({
+      captureNetworkRequests: {
+        sanitize: url => url.replace(/client_secret=[^&]+/, 'client_secret=[REDACTED]'),
+      },
+    });
+
+    await globalThis.fetch('https://api.example.com/payment?client_secret=secret&expand=customer');
+
+    expect(networkRequestEvents(onEvent)[0].payload.url).toBe(
+      'https://api.example.com/payment?client_secret=[REDACTED]&expand=customer',
+    );
+    recorder.stop();
+  });
+
+  it('sanitizes string, URL, and Request fetch inputs', async () => {
+    globalThis.fetch = vi.fn().mockResolvedValue(new Response('', { status: 200 }));
+
+    const onEvent = vi.fn();
+    const recorder = new Recorder({ engine: new MockEngine(), onEvent });
+    recorder.start({ captureNetworkRequests: { sanitize: true } });
+
+    await globalThis.fetch('/relative?secret=one#hash');
+    await globalThis.fetch(new URL('https://api.example.com/url?secret=two#hash'));
+    await globalThis.fetch(new Request('https://api.example.com/request?secret=three#hash'));
+
+    expect(networkRequestEvents(onEvent).map(event => event.payload.url)).toEqual([
+      '/relative',
+      'https://api.example.com/url',
+      'https://api.example.com/request',
+    ]);
+    recorder.stop();
+  });
+
+  it('sanitizes XMLHttpRequest URLs without changing the request', () => {
+    class FakeXMLHttpRequest {
+      status = 204;
+      openedUrl: string | URL | undefined;
+      private loadend: (() => void) | undefined;
+
+      open(_method: string, url: string | URL) {
+        this.openedUrl = url;
+      }
+
+      send() {
+        this.loadend?.call(this);
+      }
+
+      addEventListener(_type: string, listener: () => void) {
+        this.loadend = listener;
+      }
+
+      getResponseHeader() {
+        return null;
+      }
+    }
+    vi.stubGlobal('XMLHttpRequest', FakeXMLHttpRequest);
+
+    const onEvent = vi.fn();
+    const recorder = new Recorder({ engine: new MockEngine(), onEvent });
+    recorder.start({ captureNetworkRequests: { sanitize: true } });
+    const xhr = new FakeXMLHttpRequest();
+
+    xhr.open('GET', 'https://api.example.com/payment?client_secret=secret#result');
+    xhr.send();
+
+    expect(xhr.openedUrl).toBe('https://api.example.com/payment?client_secret=secret#result');
+    expect(networkRequestEvents(onEvent)[0].payload).toMatchObject({
+      initiator: 'xhr',
+      url: 'https://api.example.com/payment',
+      status: 204,
+    });
+    recorder.stop();
+  });
+
+  it('drops network metadata and logs when a custom sanitizer throws', async () => {
+    globalThis.fetch = vi.fn().mockResolvedValue(new Response('', { status: 200 }));
+
+    const onEvent = vi.fn();
+    const debugLogger = vi.fn();
+    const recorder = new Recorder({ engine: new MockEngine(), onEvent });
+    recorder.start({
+      captureNetworkRequests: {
+        sanitize: () => {
+          throw new Error('sanitizer bug');
+        },
+      },
+      debugLogger,
+    });
+
+    await expect(globalThis.fetch('https://api.example.com/payment?client_secret=secret')).resolves.toBeInstanceOf(
+      Response,
+    );
+    await globalThis.fetch('https://api.example.com/payment?client_secret=another-secret');
+
+    expect(networkRequestEvents(onEvent)).toHaveLength(0);
+    expect(debugLogger).toHaveBeenCalledWith(expect.stringMatching(/SECURITY.*network.*dropped/i));
+    expect(debugLogger).toHaveBeenCalledTimes(1);
+    expect(debugLogger.mock.calls.join(' ')).not.toContain('client_secret=secret');
+    recorder.stop();
+  });
+
+  it('keeps sanitizing a request that is still in flight when the recorder stops', async () => {
+    let settleFetch: (response: Response) => void = () => {};
+    globalThis.fetch = vi.fn().mockReturnValue(new Promise<Response>(resolve => (settleFetch = resolve)));
+
+    const onEvent = vi.fn();
+    const recorder = new Recorder({ engine: new MockEngine(), onEvent });
+    recorder.start({ captureNetworkRequests: { sanitize: true } });
+
+    // `stop()` cannot cancel an in-flight request, so its patched handler still emits.
+    const inFlight = globalThis.fetch('https://api.example.com/payment?client_secret=secret');
+    recorder.stop();
+    settleFetch(new Response('', { status: 200 }));
+    await inFlight;
+
+    expect(networkRequestEvents(onEvent)[0].payload.url).toBe('https://api.example.com/payment');
+  });
+
+  it('skips only the requests its sanitizer cannot handle and keeps capturing the rest', async () => {
+    globalThis.fetch = vi.fn().mockResolvedValue(new Response('', { status: 200 }));
+
+    const onEvent = vi.fn();
+    const recorder = new Recorder({ engine: new MockEngine(), onEvent });
+    recorder.start({
+      captureNetworkRequests: {
+        sanitize: url => {
+          if (url.includes('/unhandled')) throw new Error('sanitizer bug');
+          return url.split('?')[0];
+        },
+      },
+    });
+
+    await globalThis.fetch('https://api.example.com/unhandled?client_secret=secret');
+    await globalThis.fetch('https://api.example.com/next?client_secret=secret');
+
+    expect(networkRequestEvents(onEvent).map(event => event.payload.url)).toEqual(['https://api.example.com/next']);
+    recorder.stop();
+  });
+
+  it('does not let a failing debug logger affect the application request', async () => {
+    globalThis.fetch = vi.fn().mockResolvedValue(new Response('', { status: 200 }));
+
+    const onEvent = vi.fn();
+    const recorder = new Recorder({ engine: new MockEngine(), onEvent });
+    recorder.start({
+      captureNetworkRequests: {
+        sanitize: () => {
+          throw new Error('sanitizer bug');
+        },
+      },
+      debugLogger: () => {
+        throw new Error('logger bug');
+      },
+    });
+
+    await expect(globalThis.fetch('https://api.example.com/payment?client_secret=secret')).resolves.toBeInstanceOf(
+      Response,
+    );
+    expect(networkRequestEvents(onEvent)).toHaveLength(0);
     recorder.stop();
   });
 

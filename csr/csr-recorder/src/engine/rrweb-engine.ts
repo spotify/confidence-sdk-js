@@ -1,10 +1,8 @@
-import { RecordingPluginName, type ConsoleLogLevel, type RecordingEvent } from '@spotify-confidence/csr-common';
+import { RecordingPluginName, type RecordingEvent } from '@spotify-confidence/csr-common';
 import { RecordingConfig, DEFAULT_MASK_SELECTORS, DEFAULT_BLOCK_SELECTORS } from '../types';
 import { RecordingEngine } from './index';
 import { EventType, IncrementalSource, MouseInteractions, record, takeFullSnapshot, type recordOptions } from 'rrweb';
-import { getRecordConsolePlugin } from '@rrweb/rrweb-plugin-console-record';
-
-const ALL_CONSOLE_LEVELS: ConsoleLogLevel[] = ['log', 'warn', 'error', 'debug', 'info'];
+import { getConsoleCapturePlugin } from './console-capture-plugin';
 
 type RrwebPlugin = NonNullable<recordOptions<RecordingEvent>['plugins']>[number];
 
@@ -198,19 +196,12 @@ export class RrwebEngine implements RecordingEngine {
     const blockSelectors = config.blockSelectors ?? DEFAULT_BLOCK_SELECTORS;
 
     const plugins: RrwebPlugin[] = [clickModifiersPlugin(), clipboardActionsPlugin(), blockedElementLabelsPlugin()];
-    const { captureConsoleLogs } = config;
-    if (captureConsoleLogs) {
-      const levels = captureConsoleLogs === true ? ALL_CONSOLE_LEVELS : captureConsoleLogs.levels;
-      if (levels.length > 0) {
-        plugins.push(getRecordConsolePlugin({ level: levels }));
-      }
-    }
+    const consoleCapturePlugin = getConsoleCapturePlugin(config.captureConsoleLogs, config.debugLogger);
+    if (consoleCapturePlugin) plugins.push(consoleCapturePlugin);
 
     this.stopFn =
-      record({
-        emit: event => {
-          onEvent(event as unknown as RecordingEvent);
-        },
+      record<RecordingEvent>({
+        emit: onEvent,
         maskAllInputs: config.maskInputs ?? true,
         ...(maskSelectors.length ? { maskTextSelector: maskSelectors.join(',') } : {}),
         ...(blockSelectors.length ? { blockSelector: blockSelectors.join(',') } : {}),

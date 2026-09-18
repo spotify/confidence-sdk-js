@@ -6,12 +6,38 @@ import { RrwebEngine } from './rrweb-engine';
 
 const recordSpy = vi.fn().mockReturnValue(() => {});
 const takeFullSnapshotSpy = vi.fn();
+const consoleObserverSpy = vi.fn();
 
 vi.mock('rrweb', async importOriginal => ({
   ...(await importOriginal<typeof import('rrweb')>()),
   record: (opts: unknown) => recordSpy(opts),
   takeFullSnapshot: (isCheckout: boolean) => takeFullSnapshotSpy(isCheckout),
 }));
+
+vi.mock('@rrweb/rrweb-plugin-console-record', () => ({
+  getRecordConsolePlugin: (options: unknown) => ({
+    name: 'rrweb/console@1',
+    options,
+    observer: (callback: (...args: unknown[]) => void) => {
+      consoleObserverSpy(callback);
+      return () => {};
+    },
+  }),
+}));
+
+function observeConsolePlugin(
+  captureConsoleLogs: NonNullable<Parameters<RrwebEngine['start']>[0]['captureConsoleLogs']>,
+  debugLogger?: (message: string) => void,
+) {
+  new RrwebEngine().start({ captureConsoleLogs, debugLogger }, () => {});
+  const plugin = recordSpy.mock.calls[0][0].plugins.find(
+    ({ name }: { name: string }) => name === RecordingPluginName.ConsoleLog,
+  );
+  const callback = vi.fn();
+  plugin.observer(callback, window, plugin.options);
+
+  return { callback, emitConsoleData: consoleObserverSpy.mock.calls[0][0] };
+}
 
 function blockedElementLabelsPlugin() {
   new RrwebEngine().start({}, () => {});
@@ -63,6 +89,7 @@ describe('RrwebEngine', () => {
   beforeEach(() => {
     recordSpy.mockClear();
     takeFullSnapshotSpy.mockClear();
+    consoleObserverSpy.mockClear();
   });
 
   it('defaults maskAllInputs=true when maskInputs is omitted', () => {
@@ -254,6 +281,111 @@ describe('RrwebEngine', () => {
   it('enables slimDOMOptions to strip head noise', () => {
     new RrwebEngine().start({}, () => {});
     expect(recordSpy.mock.calls[0][0].slimDOMOptions).toBe('all');
+  });
+
+  it('strips query strings and fragments from console payloads and traces', () => {
+    const { callback, emitConsoleData } = observeConsolePlugin({ levels: ['error'], sanitize: true });
+
+    emitConsoleData({
+      level: 'error',
+      payload: [
+        'Stripe failed at https://api.stripe.com/intents/pi_1?client_secret=secret#result',
+        'socket wss://events.example/stream?subscriber=user-1 and //cdn.example/script.js?token=secret',
+      ],
+      trace: ['at checkout (/checkout?subscriber=user-1#payment:10:2)'],
+    });
+
+    expect(callback).toHaveBeenCalledWith({
+      level: 'error',
+      payload: [
+        'Stripe failed at https://api.stripe.com/intents/pi_1',
+        'socket wss://events.example/stream and //cdn.example/script.js',
+      ],
+      trace: ['at checkout (/checkout)'],
+    });
+  });
+
+  it('keeps raw console data when sanitization is not configured', () => {
+    const { callback, emitConsoleData } = observeConsolePlugin({ levels: ['error'] });
+    const data = {
+      level: 'error',
+      payload: ['https://api.example.com/payment?client_secret=secret'],
+      trace: [],
+    };
+
+    emitConsoleData(data);
+
+    expect(callback).toHaveBeenCalledWith(data);
+  });
+
+  it('uses a custom sanitizer for every console payload and trace string', () => {
+    const { callback, emitConsoleData } = observeConsolePlugin({
+      levels: ['error'],
+      sanitize: value => value.replaceAll('secret', '[REDACTED]'),
+    });
+
+    emitConsoleData({
+      level: 'error',
+      payload: ['secret'],
+      trace: ['secret trace'],
+    });
+
+    expect(callback).toHaveBeenCalledWith({
+      level: 'error',
+      payload: ['[REDACTED]'],
+      trace: ['[REDACTED] trace'],
+    });
+  });
+
+  it('drops console events and logs when a custom sanitizer throws', () => {
+    const debugLogger = vi.fn();
+    const { callback, emitConsoleData } = observeConsolePlugin(
+      {
+        levels: ['error'],
+        sanitize: () => {
+          throw new Error('sanitizer bug');
+        },
+      },
+      debugLogger,
+    );
+
+    emitConsoleData({
+      level: 'error',
+      payload: ['client_secret=secret', 'subscriber=user-1'],
+      trace: ['secret'],
+    });
+    emitConsoleData({ level: 'error', payload: ['another secret'], trace: [] });
+
+    expect(callback).not.toHaveBeenCalled();
+    expect(debugLogger).toHaveBeenCalledWith(expect.stringMatching(/SECURITY.*console.*dropped/i));
+    expect(debugLogger).toHaveBeenCalledTimes(1);
+    expect(debugLogger.mock.calls.join(' ')).not.toContain('client_secret=secret');
+  });
+
+  it('skips only the console events its sanitizer cannot handle and keeps capturing the rest', () => {
+    const { callback, emitConsoleData } = observeConsolePlugin({
+      levels: ['error'],
+      sanitize: value => {
+        if (value.includes('unhandled')) throw new Error('sanitizer bug');
+        return value.replaceAll('secret', '[REDACTED]');
+      },
+    });
+
+    emitConsoleData({ level: 'error', payload: ['unhandled secret'], trace: [] });
+    emitConsoleData({ level: 'error', payload: ['next secret'], trace: [] });
+
+    expect(callback).toHaveBeenCalledTimes(1);
+    expect(callback).toHaveBeenCalledWith({ level: 'error', payload: ['next [REDACTED]'], trace: [] });
+  });
+
+  it('fails closed on malformed console plugin data instead of asserting its type', () => {
+    const debugLogger = vi.fn();
+    const { callback, emitConsoleData } = observeConsolePlugin({ sanitize: true }, debugLogger);
+
+    emitConsoleData({ level: 'error', payload: 'not-an-array', trace: [] });
+
+    expect(callback).not.toHaveBeenCalled();
+    expect(debugLogger).toHaveBeenCalledWith(expect.stringMatching(/SECURITY.*console.*dropped/i));
   });
 
   it('records copy, cut, and paste actions without reading clipboard contents', () => {

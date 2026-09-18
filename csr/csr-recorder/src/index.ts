@@ -4,6 +4,9 @@ export { RrwebEngine } from './engine/rrweb-engine';
 export {
   type RecorderOptions,
   type RecordingConfig,
+  type CaptureSanitizer,
+  type ConsoleCaptureOptions,
+  type NetworkCaptureOptions,
   RecorderState,
   DEFAULT_MASK_SELECTORS,
   DEFAULT_BLOCK_SELECTORS,

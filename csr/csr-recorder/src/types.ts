@@ -1,3 +1,5 @@
+import type { CaptureSanitizer } from './capture-sanitizer';
+
 export interface RecorderOptions {
   /** Engine used to capture DOM events (defaults to rrweb). */
   engine: import('./engine').RecordingEngine;
@@ -7,6 +9,17 @@ export interface RecorderOptions {
 
 export const DEFAULT_MASK_SELECTORS: string[] = ['[data-csr-mask]'];
 export const DEFAULT_BLOCK_SELECTORS: string[] = ['[data-csr-block]', 'video'];
+
+export type { CaptureSanitizer };
+
+export interface ConsoleCaptureOptions {
+  levels?: import('@spotify-confidence/csr-common').ConsoleLogLevel[];
+  sanitize?: CaptureSanitizer;
+}
+
+export interface NetworkCaptureOptions {
+  sanitize?: CaptureSanitizer;
+}
 
 export interface RecordingConfig {
   /**
@@ -38,8 +51,10 @@ export interface RecordingConfig {
    *
    * - `true` — capture all levels (log, warn, error, debug, info).
    * - `{ levels: [...] }` — capture only the listed levels.
+   * - Add `sanitize: true` to remove query strings and fragments from URLs,
+   *   or provide a function to sanitize each captured payload and trace.
    */
-  captureConsoleLogs?: boolean | { levels: import('@spotify-confidence/csr-common').ConsoleLogLevel[] };
+  captureConsoleLogs?: boolean | ConsoleCaptureOptions;
   /**
    * Capture network requests (fetch and XMLHttpRequest) during the recording.
    * Defaults to `false` because request URLs and metadata can contain PII,
@@ -47,8 +62,14 @@ export interface RecordingConfig {
    *
    * Only metadata is captured (method, URL, status, duration, sizes) — no
    * headers or bodies are recorded.
+   *
+   * - `true` — capture raw URLs, preserving existing behavior.
+   * - `{ sanitize: true }` — remove query strings and fragments.
+   * - `{ sanitize: value => ... }` — apply a custom sanitizer.
    */
-  captureNetworkRequests?: boolean;
+  captureNetworkRequests?: boolean | NetworkCaptureOptions;
+  /** Optional diagnostic logger used for fail-closed sanitizer warnings. */
+  debugLogger?: (message: string) => void;
   /**
    * Capture client-side route changes during the recording. Defaults to
    * `true`. Only the pathname is recorded; origin, query strings, and
