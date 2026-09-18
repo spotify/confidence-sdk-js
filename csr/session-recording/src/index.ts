@@ -97,16 +97,9 @@ export interface SessionRecorder {
 function csrDebugLogger(): ((msg: string) => void) | undefined {
   try {
     if (sessionStorage.getItem('CSR_DEBUG')) {
-      return (msg: string) => {
-        if (msg.startsWith('[CSR] SECURITY:')) {
-          // eslint-disable-next-line no-console
-          console.error(msg);
-          return;
-        }
-        // Debug logger intentionally uses console — only active when CSR_DEBUG is set.
-        // eslint-disable-next-line no-console
-        console.log(msg);
-      };
+      // Debug logger intentionally uses console — only active when CSR_DEBUG is set.
+      // eslint-disable-next-line no-console
+      return (msg: string) => console.log(msg);
     }
   } catch (_e) {
     // sessionStorage may be unavailable (sandboxed iframe, etc.)

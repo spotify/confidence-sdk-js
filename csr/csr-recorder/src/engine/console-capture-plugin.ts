@@ -1,23 +1,15 @@
 import { getRecordConsolePlugin } from '@rrweb/rrweb-plugin-console-record';
 import type { ConsoleLogLevel, ConsoleLogPluginData } from '@spotify-confidence/csr-common';
-import { createOnceCaptureLogger, sanitizeCapturedValues } from '../capture-sanitizer';
+import { createValueSanitizer, type ValueSanitizer } from '../capture-sanitizer';
 import type { ConsoleCaptureOptions } from '../types';
 
 const ALL_CONSOLE_LEVELS: ConsoleLogLevel[] = ['log', 'warn', 'error', 'debug', 'info'];
 
-function isConsoleLogLevel(value: unknown): value is ConsoleLogLevel {
-  return typeof value === 'string' && ALL_CONSOLE_LEVELS.some(level => level === value);
-}
-
-function isStringArray(value: unknown): value is string[] {
-  return Array.isArray(value) && value.every(item => typeof item === 'string');
-}
-
-function isConsoleLogData(value: unknown): value is ConsoleLogPluginData['payload'] {
-  if (typeof value !== 'object' || value === null) return false;
-  if (!('level' in value) || !('payload' in value) || !('trace' in value)) return false;
-
-  return isConsoleLogLevel(value.level) && isStringArray(value.payload) && isStringArray(value.trace);
+/** Sanitize every string in a captured field. Returns `undefined` so the caller drops the event. */
+function sanitizeField(values: unknown, sanitize: ValueSanitizer): string[] | undefined {
+  if (!Array.isArray(values)) return undefined;
+  const sanitized = values.map(value => sanitize(String(value)));
+  return sanitized.every((value): value is string => value !== undefined) ? sanitized : undefined;
 }
 
 export function getConsoleCapturePlugin(
@@ -26,39 +18,31 @@ export function getConsoleCapturePlugin(
 ): ReturnType<typeof getRecordConsolePlugin> | undefined {
   if (!captureConsoleLogs) return undefined;
 
-  const levels = captureConsoleLogs === true ? ALL_CONSOLE_LEVELS : captureConsoleLogs.levels ?? ALL_CONSOLE_LEVELS;
+  const options = captureConsoleLogs === true ? {} : captureConsoleLogs;
+  const levels = options.levels ?? ALL_CONSOLE_LEVELS;
   if (levels.length === 0) return undefined;
 
   const plugin = getRecordConsolePlugin({ level: levels });
-  const sanitizer = typeof captureConsoleLogs === 'object' ? captureConsoleLogs.sanitize : undefined;
-  if (!sanitizer) return plugin;
-  if (!plugin.observer) {
-    createOnceCaptureLogger(debugLogger)?.('SECURITY: console sanitizer unavailable; console capture disabled');
-    return undefined;
-  }
-
+  const sanitize = createValueSanitizer(options.sanitize, 'console', debugLogger);
+  if (!sanitize) return plugin;
   const observeConsole = plugin.observer;
-  const sanitizerLogger = createOnceCaptureLogger(debugLogger);
+  // Fail closed: with no observer to wrap there is no way to sanitize.
+  if (!observeConsole) return undefined;
+
   return {
     ...plugin,
-    observer: (callback, win, options) =>
+    observer: (callback, win, observerOptions) =>
       observeConsole(
         data => {
-          if (!isConsoleLogData(data)) {
-            sanitizerLogger?.('SECURITY: console plugin data invalid; captured event dropped');
-            return;
-          }
+          const { payload, trace } = (data ?? {}) as Partial<ConsoleLogPluginData['payload']>;
+          const sanitizedPayload = sanitizeField(payload, sanitize);
+          const sanitizedTrace = sanitizeField(trace, sanitize);
+          if (!sanitizedPayload || !sanitizedTrace) return;
 
-          const payload = sanitizeCapturedValues(data.payload, sanitizer, 'console', sanitizerLogger);
-          if (payload === undefined) return;
-
-          const trace = sanitizeCapturedValues(data.trace, sanitizer, 'console', sanitizerLogger);
-          if (trace === undefined) return;
-
-          callback({ ...data, payload, trace });
+          callback({ ...(data as object), payload: sanitizedPayload, trace: sanitizedTrace });
         },
         win,
-        options,
+        observerOptions,
       ),
   };
 }

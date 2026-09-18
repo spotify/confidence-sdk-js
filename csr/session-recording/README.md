@@ -97,11 +97,12 @@ const recorder = initSessionRecorder({
 
 ### Sanitizing console and network capture
 
-Existing capture settings preserve their current behavior and record raw values. To remove query strings and fragments
-from captured network URLs and from URLs in console payloads and stack traces, enable the built-in sanitizer:
+Raw URLs and console output can contain sensitive data from first-party or third-party code. Existing capture settings
+preserve their current behavior and record raw values, so select a sanitization policy before you enable these channels
+in production.
 
-Raw URLs and console output can contain sensitive data from first-party or third-party code. Select a sanitization policy
-before you enable these capture channels in production.
+Set `sanitize: true` to remove query strings and fragments from captured network URLs and from URLs in console payloads
+and stack traces:
 
 ```typescript
 const recorder = initSessionRecorder({

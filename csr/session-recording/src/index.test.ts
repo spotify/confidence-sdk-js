@@ -111,7 +111,7 @@ describe('initSessionRecorder', () => {
     createUploader.mockResolvedValueOnce(mockUploader());
     record.mockReturnValueOnce(() => {});
     vi.stubGlobal('sessionStorage', { getItem: vi.fn().mockReturnValue('true') });
-    const consoleLogger = vi.spyOn(console, 'error').mockImplementation(() => {});
+    const consoleLogger = vi.spyOn(console, 'log').mockImplementation(() => {});
 
     initSessionRecorder({
       clientSecret: 'secret',

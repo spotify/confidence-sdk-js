@@ -286,6 +286,23 @@ describe('Recorder network request capture', () => {
     recorder.stop();
   });
 
+  it('keeps sanitizing a request that is still in flight when the recorder stops', async () => {
+    let settleFetch: (response: Response) => void = () => {};
+    globalThis.fetch = vi.fn().mockReturnValue(new Promise<Response>(resolve => (settleFetch = resolve)));
+
+    const onEvent = vi.fn();
+    const recorder = new Recorder({ engine: new MockEngine(), onEvent });
+    recorder.start({ captureNetworkRequests: { sanitize: true } });
+
+    // `stop()` cannot cancel an in-flight request, so its patched handler still emits.
+    const inFlight = globalThis.fetch('https://api.example.com/payment?client_secret=secret');
+    recorder.stop();
+    settleFetch(new Response('', { status: 200 }));
+    await inFlight;
+
+    expect(networkRequestEvents(onEvent)[0].payload.url).toBe('https://api.example.com/payment');
+  });
+
   it('does not let a failing debug logger affect the application request', async () => {
     globalThis.fetch = vi.fn().mockResolvedValue(new Response('', { status: 200 }));
 

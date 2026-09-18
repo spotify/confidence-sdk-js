@@ -27,11 +27,11 @@ const stop = record(
 stop();
 ```
 
-Raw capture remains the default when either capture option is `true`. Use the built-in sanitizer to remove query strings
-and fragments from network URLs and URLs inside console payloads and traces:
+Raw URLs and console output can contain sensitive data from first-party or third-party code. Both capture options record
+raw values when set to `true`. Select a sanitization policy before you enable these channels in production.
 
-Raw URLs and console output can contain sensitive data from first-party or third-party code. Select a sanitization policy
-before you enable these capture channels in production.
+Set `sanitize: true` to remove query strings and fragments from network URLs and from URLs inside console payloads and
+traces:
 
 ```typescript
 const stop = record(event => {}, {
@@ -40,10 +40,9 @@ const stop = record(event => {}, {
 });
 ```
 
-Set `sanitize` to `(value: string) => string` for a custom policy. A network sanitizer receives each request URL. A
-console sanitizer receives each payload and trace string. The built-in sanitizer changes only URL-like text, so use a
-function to remove secrets stored elsewhere in console data. If the sanitizer throws or returns a non-string value, the
-capture event is dropped. Pass `debugLogger` to receive a `SECURITY` warning without the unsanitized value.
+Set `sanitize` to `(value: string) => string` for a custom policy. See
+[`@spotify-confidence/session-recording`](../session-recording/README.md#sanitizing-console-and-network-capture) for the
+full description, including the fail-closed behavior.
 
 ## Route parameterization
 
