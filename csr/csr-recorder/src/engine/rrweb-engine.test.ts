@@ -362,6 +362,22 @@ describe('RrwebEngine', () => {
     expect(debugLogger.mock.calls.join(' ')).not.toContain('client_secret=secret');
   });
 
+  it('skips only the console events its sanitizer cannot handle and keeps capturing the rest', () => {
+    const { callback, emitConsoleData } = observeConsolePlugin({
+      levels: ['error'],
+      sanitize: value => {
+        if (value.includes('unhandled')) throw new Error('sanitizer bug');
+        return value.replaceAll('secret', '[REDACTED]');
+      },
+    });
+
+    emitConsoleData({ level: 'error', payload: ['unhandled secret'], trace: [] });
+    emitConsoleData({ level: 'error', payload: ['next secret'], trace: [] });
+
+    expect(callback).toHaveBeenCalledTimes(1);
+    expect(callback).toHaveBeenCalledWith({ level: 'error', payload: ['next [REDACTED]'], trace: [] });
+  });
+
   it('fails closed on malformed console plugin data instead of asserting its type', () => {
     const debugLogger = vi.fn();
     const { callback, emitConsoleData } = observeConsolePlugin({ sanitize: true }, debugLogger);

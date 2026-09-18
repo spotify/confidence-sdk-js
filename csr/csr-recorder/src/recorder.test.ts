@@ -303,6 +303,27 @@ describe('Recorder network request capture', () => {
     expect(networkRequestEvents(onEvent)[0].payload.url).toBe('https://api.example.com/payment');
   });
 
+  it('skips only the requests its sanitizer cannot handle and keeps capturing the rest', async () => {
+    globalThis.fetch = vi.fn().mockResolvedValue(new Response('', { status: 200 }));
+
+    const onEvent = vi.fn();
+    const recorder = new Recorder({ engine: new MockEngine(), onEvent });
+    recorder.start({
+      captureNetworkRequests: {
+        sanitize: url => {
+          if (url.includes('/unhandled')) throw new Error('sanitizer bug');
+          return url.split('?')[0];
+        },
+      },
+    });
+
+    await globalThis.fetch('https://api.example.com/unhandled?client_secret=secret');
+    await globalThis.fetch('https://api.example.com/next?client_secret=secret');
+
+    expect(networkRequestEvents(onEvent).map(event => event.payload.url)).toEqual(['https://api.example.com/next']);
+    recorder.stop();
+  });
+
   it('does not let a failing debug logger affect the application request', async () => {
     globalThis.fetch = vi.fn().mockResolvedValue(new Response('', { status: 200 }));
 
