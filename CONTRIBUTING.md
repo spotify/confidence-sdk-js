@@ -68,7 +68,7 @@ We adhere to the [conventional commits](https://www.conventionalcommits.org/en/v
 
 ## Code Review
 
-Pull requests raised will be reviewed by a code owner and will be merged when all comments are resolved and the
+Pull requests raised will be reviewed by a maintainer and will be merged when all comments are resolved and the
 workflows complete successfully.
 
 ## Documentation
