@@ -1,52 +1,67 @@
 import { stripUrlQueryAndHash } from '@spotify-confidence/csr-common';
 
+/** Capture option: `true` for the built-in policy, or a customer-defined function. */
 export type CaptureSanitizer = boolean | ((value: string) => string);
 
-/** Sanitizes one captured string, or returns `undefined` so the caller drops the event. */
-export type ValueSanitizer = (value: string) => string | undefined;
+/** Sanitizes one captured string. Throws when the policy fails, which drops the whole event. */
+export type ValueSanitizer = (value: string) => string;
 
 type CaptureSource = 'console' | 'network';
 
 const URL_IN_TEXT = /(?:(?:https?|wss?):)?\/\/[^\s<>"')\]}]+/giu;
 const RELATIVE_URL_IN_TEXT = /(^|[\s("'=])(\/(?!\/)[^\s<>"')\]}]*[?#][^\s<>"')\]}]*)/giu;
 
-function stripUrlsInText(value: string): string {
+/** Remove query strings and fragments from every URL found inside free text. */
+export function stripUrlsInText(value: string): string {
   return value
     .replace(URL_IN_TEXT, stripUrlQueryAndHash)
     .replace(RELATIVE_URL_IN_TEXT, (_match, prefix: string, url: string) => prefix + stripUrlQueryAndHash(url));
 }
 
-/**
- * Build the sanitizer for a capture channel, or `undefined` when that channel
- * stays raw. The result fails closed: it returns `undefined` when the sanitizer
- * throws or yields a non-string, and warns at most once per recording without
- * ever logging the unsanitized value.
- */
-export function createValueSanitizer(
+const BUILT_IN: Record<CaptureSource, ValueSanitizer> = {
+  network: stripUrlQueryAndHash,
+  console: stripUrlsInText,
+};
+
+/** The sanitizer for one capture channel, or `undefined` when that channel stays raw. */
+export function getValueSanitizer(
   sanitizer: CaptureSanitizer | undefined,
   source: CaptureSource,
-  debugLogger?: (message: string) => void,
 ): ValueSanitizer | undefined {
   if (!sanitizer) return undefined;
 
-  const builtIn = source === 'network' ? stripUrlQueryAndHash : stripUrlsInText;
-  const sanitize = sanitizer === true ? builtIn : sanitizer;
-  let hasWarned = false;
-
+  const sanitize = sanitizer === true ? BUILT_IN[source] : sanitizer;
   return value => {
+    const sanitized = sanitize(value);
+    if (typeof sanitized !== 'string') throw new TypeError('Sanitizer must return a string');
+    return sanitized;
+  };
+}
+
+/** Log at most once. Diagnostics must never reach the host application. */
+export function createOnceLogger(debugLogger?: (message: string) => void): (message: string) => void {
+  let hasLogged = false;
+  return message => {
+    if (hasLogged) return;
+    hasLogged = true;
     try {
-      const sanitized = sanitize(value);
-      if (typeof sanitized !== 'string') throw new TypeError('Sanitizer must return a string');
-      return sanitized;
+      debugLogger?.(message);
     } catch (_error) {
-      if (hasWarned) return undefined;
-      hasWarned = true;
-      try {
-        debugLogger?.(`SECURITY: ${source} sanitizer failed; captured event dropped`);
-      } catch (_loggerError) {
-        // Diagnostics must never affect the host application.
-      }
-      return undefined;
+      // Diagnostics must never affect the host application.
     }
   };
+}
+
+/** Build a captured event. Returns `undefined` when sanitizing threw, so the caller drops it. */
+export function dropOnFailure<T>(
+  build: () => T,
+  warn: (message: string) => void,
+  source: CaptureSource,
+): T | undefined {
+  try {
+    return build();
+  } catch (_error) {
+    warn(`SECURITY: ${source} sanitizer failed; captured event dropped`);
+    return undefined;
+  }
 }

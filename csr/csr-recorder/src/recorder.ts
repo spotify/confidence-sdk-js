@@ -12,7 +12,7 @@ import { RecorderOptions, RecorderState, RecordingConfig } from './types';
 import { RecordingEngine } from './engine';
 import { defaultParameterizeRoute } from './route-parameterizer';
 import { extractGraphQLRequestMetadata } from './graphql-request';
-import { createValueSanitizer, type ValueSanitizer } from './capture-sanitizer';
+import { createOnceLogger, dropOnFailure, getValueSanitizer, type ValueSanitizer } from './capture-sanitizer';
 
 export class Recorder {
   private readonly engine: RecordingEngine;
@@ -28,6 +28,7 @@ export class Recorder {
   private popstateHandler: (() => void) | null = null;
   private parameterizeRoute!: (route: string) => string;
   private sanitizeNetworkUrl: ValueSanitizer | undefined;
+  private warnNetworkDrop = createOnceLogger();
 
   constructor(options: RecorderOptions) {
     this.engine = options.engine;
@@ -44,11 +45,11 @@ export class Recorder {
     }
     this.state = RecorderState.Recording;
     this.parameterizeRoute = config?.parameterizeRoute ?? defaultParameterizeRoute;
-    this.sanitizeNetworkUrl = createValueSanitizer(
+    this.sanitizeNetworkUrl = getValueSanitizer(
       typeof config?.captureNetworkRequests === 'object' ? config.captureNetworkRequests.sanitize : undefined,
       'network',
-      config?.debugLogger,
     );
+    this.warnNetworkDrop = createOnceLogger(config?.debugLogger);
 
     this.engine.start(config ?? {}, event => {
       if (event.type === RecordingEventType.Meta) {
@@ -93,13 +94,16 @@ export class Recorder {
     }
   }
 
-  private emitNetworkRequest(payload: NetworkRequestPluginData['payload']): void {
-    const url = this.sanitizeNetworkUrl ? this.sanitizeNetworkUrl(payload.url) : payload.url;
-    if (url === undefined) return;
+  private emitNetworkRequest(raw: NetworkRequestPluginData['payload']): void {
+    const sanitizeUrl = this.sanitizeNetworkUrl;
+    const payload = sanitizeUrl
+      ? dropOnFailure(() => ({ ...raw, url: sanitizeUrl(raw.url) }), this.warnNetworkDrop, 'network')
+      : raw;
+    if (!payload) return;
 
     const data: NetworkRequestPluginData = {
       plugin: RecordingPluginName.NetworkRequest,
-      payload: { ...payload, url },
+      payload,
     };
     this.onEvent({
       type: RecordingEventType.Plugin,
@@ -314,6 +318,9 @@ export class Recorder {
       window.removeEventListener('pageshow', this.pageShowHandler);
       this.pageShowHandler = null;
     }
+    // The sanitizer is deliberately left in place. `restoreNetwork` cannot cancel
+    // in-flight requests, and their patched handlers still emit after `stop()`.
+    // Clearing it here would send those URLs raw.
     // The sanitizer is deliberately left in place. `restoreNetwork` cannot cancel
     // in-flight requests, and their patched handlers still emit after `stop()`.
     // Clearing it here would send those URLs raw.

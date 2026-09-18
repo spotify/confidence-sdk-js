@@ -363,11 +363,13 @@ describe('RrwebEngine', () => {
   });
 
   it('fails closed on malformed console plugin data instead of asserting its type', () => {
-    const { callback, emitConsoleData } = observeConsolePlugin({ sanitize: true });
+    const debugLogger = vi.fn();
+    const { callback, emitConsoleData } = observeConsolePlugin({ sanitize: true }, debugLogger);
 
     emitConsoleData({ level: 'error', payload: 'not-an-array', trace: [] });
 
     expect(callback).not.toHaveBeenCalled();
+    expect(debugLogger).toHaveBeenCalledWith(expect.stringMatching(/SECURITY.*console.*dropped/i));
   });
 
   it('records copy, cut, and paste actions without reading clipboard contents', () => {
