@@ -1,0 +1,183 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <meta
+      http-equiv="Content-Security-Policy"
+      content="default-src 'none'; script-src 'unsafe-inline'; style-src 'unsafe-inline'; img-src data: blob:; font-src data: blob:; media-src data: blob:; connect-src 'none'; object-src 'none'; worker-src 'none'; base-uri 'none'; form-action 'none'"
+    />
+    <title>Confidence privacy review</title>
+    <style>
+      /* RRWEB_CSS */
+    </style>
+    <style>
+      * {
+        box-sizing: border-box;
+      }
+      body {
+        margin: 0;
+        background: #f5f5f5;
+        color: #202020;
+        font: 14px system-ui, sans-serif;
+      }
+      main {
+        max-width: 1200px;
+        margin: 24px auto;
+        padding: 0 16px;
+      }
+      h1 {
+        font-size: 22px;
+        margin: 0 0 8px;
+      }
+      p {
+        line-height: 1.5;
+      }
+      .controls {
+        display: flex;
+        align-items: center;
+        flex-wrap: wrap;
+        gap: 12px;
+        margin: 16px 0;
+      }
+      button,
+      input {
+        font: inherit;
+      }
+      button {
+        padding: 6px 12px;
+      }
+      input[type='range'] {
+        flex: 1;
+        min-width: 180px;
+      }
+      #stage {
+        width: 100%;
+        height: min(68vh, 800px);
+        overflow: hidden;
+        background: white;
+        border: 1px solid #ccc;
+        position: relative;
+      }
+      #status {
+        min-height: 1.5em;
+      }
+    </style>
+  </head>
+  <body>
+    <main>
+      <h1>Confidence privacy review</h1>
+      <p>This recording and viewer are contained in this file. Nothing is uploaded or loaded remotely.</p>
+      <div class="controls">
+        <button id="play" type="button" disabled>Play</button>
+        <input id="position" type="range" min="0" max="0" value="0" disabled aria-label="Playback position" />
+        <span id="time">0:00 / 0:00</span>
+      </div>
+      <p id="status" role="status"></p>
+      <div id="stage" aria-label="Recording replay"></div>
+    </main>
+    <!-- EMBEDDED_RECORDING -->
+    <script>
+      /* RRWEB_SCRIPT */
+    </script>
+    <script>
+      const playButton = document.querySelector('#play');
+      const position = document.querySelector('#position');
+      const time = document.querySelector('#time');
+      const status = document.querySelector('#status');
+      const stage = document.querySelector('#stage');
+      let player = null;
+      let playing = false;
+      let duration = 0;
+
+      function clock(ms) {
+        const seconds = Math.floor(ms / 1000);
+        return `${Math.floor(seconds / 60)}:${String(seconds % 60).padStart(2, '0')}`;
+      }
+
+      function updatePosition() {
+        if (!player) return;
+        const current = Math.min(duration, Math.max(0, player.getCurrentTime()));
+        if (!position.matches(':active')) position.value = String(current);
+        time.textContent = `${clock(current)} / ${clock(duration)}`;
+      }
+
+      function fit() {
+        if (!player) return;
+        const width = Number.parseFloat(player.iframe.width) || stage.clientWidth;
+        const height = Number.parseFloat(player.iframe.height) || stage.clientHeight;
+        const scale = Math.min(stage.clientWidth / width, stage.clientHeight / height);
+        player.wrapper.style.transformOrigin = 'top left';
+        player.wrapper.style.transform = `translate(${(stage.clientWidth - width * scale) / 2}px, ${
+          (stage.clientHeight - height * scale) / 2
+        }px) scale(${scale})`;
+      }
+
+      function loadRecording(data) {
+        playing = false;
+        playButton.disabled = true;
+        position.disabled = true;
+        status.textContent = '';
+        if (data?.format !== 'csr-privacy-review-v1' || !Array.isArray(data.events)) {
+          throw new Error('This is not a Confidence privacy review recording.');
+        }
+        if (data.events.length < 2 || !data.events.some(event => event.type === 2)) {
+          throw new Error('The recording has no full page snapshot to replay.');
+        }
+        player = new rrweb.Replayer(data.events, { root: stage, triggerFocus: false, mouseTail: false });
+        if (player.iframe.getAttribute('sandbox') !== 'allow-same-origin') {
+          player.destroy();
+          player = null;
+          throw new Error('The replay iframe is not safely sandboxed.');
+        }
+        // rrweb applies the recorded viewport size asynchronously after construction.
+        // Fit again when it updates the iframe, otherwise the initial 300x150 iframe
+        // can leave the replay massively enlarged and clipped.
+        player.on(rrweb.ReplayerEvents.Resize, () => requestAnimationFrame(fit));
+        duration = player.getMetaData().totalTime;
+        position.max = String(duration);
+        position.value = '0';
+        player.pause(0);
+        player.on(rrweb.ReplayerEvents.Finish, () => {
+          playing = false;
+          playButton.textContent = 'Play';
+          position.value = String(duration);
+          time.textContent = `${clock(duration)} / ${clock(duration)}`;
+        });
+        playButton.disabled = false;
+        position.disabled = false;
+        status.textContent = `${data.events.length} events loaded from this file.`;
+        fit();
+        updatePosition();
+      }
+
+      const embeddedRecording = document.querySelector('#embedded-recording');
+      try {
+        loadRecording(JSON.parse(embeddedRecording.textContent));
+      } catch (error) {
+        status.textContent = error instanceof Error ? error.message : String(error);
+      }
+
+      playButton.addEventListener('click', () => {
+        if (!player) return;
+        if (playing) player.pause();
+        else player.play(Number(position.value) >= duration ? 0 : Number(position.value));
+        playing = !playing;
+        playButton.textContent = playing ? 'Pause' : 'Play';
+      });
+
+      position.addEventListener('input', () => {
+        if (!player) return;
+        const offset = Number(position.value);
+        if (playing) player.play(offset);
+        else player.pause(offset);
+        updatePosition();
+      });
+
+      new ResizeObserver(fit).observe(stage);
+      setInterval(() => {
+        if (playing) updatePosition();
+      }, 100);
+    </script>
+  </body>
+</html>
