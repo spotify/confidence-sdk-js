@@ -10,8 +10,8 @@ export type PrivacyReviewOptions = RecordingConfig;
 export interface PrivacyReviewRecording {
   /** Stop capture and return the locally captured DOM events. */
   stop(): RecordingEvent[];
-  /** Stop capture and open a local replay tab. Returns false if the browser blocks the new tab. */
-  preview(): boolean;
+  /** Stop capture and open a local replay tab. Resolves false if the browser blocks the tab or replay. */
+  preview(): Promise<boolean>;
   /** Stop capture and save a self-contained HTML review that opens locally. */
   download(filename?: string): void;
   readonly isRecording: boolean;
@@ -60,11 +60,48 @@ export function startPrivacyReviewRecording(options: PrivacyReviewOptions = {}):
       const opened = window.open(url, '_blank');
       if (!opened) {
         URL.revokeObjectURL(url);
-        return false;
+        return Promise.resolve(false);
       }
       opened.opener = null;
-      window.addEventListener('pagehide', () => URL.revokeObjectURL(url), { once: true });
-      return true;
+      const revoke = () => URL.revokeObjectURL(url);
+      window.addEventListener('pagehide', revoke, { once: true });
+      const deadline = Date.now() + 5_000;
+      return new Promise<boolean>(resolve => {
+        const check = () => {
+          if (opened.closed) {
+            window.removeEventListener('pagehide', revoke);
+            revoke();
+            resolve(false);
+            return;
+          }
+          try {
+            if (opened.location.href === url) {
+              if (opened.document.documentElement?.dataset.privacyReviewReady === 'true') {
+                resolve(true);
+                return;
+              }
+              if (opened.document.readyState === 'complete') {
+                opened.close();
+                window.removeEventListener('pagehide', revoke);
+                revoke();
+                resolve(false);
+                return;
+              }
+            }
+          } catch {
+            // The new tab may still be navigating; let the deadline handle it.
+          }
+          if (Date.now() >= deadline) {
+            opened.close();
+            window.removeEventListener('pagehide', revoke);
+            revoke();
+            resolve(false);
+          } else {
+            setTimeout(check, 50);
+          }
+        };
+        setTimeout(check, 0);
+      });
     },
     download(filename = 'confidence-privacy-review.html') {
       saveBlob(reviewHtmlBlob(stop()), filename);
