@@ -37,23 +37,35 @@ export function mountPrivacyReviewControls(options: PrivacyReviewControlsOptions
   `;
   const panel = document.createElement('div');
   panel.className = 'panel';
-  panel.innerHTML = `
-    <strong>Privacy review</strong>
-    <p>Record a short journey and replay it locally. Nothing is sent to Confidence.</p>
-    <div class="buttons">
-      <button type="button" id="start">Start recording</button>
-      <button type="button" id="preview" disabled>Stop &amp; preview</button>
-      <button type="button" id="download" disabled>Download review</button>
-    </div>
-    <p role="status" id="status">Ready to record.</p>
-  `;
+  const heading = document.createElement('strong');
+  heading.textContent = 'Privacy review';
+  const description = document.createElement('p');
+  description.textContent = 'Record a short journey and replay it locally. Nothing is sent to Confidence.';
+  const buttons = document.createElement('div');
+  buttons.className = 'buttons';
+  const start = document.createElement('button');
+  start.id = 'start';
+  start.type = 'button';
+  start.textContent = 'Start recording';
+  const preview = document.createElement('button');
+  preview.id = 'preview';
+  preview.type = 'button';
+  preview.textContent = 'Stop & preview';
+  preview.disabled = true;
+  const download = document.createElement('button');
+  download.id = 'download';
+  download.type = 'button';
+  download.textContent = 'Download review';
+  download.disabled = true;
+  buttons.append(start, preview, download);
+  const status = document.createElement('p');
+  status.id = 'status';
+  status.setAttribute('role', 'status');
+  status.textContent = 'Ready to record.';
+  panel.append(heading, description, buttons, status);
   shadow.append(style, panel);
   document.body.appendChild(host);
 
-  const start = shadow.querySelector<HTMLButtonElement>('#start')!;
-  const preview = shadow.querySelector<HTMLButtonElement>('#preview')!;
-  const download = shadow.querySelector<HTMLButtonElement>('#download')!;
-  const status = shadow.querySelector<HTMLElement>('#status')!;
   let review: PrivacyReviewRecording | undefined;
 
   start.addEventListener('click', () => {
@@ -67,14 +79,17 @@ export function mountPrivacyReviewControls(options: PrivacyReviewControlsOptions
     status.textContent = 'Recording locally. Explore the page, then preview it.';
   });
 
-  preview.addEventListener('click', () => {
+  preview.addEventListener('click', async () => {
     if (!review) return;
-    const opened = review.preview();
-    start.disabled = false;
     preview.disabled = true;
+    download.disabled = true;
+    status.textContent = 'Opening local preview…';
+    const opened = await review.preview();
+    start.disabled = false;
+    download.disabled = false;
     status.textContent = opened
       ? 'Preview opened in a new tab. Download a copy if you want to keep it.'
-      : 'Your browser blocked the preview tab. Download the review to open it locally.';
+      : 'Your browser blocked the preview. Download the review to open it locally.';
   });
 
   download.addEventListener('click', () => {

@@ -149,6 +149,7 @@
         status.textContent = `${data.events.length} events loaded from this file.`;
         fit();
         updatePosition();
+        document.documentElement.dataset.privacyReviewReady = 'true';
       }
 
       const embeddedRecording = document.querySelector('#embedded-recording');

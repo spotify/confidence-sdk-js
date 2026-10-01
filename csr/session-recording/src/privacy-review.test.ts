@@ -69,22 +69,27 @@ describe('startPrivacyReviewRecording', () => {
     expect(JSON.parse(embedded!)).toEqual({ format: 'csr-privacy-review-v1', events: [event] });
   });
 
-  it('previews the same local HTML in a new tab', async () => {
+  it('reports success only after the local replay has loaded', async () => {
     const event = { type: 4, timestamp: 1, data: { width: 100, height: 100 } } as RecordingEvent;
     const stopCapture = vi.fn();
     record.mockImplementationOnce(onEvent => {
       onEvent(event);
       return stopCapture;
     });
-    const opened = { opener: {} as object | null };
+    const opened = {
+      opener: {} as object | null,
+      closed: false,
+      location: { href: 'blob:local-review' },
+      document: { documentElement: { dataset: { privacyReviewReady: 'true' } }, readyState: 'complete' },
+    };
     const open = vi.fn(() => opened);
     const addEventListener = vi.fn();
-    vi.stubGlobal('window', { open, addEventListener });
+    vi.stubGlobal('window', { open, addEventListener, removeEventListener: vi.fn() });
     const createObjectURL = vi.spyOn(URL, 'createObjectURL').mockReturnValue('blob:local-review');
     const revokeObjectURL = vi.spyOn(URL, 'revokeObjectURL').mockImplementation(() => {});
 
     const review = startPrivacyReviewRecording();
-    expect(review.preview()).toBe(true);
+    expect(await review.preview()).toBe(true);
 
     expect(stopCapture).toHaveBeenCalledOnce();
     expect(open).toHaveBeenCalledWith('blob:local-review', '_blank');
@@ -96,13 +101,34 @@ describe('startPrivacyReviewRecording', () => {
     expect(revokeObjectURL).toHaveBeenCalledWith('blob:local-review');
   });
 
-  it('reports a blocked preview tab and releases its blob URL', () => {
+  it('reports a blocked preview tab and releases its blob URL', async () => {
     record.mockReturnValueOnce(vi.fn());
     vi.stubGlobal('window', { open: () => null });
     vi.spyOn(URL, 'createObjectURL').mockReturnValue('blob:blocked-preview');
     const revokeObjectURL = vi.spyOn(URL, 'revokeObjectURL').mockImplementation(() => {});
 
-    expect(startPrivacyReviewRecording().preview()).toBe(false);
+    expect(await startPrivacyReviewRecording().preview()).toBe(false);
     expect(revokeObjectURL).toHaveBeenCalledWith('blob:blocked-preview');
+  });
+
+  it('reports a viewer blocked by CSP and closes the empty tab', async () => {
+    record.mockReturnValueOnce(vi.fn());
+    const close = vi.fn();
+    const opened = {
+      opener: {} as object | null,
+      closed: false,
+      close,
+      location: { href: 'blob:blocked-viewer' },
+      document: { documentElement: { dataset: {} }, readyState: 'complete' },
+    };
+    const removeEventListener = vi.fn();
+    vi.stubGlobal('window', { open: () => opened, addEventListener: vi.fn(), removeEventListener });
+    vi.spyOn(URL, 'createObjectURL').mockReturnValue('blob:blocked-viewer');
+    const revokeObjectURL = vi.spyOn(URL, 'revokeObjectURL').mockImplementation(() => {});
+
+    expect(await startPrivacyReviewRecording().preview()).toBe(false);
+    expect(close).toHaveBeenCalledOnce();
+    expect(revokeObjectURL).toHaveBeenCalledWith('blob:blocked-viewer');
+    expect(removeEventListener).toHaveBeenCalledOnce();
   });
 });

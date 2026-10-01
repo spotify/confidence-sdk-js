@@ -77,13 +77,13 @@ const review = startPrivacyReviewRecording({
 });
 
 // After the test journey, call this from a button click or another user gesture:
-review.preview();
+await review.preview();
 
 // Optionally save a self-contained copy of the same recording:
 review.download();
 ```
 
-`preview()` opens a local browser tab immediately after capture; it returns `false` if the browser blocks the tab. It does not save a file. Open the downloaded `confidence-privacy-review.html` file directly in a browser if you choose to keep a copy. It contains both the recording and its viewer, so no server or second file is needed. The viewer blocks remote images, styles, fonts, media, and network connections, so some recorded visuals may be incomplete. The HTML file contains captured page data and remains on the reviewer's machine until they delete it.
+`preview()` opens a local browser tab immediately after capture and resolves to `false` if the browser blocks the tab or its Content Security Policy prevents replay. In that case, download the review and open the HTML file directly in a browser. The file contains both the recording and its viewer, so no server or second file is needed. The viewer blocks remote images, styles, fonts, media, and network connections, so some recorded visuals may be incomplete. The HTML file contains captured page data and remains on the reviewer's machine until they delete it.
 
 `review.stop()` returns the event array without downloading it. The preview and download methods also stop capture and can be called again. This review covers the recorder's DOM capture, including its masking and blocking rules; it does not include backend eligibility, session context, tags, measures, or flag metadata added by the normal session recording SDK.
 
