@@ -1,0 +1,39 @@
+{
+  "name": "@spotify-confidence/privacy-review",
+  "license": "Apache-2.0",
+  "version": "0.1.0",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/spotify/confidence-sdk-js.git",
+    "directory": "csr/privacy-review"
+  },
+  "type": "module",
+  "main": "src/index.ts",
+  "types": "src/index.ts",
+  "scripts": {
+    "build": "node scripts/build-privacy-review-viewer.mjs && yarn run -T tsdown",
+    "typecheck": "tsc --noEmit"
+  },
+  "files": [
+    "dist"
+  ],
+  "publishConfig": {
+    "registry": "https://registry.npmjs.org/",
+    "access": "public",
+    "type": "module",
+    "main": "./dist/index.cjs",
+    "module": "./dist/index.js",
+    "types": "./dist/index.d.ts",
+    "exports": {
+      ".": {
+        "types": "./dist/index.d.ts",
+        "import": "./dist/index.js",
+        "require": "./dist/index.cjs"
+      }
+    }
+  },
+  "dependencies": {
+    "@spotify-confidence/csr-common": "workspace:*",
+    "@spotify-confidence/csr-recorder": "workspace:*"
+  }
+}

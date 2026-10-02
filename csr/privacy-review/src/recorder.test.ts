@@ -4,7 +4,7 @@ import type { RecordingEvent } from '@spotify-confidence/csr-common';
 const record = vi.hoisted(() => vi.fn());
 vi.mock('@spotify-confidence/csr-recorder', () => ({ record }));
 
-import { startPrivacyReviewRecording } from './privacy-review';
+import { startPrivacyReviewRecording } from './index';
 
 describe('startPrivacyReviewRecording', () => {
   afterEach(() => {
