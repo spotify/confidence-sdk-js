@@ -88,7 +88,7 @@ export function startPrivacyReviewRecording(options: PrivacyReviewOptions = {}):
                 return;
               }
             }
-          } catch {
+          } catch (_error) {
             // The new tab may still be navigating; let the deadline handle it.
           }
           if (Date.now() >= deadline) {
