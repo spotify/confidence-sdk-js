@@ -4,7 +4,7 @@ import { dirname, extname, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
 
 const here = dirname(fileURLToPath(import.meta.url));
-const sdkDist = resolve(here, '..', '..', 'csr', 'session-recording', 'dist');
+const reviewDist = resolve(here, '..', '..', 'csr', 'privacy-review', 'dist');
 const port = Number(process.env.PRIVACY_REVIEW_PORT ?? 4173);
 
 const server = createServer((request, response) => {
@@ -14,7 +14,7 @@ const server = createServer((request, response) => {
   if (pathname === '/') {
     file = resolve(here, 'index.html');
   } else if (/^\/sdk\/[a-zA-Z0-9_-]+\.js$/.test(pathname)) {
-    file = resolve(sdkDist, pathname.slice('/sdk/'.length));
+    file = resolve(reviewDist, pathname.slice('/sdk/'.length));
   } else {
     response.writeHead(404);
     response.end('Not found');
@@ -27,7 +27,7 @@ const server = createServer((request, response) => {
     response.end(readFileSync(file));
   } catch {
     response.writeHead(500);
-    response.end('Build the session-recording package before running this demo.');
+    response.end('Build the privacy-review package before running this demo.');
   }
 });
 

@@ -5077,6 +5077,15 @@ __metadata:
   languageName: unknown
   linkType: soft
 
+"@spotify-confidence/privacy-review@workspace:csr/privacy-review":
+  version: 0.0.0-use.local
+  resolution: "@spotify-confidence/privacy-review@workspace:csr/privacy-review"
+  dependencies:
+    "@spotify-confidence/csr-common": "workspace:*"
+    "@spotify-confidence/csr-recorder": "workspace:*"
+  languageName: unknown
+  linkType: soft
+
 "@spotify-confidence/react@workspace:*, @spotify-confidence/react@workspace:packages/react":
   version: 0.0.0-use.local
   resolution: "@spotify-confidence/react@workspace:packages/react"

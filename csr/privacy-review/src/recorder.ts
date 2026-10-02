@@ -2,9 +2,6 @@ import { record, type RecordingConfig } from '@spotify-confidence/csr-recorder';
 import type { RecordingEvent } from '@spotify-confidence/csr-common';
 import { viewerHtml } from './privacy-review-viewer.generated';
 
-export { mountPrivacyReviewControls } from './privacy-review-controls';
-export type { PrivacyReviewControls, PrivacyReviewControlsOptions } from './privacy-review-controls';
-
 export type PrivacyReviewOptions = RecordingConfig;
 
 export interface PrivacyReviewRecording {

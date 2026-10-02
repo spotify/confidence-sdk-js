@@ -49,43 +49,7 @@ const recorder = initSessionRecorder({
 
 ## Offline privacy review
 
-Use the separate privacy review entrypoint to capture a short test journey without creating a recording session or uploading events. It uses the same recorder and masking options as normal recording. Do not start the normal `initSessionRecorder` flow during a privacy review, since that flow uploads recordings.
-
-For a local review, add the built-in floating controls to a temporary test page or local-only build of the app. The SDK adds Start recording, Stop & preview, and Download review buttons. The controls are excluded from the capture. Remove this setup when the review is finished; it is not intended as a runtime mode switch in a shipped app.
-
-```typescript
-import { mountPrivacyReviewControls } from '@spotify-confidence/session-recording/privacy-review';
-
-mountPrivacyReviewControls({
-  maskSelectors: ['.pii'],
-  blockSelectors: ['.third-party-widget'],
-  maskInputs: true,
-});
-```
-
-Call this after `document.body` exists, using the same masking and blocking options you want to verify. The returned controller has `destroy()` for cleanup. If your Content Security Policy requires a nonce for injected styles, pass `styleNonce`. Do not initialize the normal session recorder on that test page; it uploads recordings.
-
-For a custom UI, use the lower-level API:
-
-```typescript
-import { startPrivacyReviewRecording } from '@spotify-confidence/session-recording/privacy-review';
-
-const review = startPrivacyReviewRecording({
-  maskSelectors: ['.pii'],
-  blockSelectors: ['.third-party-widget'],
-  maskInputs: true,
-});
-
-// After the test journey, call this from a button click or another user gesture:
-await review.preview();
-
-// Optionally save a self-contained copy of the same recording:
-review.download();
-```
-
-`preview()` opens a local browser tab immediately after capture and resolves to `false` if the browser blocks the tab or its Content Security Policy prevents replay. In that case, download the review and open the HTML file directly in a browser. The file contains both the recording and its viewer, so no server or second file is needed. The viewer blocks remote images, styles, fonts, media, and network connections, so some recorded visuals may be incomplete. The HTML file contains captured page data and remains on the reviewer's machine until they delete it.
-
-`review.stop()` returns the event array without downloading it. The preview and download methods also stop capture and can be called again. This review covers the recorder's DOM capture, including its masking and blocking rules; it does not include backend eligibility, session context, tags, measures, or flag metadata added by the normal session recording SDK.
+To check locally what the recorder captures, use the separate [`@spotify-confidence/privacy-review`](../privacy-review/README.md) package. It has the same masking and blocking options but creates no backend session and uploads no events.
 
 ## Context
 

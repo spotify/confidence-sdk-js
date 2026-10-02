@@ -1,23 +1,21 @@
 {
-  "name": "@spotify-confidence/session-recording",
+  "name": "@spotify-confidence/privacy-review",
   "license": "Apache-2.0",
-  "version": "0.18.17",
+  "version": "0.1.0",
   "repository": {
     "type": "git",
     "url": "https://github.com/spotify/confidence-sdk-js.git",
-    "directory": "csr/session-recording"
+    "directory": "csr/privacy-review"
   },
   "type": "module",
   "main": "src/index.ts",
   "types": "src/index.ts",
   "scripts": {
-    "prebuild": "node sync-version.mjs",
-    "build": "yarn run -T tsdown && node scripts/emit-worker-file.mjs",
+    "build": "node scripts/build-privacy-review-viewer.mjs && yarn run -T tsdown",
     "typecheck": "tsc --noEmit"
   },
   "files": [
-    "dist",
-    "src"
+    "dist"
   ],
   "publishConfig": {
     "registry": "https://registry.npmjs.org/",
@@ -31,13 +29,7 @@
         "types": "./dist/index.d.ts",
         "import": "./dist/index.js",
         "require": "./dist/index.cjs"
-      },
-      "./worker": {
-        "types": "./dist/worker.d.ts",
-        "import": "./dist/worker.js",
-        "require": "./dist/worker.cjs"
-      },
-      "./confidence-worker.js": "./dist/confidence-worker.js"
+      }
     }
   },
   "dependencies": {

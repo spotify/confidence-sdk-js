@@ -1,5 +1,5 @@
 import { DEFAULT_BLOCK_SELECTORS } from '@spotify-confidence/csr-recorder';
-import { startPrivacyReviewRecording, type PrivacyReviewOptions, type PrivacyReviewRecording } from './privacy-review';
+import { startPrivacyReviewRecording, type PrivacyReviewOptions, type PrivacyReviewRecording } from './recorder';
 
 const CONTROL_SELECTOR = '[data-confidence-privacy-review-controls]';
 
