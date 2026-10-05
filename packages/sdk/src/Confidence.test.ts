@@ -12,6 +12,7 @@ const flagResolverClientMock: jest.Mocked<FlagResolverClient> = {
 
 const eventSenderEngineMock: jest.Mocked<EventSenderEngine> = {
   send: jest.fn(),
+  flush: jest.fn(),
 } as any; // TODO fix any by using an interface
 
 describe('Confidence', () => {
@@ -171,6 +172,16 @@ describe('Confidence', () => {
       closer();
 
       expect(mockCloser).toHaveBeenCalledOnce();
+    });
+  });
+
+  describe('flush', () => {
+    it('flushes queued events with keepalive and returns the result', async () => {
+      eventSenderEngineMock.flush.mockResolvedValue(true);
+
+      await expect(confidence.withContext({ targeting_key: 'child' }).flush()).resolves.toBe(true);
+
+      expect(eventSenderEngineMock.flush).toHaveBeenCalledWith({ keepalive: true });
     });
   });
 

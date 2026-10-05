@@ -255,6 +255,15 @@ export class Confidence implements EventSender, Trackable, FlagResolver {
     return undefined;
   }
 
+  /**
+   * Immediately sends all queued events, skipping the debounce. Requests use `keepalive` so they can complete
+   * even if the page navigates away right after, e.g. before an auth redirect.
+   * @returns - a promise resolving to true if every queued event was uploaded successfully
+   */
+  flush(): Promise<boolean> {
+    return this.config.eventSenderEngine.flush({ keepalive: true });
+  }
+
   /** Resolves all flags in cache */
   protected resolveFlags(): AccessiblePromise<void> {
     const context = this.getContext();
