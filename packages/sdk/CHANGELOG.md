@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.3.24](https://github.com/spotify/confidence-sdk-js/compare/sdk-v0.3.23...sdk-v0.3.24) (2026-10-05)
+
+
+### ✨ New Features
+
+* **sdk:** expose flush method to immediately send queued events ([#471](https://github.com/spotify/confidence-sdk-js/issues/471)) ([d7ec3e7](https://github.com/spotify/confidence-sdk-js/commit/d7ec3e7c21535c01ea93b4580897c8e8b4e8d7a1))
+
 ## [0.3.23](https://github.com/spotify/confidence-sdk-js/compare/sdk-v0.3.22...sdk-v0.3.23) (2026-09-17)
 
 
