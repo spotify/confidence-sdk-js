@@ -51,6 +51,7 @@ export class Confidence implements EventSender, Trackable, FlagResolver {
     // (undocumented)
     evaluateFlag<T extends Value>(path: string, defaultValue: T): FlagEvaluation<T>;
     get flagState(): State;
+    flush(): Promise<boolean>;
     getContext(): Context;
     getFlag(path: string, defaultValue: string): Promise<string>;
     // (undocumented)
