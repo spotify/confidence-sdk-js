@@ -40,6 +40,12 @@
       "bump-minor-pre-major": true,
       "bump-patch-for-minor-pre-major": true
     },
+    "csr/privacy-review": {
+      "component": "privacy-review",
+      "changelog-path": "CHANGELOG.md",
+      "bump-minor-pre-major": true,
+      "bump-patch-for-minor-pre-major": true
+    },
     "csr/session-recording": {
       "component": "session-recording",
       "changelog-path": "CHANGELOG.md",
