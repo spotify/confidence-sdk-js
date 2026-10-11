@@ -28,7 +28,7 @@
   "devDependencies": {
     "@microsoft/api-extractor": "7.43.1",
     "prettier": "*",
-    "rollup": "4.24.0",
+    "rollup": "4.59.0",
     "ts-proto": "^2.3.0",
     "typescript": "5.1.6"
   },
