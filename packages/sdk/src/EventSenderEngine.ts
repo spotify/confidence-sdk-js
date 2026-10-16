@@ -7,7 +7,6 @@ import { uuid, withApiV1 } from './utils';
 interface Event {
   eventDefinition: string;
   eventTime: string;
-  /** Lets integrations (e.g. session recording) reference this event without copying its payload. */
   correlationId: string;
   payload: Value.Struct;
 }

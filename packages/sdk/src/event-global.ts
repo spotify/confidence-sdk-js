@@ -1,6 +1,5 @@
 import type { TrackedEventNotice } from './confidence-global';
 
-/** Notify active browser integrations without retaining event history or payloads. */
 export function publishTrackedEvent(event: TrackedEventNotice): void {
   if (typeof window === 'undefined') return;
   try {
@@ -11,10 +10,10 @@ export function publishTrackedEvent(event: TrackedEventNotice): void {
       try {
         listener({ ...event });
       } catch (_error) {
-        // Observers must not interrupt tracking or delivery to other observers.
+        // A failing observer must not break tracking.
       }
     }
   } catch (_error) {
-    // The shared browser namespace belongs to the host page; tracking must remain safe.
+    // The host page owns window; never let it break tracking.
   }
 }

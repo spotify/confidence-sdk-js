@@ -333,10 +333,8 @@ export type FlagEvaluationPluginData = {
   };
 };
 
-/** A tracked SDK event occurrence. Payload and context are deliberately omitted. */
 export type SdkEventPluginData = {
   plugin: typeof RecordingPluginName.SdkEvent;
-  /** correlationId matches the uploaded SDK event, so its payload can be joined server-side. */
   payload: { name: string; correlationId?: string };
 };
 

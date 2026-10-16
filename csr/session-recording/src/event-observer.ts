@@ -1,15 +1,11 @@
 // correlationId is optional so older SDK versions without it still record.
 export type SdkEvent = { name: string; timestamp: number; correlationId?: string };
 
-/**
- * The slice of `window.__confidence` this observer owns. Mirrors the SDK's `ConfidenceGlobal`
- * without depending on it; listeners get `unknown` because the publisher may be any SDK version.
- */
+// Listeners take `unknown`: the publisher may be any SDK version.
 export type SdkEventsWindow = {
   __confidence?: { events?: { listeners: Set<(event: unknown) => void> } };
 };
 
-/** Subscribe to future SDK events only; no history is stored on the window. */
 export function observeSdkEvents(onEvent: (event: SdkEvent) => void): () => void {
   if (typeof window === 'undefined') return () => {};
   const confidence = ((window as SdkEventsWindow).__confidence ??= {});
