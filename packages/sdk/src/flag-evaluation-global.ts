@@ -1,17 +1,4 @@
-interface ConfidenceFlagEntry {
-  variant: string;
-  assignmentOrigin: string;
-}
-
-interface ConfidenceGlobal {
-  flags?: Record<string, ConfidenceFlagEntry>;
-}
-
-declare global {
-  interface Window {
-    __confidence?: ConfidenceGlobal;
-  }
-}
+import type { ConfidenceGlobal } from './confidence-global';
 
 export function publishFlagEvaluation(name: string, variant: string, assignmentOrigin: string): void {
   if (typeof window === 'undefined') return;

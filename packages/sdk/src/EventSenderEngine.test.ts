@@ -63,6 +63,7 @@ describe('EventSenderEngine unit tests', () => {
           {
             eventDefinition: 'my_event',
             eventTime: expect.any(String),
+            correlationId: expect.any(String),
             payload: {
               context: { value: 2 },
               message: 1,

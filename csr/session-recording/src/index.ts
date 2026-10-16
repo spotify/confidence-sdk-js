@@ -5,11 +5,13 @@ import {
   type TagPluginData,
   type MeasurePluginData,
   type FlagEvaluationPluginData,
+  type SdkEventPluginData,
   validateKey,
   validateTagValue,
   validateMeasureValue,
 } from '@spotify-confidence/csr-common';
 import { observeFlags, type FlagWrite } from './flag-observer';
+import { observeSdkEvents } from './event-observer';
 import { createUploader, type ClientContext } from '@spotify-confidence/csr-common/uploader';
 import { SDK_VERSION } from './version';
 
@@ -120,6 +122,7 @@ export function initSessionRecorder(options: InitSessionRecorderOptions): Sessio
 
   let stopRecorder: (() => void) | null = null;
   let closeUploader: (() => void) | null = null;
+  let stopObservingEvents: (() => void) | null = null;
   let stopObservingFlags: (() => void) | null = null;
   let sendEvent: ((event: unknown) => void) | null = null;
   let started = false;
@@ -149,6 +152,17 @@ export function initSessionRecorder(options: InitSessionRecorderOptions): Sessio
     });
   }
 
+  function subscribeToSdkEvents(): void {
+    stopObservingEvents?.();
+    stopObservingEvents = observeSdkEvents(({ name, timestamp, correlationId }) => {
+      const data: SdkEventPluginData = {
+        plugin: RecordingPluginName.SdkEvent,
+        payload: { name, ...(correlationId && { correlationId }) },
+      };
+      sendEvent?.({ type: RecordingEventType.Plugin, timestamp, data });
+    });
+  }
+
   async function initAndRecord() {
     try {
       const uploader = await createUploader({
@@ -164,6 +178,8 @@ export function initSessionRecorder(options: InitSessionRecorderOptions): Sessio
         debugLogger,
         onTerminate: ({ reason }) => {
           debugLogger?.(`Recording terminated: ${reason}`);
+          stopObservingEvents?.();
+          stopObservingEvents = null;
           stopObservingFlags?.();
           stopObservingFlags = null;
           stopRecorder?.();
@@ -180,6 +196,7 @@ export function initSessionRecorder(options: InitSessionRecorderOptions): Sessio
           // that shaped the experience being recorded.
           stopObservingFlags?.();
           stopObservingFlags = observeFlags(emitFlagEvaluation);
+          subscribeToSdkEvents();
         },
       });
 
@@ -206,6 +223,7 @@ export function initSessionRecorder(options: InitSessionRecorderOptions): Sessio
       stopRecorder = record(sendEvent, recordingConfig);
 
       stopObservingFlags = observeFlags(emitFlagEvaluation);
+      subscribeToSdkEvents();
     } catch (err) {
       debugLogger?.(`Recording disabled: ${err instanceof Error ? err.message : String(err)}`);
     }
@@ -227,6 +245,8 @@ export function initSessionRecorder(options: InitSessionRecorderOptions): Sessio
     stop() {
       if (stopped) return;
       stopped = true;
+      stopObservingEvents?.();
+      stopObservingEvents = null;
       stopObservingFlags?.();
       stopObservingFlags = null;
       stopRecorder?.();

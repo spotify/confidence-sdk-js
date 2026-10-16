@@ -41,6 +41,7 @@ export {
   type TagPluginData,
   type MeasurePluginData,
   type FlagEvaluationPluginData,
+  type SdkEventPluginData,
 } from './events';
 
 export { stripUrl, stripUrlQueryAndHash } from './url';

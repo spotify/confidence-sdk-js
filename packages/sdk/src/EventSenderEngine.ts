@@ -2,10 +2,13 @@ import { Value } from './Value';
 import { Logger } from './logger';
 import { FetchBuilder, InternalFetch, SimpleFetch, TimeUnit } from './fetch-util';
 import { EventData } from './events';
-import { withApiV1 } from './utils';
+import { publishTrackedEvent } from './event-global';
+import { uuid, withApiV1 } from './utils';
 interface Event {
   eventDefinition: string;
   eventTime: string;
+  /** Lets integrations (e.g. session recording) reference this event without copying its payload. */
+  correlationId: string;
   payload: Value.Struct;
 }
 
@@ -99,11 +102,15 @@ export class EventSenderEngine {
     if (data && 'context' in data) {
       throw new Error('Event data must not contain a context field');
     }
+    const timestamp = Date.now();
+    const correlationId = uuid();
     this.writeQueue.push({
       eventDefinition: name,
-      eventTime: new Date().toISOString(),
+      eventTime: new Date(timestamp).toISOString(),
+      correlationId,
       payload: { context, ...data },
     });
+    publishTrackedEvent({ name, timestamp, correlationId });
     this.clearPendingFlush();
     if (this.writeQueue.length >= this.maxBatchSize) {
       this.flush();

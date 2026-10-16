@@ -134,6 +134,14 @@ in `sessionStorage`, the SDK logs a prominent `SECURITY` warning without logging
 
 If you use both session recording and the Confidence SDK (or an OpenFeature provider) for feature flags, try your best to keep the contexts aligned. Aligning the contexts will make sense when using the Confidence app to set up targeting on recording rules and flag rules. Matching contexts will let you set up policies like "record sessions for users in the `beta` environment" or "only record premium users" without surprises.
 
+## SDK events
+
+When both SDKs support event capture, calls to the Confidence SDK's `track()` method in the same browser window are automatically attached to an active recording. No additional customer wiring is needed.
+
+Each occurrence records only the event name, its original timestamp and a correlation ID, as a `csr:sdkEvent` plugin event. Event payloads and SDK context are not copied. Instead each recorded occurrence carries the `correlationId` the SDK attached to the uploaded event, so the payload can be joined server-side when needed. Events before recording starts or after it stops are not captured, and flushing or retrying SDK uploads does not duplicate them in the recording.
+
+The shared `window.__confidence.events` object holds subscribers only, with no event history. Subscription ends when recording stops. This capture does not change how the events SDK uploads its events.
+
 ## Route parameterization
 
 Routes containing dynamic segments (such as IDs in the URL) are automatically normalized into patterns — for example, `/users/123/profile` becomes `/users/:id/profile`. This ensures that per-page metrics are grouped by route rather than by individual page visit, keeping dashboards meaningful and query performance fast.
