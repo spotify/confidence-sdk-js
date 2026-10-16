@@ -2,6 +2,7 @@
  * @jest-environment jsdom
  */
 import { EventSenderEngine } from './EventSenderEngine';
+import { SdkId } from './generated/confidence/flags/resolver/v1/types';
 
 jest.useFakeTimers();
 
@@ -9,6 +10,8 @@ const BATCH_SIZE = 10;
 const MAX_OPEN_REQUESTS = 10;
 const UPLOAD_LATENCY = 10;
 const FLUSH_TIMEOUT = 10;
+
+const TEST_SDK = { id: SdkId.SDK_ID_JS_CONFIDENCE, version: '1.2.3' };
 
 describe('EventSenderEngine visibilitychange', () => {
   const mockFetch = jest.fn(async () => {
@@ -27,6 +30,7 @@ describe('EventSenderEngine visibilitychange', () => {
   function createEngine(overrides?: Partial<ConstructorParameters<typeof EventSenderEngine>[0]>) {
     return new EventSenderEngine({
       clientSecret: 'my_secret',
+      sdk: TEST_SDK,
       maxBatchSize: BATCH_SIZE,
       flushTimeoutMilliseconds: FLUSH_TIMEOUT,
       fetchImplementation: mockFetch as any,
@@ -57,6 +61,7 @@ describe('EventSenderEngine visibilitychange', () => {
       }),
     );
     expect(body.clientSecret).toBe('my_secret');
+    expect(body.sdk).toEqual({ id: 'SDK_ID_JS_CONFIDENCE', version: '1.2.3' });
     expect(body.events).toHaveLength(1);
     expect(body.events[0].eventDefinition).toBe('eventDefinitions/my_event');
     expect(body.events[0].payload).toEqual({ context: { value: 1 } });
@@ -93,7 +98,7 @@ describe('EventSenderEngine visibilitychange', () => {
     expect(mockSendBeacon).toHaveBeenCalledTimes(1);
     // Events should still be in the queue and flushed via fetch
     expect(uploadSpy).toHaveBeenCalledTimes(1);
-    expect(uploadSpy).toHaveBeenCalledWith(expect.any(Object), { keepalive: true });
+    expect(uploadSpy).toHaveBeenCalledWith(expect.objectContaining({ sdk: TEST_SDK }), { keepalive: true });
 
     await jest.runAllTimersAsync();
   });

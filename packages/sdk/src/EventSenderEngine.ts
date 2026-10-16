@@ -3,6 +3,7 @@ import { Logger } from './logger';
 import { FetchBuilder, InternalFetch, SimpleFetch, TimeUnit } from './fetch-util';
 import { EventData } from './events';
 import { withApiV1 } from './utils';
+import { Sdk } from './generated/confidence/flags/resolver/v1/types';
 interface Event {
   eventDefinition: string;
   eventTime: string;
@@ -13,6 +14,7 @@ interface EventBatch {
   sendTime: string;
   clientSecret: string;
   events: Event[];
+  sdk: Sdk;
 }
 interface PublishError {
   index: number;
@@ -22,6 +24,7 @@ interface PublishError {
 
 export interface EventSenderEngineOptions {
   clientSecret: string;
+  sdk: Sdk;
   maxBatchSize: number;
   flushTimeoutMilliseconds: number;
   rateLimitRps?: number;
@@ -41,6 +44,7 @@ export class EventSenderEngine {
   private readonly writeQueue: Event[] = [];
   private readonly flushTimeoutMilliseconds: number;
   private readonly clientSecret: string;
+  private readonly sdk: Sdk;
   private readonly maxBatchSize: number;
   private readonly fetchImplementation: InternalFetch;
   private readonly publishUrl: string;
@@ -49,6 +53,7 @@ export class EventSenderEngine {
 
   constructor({
     clientSecret,
+    sdk,
     maxBatchSize,
     flushTimeoutMilliseconds,
     fetchImplementation,
@@ -62,6 +67,7 @@ export class EventSenderEngine {
     const defaultBaseUrl = region ? `https://events.${region}.confidence.dev` : 'https://events.confidence.dev';
     this.publishUrl = `${withApiV1(eventBaseUrl || baseUrl || defaultBaseUrl)}/events:publish`;
     this.clientSecret = clientSecret;
+    this.sdk = sdk;
     this.maxBatchSize = maxBatchSize;
     this.flushTimeoutMilliseconds = flushTimeoutMilliseconds;
     this.logger = logger;
@@ -127,6 +133,7 @@ export class EventSenderEngine {
         clientSecret: this.clientSecret,
         sendTime: new Date().toISOString(),
         events: this.writeQueue.splice(0, this.maxBatchSize),
+        sdk: this.sdk,
       },
       { keepalive },
     )
@@ -175,6 +182,7 @@ export class EventSenderEngine {
       clientSecret: this.clientSecret,
       sendTime: new Date().toISOString(),
       events: events.map(e => ({ ...e, eventDefinition: `eventDefinitions/${e.eventDefinition}` })),
+      sdk: Sdk.toJSON(this.sdk),
     });
     const queued = navigator.sendBeacon(this.publishUrl, new Blob([body], { type: 'application/json' }));
     if (queued) {
@@ -194,6 +202,7 @@ export class EventSenderEngine {
       body: JSON.stringify({
         ...batch,
         events: batch.events.map(e => ({ ...e, eventDefinition: `eventDefinitions/${e.eventDefinition}` })),
+        sdk: Sdk.toJSON(batch.sdk),
       }),
       keepalive,
     };

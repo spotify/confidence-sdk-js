@@ -144,7 +144,10 @@ describe('Confidence integration tests', () => {
     await customConfidence.config.eventSenderEngine.flush();
 
     expect(await nextPublish).toEqual([
-      expect.objectContaining({ events: [expect.objectContaining({ eventDefinition: 'eventDefinitions/checkout' })] }),
+      expect.objectContaining({
+        events: [expect.objectContaining({ eventDefinition: 'eventDefinitions/checkout' })],
+        sdk: { id: 'SDK_ID_JS_CONFIDENCE', version: expect.stringMatching(/^\d+\.\d+\.\d+/) },
+      }),
     ]);
   });
 

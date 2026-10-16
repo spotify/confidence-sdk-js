@@ -1,4 +1,5 @@
 import { EventSenderEngine } from './EventSenderEngine';
+import { SdkId } from './generated/confidence/flags/resolver/v1/types';
 
 jest.useFakeTimers();
 
@@ -7,6 +8,8 @@ const MAX_OPEN_REQUESTS = 10;
 const UPLOAD_LATENCY = 10;
 const FLUSH_TIMEOUT = 10;
 
+const TEST_SDK = { id: SdkId.SDK_ID_JS_CONFIDENCE, version: '1.2.3' };
+
 describe('EventSenderEngine unit tests', () => {
   const mockFetch = jest.fn(async () => {
     await sleep(UPLOAD_LATENCY);
@@ -14,6 +17,7 @@ describe('EventSenderEngine unit tests', () => {
   });
   const engine = new EventSenderEngine({
     clientSecret: 'some client secret',
+    sdk: TEST_SDK,
     maxBatchSize: BATCH_SIZE,
     flushTimeoutMilliseconds: FLUSH_TIMEOUT,
     fetchImplementation: mockFetch as any,
@@ -44,6 +48,7 @@ describe('EventSenderEngine unit tests', () => {
   it('should store context under a context field ', async () => {
     const noBatchEngine = new EventSenderEngine({
       clientSecret: 'my_secret',
+      sdk: TEST_SDK,
       maxBatchSize: 1,
       flushTimeoutMilliseconds: FLUSH_TIMEOUT,
       fetchImplementation: mockFetch as any,
@@ -59,6 +64,7 @@ describe('EventSenderEngine unit tests', () => {
       {
         sendTime: expect.any(String),
         clientSecret: 'my_secret',
+        sdk: TEST_SDK,
         events: [
           {
             eventDefinition: 'my_event',
@@ -76,6 +82,7 @@ describe('EventSenderEngine unit tests', () => {
   it('should throw if data contains a context field', async () => {
     const noBatchEngine = new EventSenderEngine({
       clientSecret: 'my_secret',
+      sdk: TEST_SDK,
       maxBatchSize: 1,
       flushTimeoutMilliseconds: FLUSH_TIMEOUT,
       fetchImplementation: mockFetch as any,
@@ -95,6 +102,7 @@ describe('EventSenderEngine unit tests', () => {
     const customFetch = jest.fn(async (_request: Request) => new Response(JSON.stringify({ errors: [] })));
     const customEngine = new EventSenderEngine({
       clientSecret: 'my_secret',
+      sdk: TEST_SDK,
       maxBatchSize: 1,
       flushTimeoutMilliseconds: FLUSH_TIMEOUT,
       fetchImplementation: customFetch as any,
@@ -110,6 +118,8 @@ describe('EventSenderEngine unit tests', () => {
     const [request] = customFetch.mock.calls[0];
     expect(request.url).toBe('https://events.example.com/v1/events:publish');
     expect(request.method).toBe('POST');
+    const body = await request.json();
+    expect(body.sdk).toEqual({ id: 'SDK_ID_JS_CONFIDENCE', version: '1.2.3' });
   });
   it('should handle a lot of events', async () => {
     const eventCount = BATCH_SIZE * MAX_OPEN_REQUESTS * 2;
