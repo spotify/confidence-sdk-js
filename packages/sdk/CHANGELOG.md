@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.3.25](https://github.com/spotify/confidence-sdk-js/compare/sdk-v0.3.24...sdk-v0.3.25) (2026-10-16)
+
+
+### 🐛 Bug Fixes
+
+* **sdk:** include sdk id and version in event publish requests ([#473](https://github.com/spotify/confidence-sdk-js/issues/473)) ([9cc03e9](https://github.com/spotify/confidence-sdk-js/commit/9cc03e96c03ae43947f7129de25d0d03bd4543f1))
+
 ## [0.3.24](https://github.com/spotify/confidence-sdk-js/compare/sdk-v0.3.23...sdk-v0.3.24) (2026-10-05)
 
 
