@@ -1,4 +1,4 @@
-import { afterEach, describe, expect, it, vi } from 'vitest';
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
 const createUploader = vi.hoisted(() => vi.fn());
 const record = vi.hoisted(() => vi.fn());
@@ -13,6 +13,7 @@ vi.mock('@spotify-confidence/csr-recorder', () => ({
 import { RecordingPluginName } from '@spotify-confidence/csr-common';
 
 import { initSessionRecorder } from './index';
+import type { SdkEventsWindow } from './event-observer';
 
 function flushPromises() {
   return new Promise(r => setTimeout(r, 0));
@@ -303,30 +304,36 @@ describe('initSessionRecorder', () => {
 });
 
 describe('automatic SDK event capture', () => {
+  let win: SdkEventsWindow;
+  const listeners = () => win.__confidence?.events?.listeners ?? new Set();
+  const emit = (event: unknown) => listeners().forEach(listener => listener(event));
+  const sdkEvents = (uploader: ReturnType<typeof mockUploader>) =>
+    uploader.mock.calls.filter(([event]) => event.data.plugin === RecordingPluginName.SdkEvent);
+
+  beforeEach(() => {
+    win = {};
+    vi.stubGlobal('window', win);
+  });
+
   afterEach(() => {
     vi.resetAllMocks();
     vi.unstubAllGlobals();
   });
 
   it('captures only active recording events, preserves timestamps, and cleans up on restart/stop', async () => {
-    vi.stubGlobal('window', {});
     const uploader = mockUploader();
     createUploader.mockResolvedValueOnce(uploader);
     record.mockImplementation(() => () => {});
     const recorder = initSessionRecorder({ clientSecret: 'secret', mode: 'manual' });
-    expect((window as any).__confidence).toBeUndefined();
+    expect(win.__confidence).toBeUndefined();
     recorder.start();
-    expect((window as any).__confidence).toBeUndefined();
+    expect(win.__confidence).toBeUndefined();
     await flushPromises();
-    const listeners = (window as any).__confidence.events.listeners as Set<(event: unknown) => void>;
-    const emit = () =>
-      listeners.forEach(listener =>
-        listener({ name: 'checkout-started', timestamp: 123, correlationId: 'corr-1', data: { secret: true } }),
-      );
-    expect(listeners.size).toBe(1);
-    emit();
-    emit();
-    const events = () => uploader.mock.calls.filter(([event]) => event.data.plugin === RecordingPluginName.SdkEvent);
+    const checkout = { name: 'checkout-started', timestamp: 123, correlationId: 'corr-1', data: { secret: true } };
+    expect(listeners().size).toBe(1);
+    emit(checkout);
+    emit(checkout);
+    const events = () => sdkEvents(uploader);
     expect(events()).toHaveLength(2);
     expect(events()[0][0]).toEqual({
       type: 6,
@@ -334,47 +341,41 @@ describe('automatic SDK event capture', () => {
       data: { plugin: 'csr:sdkEvent', payload: { name: 'checkout-started', correlationId: 'corr-1' } },
     });
     createUploader.mock.calls[0][0].onSessionRestart();
-    expect(listeners.size).toBe(1);
+    expect(listeners().size).toBe(1);
     expect(events()).toHaveLength(2);
-    emit();
+    emit(checkout);
     expect(events()).toHaveLength(3);
     recorder.stop();
-    expect(listeners.size).toBe(0);
-    emit();
+    expect(listeners().size).toBe(0);
+    emit(checkout);
     expect(events()).toHaveLength(3);
   });
 
   it('records events from SDKs that predate correlation IDs', async () => {
-    vi.stubGlobal('window', {});
     const uploader = mockUploader();
     createUploader.mockResolvedValueOnce(uploader);
     record.mockReturnValue(() => {});
     initSessionRecorder({ clientSecret: 'secret' });
     await flushPromises();
-    (window as any).__confidence.events.listeners.forEach((listener: (event: unknown) => void) =>
-      listener({ name: 'legacy', timestamp: 1 }),
-    );
-    const [[event]] = uploader.mock.calls.filter(([e]) => e.data.plugin === RecordingPluginName.SdkEvent);
+    emit({ name: 'legacy', timestamp: 1 });
+    const [[event]] = sdkEvents(uploader);
     expect(event.data.payload).toEqual({ name: 'legacy' });
   });
 
   it('removes the subscription when the backend terminates recording', async () => {
-    vi.stubGlobal('window', {});
     createUploader.mockResolvedValueOnce(mockUploader());
     record.mockReturnValue(() => {});
     initSessionRecorder({ clientSecret: 'secret' });
     await flushPromises();
-    const listeners = (window as any).__confidence.events.listeners;
-    expect(listeners.size).toBe(1);
+    expect(listeners().size).toBe(1);
     createUploader.mock.calls[0][0].onTerminate({ reason: 'test' });
-    expect(listeners.size).toBe(0);
+    expect(listeners().size).toBe(0);
   });
 
   it('does not subscribe when recording is skipped', async () => {
-    vi.stubGlobal('window', {});
     createUploader.mockResolvedValueOnce(null);
     initSessionRecorder({ clientSecret: 'secret' });
     await flushPromises();
-    expect((window as any).__confidence).toBeUndefined();
+    expect(win.__confidence).toBeUndefined();
   });
 });

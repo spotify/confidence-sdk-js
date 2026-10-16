@@ -11,8 +11,8 @@ function engine() {
     maxOpenRequests: 1,
     logger: {},
   });
-  jest.spyOn(sender, 'upload').mockResolvedValue([]);
-  return sender;
+  const upload = jest.spyOn(sender, 'upload').mockResolvedValue([]);
+  return { sender, upload };
 }
 
 afterEach(() => {
@@ -27,7 +27,7 @@ it('does not create history or a global when there are no subscribers', () => {
 it('publishes every occurrence at queue time, with no payload/context and no flush duplicates', async () => {
   const listener = jest.fn();
   window.__confidence = { events: { listeners: new Set([listener]) } };
-  const sender = engine();
+  const { sender, upload } = engine();
   sender.send({ user: 'private' }, 'search-failed', { query: 'private' });
   sender.send({}, 'search-failed');
   expect(listener).toHaveBeenCalledTimes(2);
@@ -39,7 +39,7 @@ it('publishes every occurrence at queue time, with no payload/context and no flu
   expect(listener.mock.calls[1][0].correlationId).not.toBe(listener.mock.calls[0][0].correlationId);
   await sender.flush();
   expect(listener).toHaveBeenCalledTimes(2);
-  const batch = (sender.upload as jest.Mock).mock.calls[0][0];
+  const [[batch]] = upload.mock.calls;
   expect(batch.events[0].eventTime).toBe(new Date(listener.mock.calls[0][0].timestamp).toISOString());
   expect(batch.events[0].correlationId).toBe(listener.mock.calls[0][0].correlationId);
   expect(batch.events[1].correlationId).toBe(listener.mock.calls[1][0].correlationId);
@@ -59,7 +59,7 @@ it('isolates throwing and mutating listeners from uploads and other listeners', 
       ]),
     },
   };
-  const sender = engine();
+  const { sender, upload } = engine();
   expect(() => sender.send({}, 'original')).not.toThrow();
   expect(listener).toHaveBeenCalledWith({
     name: 'original',
@@ -67,12 +67,13 @@ it('isolates throwing and mutating listeners from uploads and other listeners', 
     correlationId: expect.any(String),
   });
   await sender.flush();
-  expect((sender.upload as jest.Mock).mock.calls[0][0].events[0].eventDefinition).toBe('original');
+  expect(upload.mock.calls[0][0].events[0].eventDefinition).toBe('original');
 });
 
 it('does not publish rejected events', () => {
   const listener = jest.fn();
   window.__confidence = { events: { listeners: new Set([listener]) } };
-  expect(() => engine().send({}, 'bad', { context: {} } as any)).toThrow();
+  // @ts-expect-error context is reserved; this checks the runtime guard for untyped callers.
+  expect(() => engine().sender.send({}, 'bad', { context: {} })).toThrow();
   expect(listener).not.toHaveBeenCalled();
 });
