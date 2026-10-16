@@ -501,6 +501,7 @@ export class Confidence implements EventSender, Trackable, FlagResolver {
     const maxBatchSize = Math.floor(1024 / estEventSizeKb);
     const eventSenderEngine = new EventSenderEngine({
       clientSecret,
+      sdk,
       maxBatchSize,
       flushTimeoutMilliseconds,
       fetchImplementation,
