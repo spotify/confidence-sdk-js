@@ -47,6 +47,10 @@ const recorder = initSessionRecorder({
 
 `maskInputs` defaults to `true` — all input values are masked unless you explicitly opt out.
 
+## Offline privacy review
+
+To check locally what the recorder captures, use the separate [`@spotify-confidence/privacy-review`](../privacy-review/README.md) package. It has the same masking and blocking options but creates no backend session and uploads no events.
+
 ## Context
 
 Context lets you attach custom dimensions to the recording session. These are sent alongside the auto-collected browser metadata (user agent, OS, viewport, language, timezone) in the session init request. Context serves two purposes: it helps you find and filter recordings later, and the backend uses it to target recordings to specific cohorts of your user population (e.g. only record premium users, or users on a specific build version).
