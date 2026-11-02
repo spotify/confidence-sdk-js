@@ -111,6 +111,13 @@ export namespace Schema {
   }
 
   type ListType<T> = T extends Value.Primitive ? ReadonlyArray<T> : never;
+  /**
+   * Creates a schema for a list (array) flag value.
+   *
+   * @deprecated List/array flag values and `listSchema` flag schemas are deprecated in Confidence.
+   * Existing list flags continue to resolve and validate; prefer struct or primitive flag properties
+   * for new flags. This only concerns flag schemas, not arrays in event data or evaluation context.
+   */
   export function list<const T extends Value.Primitive>(itemSchema: Schema<T>): Schema<ListType<T>> {
     return new List(itemSchema);
   }
@@ -129,6 +136,7 @@ export namespace Schema {
       return Schema.STRING;
     }
     if (schema.listSchema) {
+      // Deprecated: list flag schemas are still parsed so existing list flags keep resolving.
       if (!schema.listSchema.elementSchema) throw new TypeError('ListSchema must specify an elementSchema');
       return list(parse(schema.listSchema.elementSchema));
     }
