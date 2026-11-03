@@ -9,24 +9,19 @@ import { listenOn, spyOn } from '../utils';
 export function pageViews(): Trackable.Manager {
   return controller => {
     let referrer: string = document.referrer;
+    let closed = false;
 
-    controller.setContext({
-      page: {
-        path: location.pathname,
-        search: location.search,
-        referrer: referrer,
-        title: document.title,
-        url: location.href,
-      },
-    });
+    controller.setContext({ page: currentPage() });
 
     const listeners = [
+      // Routers call pushState/replaceState inside their own render phase (e.g. React effects),
+      // so context updates and events triggered from there are deferred to a microtask.
       spyOn(history, 'pushState', () => {
-        pageChanged({ type: 'pushstate' });
+        pageChanged({ type: 'pushstate' }, true);
       }),
 
       spyOn(history, 'replaceState', () => {
-        pageChanged({ type: 'replacestate' });
+        pageChanged({ type: 'replacestate' }, true);
       }),
 
       listenOn(window, 'popstate', pageChanged),
@@ -41,22 +36,38 @@ export function pageViews(): Trackable.Manager {
       listeners.push(listenOn(window, 'load', pageChanged));
     }
 
-    return Closer.combine(...listeners);
+    const close = Closer.combine(...listeners);
+    return () => {
+      closed = true;
+      close();
+    };
 
-    function pageChanged({ type }: { type: string }) {
-      controller.setContext({
-        page: {
-          path: location.pathname,
-          search: location.search,
-          referrer: referrer,
-          title: document.title,
-          url: location.href,
-        },
-      });
-      controller.config.logger.debug?.('Confidence: page viewed', { type });
-      controller.track('page-viewed');
+    function currentPage() {
+      return {
+        path: location.pathname,
+        search: location.search,
+        referrer: referrer,
+        title: document.title,
+        url: location.href,
+      };
+    }
 
+    function pageChanged({ type }: { type: string }, deferred = false) {
+      const page = currentPage();
       referrer = location.href;
+
+      const emit = () => {
+        if (closed) return;
+        controller.setContext({ page });
+        controller.config.logger.debug?.('Confidence: page viewed', { type });
+        controller.track('page-viewed');
+      };
+
+      if (deferred) {
+        queueMicrotask(emit);
+      } else {
+        emit();
+      }
     }
   };
 }
