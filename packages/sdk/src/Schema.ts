@@ -114,7 +114,7 @@ export namespace Schema {
   /**
    * Creates a schema for a list (array) flag value.
    *
-   * @deprecated List/array flag values and `listSchema` flag schemas are deprecated in Confidence.
+   * List/array flag values and `listSchema` flag schemas are deprecated in Confidence.
    * Existing list flags continue to resolve and validate; prefer struct or primitive flag properties
    * for new flags. This only concerns flag schemas, not arrays in event data or evaluation context.
    */
