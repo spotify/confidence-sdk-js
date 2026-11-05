@@ -126,6 +126,17 @@
   * devDependencies
     * @spotify-confidence/sdk bumped to 0.3.19
 
+## [0.3.26](https://github.com/spotify/confidence-sdk-js/compare/openfeature-server-provider-v0.3.25...openfeature-server-provider-v0.3.26) (2026-11-05)
+
+
+### Dependencies
+
+* The following workspace dependencies were updated
+  * devDependencies
+    * @spotify-confidence/sdk bumped to 0.3.26
+  * peerDependencies
+    * @spotify-confidence/sdk bumped from >=0.1.4 <0.4.0 to >=0.3.26
+
 ## [0.3.25](https://github.com/spotify/confidence-sdk-js/compare/openfeature-server-provider-v0.3.24...openfeature-server-provider-v0.3.25) (2026-10-16)
 
 
