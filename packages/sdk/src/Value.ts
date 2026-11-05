@@ -17,7 +17,13 @@ export namespace Value {
   export type Struct = {
     readonly [key: string]: Value;
   };
-  /** Readonly List */
+  /**
+   * Readonly List
+   *
+   * @remarks
+   * Lists remain supported in event data and evaluation context. Using lists as flag values
+   * (`listSchema` in a flag schema) is deprecated in Confidence but still resolves.
+   */
   export type List = ReadonlyArray<number> | ReadonlyArray<string> | ReadonlyArray<boolean>;
 
   /** Asserts a Value */
