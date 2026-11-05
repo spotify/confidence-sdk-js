@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.3.26](https://github.com/spotify/confidence-sdk-js/compare/sdk-v0.3.25...sdk-v0.3.26) (2026-11-05)
+
+
+### 🐛 Bug Fixes
+
+* **sdk:** defer pageViews updates triggered by pushState/replaceState ([#476](https://github.com/spotify/confidence-sdk-js/issues/476)) ([7188fe4](https://github.com/spotify/confidence-sdk-js/commit/7188fe4b499ef85af63815b6a0ebf20c48c829e4))
+
 ## [0.3.25](https://github.com/spotify/confidence-sdk-js/compare/sdk-v0.3.24...sdk-v0.3.25) (2026-10-16)
 
 
