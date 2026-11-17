@@ -630,6 +630,23 @@ describe('worker/core', () => {
       expect(dead.reason).toBe('stopped');
     });
 
+    it('calls closeSession on the backend when the last port sends bye with reason "stop"', async () => {
+      const { fetchHarness } = setupBackend();
+      const { registerPort } = await loadCore();
+      const port = createMockPort();
+      registerPort(port.adapter);
+
+      port.tabSends(helloMessage());
+      await port.next<WelcomeMessage>(isType('welcome'));
+
+      port.tabSends({ type: 'bye', reason: 'stop' });
+      await vi.waitFor(() => expect(fetchHarness.calls).toHaveLength(2));
+
+      const closeCall = fetchHarness.calls[1];
+      expect(closeCall.url).toBe(`${API_URL}/v1/sessions:closeSession`);
+      expect(JSON.parse(closeCall.init?.body as string)).toEqual({ clientSecret: 'secret', sessionId: 'sess-1' });
+    });
+
     it('enters idle when the last port sends bye with reason "pagehide"', async () => {
       vi.useFakeTimers();
       try {

@@ -509,8 +509,12 @@ function onBye(handle: PortHandle, reason?: string): void {
   if (ports.length === 0 && state.phase === 'active') {
     if (reason === 'stop') {
       log('last tab stopped; closing transport and ending session');
+      const { client, sessionId } = state;
       state.transport.close('stop');
       transitionToDead('stopped');
+      client.closeSession?.(sessionId).catch(err => {
+        log(`close-session failed (best-effort): ${String(err)}`);
+      });
     } else {
       log(`last tab disconnected; closing transport in ${IDLE_GRACE_MS}ms`);
       idleTimer = setTimeout(enterIdle, IDLE_GRACE_MS);
