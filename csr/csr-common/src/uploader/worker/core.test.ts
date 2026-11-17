@@ -611,6 +611,51 @@ describe('worker/core', () => {
       expect(portA.received.some(isType('dead'))).toBe(false);
     });
 
+    it('transitions to dead when the last port sends bye with reason "stop"', async () => {
+      setupBackend();
+      const { registerPort } = await loadCore();
+      const port = createMockPort();
+      registerPort(port.adapter);
+
+      port.tabSends(helloMessage());
+      await port.next<WelcomeMessage>(isType('welcome'));
+
+      port.tabSends({ type: 'bye', reason: 'stop' });
+
+      // A new port arriving after stop should get dead, not a resumed session.
+      const port2 = createMockPort();
+      registerPort(port2.adapter);
+      port2.tabSends(helloMessage({ tabId: 'tab-B' }));
+      const dead = await port2.next<DeadMessage>(isType('dead'));
+      expect(dead.reason).toBe('stopped');
+    });
+
+    it('enters idle when the last port sends bye with reason "pagehide"', async () => {
+      vi.useFakeTimers();
+      try {
+        const { fetchHarness } = setupBackend();
+        const { registerPort } = await loadCore();
+        const port = createMockPort();
+        registerPort(port.adapter);
+
+        port.tabSends(helloMessage());
+        await port.next<WelcomeMessage>(isType('welcome'));
+
+        port.tabSends({ type: 'bye', reason: 'pagehide' });
+
+        await vi.advanceTimersByTimeAsync(5_000);
+
+        const port2 = createMockPort();
+        registerPort(port2.adapter);
+        port2.tabSends(helloMessage({ tabId: 'tab-B' }));
+        const welcome = await port2.next<WelcomeMessage>(isType('welcome'));
+        expect(welcome.result).toEqual({ sessionId: 'sess-1', sessionToken: 'tok-1' });
+        expect(fetchHarness.calls).toHaveLength(1);
+      } finally {
+        vi.useRealTimers();
+      }
+    });
+
     it('backs off after a failed restart instead of retrying on every active frame', async () => {
       let initCount = 0;
       const fetchHarness = installMockFetch(() => {
