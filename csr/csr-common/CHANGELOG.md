@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.18.14](https://github.com/spotify/confidence-sdk-js/compare/csr-common-v0.18.13...csr-common-v0.18.14) (2026-11-18)
+
+
+### 🐛 Bug Fixes
+
+* **csr:** end session on explicit stop instead of entering idle ([#478](https://github.com/spotify/confidence-sdk-js/issues/478)) ([fbd5ba7](https://github.com/spotify/confidence-sdk-js/commit/fbd5ba7f64ed03dc3a4ec195eac97fa1ef5b84e7))
+
 ## [0.18.13](https://github.com/spotify/confidence-sdk-js/compare/csr-common-v0.18.12...csr-common-v0.18.13) (2026-09-17)
 
 
