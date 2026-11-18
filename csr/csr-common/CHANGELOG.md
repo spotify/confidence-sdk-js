@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.18.15](https://github.com/spotify/confidence-sdk-js/compare/csr-common-v0.18.14...csr-common-v0.18.15) (2026-11-18)
+
+
+### 🐛 Bug Fixes
+
+* **csr:** allow fresh session after explicit stop ([#480](https://github.com/spotify/confidence-sdk-js/issues/480)) ([98bdac5](https://github.com/spotify/confidence-sdk-js/commit/98bdac549e2d42cd0d322ae49d855f21d84d8e6b))
+
 ## [0.18.14](https://github.com/spotify/confidence-sdk-js/compare/csr-common-v0.18.13...csr-common-v0.18.14) (2026-11-18)
 
 
