@@ -241,6 +241,12 @@ function onHello(handle: PortHandle): void {
       sendSkipWelcome(handle);
       return;
     case 'dead':
+      if (state.reason === 'stopped') {
+        log('restarting after explicit stop');
+        state = { phase: 'initializing' };
+        void initializeSession(handle.hello!).then(flushPendingWelcomes);
+        return;
+      }
       sendDead(handle, state.reason);
       return;
     default:
