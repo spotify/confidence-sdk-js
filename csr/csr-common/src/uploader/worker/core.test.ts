@@ -622,12 +622,40 @@ describe('worker/core', () => {
 
       port.tabSends({ type: 'bye', reason: 'stop' });
 
-      // A new port arriving after stop should get dead, not a resumed session.
+      // A new port arriving after stop gets a fresh session, not the old one.
       const port2 = createMockPort();
       registerPort(port2.adapter);
       port2.tabSends(helloMessage({ tabId: 'tab-B' }));
-      const dead = await port2.next<DeadMessage>(isType('dead'));
-      expect(dead.reason).toBe('stopped');
+      const welcome = await port2.next<WelcomeMessage>(isType('welcome'));
+      expect(welcome.result).toEqual({ sessionId: 'sess-1', sessionToken: 'tok-1' });
+    });
+
+    it('starts a fresh session after stop, not resuming the old one', async () => {
+      let initCount = 0;
+      const fetchHarness = installMockFetch(() => {
+        initCount += 1;
+        return jsonResponse({ sessionId: `sess-${initCount}`, sessionToken: `tok-${initCount}` });
+      });
+      installMockWsServer(WS_URL);
+      const { registerPort } = await loadCore();
+
+      const port = createMockPort();
+      registerPort(port.adapter);
+      port.tabSends(helloMessage());
+      const firstWelcome = await port.next<WelcomeMessage>(isType('welcome'));
+
+      port.tabSends({ type: 'bye', reason: 'stop' });
+
+      const port2 = createMockPort();
+      registerPort(port2.adapter);
+      port2.tabSends(helloMessage({ tabId: 'tab-B' }));
+      const secondWelcome = await port2.next<WelcomeMessage>(isType('welcome'));
+
+      expect((secondWelcome.result as { sessionId: string }).sessionId).not.toBe(
+        (firstWelcome.result as { sessionId: string }).sessionId,
+      );
+      const initCalls = fetchHarness.calls.filter(c => c.url.includes('initSession'));
+      expect(initCalls).toHaveLength(2);
     });
 
     it('calls closeSession on the backend when the last port sends bye with reason "stop"', async () => {
