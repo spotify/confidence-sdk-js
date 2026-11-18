@@ -153,7 +153,7 @@ function handleMessage(handle: PortHandle, message: IncomingMessage): void {
       onFrame(handle, message.frame);
       return;
     case 'bye':
-      onBye(handle);
+      onBye(handle, message.reason);
       return;
     default:
       break;
@@ -503,12 +503,22 @@ function onFrame(handle: PortHandle, frame: Frame): void {
   void restartSession(client, previousSessionId, nextRetryDelayMs).then(flushPendingWelcomes);
 }
 
-function onBye(handle: PortHandle): void {
+function onBye(handle: PortHandle, reason?: string): void {
   const idx = ports.indexOf(handle);
   if (idx >= 0) ports.splice(idx, 1);
   if (ports.length === 0 && state.phase === 'active') {
-    log(`last tab disconnected; closing transport in ${IDLE_GRACE_MS}ms`);
-    idleTimer = setTimeout(enterIdle, IDLE_GRACE_MS);
+    if (reason === 'stop') {
+      log('last tab stopped; closing transport and ending session');
+      const { client, sessionId } = state;
+      state.transport.close('stop');
+      transitionToDead('stopped');
+      client.closeSession?.(sessionId).catch(err => {
+        log(`close-session failed (best-effort): ${String(err)}`);
+      });
+    } else {
+      log(`last tab disconnected; closing transport in ${IDLE_GRACE_MS}ms`);
+      idleTimer = setTimeout(enterIdle, IDLE_GRACE_MS);
+    }
   }
 }
 

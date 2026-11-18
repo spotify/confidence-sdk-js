@@ -60,6 +60,22 @@ export class CsrClient implements Client {
     return transport;
   }
 
+  async closeSession(sessionId: string): Promise<void> {
+    const url = `${this.trimSlash(this.apiUrl)}/v1/sessions:closeSession`;
+    this.log(`fetch POST ${url}`);
+    const res = await fetch(url, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        clientSecret: this.clientSecret,
+        sessionId,
+      }),
+    });
+    if (!res.ok) {
+      throw new Error(`close-session failed: HTTP ${res.status}`);
+    }
+  }
+
   private trimSlash(s: string): string {
     return s.endsWith('/') ? s.slice(0, -1) : s;
   }

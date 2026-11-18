@@ -68,6 +68,38 @@ describe('CsrClient.initSession', () => {
   });
 });
 
+describe('CsrClient.closeSession', () => {
+  it('POSTs to /v1/sessions:closeSession with sessionId and clientSecret', async () => {
+    const { calls } = installMockFetch(() => new Response(null, { status: 200 }));
+
+    const client = new CsrClient('https://recording.confidence.dev', 'secret', undefined);
+    await client.closeSession('sess-42');
+
+    expect(calls).toHaveLength(1);
+    expect(calls[0].url).toBe('https://recording.confidence.dev/v1/sessions:closeSession');
+    expect(JSON.parse(calls[0].init!.body as string)).toEqual({
+      clientSecret: 'secret',
+      sessionId: 'sess-42',
+    });
+  });
+
+  it('trims a trailing slash from apiUrl', async () => {
+    const { calls } = installMockFetch(() => new Response(null, { status: 200 }));
+
+    const client = new CsrClient('https://api/', 'secret', undefined);
+    await client.closeSession('sess-1');
+
+    expect(calls[0].url).toBe('https://api/v1/sessions:closeSession');
+  });
+
+  it('throws on non-2xx response', async () => {
+    installMockFetch(() => new Response(null, { status: 500 }));
+
+    const client = new CsrClient('https://api', 'secret', undefined);
+    await expect(client.closeSession('sess-1')).rejects.toThrow(/HTTP 500/);
+  });
+});
+
 describe('CsrClient.openTransport', () => {
   it('derives the unchanged ws:// endpoint and sends the token as a protocol', async () => {
     const ws = installMockWsServer('ws://api.example/sessions/stream');
