@@ -320,6 +320,34 @@ import { Confidence, pageViews } from '@spotify-confidence/sdk';
 confidence.track(pageViews());
 ```
 
+#### Sessions (web)
+
+To add a `session_id` to the context, use:
+
+```ts
+import { Confidence, session } from '@spotify-confidence/sdk';
+confidence.track(session());
+```
+
+A session ends after 30 minutes without user activity (pointer, keyboard, scroll, navigation or the page becoming visible again). The ID is stored in a cookie named `cnfdSessionId`. Use `timeout` (in minutes) to change the inactivity limit, and `domain` to share the session across subdomains:
+
+```ts
+confidence.track(session({ timeout: 60, domain: '.example.com' }));
+```
+
+The context is updated on activity, so an event tracked without any user activity after the timeout still carries the previous `session_id`.
+
+#### Campaign (web)
+
+To add the UTM parameters of the landing page (`utm_source`, `utm_medium`, `utm_campaign`, `utm_term`, `utm_content`) to the context, use:
+
+```ts
+import { Confidence, campaign } from '@spotify-confidence/sdk';
+confidence.track(campaign());
+```
+
+The parameters are stored in a cookie named `cnfdCampaign` and kept for later pages until 30 minutes without user activity, so events after the landing page still carry the campaign. A URL with new UTM parameters replaces the stored ones. `campaign()` takes the same `timeout` and `domain` options as `session()`; use the same values for both to keep them aligned.
+
 #### Web vitals (web)
 
 To automatically send tracking events containing [web vitals data](https://web.dev/articles/vitals), use:

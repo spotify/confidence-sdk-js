@@ -52,6 +52,7 @@ export namespace Cookie {
   type Options = {
     sameSite?: boolean;
     domain?: string;
+    path?: string;
     secure?: boolean;
     maxAge?: number;
     expires?: Date;
@@ -68,6 +69,9 @@ export namespace Cookie {
     }
     if (opt.domain) {
       parts.push(`domain=${encodeURIComponent(opt.domain)}`);
+    }
+    if (opt.path) {
+      parts.push(`path=${opt.path}`);
     }
     if (opt.secure) {
       parts.push('secure');

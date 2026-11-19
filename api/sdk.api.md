@@ -23,6 +23,9 @@ export interface CacheOptions {
 export type CacheScope = (provider: CacheProvider) => CacheProvider;
 
 // @public
+export function campaign(options?: SessionOptions): Trackable.Manager;
+
+// @public
 export namespace Closer {
     export function combine(...closers: Closer[]): Closer;
 }
@@ -265,6 +268,15 @@ export interface FlagResolver extends Contextual<FlagResolver> {
 
 // @public
 export function pageViews(): Trackable.Manager;
+
+// @public
+export function session(options?: SessionOptions): Trackable.Manager;
+
+// @public
+export type SessionOptions = {
+    timeout?: number;
+    domain?: string;
+};
 
 // Warning: (ae-missing-release-tag) "SimpleFetch" is part of the package's API, but it is missing a release tag (@alpha, @beta, @public, or @internal)
 //
