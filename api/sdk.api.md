@@ -23,7 +23,12 @@ export interface CacheOptions {
 export type CacheScope = (provider: CacheProvider) => CacheProvider;
 
 // @public
-export function campaign(options?: SessionOptions): Trackable.Manager;
+export function campaign(options?: CampaignOptions): Trackable.Manager;
+
+// @public
+export type CampaignOptions = SessionOptions & {
+    firstTouch?: number | false;
+};
 
 // @public
 export namespace Closer {

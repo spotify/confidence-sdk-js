@@ -322,31 +322,66 @@ confidence.track(pageViews());
 
 #### Sessions (web)
 
-To add a `session_id` to the context, use:
+To add session information to the context, use:
 
 ```ts
 import { Confidence, session } from '@spotify-confidence/sdk';
 confidence.track(session());
 ```
 
-A session ends after 30 minutes without user activity (pointer, keyboard, scroll, navigation or the page becoming visible again). The ID is stored in a cookie named `cnfdSessionId`. Use `timeout` (in minutes) to change the inactivity limit, and `domain` to share the session across subdomains:
+This sets `session_id`, `session_start` (ISO timestamp) and `session_count` (the number of sessions of this browser, kept for a year, so `1` means a new visitor).
+
+A new session starts:
+
+- after 30 minutes without user activity (pointer, keyboard, scroll, navigation or the page becoming visible again), or
+- when the URL has campaign parameters (UTM parameters or click IDs, see below) that differ from the ones that started the current session.
+
+The session is stored in cookies named `cnfdSession` and `cnfdSessionCount`. Use `timeout` (in minutes) to change the inactivity limit, and `domain` to share the session across subdomains:
 
 ```ts
 confidence.track(session({ timeout: 60, domain: '.example.com' }));
 ```
 
-The context is updated on activity, so an event tracked without any user activity after the timeout still carries the previous `session_id`.
+The context is updated on activity, so an event tracked without any user activity after the timeout still carries the previous session.
 
 #### Campaign (web)
 
-To add the UTM parameters of the landing page (`utm_source`, `utm_medium`, `utm_campaign`, `utm_term`, `utm_content`) to the context, use:
+To add how the visitor arrived to the context, use:
 
 ```ts
 import { Confidence, campaign } from '@spotify-confidence/sdk';
 confidence.track(campaign());
 ```
 
-The parameters are stored in a cookie named `cnfdCampaign` and kept for later pages until 30 minutes without user activity, so events after the landing page still carry the campaign. A URL with new UTM parameters replaces the stored ones. `campaign()` takes the same `timeout` and `domain` options as `session()`; use the same values for both to keep them aligned.
+This sets `campaign` for the current visit and `first_campaign` for the first visit:
+
+```json
+{
+  "campaign": {
+    "utm_source": "google",
+    "utm_medium": "cpc",
+    "gclid": "abc123",
+    "referrer": "https://www.google.com/search",
+    "landing_page": "/pricing"
+  },
+  "first_campaign": {
+    "referrer": "https://news.example.org/article",
+    "landing_page": "/blog"
+  }
+}
+```
+
+- **Fields:** `utm_source`, `utm_medium`, `utm_campaign`, `utm_term`, `utm_content`, `utm_id`, the click IDs `gclid`, `fbclid`, `msclkid` and `li_fat_id`, the external `referrer` (without query or fragment, and only when it is another site) and the `landing_page` path. Fields without a value are left out, so a direct visit only has `landing_page`.
+- **`campaign`** is kept until 30 minutes without user activity, so later pages still carry it. A URL with different campaign parameters replaces it. A new referrer on its own does not, so returning from e.g. a login or payment page keeps the original campaign.
+- **`first_campaign`** is the first visit's `campaign`, kept for 90 days.
+
+The values are stored in cookies named `cnfdCampaign` and `cnfdFirstCampaign`. `campaign()` takes the same `timeout` and `domain` options as `session()`, plus `firstTouch` to change how many days the first visit is kept, or `false` to not track it:
+
+```ts
+confidence.track(campaign({ domain: '.example.com', firstTouch: 30 }));
+```
+
+Use the same `timeout` and `domain` for `session()` and `campaign()` to keep them aligned.
 
 #### Web vitals (web)
 
