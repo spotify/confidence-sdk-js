@@ -342,7 +342,7 @@ The session is stored in cookies named `cnfdSession` and `cnfdSessionCount`. Use
 confidence.track(session({ timeout: 60, domain: '.example.com' }));
 ```
 
-The context is updated on activity, so an event tracked without any user activity after the timeout still carries the previous session.
+When the session expires, the session fields are removed from the context. A new session starts on the next user activity. Other tabs of the same site share the session through the cookie, and pick up a new session on their next activity.
 
 #### Campaign (web)
 
@@ -371,17 +371,29 @@ This sets `campaign` for the current visit and `first_campaign` for the first vi
 }
 ```
 
-- **Fields:** `utm_source`, `utm_medium`, `utm_campaign`, `utm_term`, `utm_content`, `utm_id`, the click IDs `gclid`, `fbclid`, `msclkid` and `li_fat_id`, the external `referrer` (without query or fragment, and only when it is another site) and the `landing_page` path. Fields without a value are left out, so a direct visit only has `landing_page`.
-- **`campaign`** is kept until 30 minutes without user activity, so later pages still carry it. A URL with different campaign parameters replaces it. A new referrer on its own does not, so returning from e.g. a login or payment page keeps the original campaign.
+- **Fields:** `utm_source`, `utm_medium`, `utm_campaign`, `utm_term`, `utm_content`, `utm_id`, the click IDs `gclid`, `fbclid`, `msclkid` and `li_fat_id`, the external `referrer` (without query or fragment, only when it is another site, and only for campaigns that start with a page load) and the `landing_page` path. Fields without a value are left out, so a direct visit only has `landing_page`.
+- **`campaign`** is kept until 30 minutes without user activity, so later pages still carry it, and is then removed from the context. A URL with different campaign parameters replaces it. A new referrer on its own does not, so returning from e.g. a login or payment page keeps the original campaign.
 - **`first_campaign`** is the first visit's `campaign`, kept for 90 days.
 
-The values are stored in cookies named `cnfdCampaign` and `cnfdFirstCampaign`. `campaign()` takes the same `timeout` and `domain` options as `session()`, plus `firstTouch` to change how many days the first visit is kept, or `false` to not track it:
+The values are stored in cookies named `cnfdCampaign` and `cnfdFirstCampaign`. `campaign()` takes the same `timeout`, `domain` and `params` options as `session()`, plus `firstTouch` to change how many days the first visit is kept, or `false` to not track it:
 
 ```ts
 confidence.track(campaign({ domain: '.example.com', firstTouch: 30 }));
 ```
 
 Use the same `timeout` and `domain` for `session()` and `campaign()` to keep them aligned.
+
+Each tracker updates the context on its own, and every context change starts a new flag resolve that replaces the one in flight. Starting `session()`, `campaign()` and `pageViews()` together therefore sends a few resolve requests on page load, of which only the last completes.
+
+**Privacy:** `utm_term` and `utm_content` can contain free text (such as search terms), and click IDs identify individual users. The values are stored in cookies and sent with every flag resolve and event. Use `params` to only capture the parameters you need:
+
+```ts
+const params = ['utm_source', 'utm_medium', 'utm_campaign'];
+confidence.track(session({ params }));
+confidence.track(campaign({ params }));
+```
+
+Use the same `params` for both trackers, so a new session starts exactly when the campaign changes.
 
 #### Web vitals (web)
 

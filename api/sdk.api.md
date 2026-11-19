@@ -281,6 +281,7 @@ export function session(options?: SessionOptions): Trackable.Manager;
 export type SessionOptions = {
     timeout?: number;
     domain?: string;
+    params?: readonly string[];
 };
 
 // Warning: (ae-missing-release-tag) "SimpleFetch" is part of the package's API, but it is missing a release tag (@alpha, @beta, @public, or @internal)

@@ -12,16 +12,21 @@ export function spyOn<T extends {}, N extends keyof PickFn<T>>(
 ): CleanupFn {
   const t = target as any;
   const originalFn = t[fnName];
+  let active = true;
   // eslint-disable-next-line func-names
-  t[fnName] = function (...args: any): any {
+  const wrapper = function (this: unknown, ...args: any): any {
     try {
       return originalFn.call(this, ...args);
     } finally {
-      callback(...args);
+      if (active) callback(...args);
     }
   };
+  t[fnName] = wrapper;
   return () => {
-    t[fnName] = originalFn;
+    active = false;
+    // Only unwrap when no other spy was added on top; otherwise this wrapper stays as a pass-through
+    // so spies can be closed in any order.
+    if (t[fnName] === wrapper) t[fnName] = originalFn;
   };
 }
 
@@ -71,7 +76,7 @@ export namespace Cookie {
       parts.push(`domain=${encodeURIComponent(opt.domain)}`);
     }
     if (opt.path) {
-      parts.push(`path=${opt.path}`);
+      parts.push(`path=${encodeURI(opt.path)}`);
     }
     if (opt.secure) {
       parts.push('secure');
@@ -85,7 +90,7 @@ export namespace Cookie {
     return documentCookie && decodeURIComponent(documentCookie.slice(prefix.length));
   }
 
-  export function remove(key: string) {
-    set(key, '', { maxAge: 0 });
+  export function remove(key: string, opt: Pick<Options, 'domain' | 'path'> = {}) {
+    set(key, '', { ...opt, maxAge: 0 });
   }
 }
