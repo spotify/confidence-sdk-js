@@ -186,6 +186,7 @@ export type DeviceInfoOptions = {
     browser?: boolean;
     locale?: boolean;
     screen?: boolean;
+    viewport?: boolean;
     timezone?: boolean;
 };
 

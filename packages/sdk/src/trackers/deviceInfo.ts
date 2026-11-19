@@ -35,6 +35,11 @@ export type DeviceInfoOptions = {
    */
   screen?: boolean;
   /**
+   * Add `viewport.width` and `viewport.height`, measured once when the tracker starts
+   * @defaultValue true
+   */
+  viewport?: boolean;
+  /**
    * Add `timezone`
    * @defaultValue true
    */
@@ -42,11 +47,11 @@ export type DeviceInfoOptions = {
 };
 
 /**
- * Adds OS, device, browser, locale, screen and timezone information to the context.
+ * Adds OS, device, browser, locale, screen, viewport and timezone information to the context.
  *
  * @remarks
  * Sets the top-level context keys `os`, `device`, `browser`, `locale`, `preferred_languages`,
- * `screen` and `timezone`, replacing any values previously set under those keys.
+ * `screen`, `viewport` and `timezone`, replacing any values previously set under those keys.
  * `os`, `device`, `locale` and `preferred_languages` follow the device info context of the
  * Confidence iOS and Android SDKs; see the README for how values differ per platform.
  * @public
@@ -58,6 +63,7 @@ export function deviceInfo(options: DeviceInfoOptions = {}): Trackable.Manager {
     browser = true,
     locale = true,
     screen: withScreen = true,
+    viewport = true,
     timezone = true,
   } = options;
   return controller => {
@@ -81,6 +87,10 @@ export function deviceInfo(options: DeviceInfoOptions = {}): Trackable.Manager {
         height: screen.height,
         pixel_ratio: typeof devicePixelRatio === 'number' ? devicePixelRatio : 1,
       };
+    }
+    if (viewport && typeof window !== 'undefined') {
+      // Not updated on resize, as every context change re-resolves flags.
+      context.viewport = { width: window.innerWidth, height: window.innerHeight };
     }
     if (timezone) {
       try {

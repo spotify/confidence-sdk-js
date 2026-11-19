@@ -91,19 +91,24 @@ describe('deviceInfo', () => {
       locale: navigator.language.replace(/-/g, '_'),
       preferred_languages: [...navigator.languages],
       screen: { width: expect.any(Number), height: expect.any(Number), pixel_ratio: expect.any(Number) },
+      viewport: { width: window.innerWidth, height: window.innerHeight },
       timezone: expect.any(String),
     });
   });
 
   it('formats locale like the mobile SDKs', () => {
     jest.spyOn(navigator, 'language', 'get').mockReturnValue('sv-SE');
-    expect(run({ os: false, device: false, browser: false, screen: false, timezone: false }).locale).toBe('sv_SE');
+    expect(
+      run({ os: false, device: false, browser: false, screen: false, viewport: false, timezone: false }).locale,
+    ).toBe('sv_SE');
     jest.restoreAllMocks();
   });
 
   it('only sets the enabled fields', () => {
-    expect(Object.keys(run({ device: false, browser: false, locale: false, screen: false, timezone: false }))).toEqual([
-      'os',
-    ]);
+    expect(
+      Object.keys(
+        run({ device: false, browser: false, locale: false, screen: false, viewport: false, timezone: false }),
+      ),
+    ).toEqual(['os']);
   });
 });

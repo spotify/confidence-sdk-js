@@ -322,7 +322,7 @@ confidence.track(pageViews());
 
 #### Device info (web)
 
-To add OS, device, browser, locale, screen and timezone information to the context (and therefore to every tracked event and flag resolve), use:
+To add OS, device, browser, locale, screen, viewport and timezone information to the context (and therefore to every tracked event and flag resolve), use:
 
 ```ts
 import { Confidence, deviceInfo } from '@spotify-confidence/sdk';
@@ -339,22 +339,24 @@ This sets the following top-level context keys, replacing any values you have se
   "locale": "en_US",
   "preferred_languages": ["en-US", "sv"],
   "screen": { "width": 393, "height": 852, "pixel_ratio": 3 },
+  "viewport": { "width": 393, "height": 659 },
   "timezone": "Europe/Stockholm"
 }
 ```
 
 Each group can be turned off, e.g. `deviceInfo({ screen: false, timezone: false })`.
 
-| Key                                | Values                                                                         | Compared to the iOS / Android SDKs                                                                                                                                      |
-| ---------------------------------- | ------------------------------------------------------------------------------ | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `os.name`                          | `iOS`, `iPadOS`, `android`, `macOS`, `Windows`, `ChromeOS`, `Linux`, `Unknown` | Same values as iOS (`iOS`, `iPadOS`) and Android (`android`)                                                                                                            |
-| `os.version`                       | iOS, iPadOS and Android only, e.g. `"17.4"`, `"14"`                            | Same as iOS. Android sends the API level as a number (e.g. `34`), so Android rules can't be shared. Omitted on Windows and macOS because browsers freeze these versions |
-| `device.form_factor`               | `mobile`, `tablet`, `desktop`                                                  | Web only. Mobile SDKs set `device.type`, `device.model` and `device.manufacturer`, which browsers don't expose                                                          |
-| `device.touch`                     | `true` / `false`                                                               | Web only                                                                                                                                                                |
-| `locale`                           | e.g. `en_US`                                                                   | Same format as both mobile SDKs                                                                                                                                         |
-| `preferred_languages`              | e.g. `["en-US", "sv"]`                                                         | Same format as iOS; Android uses `en_US`                                                                                                                                |
-| `browser.name` / `browser.version` | e.g. `Chrome` / `"131"` (major version only)                                   | Web only                                                                                                                                                                |
-| `screen`, `timezone`               |                                                                                | Web only                                                                                                                                                                |
+| Key                                | Values                                                                                                        | Compared to the iOS / Android SDKs                                                                                                                                      |
+| ---------------------------------- | ------------------------------------------------------------------------------------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `os.name`                          | `iOS`, `iPadOS`, `android`, `macOS`, `Windows`, `ChromeOS`, `Linux`, `Unknown`                                | Same values as iOS (`iOS`, `iPadOS`) and Android (`android`)                                                                                                            |
+| `os.version`                       | iOS, iPadOS and Android only, e.g. `"17.4"`, `"14"`                                                           | Same as iOS. Android sends the API level as a number (e.g. `34`), so Android rules can't be shared. Omitted on Windows and macOS because browsers freeze these versions |
+| `device.form_factor`               | `mobile`, `tablet`, `desktop`                                                                                 | Web only. Mobile SDKs set `device.type`, `device.model` and `device.manufacturer`, which browsers don't expose                                                          |
+| `device.touch`                     | `true` / `false`                                                                                              | Web only                                                                                                                                                                |
+| `locale`                           | e.g. `en_US`                                                                                                  | Same format as both mobile SDKs                                                                                                                                         |
+| `preferred_languages`              | e.g. `["en-US", "sv"]`                                                                                        | Same format as iOS; Android uses `en_US`                                                                                                                                |
+| `browser.name` / `browser.version` | e.g. `Chrome` / `"131"` (major version only)                                                                  | Web only                                                                                                                                                                |
+| `screen`, `timezone`               |                                                                                                               | Web only                                                                                                                                                                |
+| `viewport`                         | Browser window size when the tracker starts; not updated on resize, as every context change re-resolves flags | Web only                                                                                                                                                                |
 
 The OS and browser are detected from `navigator.userAgentData` brands where available, and otherwise from the user agent, without any additional dependencies. Recognized browsers are Chrome, Safari, Firefox, Edge, Opera, Opera Mini, Samsung Internet, Yandex, Vivaldi and Brave (Brave only via `userAgentData`); others are reported as `Unknown` or as the browser engine they identify as (usually Chrome).
 
