@@ -63,6 +63,28 @@ export function collectUserAgentContext(): UserAgentContext | undefined {
     // Some embedded contexts throw.
   }
 
+  let colorScheme: UserAgentContext['colorScheme'];
+  let prefersReducedMotion: boolean | undefined;
+  let prefersContrast: UserAgentContext['prefersContrast'];
+  let forcedColors: boolean | undefined;
+
+  if (window.matchMedia) {
+    colorScheme = window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light';
+    prefersReducedMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+    forcedColors = window.matchMedia('(forced-colors: active)').matches;
+
+    if (window.matchMedia('(prefers-contrast: more)').matches) {
+      prefersContrast = 'more';
+    } else if (window.matchMedia('(prefers-contrast: less)').matches) {
+      prefersContrast = 'less';
+    } else {
+      prefersContrast = 'no-preference';
+    }
+  }
+
+  const { effectiveType: effectiveConnectionType } =
+    (navigator as Navigator & { connection?: { effectiveType?: string } }).connection ?? {};
+
   return {
     userAgent: navigator.userAgent,
     os: parsed.os.name?.toLowerCase().replace(/\s+/g, ''),
@@ -78,21 +100,10 @@ export function collectUserAgentContext(): UserAgentContext | undefined {
     devicePixelRatio: window.devicePixelRatio,
     uri: `${window.location.origin}${window.location.pathname}`,
     referrer: stripUrlQueryAndHash(document.referrer),
-    colorScheme: window.matchMedia
-      ? window.matchMedia('(prefers-color-scheme: dark)').matches
-        ? 'dark'
-        : 'light'
-      : undefined,
-    prefersReducedMotion: window.matchMedia ? window.matchMedia('(prefers-reduced-motion: reduce)').matches : undefined,
-    prefersContrast: window.matchMedia
-      ? window.matchMedia('(prefers-contrast: more)').matches
-        ? 'more'
-        : window.matchMedia('(prefers-contrast: less)').matches
-        ? 'less'
-        : 'no-preference'
-      : undefined,
-    forcedColors: window.matchMedia ? window.matchMedia('(forced-colors: active)').matches : undefined,
-    effectiveConnectionType: (navigator as Navigator & { connection?: { effectiveType?: string } }).connection
-      ?.effectiveType,
+    colorScheme,
+    prefersReducedMotion,
+    prefersContrast,
+    forcedColors,
+    effectiveConnectionType,
   };
 }
