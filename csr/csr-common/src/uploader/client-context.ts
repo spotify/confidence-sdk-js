@@ -51,6 +51,26 @@ export interface ClientContext {
   [key: string]: ContextValue | undefined;
 }
 
+function mediaMatches(query: string): boolean | undefined {
+  return window.matchMedia?.(query).matches;
+}
+
+function collectColorScheme(): UserAgentContext['colorScheme'] {
+  if (!window.matchMedia) return undefined;
+  return mediaMatches('(prefers-color-scheme: dark)') ? 'dark' : 'light';
+}
+
+function collectContrastPreference(): UserAgentContext['prefersContrast'] {
+  if (!window.matchMedia) return undefined;
+  if (mediaMatches('(prefers-contrast: more)')) return 'more';
+  if (mediaMatches('(prefers-contrast: less)')) return 'less';
+  return 'no-preference';
+}
+
+function collectEffectiveConnectionType(): string | undefined {
+  return (navigator as Navigator & { connection?: { effectiveType?: string } }).connection?.effectiveType;
+}
+
 export function collectUserAgentContext(): UserAgentContext | undefined {
   if (typeof window === 'undefined' || typeof navigator === 'undefined') return undefined;
 
@@ -62,28 +82,6 @@ export function collectUserAgentContext(): UserAgentContext | undefined {
   } catch (_e) {
     // Some embedded contexts throw.
   }
-
-  let colorScheme: UserAgentContext['colorScheme'];
-  let prefersReducedMotion: boolean | undefined;
-  let prefersContrast: UserAgentContext['prefersContrast'];
-  let forcedColors: boolean | undefined;
-
-  if (window.matchMedia) {
-    colorScheme = window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light';
-    prefersReducedMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
-    forcedColors = window.matchMedia('(forced-colors: active)').matches;
-
-    if (window.matchMedia('(prefers-contrast: more)').matches) {
-      prefersContrast = 'more';
-    } else if (window.matchMedia('(prefers-contrast: less)').matches) {
-      prefersContrast = 'less';
-    } else {
-      prefersContrast = 'no-preference';
-    }
-  }
-
-  const { effectiveType: effectiveConnectionType } =
-    (navigator as Navigator & { connection?: { effectiveType?: string } }).connection ?? {};
 
   return {
     userAgent: navigator.userAgent,
@@ -100,10 +98,10 @@ export function collectUserAgentContext(): UserAgentContext | undefined {
     devicePixelRatio: window.devicePixelRatio,
     uri: `${window.location.origin}${window.location.pathname}`,
     referrer: stripUrlQueryAndHash(document.referrer),
-    colorScheme,
-    prefersReducedMotion,
-    prefersContrast,
-    forcedColors,
-    effectiveConnectionType,
+    colorScheme: collectColorScheme(),
+    prefersReducedMotion: mediaMatches('(prefers-reduced-motion: reduce)'),
+    prefersContrast: collectContrastPreference(),
+    forcedColors: mediaMatches('(forced-colors: active)'),
+    effectiveConnectionType: collectEffectiveConnectionType(),
   };
 }
