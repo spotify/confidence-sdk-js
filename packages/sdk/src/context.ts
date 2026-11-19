@@ -1,5 +1,4 @@
 import { Value } from './Value';
-import type { DeviceInfo } from './trackers/deviceInfo';
 
 /**
  * Interface that describes a Contextual
@@ -37,6 +36,4 @@ export interface Context extends Value.Struct {
     title: string;
     url: string;
   };
-  /** Device metadata, see {@link deviceInfo} */
-  device?: DeviceInfo;
 }

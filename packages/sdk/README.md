@@ -322,28 +322,28 @@ confidence.track(pageViews());
 
 #### Device info (web)
 
-To add device, OS and browser information to the context (and therefore to every tracked event and flag resolve), use:
+To add OS, device, browser, locale, screen and timezone information to the context (and therefore to every tracked event and flag resolve), use:
 
 ```ts
 import { Confidence, deviceInfo } from '@spotify-confidence/sdk';
 confidence.track(deviceInfo());
 ```
 
-This sets a `device` field on the context:
+This adds the following fields to the context. `os`, `device`, `locale` and `preferred_languages` use the same names as the device info context in the Confidence iOS and Android SDKs, so the same targeting rules and queries work across platforms. `browser`, `screen` and `timezone` are web-only.
 
 ```json
 {
-  "device": {
-    "os": { "name": "macOS", "version": "10.15.7" },
-    "browser": { "name": "Chrome", "version": "131" },
-    "type": "desktop",
-    "language": "en-US",
-    "timezone": "Europe/Stockholm",
-    "screen": { "width": 1728, "height": 1117, "pixel_ratio": 2 },
-    "touch": false
-  }
+  "os": { "name": "macOS", "version": "10.15.7" },
+  "device": { "type": "desktop", "touch": false },
+  "browser": { "name": "Chrome", "version": "131" },
+  "locale": "en-US",
+  "preferred_languages": ["en-US", "sv"],
+  "screen": { "width": 1728, "height": 1117, "pixel_ratio": 2 },
+  "timezone": "Europe/Stockholm"
 }
 ```
+
+Each group can be turned off, e.g. `deviceInfo({ screen: false, timezone: false })`.
 
 The OS and browser are detected from the user agent (and `navigator.userAgentData` where available) without any additional dependencies. Only the major OS and browser families are recognized; anything else is reported as `Unknown`.
 

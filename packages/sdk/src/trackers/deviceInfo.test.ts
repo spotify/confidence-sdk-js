@@ -53,17 +53,27 @@ describe('parseDeviceInfo', () => {
 });
 
 describe('deviceInfo', () => {
-  it('sets device context', () => {
+  function run(options?: Parameters<typeof deviceInfo>[0]) {
     const controller = { setContext: jest.fn() } as unknown as jest.Mocked<Trackable.Controller>;
-    deviceInfo()(controller);
-    expect(controller.setContext).toHaveBeenCalledWith({
-      device: expect.objectContaining({
-        os: expect.any(Object),
-        browser: expect.any(Object),
-        type: expect.any(String),
-        touch: expect.any(Boolean),
-        language: expect.any(String),
-      }),
+    deviceInfo(options)(controller);
+    return controller.setContext.mock.calls[0][0];
+  }
+
+  it('sets all fields using the mobile SDK context layout by default', () => {
+    expect(run()).toEqual({
+      os: expect.objectContaining({ name: expect.any(String) }),
+      device: { type: expect.any(String), touch: expect.any(Boolean) },
+      browser: expect.objectContaining({ name: expect.any(String) }),
+      locale: navigator.language,
+      preferred_languages: [...navigator.languages],
+      screen: { width: expect.any(Number), height: expect.any(Number), pixel_ratio: expect.any(Number) },
+      timezone: expect.any(String),
     });
+  });
+
+  it('only sets the enabled fields', () => {
+    expect(Object.keys(run({ device: false, browser: false, locale: false, screen: false, timezone: false }))).toEqual([
+      'os',
+    ]);
   });
 });

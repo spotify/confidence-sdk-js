@@ -157,7 +157,6 @@ export interface Configuration extends ConfidenceOptions {
 
 // @public
 export interface Context extends Value.Struct {
-    device?: DeviceInfo;
     page?: {
         path: string;
         referrer: string;
@@ -178,28 +177,20 @@ export interface Contextual<Self extends Contextual<Self>> {
 }
 
 // @public
-export type DeviceInfo = {
-    os: {
-        name: string;
-        version?: string;
-    };
-    browser: {
-        name: string;
-        version?: string;
-    };
-    type: 'mobile' | 'tablet' | 'desktop';
-    language?: string;
-    timezone?: string;
-    screen?: {
-        width: number;
-        height: number;
-        pixel_ratio: number;
-    };
-    touch: boolean;
+export function deviceInfo({ os, device, browser, locale, screen: withScreen, timezone, }?: DeviceInfoOptions): Trackable.Manager;
+
+// @public
+export type DeviceInfoOptions = {
+    os?: boolean;
+    device?: boolean;
+    browser?: boolean;
+    locale?: boolean;
+    screen?: boolean;
+    timezone?: boolean;
 };
 
 // @public
-export function deviceInfo(): Trackable.Manager;
+export type DeviceType = 'mobile' | 'tablet' | 'desktop';
 
 // @public
 export type EvaluationContext = {
@@ -287,6 +278,12 @@ export interface FlagResolver extends Contextual<FlagResolver> {
     getFlag<T extends Value>(path: string, defaultValue: T): Promise<T>;
     subscribe(onStateChange?: StateObserver): () => void;
 }
+
+// @public
+export type NamedVersion = {
+    name: string;
+    version?: string;
+};
 
 // @public
 export function pageViews(): Trackable.Manager;

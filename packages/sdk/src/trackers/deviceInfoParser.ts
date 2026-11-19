@@ -1,4 +1,4 @@
-import type { DeviceInfo } from './deviceInfo';
+import type { DeviceType, NamedVersion } from './deviceInfo';
 
 export type UserAgentData = {
   platform?: string;
@@ -34,7 +34,7 @@ const BRAND_NAMES: Record<string, string> = {
   Chromium: 'Chromium',
 };
 
-function match(rules: Rule[], userAgent: string): { name: string; version?: string } {
+function match(rules: Rule[], userAgent: string): NamedVersion {
   for (const [name, pattern] of rules) {
     const result = pattern.exec(userAgent);
     if (result) {
@@ -45,7 +45,7 @@ function match(rules: Rule[], userAgent: string): { name: string; version?: stri
   return { name: 'Unknown' };
 }
 
-function deviceType(userAgent: string, uaData: UserAgentData | undefined): DeviceInfo['type'] {
+function deviceType(userAgent: string, uaData: UserAgentData | undefined): DeviceType {
   // iPadOS 13+ reports itself as macOS, so detect it via touch support.
   if (/iPad|Tablet/.test(userAgent) || (/Android/.test(userAgent) && !/Mobile/.test(userAgent))) return 'tablet';
   if (/Macintosh/.test(userAgent) && navigator.maxTouchPoints > 1) return 'tablet';
@@ -56,7 +56,11 @@ function deviceType(userAgent: string, uaData: UserAgentData | undefined): Devic
 export function parseDeviceInfo(
   userAgent: string,
   uaData?: UserAgentData,
-): Pick<DeviceInfo, 'os' | 'browser' | 'type'> {
+): {
+  os: NamedVersion;
+  browser: NamedVersion;
+  type: DeviceType;
+} {
   const os = match(OS_RULES, userAgent);
   const type = deviceType(userAgent, uaData);
   if (os.name === 'macOS' && type === 'tablet') {
