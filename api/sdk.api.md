@@ -278,15 +278,6 @@ export interface FlagResolver extends Contextual<FlagResolver> {
 }
 
 // @public
-export type FormFactor = 'mobile' | 'tablet' | 'desktop';
-
-// @public
-export type NamedVersion = {
-    name: string;
-    version?: string;
-};
-
-// @public
 export function pageViews(): Trackable.Manager;
 
 // Warning: (ae-missing-release-tag) "SimpleFetch" is part of the package's API, but it is missing a release tag (@alpha, @beta, @public, or @internal)

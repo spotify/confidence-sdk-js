@@ -2,8 +2,6 @@ import { Trackable } from '../Trackable';
 import { Value } from '../Value';
 import { parseDeviceInfo, type UserAgentData } from './deviceInfoParser';
 
-export type { NamedVersion, FormFactor } from './deviceInfoParser';
-
 /**
  * Options defining which device information to add to the context. By default everything is added.
  * @public
@@ -52,8 +50,8 @@ export type DeviceInfoOptions = {
  * @remarks
  * Sets the top-level context keys `os`, `device`, `browser`, `locale`, `preferred_languages`,
  * `screen`, `viewport` and `timezone`, replacing any values previously set under those keys.
- * `os`, `device`, `locale` and `preferred_languages` follow the device info context of the
- * Confidence iOS and Android SDKs; see the README for how values differ per platform.
+ * `os.name` uses the same values as the Confidence iOS and Android SDKs, and `locale` uses their
+ * `en_US` format for simple locales. Other keys differ per platform; see the README.
  * @public
  */
 export function deviceInfo(options: DeviceInfoOptions = {}): Trackable.Manager {
@@ -88,8 +86,9 @@ export function deviceInfo(options: DeviceInfoOptions = {}): Trackable.Manager {
         pixel_ratio: typeof devicePixelRatio === 'number' ? devicePixelRatio : 1,
       };
     }
-    if (viewport && typeof window !== 'undefined') {
-      // Not updated on resize, as every context change re-resolves flags.
+    // Not updated on resize, as every context change re-resolves flags. Skipped when the page starts
+    // hidden or prerendered, where the size can be 0.
+    if (viewport && typeof window !== 'undefined' && window.innerWidth > 0 && window.innerHeight > 0) {
       context.viewport = { width: window.innerWidth, height: window.innerHeight };
     }
     if (timezone) {
