@@ -67,6 +67,11 @@ function collectContrastPreference(): UserAgentContext['prefersContrast'] {
   return 'no-preference';
 }
 
+function collectUri(): string {
+  if (window.location.protocol === 'file:') return 'file:///[local]';
+  return `${window.location.origin}${window.location.pathname}`;
+}
+
 function collectEffectiveConnectionType(): string | undefined {
   return (navigator as Navigator & { connection?: { effectiveType?: string } }).connection?.effectiveType;
 }
@@ -96,7 +101,7 @@ export function collectUserAgentContext(): UserAgentContext | undefined {
     screenWidth: window.screen.width,
     screenHeight: window.screen.height,
     devicePixelRatio: window.devicePixelRatio,
-    uri: `${window.location.origin}${window.location.pathname}`,
+    uri: collectUri(),
     referrer: stripUrlQueryAndHash(document.referrer),
     colorScheme: collectColorScheme(),
     prefersReducedMotion: mediaMatches('(prefers-reduced-motion: reduce)'),

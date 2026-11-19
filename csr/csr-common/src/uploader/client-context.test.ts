@@ -19,7 +19,7 @@ function stubBrowser(
     ...overrides.navigator,
   });
   vi.stubGlobal('window', {
-    location: { origin: 'https://example.com', pathname: '/path' },
+    location: { protocol: 'https:', origin: 'https://example.com', pathname: '/path' },
     innerWidth: 1440,
     innerHeight: 900,
     screen: { width: 2560, height: 1440 },
@@ -99,6 +99,19 @@ describe('collectUserAgentContext', () => {
   ])('strips query/hash from referrer %s', (referrer, expected) => {
     stubBrowser({ document: { referrer } });
     expect(collectUserAgentContext()?.referrer).toBe(expected);
+  });
+
+  it('redacts filesystem path for file: protocol URIs', () => {
+    stubBrowser({
+      window: {
+        location: {
+          protocol: 'file:',
+          origin: 'file://',
+          pathname: '/Users/adam/Library/Application Support/chirp/dashboard/index.html',
+        },
+      },
+    });
+    expect(collectUserAgentContext()?.uri).toBe('file:///[local]');
   });
 
   it('excludes query/hash from the initial document URI', () => {
