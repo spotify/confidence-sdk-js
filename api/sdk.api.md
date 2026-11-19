@@ -157,6 +157,7 @@ export interface Configuration extends ConfidenceOptions {
 
 // @public
 export interface Context extends Value.Struct {
+    device?: DeviceInfo;
     page?: {
         path: string;
         referrer: string;
@@ -175,6 +176,30 @@ export interface Contextual<Self extends Contextual<Self>> {
     setContext(context: Context): void;
     withContext(context: Context): Self;
 }
+
+// @public
+export type DeviceInfo = {
+    os: {
+        name: string;
+        version?: string;
+    };
+    browser: {
+        name: string;
+        version?: string;
+    };
+    type: 'mobile' | 'tablet' | 'desktop';
+    language?: string;
+    timezone?: string;
+    screen?: {
+        width: number;
+        height: number;
+        pixel_ratio: number;
+    };
+    touch: boolean;
+};
+
+// @public
+export function deviceInfo(): Trackable.Manager;
 
 // @public
 export type EvaluationContext = {

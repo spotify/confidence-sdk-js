@@ -320,6 +320,33 @@ import { Confidence, pageViews } from '@spotify-confidence/sdk';
 confidence.track(pageViews());
 ```
 
+#### Device info (web)
+
+To add device, OS and browser information to the context (and therefore to every tracked event and flag resolve), use:
+
+```ts
+import { Confidence, deviceInfo } from '@spotify-confidence/sdk';
+confidence.track(deviceInfo());
+```
+
+This sets a `device` field on the context:
+
+```json
+{
+  "device": {
+    "os": { "name": "macOS", "version": "10.15.7" },
+    "browser": { "name": "Chrome", "version": "131" },
+    "type": "desktop",
+    "language": "en-US",
+    "timezone": "Europe/Stockholm",
+    "screen": { "width": 1728, "height": 1117, "pixel_ratio": 2 },
+    "touch": false
+  }
+}
+```
+
+The OS and browser are detected from the user agent (and `navigator.userAgentData` where available) without any additional dependencies. Only the major OS and browser families are recognized; anything else is reported as `Unknown`.
+
 #### Web vitals (web)
 
 To automatically send tracking events containing [web vitals data](https://web.dev/articles/vitals), use:
