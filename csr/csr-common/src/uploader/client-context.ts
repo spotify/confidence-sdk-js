@@ -34,6 +34,16 @@ export type UserAgentContext = {
   uri?: string;
   /** Document referrer — without query/hash to avoid leaking PII. */
   referrer?: string;
+  /** Active color scheme at session init — `dark` or `light`. */
+  colorScheme?: 'dark' | 'light';
+  /** Whether the user prefers reduced motion. */
+  prefersReducedMotion?: boolean;
+  /** User contrast preference — `more`, `less`, or `no-preference`. */
+  prefersContrast?: 'more' | 'less' | 'no-preference';
+  /** Whether Windows High Contrast / forced-colors mode is active. */
+  forcedColors?: boolean;
+  /** Network effective type at session init (e.g. `4g`, `3g`). */
+  effectiveConnectionType?: string;
 };
 
 export interface ClientContext {
@@ -68,5 +78,21 @@ export function collectUserAgentContext(): UserAgentContext | undefined {
     devicePixelRatio: window.devicePixelRatio,
     uri: `${window.location.origin}${window.location.pathname}`,
     referrer: stripUrlQueryAndHash(document.referrer),
+    colorScheme: window.matchMedia
+      ? window.matchMedia('(prefers-color-scheme: dark)').matches
+        ? 'dark'
+        : 'light'
+      : undefined,
+    prefersReducedMotion: window.matchMedia ? window.matchMedia('(prefers-reduced-motion: reduce)').matches : undefined,
+    prefersContrast: window.matchMedia
+      ? window.matchMedia('(prefers-contrast: more)').matches
+        ? 'more'
+        : window.matchMedia('(prefers-contrast: less)').matches
+          ? 'less'
+          : 'no-preference'
+      : undefined,
+    forcedColors: window.matchMedia ? window.matchMedia('(forced-colors: active)').matches : undefined,
+    effectiveConnectionType: (navigator as Navigator & { connection?: { effectiveType?: string } }).connection
+      ?.effectiveType,
   };
 }

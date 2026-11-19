@@ -24,6 +24,7 @@ function stubBrowser(
     innerHeight: 900,
     screen: { width: 2560, height: 1440 },
     devicePixelRatio: 2,
+    matchMedia: () => ({ matches: false }),
     ...overrides.window,
   });
   vi.stubGlobal('document', {
@@ -81,6 +82,10 @@ describe('collectUserAgentContext', () => {
       devicePixelRatio: 2,
       uri: 'https://example.com/path',
       referrer: 'https://referrer.example/',
+      colorScheme: 'light',
+      prefersReducedMotion: false,
+      prefersContrast: 'no-preference',
+      forcedColors: false,
     });
   });
 
@@ -164,6 +169,70 @@ describe('collectUserAgentContext', () => {
     const ctx = collectUserAgentContext();
     expect(ctx?.os).toBe('chromeos');
     expect(ctx?.browser).toBe('microsoftedge');
+  });
+
+  it('reports colorScheme dark when prefers-color-scheme matches', () => {
+    stubBrowser({
+      window: {
+        matchMedia: (query: string) => ({ matches: query === '(prefers-color-scheme: dark)' }),
+      },
+    });
+    expect(collectUserAgentContext()?.colorScheme).toBe('dark');
+  });
+
+  it('reports prefersReducedMotion true when prefers-reduced-motion matches', () => {
+    stubBrowser({
+      window: {
+        matchMedia: (query: string) => ({ matches: query === '(prefers-reduced-motion: reduce)' }),
+      },
+    });
+    expect(collectUserAgentContext()?.prefersReducedMotion).toBe(true);
+  });
+
+  it('reports prefersContrast more when prefers-contrast: more matches', () => {
+    stubBrowser({
+      window: {
+        matchMedia: (query: string) => ({ matches: query === '(prefers-contrast: more)' }),
+      },
+    });
+    expect(collectUserAgentContext()?.prefersContrast).toBe('more');
+  });
+
+  it('reports prefersContrast less when prefers-contrast: less matches', () => {
+    stubBrowser({
+      window: {
+        matchMedia: (query: string) => ({ matches: query === '(prefers-contrast: less)' }),
+      },
+    });
+    expect(collectUserAgentContext()?.prefersContrast).toBe('less');
+  });
+
+  it('reports forcedColors true when forced-colors: active matches', () => {
+    stubBrowser({
+      window: {
+        matchMedia: (query: string) => ({ matches: query === '(forced-colors: active)' }),
+      },
+    });
+    expect(collectUserAgentContext()?.forcedColors).toBe(true);
+  });
+
+  it('captures effectiveConnectionType from navigator.connection', () => {
+    stubBrowser({ navigator: { connection: { effectiveType: '4g' } } });
+    expect(collectUserAgentContext()?.effectiveConnectionType).toBe('4g');
+  });
+
+  it('omits effectiveConnectionType when navigator.connection is absent', () => {
+    stubBrowser();
+    expect(collectUserAgentContext()?.effectiveConnectionType).toBeUndefined();
+  });
+
+  it('falls back gracefully when matchMedia is unavailable', () => {
+    stubBrowser({ window: { matchMedia: undefined } });
+    const ctx = collectUserAgentContext();
+    expect(ctx?.colorScheme).toBeUndefined();
+    expect(ctx?.prefersReducedMotion).toBeUndefined();
+    expect(ctx?.prefersContrast).toBeUndefined();
+    expect(ctx?.forcedColors).toBeUndefined();
   });
 
   it('omits timeZone when Intl.DateTimeFormat throws', () => {
