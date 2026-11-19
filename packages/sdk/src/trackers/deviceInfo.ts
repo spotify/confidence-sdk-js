@@ -2,22 +2,10 @@ import { Trackable } from '../Trackable';
 import { Value } from '../Value';
 import { parseDeviceInfo, type UserAgentData } from './deviceInfoParser';
 
-/**
- * A name with an optional version, e.g. an OS or browser.
- * @public
- */
-export type NamedVersion = { name: string; version?: string };
-
-/**
- * Form factor of the device.
- * @public
- */
-export type DeviceType = 'mobile' | 'tablet' | 'desktop';
+export type { NamedVersion, FormFactor } from './deviceInfoParser';
 
 /**
  * Options defining which device information to add to the context. By default everything is added.
- * Field names match the device info context of the Confidence iOS and Android SDKs, with
- * `browser`, `screen` and `timezone` as web-only additions.
  * @public
  */
 export type DeviceInfoOptions = {
@@ -27,7 +15,7 @@ export type DeviceInfoOptions = {
    */
   os?: boolean;
   /**
-   * Add `device.type` and `device.touch`
+   * Add `device.form_factor` and `device.touch`
    * @defaultValue true
    */
   device?: boolean;
@@ -53,37 +41,38 @@ export type DeviceInfoOptions = {
   timezone?: boolean;
 };
 
-function safely<T>(fn: () => T): T | undefined {
-  try {
-    return fn();
-  } catch (e) {
-    return undefined;
-  }
-}
-
 /**
  * Adds OS, device, browser, locale, screen and timezone information to the context.
+ *
+ * @remarks
+ * Sets the top-level context keys `os`, `device`, `browser`, `locale`, `preferred_languages`,
+ * `screen` and `timezone`, replacing any values previously set under those keys.
+ * `os`, `device`, `locale` and `preferred_languages` follow the device info context of the
+ * Confidence iOS and Android SDKs; see the README for how values differ per platform.
  * @public
  */
-export function deviceInfo({
-  os = true,
-  device = true,
-  browser = true,
-  locale = true,
-  screen: withScreen = true,
-  timezone = true,
-}: DeviceInfoOptions = {}): Trackable.Manager {
+export function deviceInfo(options: DeviceInfoOptions = {}): Trackable.Manager {
+  const {
+    os = true,
+    device = true,
+    browser = true,
+    locale = true,
+    screen: withScreen = true,
+    timezone = true,
+  } = options;
   return controller => {
     if (typeof navigator === 'undefined') return;
     const uaData = (navigator as Navigator & { userAgentData?: UserAgentData }).userAgentData;
-    const parsed = parseDeviceInfo(navigator.userAgent ?? '', uaData);
+    const maxTouchPoints = navigator.maxTouchPoints ?? 0;
+    const parsed = parseDeviceInfo(navigator.userAgent ?? '', uaData, maxTouchPoints);
     const context: Record<string, Value> = {};
 
     if (os) context.os = parsed.os;
-    if (device) context.device = { type: parsed.type, touch: (navigator.maxTouchPoints ?? 0) > 0 };
+    if (device) context.device = { form_factor: parsed.formFactor, touch: maxTouchPoints > 0 };
     if (browser) context.browser = parsed.browser;
     if (locale && navigator.language) {
-      context.locale = navigator.language;
+      // Mobile SDKs report locale identifiers with underscores (en_US).
+      context.locale = navigator.language.replace(/-/g, '_');
       context.preferred_languages = [...(navigator.languages ?? [navigator.language])];
     }
     if (withScreen && typeof screen !== 'undefined') {
@@ -94,8 +83,11 @@ export function deviceInfo({
       };
     }
     if (timezone) {
-      const zone = safely(() => new Intl.DateTimeFormat().resolvedOptions().timeZone);
-      if (zone) context.timezone = zone;
+      try {
+        context.timezone = new Intl.DateTimeFormat().resolvedOptions().timeZone;
+      } catch (e) {
+        // Intl unavailable; skip timezone.
+      }
     }
 
     controller.setContext(context);

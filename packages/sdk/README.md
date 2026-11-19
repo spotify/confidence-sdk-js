@@ -329,23 +329,34 @@ import { Confidence, deviceInfo } from '@spotify-confidence/sdk';
 confidence.track(deviceInfo());
 ```
 
-This adds the following fields to the context. `os`, `device`, `locale` and `preferred_languages` use the same names as the device info context in the Confidence iOS and Android SDKs, so the same targeting rules and queries work across platforms. `browser`, `screen` and `timezone` are web-only.
+This sets the following top-level context keys, replacing any values you have set under the same keys:
 
 ```json
 {
-  "os": { "name": "macOS", "version": "10.15.7" },
-  "device": { "type": "desktop", "touch": false },
-  "browser": { "name": "Chrome", "version": "131" },
-  "locale": "en-US",
+  "os": { "name": "iOS", "version": "17.4" },
+  "device": { "form_factor": "mobile", "touch": true },
+  "browser": { "name": "Safari", "version": "17" },
+  "locale": "en_US",
   "preferred_languages": ["en-US", "sv"],
-  "screen": { "width": 1728, "height": 1117, "pixel_ratio": 2 },
+  "screen": { "width": 393, "height": 852, "pixel_ratio": 3 },
   "timezone": "Europe/Stockholm"
 }
 ```
 
 Each group can be turned off, e.g. `deviceInfo({ screen: false, timezone: false })`.
 
-The OS and browser are detected from the user agent (and `navigator.userAgentData` where available) without any additional dependencies. Only the major OS and browser families are recognized; anything else is reported as `Unknown`.
+| Key                                | Values                                                                         | Compared to the iOS / Android SDKs                                                                                                                                      |
+| ---------------------------------- | ------------------------------------------------------------------------------ | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `os.name`                          | `iOS`, `iPadOS`, `android`, `macOS`, `Windows`, `ChromeOS`, `Linux`, `Unknown` | Same values as iOS (`iOS`, `iPadOS`) and Android (`android`)                                                                                                            |
+| `os.version`                       | iOS, iPadOS and Android only, e.g. `"17.4"`, `"14"`                            | Same as iOS. Android sends the API level as a number (e.g. `34`), so Android rules can't be shared. Omitted on Windows and macOS because browsers freeze these versions |
+| `device.form_factor`               | `mobile`, `tablet`, `desktop`                                                  | Web only. Mobile SDKs set `device.type`, `device.model` and `device.manufacturer`, which browsers don't expose                                                          |
+| `device.touch`                     | `true` / `false`                                                               | Web only                                                                                                                                                                |
+| `locale`                           | e.g. `en_US`                                                                   | Same format as both mobile SDKs                                                                                                                                         |
+| `preferred_languages`              | e.g. `["en-US", "sv"]`                                                         | Same format as iOS; Android uses `en_US`                                                                                                                                |
+| `browser.name` / `browser.version` | e.g. `Chrome` / `"131"` (major version only)                                   | Web only                                                                                                                                                                |
+| `screen`, `timezone`               |                                                                                | Web only                                                                                                                                                                |
+
+The OS and browser are detected from `navigator.userAgentData` brands where available, and otherwise from the user agent, without any additional dependencies. Recognized browsers are Chrome, Safari, Firefox, Edge, Opera, Opera Mini, Samsung Internet, Yandex, Vivaldi and Brave (Brave only via `userAgentData`); others are reported as `Unknown` or as the browser engine they identify as (usually Chrome).
 
 #### Web vitals (web)
 

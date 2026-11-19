@@ -177,7 +177,7 @@ export interface Contextual<Self extends Contextual<Self>> {
 }
 
 // @public
-export function deviceInfo({ os, device, browser, locale, screen: withScreen, timezone, }?: DeviceInfoOptions): Trackable.Manager;
+export function deviceInfo(options?: DeviceInfoOptions): Trackable.Manager;
 
 // @public
 export type DeviceInfoOptions = {
@@ -188,9 +188,6 @@ export type DeviceInfoOptions = {
     screen?: boolean;
     timezone?: boolean;
 };
-
-// @public
-export type DeviceType = 'mobile' | 'tablet' | 'desktop';
 
 // @public
 export type EvaluationContext = {
@@ -278,6 +275,9 @@ export interface FlagResolver extends Contextual<FlagResolver> {
     getFlag<T extends Value>(path: string, defaultValue: T): Promise<T>;
     subscribe(onStateChange?: StateObserver): () => void;
 }
+
+// @public
+export type FormFactor = 'mobile' | 'tablet' | 'desktop';
 
 // @public
 export type NamedVersion = {
