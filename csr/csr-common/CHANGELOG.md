@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.18.16](https://github.com/spotify/confidence-sdk-js/compare/csr-common-v0.18.15...csr-common-v0.18.16) (2026-11-19)
+
+
+### ✨ New Features
+
+* **csr:** collect media preferences and connection type in UserAgentContext ([#482](https://github.com/spotify/confidence-sdk-js/issues/482)) ([b53572a](https://github.com/spotify/confidence-sdk-js/commit/b53572aedd6bb3244ef9dc9b3ef9e76002b6bdc2))
+
 ## [0.18.15](https://github.com/spotify/confidence-sdk-js/compare/csr-common-v0.18.14...csr-common-v0.18.15) (2026-11-18)
 
 
