@@ -88,8 +88,8 @@ export function collectUserAgentContext(): UserAgentContext | undefined {
       ? window.matchMedia('(prefers-contrast: more)').matches
         ? 'more'
         : window.matchMedia('(prefers-contrast: less)').matches
-          ? 'less'
-          : 'no-preference'
+        ? 'less'
+        : 'no-preference'
       : undefined,
     forcedColors: window.matchMedia ? window.matchMedia('(forced-colors: active)').matches : undefined,
     effectiveConnectionType: (navigator as Navigator & { connection?: { effectiveType?: string } }).connection
