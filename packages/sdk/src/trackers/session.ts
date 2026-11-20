@@ -44,13 +44,20 @@ export type SessionOptions = {
    * @defaultValue `['utm_source', 'utm_medium', 'utm_campaign', 'utm_term', 'utm_content', 'utm_id', 'gclid', 'fbclid', 'msclkid', 'li_fat_id']`
    */
   params?: readonly string[];
+  /**
+   * Start a new session when the URL has campaign parameters (from `params`) different from those
+   * that started the current session, like Universal Analytics did. Off by default, matching GA4 and
+   * Amplitude, where a campaign change mid-session keeps the session.
+   * @defaultValue false
+   */
+  newSessionOnCampaign?: boolean;
 };
 
 /**
  * Options for the {@link campaign} tracker.
  * @public
  */
-export type CampaignOptions = SessionOptions & {
+export type CampaignOptions = Omit<SessionOptions, 'newSessionOnCampaign'> & {
   /**
    * Days to keep the first touch in `first_campaign`, or `false` to not track the first touch.
    * @defaultValue 90
@@ -156,8 +163,9 @@ function expiryTimer(cookie: string, timeoutMs: number, onExpire: () => void) {
 /**
  * Adds `session_id`, `session_start` (ISO timestamp) and `session_count` (number of sessions of
  * this browser) to the context. A new session starts after `timeout` minutes without user activity
- * (pointer, keyboard, scroll, navigation or the page becoming visible), or when the URL has campaign
- * parameters (UTM or click IDs) different from those that started the current session.
+ * (pointer, keyboard, scroll, navigation or the page becoming visible), and, with
+ * `newSessionOnCampaign`, when the URL has campaign parameters (UTM or click IDs) different from
+ * those that started the current session.
  *
  * @remarks
  * When the session expires the session fields are removed from the context, and a new session
@@ -165,7 +173,7 @@ function expiryTimer(cookie: string, timeoutMs: number, onExpire: () => void) {
  * @public
  */
 export function session(options: SessionOptions = {}): Trackable.Manager {
-  const { timeout = 30, domain, params: keys = DEFAULT_CAMPAIGN_PARAMS } = options;
+  const { timeout = 30, domain, params: keys = DEFAULT_CAMPAIGN_PARAMS, newSessionOnCampaign = false } = options;
   return controller => {
     if (typeof document === 'undefined') return undefined;
     let current: string | undefined;
@@ -175,7 +183,7 @@ export function session(options: SessionOptions = {}): Trackable.Manager {
     });
     const refresh = () => {
       let stored = readJson<StoredSession>(SESSION_COOKIE);
-      const urlParams = paramsFromUrl(keys);
+      const urlParams = newSessionOnCampaign ? paramsFromUrl(keys) : undefined;
       const params = urlParams && paramsKey(urlParams, keys);
       if (!stored || (params && params !== stored.params)) {
         const count = (Number(Cookie.get(SESSION_COUNT_COOKIE)) || 0) + 1;

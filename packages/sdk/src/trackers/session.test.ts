@@ -79,9 +79,18 @@ describe('session', () => {
     second.close();
   });
 
-  it('starts a new session when new campaign parameters arrive', async () => {
+  it('keeps the session when new campaign parameters arrive by default', async () => {
     history.replaceState(null, '', '/?utm_source=newsletter');
-    const { last, close } = run(session());
+    const { controller, close } = run(session());
+    history.pushState(null, '', '/?utm_source=ads');
+    await Promise.resolve();
+    expect(controller.setContext).toHaveBeenCalledTimes(1);
+    close();
+  });
+
+  it('starts a new session when new campaign parameters arrive with newSessionOnCampaign', async () => {
+    history.replaceState(null, '', '/?utm_source=newsletter');
+    const { last, close } = run(session({ newSessionOnCampaign: true }));
     const before = last();
 
     history.pushState(null, '', '/?utm_source=ads');
@@ -93,7 +102,7 @@ describe('session', () => {
 
   it('keeps the session when navigating without or with the same campaign parameters', async () => {
     history.replaceState(null, '', '/?utm_source=newsletter');
-    const { controller, close } = run(session());
+    const { controller, close } = run(session({ newSessionOnCampaign: true }));
     history.pushState(null, '', '/pricing');
     history.pushState(null, '', '/?utm_source=newsletter');
     await Promise.resolve();
@@ -302,7 +311,7 @@ describe('params option', () => {
 
   it('ignores parameters that are not configured when deciding on a new session', async () => {
     history.replaceState(null, '', '/?utm_source=google');
-    const { controller, close } = run(session({ params: ['utm_source'] }));
+    const { controller, close } = run(session({ params: ['utm_source'], newSessionOnCampaign: true }));
     history.pushState(null, '', '/?utm_source=google&gclid=abc');
     await Promise.resolve();
     expect(controller.setContext).toHaveBeenCalledTimes(1);

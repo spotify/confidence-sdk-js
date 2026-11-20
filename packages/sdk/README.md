@@ -331,10 +331,11 @@ confidence.track(session());
 
 This sets `session_id`, `session_start` (ISO timestamp) and `session_count` (the number of sessions of this browser, kept for a year, so `1` means a new visitor).
 
-A new session starts:
+A new session starts after 30 minutes without user activity (pointer, keyboard, scroll, navigation or the page becoming visible again). A new campaign mid-session keeps the session, as in GA4 and Amplitude. To also start a new session when the URL has campaign parameters (UTM parameters or click IDs, see below) that differ from the ones that started the current session, as Universal Analytics did, use `newSessionOnCampaign`:
 
-- after 30 minutes without user activity (pointer, keyboard, scroll, navigation or the page becoming visible again), or
-- when the URL has campaign parameters (UTM parameters or click IDs, see below) that differ from the ones that started the current session.
+```ts
+confidence.track(session({ newSessionOnCampaign: true }));
+```
 
 The session is stored in cookies named `cnfdSession` and `cnfdSessionCount`. Use `timeout` (in minutes) to change the inactivity limit, and `domain` to share the session across subdomains:
 
@@ -375,7 +376,7 @@ This sets `campaign` for the current visit and `first_campaign` for the first vi
 - **`campaign`** is kept until 30 minutes without user activity, so later pages still carry it, and is then removed from the context. A URL with different campaign parameters replaces it. A new referrer on its own does not, so returning from e.g. a login or payment page keeps the original campaign.
 - **`first_campaign`** is the first visit's `campaign`, kept for 90 days.
 
-The values are stored in cookies named `cnfdCampaign` and `cnfdFirstCampaign`. `campaign()` takes the same `timeout`, `domain` and `params` options as `session()`, plus `firstTouch` to change how many days the first visit is kept, or `false` to not track it:
+The values are stored in cookies named `cnfdCampaign` and `cnfdFirstCampaign`. `campaign()` takes the same `timeout`, `domain` and `params` options as `session()` (but not `newSessionOnCampaign`), plus `firstTouch` to change how many days the first visit is kept, or `false` to not track it:
 
 ```ts
 confidence.track(campaign({ domain: '.example.com', firstTouch: 30 }));
@@ -389,11 +390,11 @@ Each tracker updates the context on its own, and every context change starts a n
 
 ```ts
 const params = ['utm_source', 'utm_medium', 'utm_campaign'];
-confidence.track(session({ params }));
+confidence.track(session({ params, newSessionOnCampaign: true }));
 confidence.track(campaign({ params }));
 ```
 
-Use the same `params` for both trackers, so a new session starts exactly when the campaign changes.
+With `newSessionOnCampaign`, use the same `params` for both trackers, so a new session starts exactly when the campaign changes.
 
 #### Web vitals (web)
 

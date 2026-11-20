@@ -26,7 +26,7 @@ export type CacheScope = (provider: CacheProvider) => CacheProvider;
 export function campaign(options?: CampaignOptions): Trackable.Manager;
 
 // @public
-export type CampaignOptions = SessionOptions & {
+export type CampaignOptions = Omit<SessionOptions, 'newSessionOnCampaign'> & {
     firstTouch?: number | false;
 };
 
@@ -282,6 +282,7 @@ export type SessionOptions = {
     timeout?: number;
     domain?: string;
     params?: readonly string[];
+    newSessionOnCampaign?: boolean;
 };
 
 // Warning: (ae-missing-release-tag) "SimpleFetch" is part of the package's API, but it is missing a release tag (@alpha, @beta, @public, or @internal)
