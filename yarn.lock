@@ -5101,6 +5101,7 @@ __metadata:
   dependencies:
     "@bufbuild/protobuf": "npm:^2.0.0"
     "@microsoft/api-extractor": "npm:7.43.1"
+    bowser: "npm:^2.14.1"
     prettier: "npm:*"
     rollup: "npm:4.24.0"
     ts-proto: "npm:^2.3.0"

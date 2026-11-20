@@ -1,3 +1,5 @@
+import Bowser from 'bowser';
+
 export type NamedVersion = { name: string; version?: string };
 
 export type FormFactor = 'mobile' | 'tablet' | 'desktop';
@@ -8,43 +10,34 @@ export type UserAgentData = {
   brands?: { brand: string; version: string }[];
 };
 
-type Rule = [name: string, pattern: RegExp];
-
 // OS names match the Confidence iOS (`UIDevice.systemName`) and Android SDKs where they overlap.
-// Windows and macOS versions are frozen in user agents (10.0 and 10.15.7), and ChromeOS and Linux
-// versions aren't meaningful, so no version is captured for them.
-const OS_RULES: Rule[] = [
-  ['Windows', /Windows NT/],
-  ['iPadOS', /iPad.*? OS ([\d_]+)/],
-  ['iOS', /(?:iPhone|iPod).*? OS ([\d_]+)/],
-  ['android', /Android ([\d.]+)/],
-  ['ChromeOS', /CrOS/],
-  ['macOS', /Mac OS X/],
-  ['Linux', /Linux/],
-];
-
-// `navigator.userAgentData.platform` values, which stay correct when a browser requests the
-// desktop version of a site.
-const PLATFORM_NAMES: Record<string, string> = {
+const OS_NAMES: Record<string, string> = {
   Android: 'android',
   'Chrome OS': 'ChromeOS',
-  Linux: 'Linux',
   macOS: 'macOS',
   Windows: 'Windows',
+  Linux: 'Linux',
+  iOS: 'iOS',
 };
 
-// Order matters: most browsers include "Chrome" and "Safari" in their user agent.
-const BROWSER_RULES: Rule[] = [
-  ['Edge', /Edg(?:e|A|iOS)?\/(\d+)/],
-  ['Opera Mini', /Opera Mini\/(\d+)/],
-  ['Opera', /(?:OPR|OPT|Opera)\/(\d+)/],
-  ['Samsung Internet', /SamsungBrowser\/(\d+)/],
-  ['Yandex', /YaBrowser\/(\d+)/],
-  ['Vivaldi', /Vivaldi\/(\d+)/],
-  ['Firefox', /(?:Firefox|FxiOS)\/(\d+)/],
-  ['Chrome', /(?:Chrome|CriOS)\/(\d+)/],
-  ['Safari', /Version\/(\d+).*Safari/],
-];
+// Windows and macOS versions are frozen in user agents (10.0 and 10.15.7), and ChromeOS and Linux
+// versions aren't meaningful.
+const VERSIONED_OS = ['iOS', 'iPadOS', 'android'];
+
+const BROWSER_NAMES: Record<string, string> = {
+  'Microsoft Edge': 'Edge',
+  'Opera Touch': 'Opera',
+  'Opera Mini': 'Opera Mini',
+  Opera: 'Opera',
+  'Samsung Internet for Android': 'Samsung Internet',
+  'Yandex Browser': 'Yandex',
+  Vivaldi: 'Vivaldi',
+  Firefox: 'Firefox',
+  Chrome: 'Chrome',
+  Chromium: 'Chromium',
+  Safari: 'Safari',
+  Brave: 'Brave',
+};
 
 const BRAND_NAMES: Record<string, string> = {
   'Google Chrome': 'Chrome',
@@ -65,38 +58,39 @@ function withVersion(name: string, version: string | undefined): NamedVersion {
   return version ? { name, version } : { name };
 }
 
-function match(rules: Rule[], userAgent: string): NamedVersion {
-  for (const [name, pattern] of rules) {
-    const result = pattern.exec(userAgent);
-    if (result) return withVersion(name, result[1]?.replace(/_/g, '.'));
-  }
-  return { name: 'Unknown' };
+function major(version: string | undefined): string | undefined {
+  return version?.split('.')[0];
 }
 
-function isTablet(userAgent: string, maxTouchPoints: number): boolean {
-  if (/iPad/.test(userAgent)) return true;
-  if (/Android/.test(userAgent) && !ANDROID_NON_TABLET.test(userAgent)) {
-    return /Tablet/.test(userAgent) || !/Mobile/.test(userAgent);
-  }
+function parseFormFactor(userAgent: string, platformType: string | undefined, maxTouchPoints: number): FormFactor {
+  if (ANDROID_NON_TABLET.test(userAgent)) return 'desktop';
   // iPadOS 13+ reports itself as macOS by default; real Macs have no touch points.
-  return /Macintosh/.test(userAgent) && maxTouchPoints > 1;
+  if (/Macintosh/.test(userAgent) && maxTouchPoints > 1) return 'tablet';
+  if (platformType === 'tablet' || platformType === 'mobile') return platformType;
+  return 'desktop';
 }
 
-function parseOs(userAgent: string, uaData: UserAgentData | undefined, tablet: boolean): NamedVersion {
-  let os = match(OS_RULES, userAgent);
-  if (os.name === 'macOS' && tablet) os = { name: 'iPadOS' };
+function parseOs(
+  userAgent: string,
+  parsed: Bowser.Parser.ParsedResult,
+  uaData: UserAgentData | undefined,
+  tablet: boolean,
+): NamedVersion {
+  const name = (parsed.os.name && OS_NAMES[parsed.os.name]) || 'Unknown';
+  let os = VERSIONED_OS.includes(name) ? withVersion(name, parsed.os.version) : { name };
+  if ((name === 'iOS' || name === 'macOS') && tablet) os = withVersion('iPadOS', os.version);
 
   if (os.name === 'iOS' || os.name === 'iPadOS') {
-    // Safari's Version/ token tracks the OS version. Use it when the OS version is missing (iPadOS
-    // desktop mode) or frozen (Safari 26+). Other iOS browsers keep the OS version from the UA.
-    const safari = /Version\/([\d.]+).*Safari/.exec(userAgent)?.[1];
-    if (safari && (!os.version || Number(safari.split('.')[0]) >= FIRST_FROZEN_SAFARI)) {
+    // Safari's version tracks the OS version. Use it when the OS version is missing (iPadOS desktop
+    // mode) or frozen (Safari 26+). Other iOS browsers keep the OS version from the UA.
+    const safari = parsed.browser.name === 'Safari' ? parsed.browser.version : undefined;
+    if (safari && (!os.version || Number(major(safari)) >= FIRST_FROZEN_SAFARI)) {
       os = withVersion(os.name, safari);
     }
   }
   if (os.name === 'android' && REDUCED_ANDROID.test(userAgent)) os = { name: 'android' };
 
-  const platform = uaData?.platform && PLATFORM_NAMES[uaData.platform];
+  const platform = uaData?.platform && OS_NAMES[uaData.platform];
   if (platform && platform !== os.name) os = { name: platform };
   return os;
 }
@@ -106,18 +100,15 @@ export function parseDeviceInfo(
   uaData: UserAgentData | undefined,
   maxTouchPoints: number,
 ): { os: NamedVersion; browser: NamedVersion; formFactor: FormFactor } {
-  const tablet = isTablet(userAgent, maxTouchPoints);
-  const os = parseOs(userAgent, uaData, tablet);
+  const parsed = Bowser.parse(userAgent);
+  let formFactor = parseFormFactor(userAgent, parsed.platform.type, maxTouchPoints);
+  const os = parseOs(userAgent, parsed, uaData, formFactor === 'tablet');
 
-  let browser = match(BROWSER_RULES, userAgent);
+  const browserName = parsed.browser.name && BROWSER_NAMES[parsed.browser.name];
+  let browser = browserName ? withVersion(browserName, major(parsed.browser.version)) : { name: 'Unknown' };
   const brand = uaData?.brands?.find(b => b.brand in BRAND_NAMES);
-  if (brand) {
-    browser = withVersion(BRAND_NAMES[brand.brand], brand.version.split('.')[0]);
-  }
+  if (brand) browser = withVersion(BRAND_NAMES[brand.brand], major(brand.version));
 
-  let formFactor: FormFactor = 'desktop';
-  if (tablet) formFactor = 'tablet';
-  else if (uaData?.mobile ?? /Mobi|iPhone|iPod/.test(userAgent)) formFactor = 'mobile';
-
+  if (formFactor !== 'tablet' && uaData?.mobile !== undefined) formFactor = uaData.mobile ? 'mobile' : 'desktop';
   return { os, browser, formFactor };
 }
