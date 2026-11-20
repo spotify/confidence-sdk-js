@@ -4,6 +4,8 @@ export default defineConfig({
   entry: {
     index: './src/index.ts',
     worker: './src/worker.ts',
+    // Local-only review tooling: a separate entry so it never reaches `index` bundles.
+    'privacy-review': './src/privacy-review/index.ts',
   },
   format: ['esm', 'cjs'],
   platform: 'browser',
