@@ -1,5 +1,19 @@
 # Changelog
 
+## [0.18.21](https://github.com/spotify/confidence-sdk-js/compare/session-recording-v0.18.20...session-recording-v0.18.21) (2026-11-20)
+
+
+### ✨ New Features
+
+* add masking levels, data-csr-unmask and grouped privacy options ([#488](https://github.com/spotify/confidence-sdk-js/issues/488)) ([6fa68e9](https://github.com/spotify/confidence-sdk-js/commit/6fa68e9513db3a2fa368ec2023ee80ffeaf2a79d))
+
+
+### Dependencies
+
+* The following workspace dependencies were updated
+  * dependencies
+    * @spotify-confidence/csr-recorder bumped to 0.17.26
+
 ## [0.18.20](https://github.com/spotify/confidence-sdk-js/compare/session-recording-v0.18.19...session-recording-v0.18.20) (2026-11-19)
 
 
