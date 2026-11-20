@@ -185,6 +185,130 @@ function clickModifiersPlugin(): RrwebPlugin {
   };
 }
 
+const UNMASK_SELECTOR = '[data-csr-unmask]';
+// rrweb's text masking never reaches attributes, so these are masked wherever text is.
+const TEXT_ATTRIBUTES = new Set(['title', 'placeholder', 'aria-label', 'alt']);
+
+function maskWithStars(text: string): string {
+  return text.replace(/\S/g, '*');
+}
+
+// nodeType, not instanceof, so nodes inside same-origin iframes are recognised.
+function isElement(node: unknown): node is Element {
+  return (node as Node | null)?.nodeType === 1;
+}
+
+// Parent element, continuing from a shadow root to its host.
+function parentAcrossShadow(element: Element): Element | null {
+  const root = element.getRootNode() as Node & { host?: unknown };
+  return element.parentElement ?? (isElement(root.host) ? root.host : null);
+}
+
+// Levels up to the nearest match (0 = the element itself), or -1 if none within `limit`.
+function distanceToMatch(element: Element, selector: string, limit = Infinity): number {
+  let current: Element | null = element;
+  for (let distance = 0; current && distance <= limit; distance++) {
+    try {
+      if (current.matches(selector)) return distance;
+    } catch (_error) {
+      // An invalid customer selector must fail closed: treat it as matching.
+      return distance;
+    }
+    current = parentAcrossShadow(current);
+  }
+  return -1;
+}
+
+type Masking = { maskAllText: boolean; maskSelector: string; maskAttributes: Set<string> };
+
+/** Whether text on this element is masked. Under maskAllText the nearer of mask and unmask wins; ties mask. */
+function isMasked(element: Element | null, { maskAllText, maskSelector }: Masking): boolean {
+  if (!element) return maskAllText;
+  if (!maskAllText) return maskSelector !== '' && distanceToMatch(element, maskSelector) >= 0;
+  const unmaskDistance = distanceToMatch(element, UNMASK_SELECTOR);
+  return unmaskDistance < 0 || distanceToMatch(element, maskSelector, unmaskDistance) >= 0;
+}
+
+function isButtonValue(name: string, element: Element | null): boolean {
+  // Button labels are visible text, but maskInputs leaves them alone.
+  return (
+    name === 'value' &&
+    element?.tagName === 'INPUT' &&
+    ['submit', 'button'].includes(element.getAttribute('type') ?? '')
+  );
+}
+
+function maskAttributes(attributes: Record<string, unknown>, element: Element | null, masking: Masking): void {
+  const followsText = (name: string) =>
+    TEXT_ATTRIBUTES.has(name) || (masking.maskAllText && isButtonValue(name, element));
+  const names = Object.keys(attributes).filter(
+    name => typeof attributes[name] === 'string' && (followsText(name) || masking.maskAttributes.has(name)),
+  );
+  // Most elements carry none of these, so skip the ancestor walks for them.
+  if (names.length === 0) return;
+  const textMasked = isMasked(element, masking);
+  // Listed attributes are masked everywhere except under a nearer data-csr-unmask.
+  const listedMasked = textMasked || isMasked(element, { ...masking, maskAllText: true });
+  for (const name of names) {
+    if (masking.maskAttributes.has(name) ? listedMasked : textMasked) {
+      attributes[name] = maskWithStars(attributes[name] as string);
+    }
+  }
+}
+
+function maskAttributesInTree(node: SerializedNode, getNode: (id: number) => Element | null, masking: Masking): void {
+  if (node.type === 2 && node.attributes && node.id !== undefined) {
+    maskAttributes(node.attributes, getNode(node.id), masking);
+  }
+  node.childNodes?.forEach(child => maskAttributesInTree(child, getNode, masking));
+}
+
+function maskedAttributesPlugin(masking: Masking): RrwebPlugin {
+  let getNode: (id: number) => Element | null = () => null;
+
+  return {
+    name: 'csr/masked-attributes@1',
+    options: {},
+    observer: () => () => {},
+    getMirror: ({ nodeMirror }) => {
+      getNode = id => {
+        const node = nodeMirror.getNode(id);
+        return isElement(node) ? node : null;
+      };
+    },
+    eventProcessor: event => {
+      if (event.type === EventType.FullSnapshot) {
+        maskAttributesInTree(event.data.node as SerializedNode, getNode, masking);
+      } else if (event.type === EventType.IncrementalSnapshot && event.data.source === IncrementalSource.Mutation) {
+        event.data.adds.forEach(add => maskAttributesInTree(add.node as SerializedNode, getNode, masking));
+        event.data.attributes.forEach(change =>
+          maskAttributes(change.attributes as Record<string, unknown>, getNode(change.id), masking),
+        );
+      }
+      return event;
+    },
+  };
+}
+
+function maskingFor(config: RecordingConfig, maskSelectors: string[]): Masking {
+  const maskAllText = config.maskAllText ?? false;
+  // Under maskAllText, data-csr-mask keeps working alongside custom maskSelectors.
+  const selectors = maskAllText ? [...new Set([...DEFAULT_MASK_SELECTORS, ...maskSelectors])] : maskSelectors;
+  return { maskAllText, maskSelector: selectors.join(','), maskAttributes: new Set(config.maskAttributes) };
+}
+
+function maskTextOptions(masking: Masking) {
+  if (masking.maskAllText) {
+    // '*' makes rrweb ask maskTextFn about every text node.
+    return {
+      maskTextSelector: '*',
+      maskTextFn: (text: string, element: HTMLElement | null) =>
+        isMasked(element, masking) ? maskWithStars(text) : text,
+    };
+  }
+  return masking.maskSelector ? { maskTextSelector: masking.maskSelector } : {};
+}
+
 /**
  * rrweb adapter — bundles rrweb so consumers don't take a peer-dep on it.
  */
@@ -195,7 +319,14 @@ export class RrwebEngine implements RecordingEngine {
     const maskSelectors = config.maskSelectors ?? DEFAULT_MASK_SELECTORS;
     const blockSelectors = config.blockSelectors ?? DEFAULT_BLOCK_SELECTORS;
 
-    const plugins: RrwebPlugin[] = [clickModifiersPlugin(), clipboardActionsPlugin(), blockedElementLabelsPlugin()];
+    const masking = maskingFor(config, maskSelectors);
+
+    const plugins: RrwebPlugin[] = [
+      clickModifiersPlugin(),
+      clipboardActionsPlugin(),
+      blockedElementLabelsPlugin(),
+      maskedAttributesPlugin(masking),
+    ];
     const consoleCapturePlugin = getConsoleCapturePlugin(config.captureConsoleLogs, config.debugLogger);
     if (consoleCapturePlugin) plugins.push(consoleCapturePlugin);
 
@@ -203,7 +334,7 @@ export class RrwebEngine implements RecordingEngine {
       record<RecordingEvent>({
         emit: onEvent,
         maskAllInputs: config.maskInputs ?? true,
-        ...(maskSelectors.length ? { maskTextSelector: maskSelectors.join(',') } : {}),
+        ...maskTextOptions(masking),
         ...(blockSelectors.length ? { blockSelector: blockSelectors.join(',') } : {}),
         ...(plugins.length ? { plugins } : {}),
         ...(config.userTriggeredOnInput ? { userTriggeredOnInput: true } : {}),

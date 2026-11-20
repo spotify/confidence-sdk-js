@@ -117,6 +117,12 @@ describe('RrwebEngine', () => {
     expect(recordSpy.mock.calls[0][0].maskTextSelector).toBe('[data-csr-mask]');
   });
 
+  it('masks every text node and delegates to maskTextFn when maskAllText is set', () => {
+    new RrwebEngine().start({ maskAllText: true, maskSelectors: ['.private'] }, () => {});
+    expect(recordSpy.mock.calls[0][0].maskTextSelector).toBe('*');
+    expect(recordSpy.mock.calls[0][0].maskTextFn).toBeTypeOf('function');
+  });
+
   it('joins blockSelectors with `,` for blockSelector', () => {
     new RrwebEngine().start({ blockSelectors: ['video', '.third-party'] }, () => {});
     expect(recordSpy.mock.calls[0][0].blockSelector).toBe('video,.third-party');

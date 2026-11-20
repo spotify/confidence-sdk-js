@@ -47,6 +47,58 @@ const recorder = initSessionRecorder({
 
 `maskInputs` defaults to `true` — all input values are masked unless you explicitly opt out.
 
+### Mask all text by default
+
+If listing everything sensitive is impractical, set `maskAllText: true`. All text is masked, and you opt components back in by adding `data-csr-unmask`:
+
+```typescript
+const recorder = initSessionRecorder({
+  clientSecret: '<your-client-secret>',
+  maskAllText: true,
+  maskSelectors: ['.pii'],
+});
+```
+
+```html
+<nav data-csr-unmask>Home · Orders · Help</nav>
+<p>Jane Doe</p>
+<!-- recorded as ******** -->
+```
+
+Because the attribute lives on the component, it moves with the component when markup changes; there is no selector to keep in sync. Anything you forget to tag stays masked.
+
+When an element is inside both a mask (`maskSelectors` or `data-csr-mask`) and `data-csr-unmask`, the nearer one wins, so you can nest them in either direction:
+
+```html
+<section data-csr-unmask>
+  <h2>Order summary</h2>
+  <!-- recorded -->
+  <span data-csr-mask>Jane Doe</span>
+  <!-- masked -->
+</section>
+<section class="pii">
+  <h2 data-csr-unmask>Order summary</h2>
+  <!-- recorded -->
+  <p>Jane Doe</p>
+  <!-- masked -->
+</section>
+```
+
+`maskAllText` also masks `value` on submit and button inputs. Text input values are still controlled by `maskInputs`. `data-csr-unmask` applies inside a component's shadow DOM. Add it in the markup a component first renders: text recorded before the attribute was added stays masked in the replay.
+
+### Masking attributes
+
+Wherever text is masked, the values of `title`, `placeholder`, `aria-label` and `alt` on the same elements are masked too. That covers `maskSelectors` and `data-csr-mask` matches, and every element outside `data-csr-unmask` under `maskAllText`. Other attributes, such as `href` or your own `data-*` attributes, are recorded as-is.
+
+To mask more attributes, list them in `maskAttributes`. Listed attributes are masked on every element, whether or not its text is masked, except under a nearer `data-csr-unmask`:
+
+```typescript
+const recorder = initSessionRecorder({
+  clientSecret: '<your-client-secret>',
+  maskAttributes: ['href', 'data-user-email'],
+});
+```
+
 ## Context
 
 Context lets you attach custom dimensions to the recording session. These are sent alongside the auto-collected browser metadata (user agent, OS, viewport, language, timezone) in the session init request. Context serves two purposes: it helps you find and filter recordings later, and the backend uses it to target recordings to specific cohorts of your user population (e.g. only record premium users, or users on a specific build version).

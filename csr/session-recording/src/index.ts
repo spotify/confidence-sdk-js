@@ -20,6 +20,10 @@ export interface InitSessionRecorderOptions {
   clientSecret: string;
   /** CSS selectors whose text content should be masked. */
   maskSelectors?: string[];
+  /** Mask all text except inside `data-csr-unmask` elements. Defaults to `false`. */
+  maskAllText?: boolean;
+  /** Attributes to mask on every element. `title`, `placeholder`, `aria-label` and `alt` are always masked wherever text is. */
+  maskAttributes?: string[];
   /** CSS selectors whose subtrees should be blocked (replaced with a placeholder, never serialized). */
   blockSelectors?: string[];
   /** Mask values of every `<input>` / `<textarea>` / `contenteditable`. Defaults to `true`. */
@@ -127,6 +131,8 @@ export function initSessionRecorder(options: InitSessionRecorderOptions): Sessio
 
   const recordingConfig = {
     maskSelectors: options.maskSelectors,
+    maskAllText: options.maskAllText,
+    maskAttributes: options.maskAttributes,
     blockSelectors: options.blockSelectors,
     maskInputs: options.maskInputs,
     captureConsoleLogs: options.captureConsoleLogs,
