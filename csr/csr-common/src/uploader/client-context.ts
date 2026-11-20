@@ -19,6 +19,12 @@ export type UserAgentContext = {
   /** Browser major version. */
   browserVersion?: string;
   mobile?: boolean;
+  /** The app whose built-in browser opened the page, e.g. `instagram` or `tiktok`. */
+  inAppBrowser?: string;
+  /** Whether the page runs in an app's web view rather than a standalone browser. */
+  webview?: boolean;
+  /** Whether the user agent is a crawler or tool, or the browser is controlled by automation. */
+  bot?: boolean;
   /** BCP-47 language tag (e.g. `en-US`). */
   languageCode?: string;
   /** IANA time zone (e.g. `Europe/Stockholm`). */
@@ -98,6 +104,9 @@ export function collectUserAgentContext(): UserAgentContext | undefined {
     browser: device && toFamily(device.browser.name),
     browserVersion: device?.browser.version,
     mobile: device && device.formFactor !== 'desktop',
+    inAppBrowser: device?.inAppBrowser,
+    webview: device?.webview,
+    bot: device?.bot,
     languageCode: navigator.language,
     timeZone,
     viewportWidth: window.innerWidth,

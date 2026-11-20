@@ -58,6 +58,9 @@ describe('collectUserAgentContext', () => {
       os: { name: 'macOS' },
       browser: { name: 'Chrome', version: '120' },
       formFactor: 'desktop',
+      inAppBrowser: 'instagram',
+      webview: true,
+      bot: false,
       touch: false,
     });
     stubBrowser();
@@ -68,6 +71,9 @@ describe('collectUserAgentContext', () => {
       browser: 'chrome',
       browserVersion: '120',
       mobile: false,
+      inAppBrowser: 'instagram',
+      webview: true,
+      bot: false,
       languageCode: 'en-US',
       timeZone: expect.any(String),
       viewportWidth: 1440,

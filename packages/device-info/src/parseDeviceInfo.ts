@@ -65,6 +65,27 @@ const FIRST_FROZEN_SAFARI = 26;
 // Android devices that aren't tablets even without "Mobile" in the user agent.
 const ANDROID_NON_TABLET = /\bTV\b|SMART-TV|AFT\w+|CrKey|OculusBrowser|Quest|Android Automotive/i;
 
+// Checked in order: Messenger and Instagram user agents also contain Facebook tokens.
+const IN_APP_BROWSERS: [name: string, pattern: RegExp][] = [
+  ['messenger', /FBAN\/Messenger|FB_IAB\/MESSENGER|\bOrca-Android\b/i],
+  ['instagram', /\bInstagram\b/],
+  ['facebook', /\bFBAN\/|\bFBAV\/|\bFB_IAB\/|\bFB4A\b|\bFBIOS\b/],
+  ['tiktok', /musical_ly|\bBytedanceWebview\b|\bTikTok\b/],
+  ['snapchat', /\bSnapchat\b/],
+  ['linkedin', /\bLinkedInApp\b/],
+  ['pinterest', /\bPinterest\b/],
+  ['x', /\bTwitter for\b|\bTwitterAndroid\b/],
+  ['wechat', /\bMicroMessenger\b/],
+  ['line', /\bLine\/\d/],
+];
+// Android web views add "wv". iOS web views lack the "Safari/" token that iOS browsers keep.
+const ANDROID_WEBVIEW = /; wv\)/;
+const IOS_WEBVIEW = /(?:iPhone|iPod|iPad).*AppleWebKit(?!.*Safari\/)/;
+const IOS_BROWSERS_WITHOUT_SAFARI_TOKEN = /\bOPT\/|\bEdgiOS\/|\bFxiOS\//;
+// "Cubot" is a phone brand, not a bot.
+const BOT =
+  /(?<!cu)bot\b|crawl|spider|slurp|HeadlessChrome|Lighthouse|PhantomJS|facebookexternalhit|Bytespider|Google-InspectionTool|PTST\/|^curl\/|^Wget\/|python-requests|axios\/|node-fetch|Go-http-client|okhttp/i;
+
 function withVersion(name: string, version: string | undefined): NamedVersion {
   return version ? { name, version } : { name };
 }
@@ -110,7 +131,17 @@ function parseOs(
  * The detected OS, browser and form factor.
  * @public
  */
-export type DeviceInfo = { os: NamedVersion; browser: NamedVersion; formFactor: FormFactor };
+export type DeviceInfo = {
+  os: NamedVersion;
+  browser: NamedVersion;
+  formFactor: FormFactor;
+  /** The app whose built-in browser opened the page, such as `instagram` or `tiktok`. */
+  inAppBrowser?: string;
+  /** Whether the page runs in an app's web view rather than a standalone browser. */
+  webview: boolean;
+  /** Whether the user agent belongs to a crawler, monitoring tool or HTTP library. */
+  bot: boolean;
+};
 
 /**
  * Detects the OS, browser and form factor from a user agent.
@@ -135,5 +166,13 @@ export function parseDeviceInfo(userAgent: string, uaData?: UserAgentData, maxTo
   if (brand) browser = withVersion(BRAND_NAMES[brand.brand], major(brand.version));
 
   if (formFactor !== 'tablet' && uaData?.mobile !== undefined) formFactor = uaData.mobile ? 'mobile' : 'desktop';
-  return { os, browser, formFactor };
+
+  const inAppBrowser = IN_APP_BROWSERS.find(([, pattern]) => pattern.test(userAgent))?.[0];
+  const webview =
+    !!inAppBrowser ||
+    ANDROID_WEBVIEW.test(userAgent) ||
+    (IOS_WEBVIEW.test(userAgent) && !IOS_BROWSERS_WITHOUT_SAFARI_TOKEN.test(userAgent));
+  const info: DeviceInfo = { os, browser, formFactor, webview, bot: BOT.test(userAgent) };
+  if (inAppBrowser) info.inAppBrowser = inAppBrowser;
+  return info;
 }

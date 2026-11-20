@@ -30,6 +30,12 @@ type DeviceInfo = {
     os: NamedVersion;
     browser: NamedVersion;
     formFactor: FormFactor;
+    /** The app whose built-in browser opened the page, such as `instagram` or `tiktok`. */
+    inAppBrowser?: string;
+    /** Whether the page runs in an app's web view rather than a standalone browser. */
+    webview: boolean;
+    /** Whether the user agent belongs to a crawler, monitoring tool or HTTP library. */
+    bot: boolean;
 };
 /**
  * Detects the OS, browser and form factor from a user agent.
@@ -47,6 +53,7 @@ declare function parseDeviceInfo(userAgent: string, uaData?: UserAgentData, maxT
 
 /**
  * Detects the OS, browser and form factor of the current browser, and whether it has a touch screen.
+ * `bot` is also true when the browser is controlled by automation (`navigator.webdriver`).
  *
  * @returns `undefined` outside the browser
  * @public

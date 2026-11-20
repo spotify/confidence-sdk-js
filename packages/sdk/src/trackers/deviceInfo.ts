@@ -13,7 +13,8 @@ export type DeviceInfoOptions = {
    */
   os?: boolean;
   /**
-   * Add `device.form_factor` and `device.touch`
+   * Add `device.form_factor`, `device.touch`, `device.webview`, `device.bot` and, when opened inside an app,
+   * `device.in_app_browser`
    * @defaultValue true
    */
   device?: boolean;
@@ -70,7 +71,15 @@ export function deviceInfo(options: DeviceInfoOptions = {}): Trackable.Manager {
     const context: Record<string, Value> = {};
 
     if (os) context.os = parsed.os;
-    if (device) context.device = { form_factor: parsed.formFactor, touch: parsed.touch };
+    if (device) {
+      context.device = {
+        form_factor: parsed.formFactor,
+        touch: parsed.touch,
+        webview: parsed.webview,
+        bot: parsed.bot,
+        ...(parsed.inAppBrowser ? { in_app_browser: parsed.inAppBrowser } : {}),
+      };
+    }
     if (browser) context.browser = parsed.browser;
     if (locale && navigator.language) {
       // Mobile SDKs report locale identifiers with underscores (en_US).

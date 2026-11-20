@@ -80,7 +80,15 @@ describe('parseDeviceInfo', () => {
     ['androidTv', { name: 'android', version: '12' }, { name: 'Chrome', version: '120' }, 'desktop'],
     ['quest', { name: 'Linux' }, { name: 'Samsung Internet', version: '4' }, 'desktop'],
   ] as const)('parses %s', (key, os, browser, formFactor) => {
-    expect(parseDeviceInfo(UA[key])).toEqual({ os, browser, formFactor });
+    const info = parseDeviceInfo(UA[key]);
+    expect({ os: info.os, browser: info.browser, formFactor: info.formFactor }).toEqual({ os, browser, formFactor });
+  });
+
+  it.each(Object.keys(UA) as (keyof typeof UA)[])('does not flag %s as a bot or in-app browser', key => {
+    const info = parseDeviceInfo(UA[key]);
+    expect(info.bot).toBe(false);
+    expect(info.inAppBrowser).toBeUndefined();
+    expect(info.webview).toBe(key === 'androidTv');
   });
 
   it('detects iPadOS desktop mode in Safari via touch points and takes the version from Safari', () => {
@@ -88,6 +96,8 @@ describe('parseDeviceInfo', () => {
       os: { name: 'iPadOS', version: '17.4.1' },
       browser: { name: 'Safari', version: '17' },
       formFactor: 'tablet',
+      webview: false,
+      bot: false,
     });
   });
 
@@ -96,6 +106,8 @@ describe('parseDeviceInfo', () => {
       os: { name: 'iPadOS' },
       browser: { name: 'Chrome', version: '131' },
       formFactor: 'tablet',
+      webview: false,
+      bot: false,
     });
   });
 
@@ -143,7 +155,72 @@ describe('parseDeviceInfo', () => {
       os: { name: 'Unknown' },
       browser: { name: 'Unknown' },
       formFactor: 'desktop',
+      webview: false,
+      bot: true,
     });
+  });
+
+  it.each([
+    [
+      'instagram',
+      'Mozilla/5.0 (iPhone; CPU iPhone OS 17_4 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Mobile/15E148 Instagram 325.0.0.35.91 (iPhone15,2; iOS 17_4; en_US; en; scale=3.00; 1179x2556; 579823567)',
+    ],
+    [
+      'facebook',
+      'Mozilla/5.0 (Linux; Android 14; Pixel 8 Build/AP1A.240305.019; wv) AppleWebKit/537.36 (KHTML, like Gecko) Version/4.0 Chrome/122.0.6261.119 Mobile Safari/537.36 [FB_IAB/FB4A;FBAV/455.0.0.44.88;]',
+    ],
+    [
+      'facebook',
+      'Mozilla/5.0 (iPhone; CPU iPhone OS 17_4 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Mobile/15E148 [FBAN/FBIOS;FBAV/455.0.0.38.107;FBBV/583542335;FBDV/iPhone15,2;FBMD/iPhone;FBSN/iOS;FBSV/17.4;FBSS/3;FBCR/;FBID/phone;FBLC/en_US;FBOP/80]',
+    ],
+    [
+      'messenger',
+      'Mozilla/5.0 (iPhone; CPU iPhone OS 17_4 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Mobile/15E148 [FBAN/Messenger;FBAV/450.0.0.31.110;FBBV/580153532;FBDV/iPhone15,2;FBMD/iPhone;FBSN/iOS;FBSV/17.4;FBSS/3;FBCR/;FBID/phone;FBLC/en_US;FBOP/5]',
+    ],
+    [
+      'tiktok',
+      'Mozilla/5.0 (iPhone; CPU iPhone OS 17_4 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Mobile/15E148 musical_ly_33.8.0 JsSdk/2.0 NetType/WIFI Channel/App Store ByteLocale/en Region/US',
+    ],
+    [
+      'linkedin',
+      'Mozilla/5.0 (iPhone; CPU iPhone OS 17_4 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Mobile/15E148 [LinkedInApp]/9.29.6',
+    ],
+    [
+      'snapchat',
+      'Mozilla/5.0 (iPhone; CPU iPhone OS 17_4 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Mobile/15E148 Snapchat/13.20.0.37 (like Safari/8617.2.4.10.8, panda)',
+    ],
+  ])('detects the %s in-app browser', (inAppBrowser, userAgent) => {
+    const info = parseDeviceInfo(userAgent);
+    expect(info.inAppBrowser).toBe(inAppBrowser);
+    expect(info.webview).toBe(true);
+    expect(info.bot).toBe(false);
+  });
+
+  it.each([
+    'Mozilla/5.0 (Linux; Android 14; Pixel 8 Build/AP1A.240305.019; wv) AppleWebKit/537.36 (KHTML, like Gecko) Version/4.0 Chrome/122.0.6261.119 Mobile Safari/537.36',
+    'Mozilla/5.0 (iPhone; CPU iPhone OS 17_4 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Mobile/15E148',
+  ])('detects other web views: %s', userAgent => {
+    const info = parseDeviceInfo(userAgent);
+    expect(info.webview).toBe(true);
+    expect(info.inAppBrowser).toBeUndefined();
+  });
+
+  it.each([
+    'Mozilla/5.0 (compatible; Googlebot/2.1; +http://www.google.com/bot.html)',
+    'Mozilla/5.0 AppleWebKit/537.36 (KHTML, like Gecko; compatible; GPTBot/1.2; +https://openai.com/gptbot)',
+    'Mozilla/5.0 (compatible; bingbot/2.0; +http://www.bing.com/bingbot.htm)',
+    'facebookexternalhit/1.1 (+http://www.facebook.com/externalhit_uatext.php)',
+    'Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) HeadlessChrome/131.0.0.0 Safari/537.36',
+    'Mozilla/5.0 (Linux; Android 11; moto g power (2022)) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/131.0.0.0 Mobile Safari/537.36 Chrome-Lighthouse',
+    'python-requests/2.32.3',
+  ])('detects bots: %s', userAgent => {
+    expect(parseDeviceInfo(userAgent).bot).toBe(true);
+  });
+
+  it('does not flag Cubot phones as bots', () => {
+    const cubot =
+      'Mozilla/5.0 (Linux; Android 12; Cubot P80) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/131.0.0.0 Mobile Safari/537.36';
+    expect(parseDeviceInfo(cubot).bot).toBe(false);
   });
 });
 
@@ -155,8 +232,15 @@ describe('getDeviceInfo', () => {
       os: { name: 'iOS', version: '17.4' },
       browser: { name: 'Safari', version: '17' },
       formFactor: 'mobile',
+      webview: false,
+      bot: false,
       touch: true,
     });
+  });
+
+  it('flags browsers controlled by automation as bots', () => {
+    override(navigator, 'webdriver', true);
+    expect(getDeviceInfo()?.bot).toBe(true);
   });
 
   it('returns undefined outside the browser', () => {

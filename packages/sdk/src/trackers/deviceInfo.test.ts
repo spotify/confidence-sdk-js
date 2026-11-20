@@ -39,7 +39,7 @@ describe('deviceInfo', () => {
     override(window, 'innerHeight', 659);
     expect(run()).toEqual({
       os: { name: 'iOS', version: '17.4' },
-      device: { form_factor: 'mobile', touch: true },
+      device: { form_factor: 'mobile', touch: true, webview: false, bot: false },
       browser: { name: 'Safari', version: '17' },
       locale: 'sv_SE',
       preferred_languages: ['sv-SE', 'en'],
