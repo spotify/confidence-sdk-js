@@ -52,7 +52,7 @@ describe('initSessionRecorder', () => {
     expect(record).toHaveBeenCalledOnce();
   });
 
-  it('forwards options to createUploader and record', async () => {
+  it('forwards deprecated flat privacy options to record', async () => {
     createUploader.mockResolvedValueOnce(mockUploader());
     record.mockReturnValueOnce(() => {});
 
@@ -76,6 +76,27 @@ describe('initSessionRecorder', () => {
       maskSelectors: ['.private'],
       blockSelectors: ['video', '.third-party'],
       maskInputs: false,
+      maskAllText: false,
+    });
+  });
+
+  it('forwards grouped masking and blocking options to record', async () => {
+    createUploader.mockResolvedValueOnce(mockUploader());
+    record.mockReturnValueOnce(() => {});
+
+    initSessionRecorder({
+      clientSecret: 'secret',
+      masking: { level: 'text', selectors: ['.pii'], attributes: ['href'] },
+      blocking: { selectors: ['.widget'] },
+    });
+    await flushPromises();
+
+    expect(record.mock.calls[0][1]).toEqual({
+      maskSelectors: ['.pii'],
+      maskAttributes: ['href'],
+      maskAllText: true,
+      maskInputs: true,
+      blockSelectors: ['.widget'],
     });
   });
 

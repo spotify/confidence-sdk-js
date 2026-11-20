@@ -29,6 +29,19 @@ export interface RecordingConfig {
    */
   maskSelectors?: string[];
   /**
+   * Mask all text, plus `value` on options and on submit and button inputs, except inside
+   * `data-csr-unmask`. The nearer of a mask and `data-csr-unmask` wins.
+   * Typed and pre-filled input values still follow `maskInputs`: with
+   * `maskInputs: false` they are recorded unmasked. Defaults to `false`.
+   */
+  maskAllText?: boolean;
+  /**
+   * Attributes to mask on every element, except under a nearer
+   * `data-csr-unmask`. `title`, `placeholder`, `aria-label` and `alt` are
+   * always masked wherever text is.
+   */
+  maskAttributes?: string[];
+  /**
    * CSS selectors for elements whose subtree should be blocked entirely.
    * Joined with `,` and passed to rrweb as `blockSelector`. Matching elements
    * are replaced with a same-sized placeholder; their contents are never
