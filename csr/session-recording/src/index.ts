@@ -10,7 +10,7 @@ import {
   validateMeasureValue,
 } from '@spotify-confidence/csr-common';
 import { observeFlags, type FlagWrite } from './flag-observer';
-import { createUploader, type ClientContext } from '@spotify-confidence/csr-common/uploader';
+import { createUploader, getDeviceInfo, type ClientContext } from '@spotify-confidence/csr-common/uploader';
 import { SDK_VERSION } from './version';
 
 const DEFAULT_API_URL = 'https://recording.confidence.dev';
@@ -77,6 +77,11 @@ export interface InitSessionRecorderOptions {
    * The worker version must match the SDK version — a mismatch may cause silent failures.
    */
   workerUrl?: string;
+  /**
+   * Record sessions from crawlers, monitoring tools and automated browsers (`navigator.webdriver`).
+   * Defaults to `false`. Set to `true` when recording automated tests.
+   */
+  recordBots?: boolean;
   /** Verbose tracer for debugging — called with one-line lifecycle/transport messages. */
   debugLogger?: (msg: string) => void;
 }
@@ -151,6 +156,10 @@ export function initSessionRecorder(options: InitSessionRecorderOptions): Sessio
 
   async function initAndRecord() {
     try {
+      if (!options.recordBots && getDeviceInfo()?.bot) {
+        debugLogger?.('Recording skipped: bot or automated browser');
+        return;
+      }
       const uploader = await createUploader({
         apiUrl: options.apiUrl ?? DEFAULT_API_URL,
         websocketUrl: options.websocketUrl ?? DEFAULT_WEBSOCKET_URL,
