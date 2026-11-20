@@ -1,4 +1,5 @@
 export { createUploader } from './create-uploader';
+export { getDeviceInfo } from './device-info';
 export { type Uploader, type CreateUploaderOptions } from './types';
 export {
   collectUserAgentContext,
