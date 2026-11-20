@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.17.26](https://github.com/spotify/confidence-sdk-js/compare/csr-recorder-v0.17.25...csr-recorder-v0.17.26) (2026-11-20)
+
+
+### ✨ New Features
+
+* add masking levels, data-csr-unmask and grouped privacy options ([#488](https://github.com/spotify/confidence-sdk-js/issues/488)) ([6fa68e9](https://github.com/spotify/confidence-sdk-js/commit/6fa68e9513db3a2fa368ec2023ee80ffeaf2a79d))
+
 ## [0.17.25](https://github.com/spotify/confidence-sdk-js/compare/csr-recorder-v0.17.24...csr-recorder-v0.17.25) (2026-11-19)
 
 
