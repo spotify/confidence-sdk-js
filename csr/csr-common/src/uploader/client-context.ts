@@ -1,4 +1,4 @@
-import Bowser from 'bowser';
+import { getDeviceInfo } from '@spotify-confidence/device-info';
 import { stripUrlQueryAndHash } from '../url';
 
 /**
@@ -12,9 +12,9 @@ export type ContextValue = string | number | boolean | null | ContextValue[] | {
  */
 export type UserAgentContext = {
   userAgent?: string;
-  /** Coarse OS family — `windows`, `macos`, `ios`, `android`, `linux`, or `unknown`. */
+  /** OS family — e.g. `windows`, `macos`, `ios`, `ipados`, `android`, `chromeos`, `linux`, or `unknown`. */
   os?: string;
-  /** Coarse browser family — `chrome`, `firefox`, `safari`, `edge`, or `unknown`. */
+  /** Browser family — e.g. `chrome`, `firefox`, `safari`, `edge`, `samsunginternet`, or `unknown`. */
   browser?: string;
   /** Browser major version. */
   browserVersion?: string;
@@ -51,6 +51,10 @@ export interface ClientContext {
   [key: string]: ContextValue | undefined;
 }
 
+function toFamily(name: string): string {
+  return name.toLowerCase().replace(/\s+/g, '');
+}
+
 function mediaMatches(query: string): boolean | undefined {
   return window.matchMedia?.(query).matches;
 }
@@ -79,7 +83,7 @@ function collectEffectiveConnectionType(): string | undefined {
 export function collectUserAgentContext(): UserAgentContext | undefined {
   if (typeof window === 'undefined' || typeof navigator === 'undefined') return undefined;
 
-  const parsed = Bowser.parse(navigator.userAgent);
+  const device = getDeviceInfo();
 
   let timeZone: string | undefined;
   try {
@@ -90,10 +94,10 @@ export function collectUserAgentContext(): UserAgentContext | undefined {
 
   return {
     userAgent: navigator.userAgent,
-    os: parsed.os.name?.toLowerCase().replace(/\s+/g, ''),
-    browser: parsed.browser.name?.toLowerCase().replace(/\s+/g, ''),
-    browserVersion: parsed.browser.version?.split('.')[0],
-    mobile: parsed.platform.type ? parsed.platform.type === 'mobile' || parsed.platform.type === 'tablet' : undefined,
+    os: device && toFamily(device.os.name),
+    browser: device && toFamily(device.browser.name),
+    browserVersion: device?.browser.version,
+    mobile: device && device.formFactor !== 'desktop',
     languageCode: navigator.language,
     timeZone,
     viewportWidth: window.innerWidth,

@@ -1,6 +1,12 @@
 {
   "plugins": ["node-workspace"],
   "packages": {
+    "packages/device-info": {
+      "component": "device-info",
+      "changelog-path": "CHANGELOG.md",
+      "bump-minor-pre-major": true,
+      "bump-patch-for-minor-pre-major": true
+    },
     "packages/openfeature-server-provider": {
       "component": "openfeature-server-provider",
       "changelog-path": "CHANGELOG.md",
@@ -50,55 +56,55 @@
   "changelog-sections": [
     {
       "type": "fix",
-      "section": "🐛 Bug Fixes"
+      "section": "\ud83d\udc1b Bug Fixes"
     },
     {
       "type": "feat",
-      "section": "✨ New Features"
+      "section": "\u2728 New Features"
     },
     {
       "type": "chore",
-      "section": "🧹 Chore"
+      "section": "\ud83e\uddf9 Chore"
     },
     {
       "type": "docs",
-      "section": "📚 Documentation"
+      "section": "\ud83d\udcda Documentation"
     },
     {
       "type": "perf",
-      "section": "🚀 Performance"
+      "section": "\ud83d\ude80 Performance"
     },
     {
       "type": "build",
       "hidden": true,
-      "section": "🛠️ Build"
+      "section": "\ud83d\udee0\ufe0f Build"
     },
     {
       "type": "deps",
-      "section": "📦 Dependencies"
+      "section": "\ud83d\udce6 Dependencies"
     },
     {
       "type": "ci",
       "hidden": true,
-      "section": "🚦 CI"
+      "section": "\ud83d\udea6 CI"
     },
     {
       "type": "refactor",
-      "section": "🔄 Refactoring"
+      "section": "\ud83d\udd04 Refactoring"
     },
     {
       "type": "revert",
-      "section": "🔙 Reverts"
+      "section": "\ud83d\udd19 Reverts"
     },
     {
       "type": "style",
       "hidden": true,
-      "section": "🎨 Styling"
+      "section": "\ud83c\udfa8 Styling"
     },
     {
       "type": "test",
       "hidden": true,
-      "section": "🧪 Tests"
+      "section": "\ud83e\uddea Tests"
     }
   ],
   "$schema": "https://raw.githubusercontent.com/googleapis/release-please/main/schemas/config.json"

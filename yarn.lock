@@ -5032,6 +5032,7 @@ __metadata:
   version: 0.0.0-use.local
   resolution: "@spotify-confidence/csr-common@workspace:csr/csr-common"
   dependencies:
+    "@spotify-confidence/device-info": "workspace:*"
     bowser: "npm:^2.14.1"
   languageName: unknown
   linkType: soft
@@ -5043,6 +5044,16 @@ __metadata:
     "@rrweb/rrweb-plugin-console-record": "npm:^2.0.1"
     "@spotify-confidence/csr-common": "workspace:*"
     rrweb: "npm:^2.0.1"
+  languageName: unknown
+  linkType: soft
+
+"@spotify-confidence/device-info@workspace:*, @spotify-confidence/device-info@workspace:packages/device-info":
+  version: 0.0.0-use.local
+  resolution: "@spotify-confidence/device-info@workspace:packages/device-info"
+  dependencies:
+    bowser: "npm:^2.14.1"
+    rollup: "npm:4.24.0"
+    typescript: "npm:5.1.6"
   languageName: unknown
   linkType: soft
 
@@ -5101,7 +5112,7 @@ __metadata:
   dependencies:
     "@bufbuild/protobuf": "npm:^2.0.0"
     "@microsoft/api-extractor": "npm:7.43.1"
-    bowser: "npm:^2.14.1"
+    "@spotify-confidence/device-info": "workspace:*"
     prettier: "npm:*"
     rollup: "npm:4.24.0"
     ts-proto: "npm:^2.3.0"

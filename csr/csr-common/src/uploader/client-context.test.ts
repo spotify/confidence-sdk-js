@@ -1,8 +1,8 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
-const parse = vi.hoisted(() => vi.fn());
+const getDeviceInfo = vi.hoisted(() => vi.fn());
 
-vi.mock('bowser', () => ({ default: { parse } }));
+vi.mock('@spotify-confidence/device-info', () => ({ getDeviceInfo }));
 
 import { collectUserAgentContext } from './client-context';
 
@@ -35,12 +35,7 @@ function stubBrowser(
 
 describe('collectUserAgentContext', () => {
   beforeEach(() => {
-    parse.mockImplementation(() => ({
-      os: {},
-      browser: {},
-      platform: {},
-      engine: {},
-    }));
+    getDeviceInfo.mockReturnValue(undefined);
   });
 
   afterEach(() => {
@@ -59,11 +54,11 @@ describe('collectUserAgentContext', () => {
   });
 
   it('captures all fields from a populated env', () => {
-    parse.mockReturnValueOnce({
+    getDeviceInfo.mockReturnValueOnce({
       os: { name: 'macOS' },
-      browser: { name: 'Chrome', version: '120.0.6099.225' },
-      platform: { type: 'desktop' },
-      engine: {},
+      browser: { name: 'Chrome', version: '120' },
+      formFactor: 'desktop',
+      touch: false,
     });
     stubBrowser();
 
@@ -129,29 +124,29 @@ describe('collectUserAgentContext', () => {
     expect(collectUserAgentContext()?.uri).toBe('https://example.com/path');
   });
 
-  it('flags `mobile` platform type as mobile=true', () => {
-    parse.mockReturnValueOnce({
-      os: {},
-      browser: {},
-      platform: { type: 'mobile' },
-      engine: {},
+  it('flags the mobile form factor as mobile=true', () => {
+    getDeviceInfo.mockReturnValueOnce({
+      os: { name: 'iOS' },
+      browser: { name: 'Safari', version: '17' },
+      formFactor: 'mobile',
+      touch: false,
     });
     stubBrowser();
     expect(collectUserAgentContext()?.mobile).toBe(true);
   });
 
-  it('flags `tablet` platform type as mobile=true', () => {
-    parse.mockReturnValueOnce({
-      os: {},
-      browser: {},
-      platform: { type: 'tablet' },
-      engine: {},
+  it('flags the tablet form factor as mobile=true', () => {
+    getDeviceInfo.mockReturnValueOnce({
+      os: { name: 'iOS' },
+      browser: { name: 'Safari', version: '17' },
+      formFactor: 'tablet',
+      touch: false,
     });
     stubBrowser();
     expect(collectUserAgentContext()?.mobile).toBe(true);
   });
 
-  it('omits os/browser/browserVersion/mobile when bowser returns nothing useful', () => {
+  it('omits os/browser/browserVersion/mobile outside the browser', () => {
     stubBrowser();
     const ctx = collectUserAgentContext();
     expect(ctx?.os).toBeUndefined();
@@ -160,28 +155,17 @@ describe('collectUserAgentContext', () => {
     expect(ctx?.mobile).toBeUndefined();
   });
 
-  it('extracts major version from a full version string', () => {
-    parse.mockReturnValueOnce({
-      os: {},
-      browser: { name: 'Safari', version: '17.4.1' },
-      platform: {},
-      engine: {},
-    });
-    stubBrowser();
-    expect(collectUserAgentContext()?.browserVersion).toBe('17');
-  });
-
   it('lowercases and strips whitespace from os/browser names', () => {
-    parse.mockReturnValueOnce({
-      os: { name: 'Chrome OS' },
-      browser: { name: 'Microsoft Edge', version: '120.0.0' },
-      platform: {},
-      engine: {},
+    getDeviceInfo.mockReturnValueOnce({
+      os: { name: 'ChromeOS' },
+      browser: { name: 'Samsung Internet', version: '25' },
+      formFactor: 'desktop',
+      touch: false,
     });
     stubBrowser();
     const ctx = collectUserAgentContext();
     expect(ctx?.os).toBe('chromeos');
-    expect(ctx?.browser).toBe('microsoftedge');
+    expect(ctx?.browser).toBe('samsunginternet');
   });
 
   it('reports colorScheme dark when prefers-color-scheme matches', () => {

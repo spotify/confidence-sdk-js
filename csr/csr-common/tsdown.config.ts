@@ -11,5 +11,6 @@ export default defineConfig({
   dts: { oxc: true },
   deps: {
     neverBundle: ['bowser'],
+    alwaysBundle: ['@spotify-confidence/device-info'],
   },
 });

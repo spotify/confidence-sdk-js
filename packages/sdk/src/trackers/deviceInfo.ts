@@ -1,6 +1,6 @@
 import { Trackable } from '../Trackable';
 import { Value } from '../Value';
-import { parseDeviceInfo, type UserAgentData } from './deviceInfoParser';
+import { getDeviceInfo } from '@spotify-confidence/device-info';
 
 /**
  * Options defining which device information to add to the context. By default everything is added.
@@ -65,14 +65,12 @@ export function deviceInfo(options: DeviceInfoOptions = {}): Trackable.Manager {
     timezone = true,
   } = options;
   return controller => {
-    if (typeof navigator === 'undefined') return;
-    const uaData = (navigator as Navigator & { userAgentData?: UserAgentData }).userAgentData;
-    const maxTouchPoints = navigator.maxTouchPoints ?? 0;
-    const parsed = parseDeviceInfo(navigator.userAgent ?? '', uaData, maxTouchPoints);
+    const parsed = getDeviceInfo();
+    if (!parsed) return;
     const context: Record<string, Value> = {};
 
     if (os) context.os = parsed.os;
-    if (device) context.device = { form_factor: parsed.formFactor, touch: maxTouchPoints > 0 };
+    if (device) context.device = { form_factor: parsed.formFactor, touch: parsed.touch };
     if (browser) context.browser = parsed.browser;
     if (locale && navigator.language) {
       // Mobile SDKs report locale identifiers with underscores (en_US).

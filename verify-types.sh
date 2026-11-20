@@ -16,7 +16,7 @@
 set -e
 
 ROOT="$(cd "$(dirname "$0")" && pwd)"
-PACKAGES="sdk openfeature-web-provider openfeature-server-provider react"
+PACKAGES="device-info sdk openfeature-web-provider openfeature-server-provider react"
 
 # explicit template: BSD mktemp ignores TMPDIR
 WORK="$(mktemp -d "${TMPDIR:-/tmp}/verify-types.XXXXXX")"
@@ -39,7 +39,7 @@ echo "Installing into a scratch consumer project..."
 cd "$WORK"
 # hermetic cache: this must not depend on, or write to, the developer's shared npm cache
 npm install --no-audit --no-fund --cache "$WORK/.npm-cache" \
-  ./sdk.tgz ./openfeature-web-provider.tgz ./openfeature-server-provider.tgz ./react.tgz \
+  ./device-info.tgz ./sdk.tgz ./openfeature-web-provider.tgz ./openfeature-server-provider.tgz ./react.tgz \
   @openfeature/web-sdk@^1.0.3 @openfeature/server-sdk@^1.13.5 \
   react@^19 @types/react@^19 @types/node@^22 typescript@5.1.6 >npm-install.log 2>&1 ||
   { cat npm-install.log; exit 1; }

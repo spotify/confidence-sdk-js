@@ -368,7 +368,7 @@ Only some keys line up with the device info context of the Confidence iOS and An
 
 Safari 26 and later reports iOS and iPadOS as `18.6`, so for Safari the version is taken from Safari's own version, which matches the OS version. Other iOS browsers report the version from the user agent.
 
-The OS and browser are detected from `navigator.userAgentData` where available, and otherwise from the user agent using [bowser](https://github.com/bowser-js/bowser), the same library the session recording SDK uses. `userAgentData.platform` also catches mobile browsers that request the desktop version of a site. Recognized browsers are Chrome, Chromium, Safari, Firefox, Edge, Opera, Opera Mini, Samsung Internet, Yandex, Vivaldi and Brave (Brave only via `userAgentData`); others are reported as `Unknown`. Android TVs, set-top boxes, VR headsets and car displays are reported as `desktop`, not `tablet`.
+The OS and browser are detected from `navigator.userAgentData` where available, and otherwise from the user agent, using [`@spotify-confidence/device-info`](../device-info), which the session recording SDK also uses. `userAgentData.platform` also catches mobile browsers that request the desktop version of a site. Recognized browsers are Chrome, Chromium, Safari, Firefox, Edge, Opera, Opera Mini, Samsung Internet, Yandex, Vivaldi and Brave (Brave only via `userAgentData`); others are reported as `Unknown`. Android TVs, set-top boxes, VR headsets and car displays are reported as `desktop`, not `tablet`.
 
 #### Web vitals (web)
 

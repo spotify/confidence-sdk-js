@@ -1,10 +1,23 @@
 {
   "files": [],
-  "compilerOptions": { "composite": true },
+  "compilerOptions": {
+    "composite": true
+  },
   "references": [
-    { "path": "./packages/sdk" },
-    { "path": "./packages/openfeature-server-provider" },
-    { "path": "./packages/openfeature-web-provider" },
-    { "path": "./packages/react" }
+    {
+      "path": "./packages/device-info"
+    },
+    {
+      "path": "./packages/sdk"
+    },
+    {
+      "path": "./packages/openfeature-server-provider"
+    },
+    {
+      "path": "./packages/openfeature-web-provider"
+    },
+    {
+      "path": "./packages/react"
+    }
   ]
 }

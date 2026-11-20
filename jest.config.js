@@ -27,6 +27,11 @@ module.exports = {
       ...projectCommonConfig,
     },
     {
+      displayName: 'device-info',
+      testMatch: ['<rootDir>/packages/device-info/src/**/*.test.ts*'],
+      ...projectCommonConfig,
+    },
+    {
       displayName: 'server-provider',
       testMatch: ['<rootDir>/packages/openfeature-server-provider/src/**/*.test.ts*'],
       ...projectCommonConfig,

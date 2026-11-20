@@ -1,0 +1,56 @@
+{
+  "name": "@spotify-confidence/device-info",
+  "license": "Apache-2.0",
+  "version": "0.0.0",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/spotify/confidence-sdk-js.git",
+    "directory": "packages/device-info"
+  },
+  "engineStrict": true,
+  "engines": {
+    "node": ">=18.17.0"
+  },
+  "dependencies": {
+    "bowser": "^2.14.1"
+  },
+  "devDependencies": {
+    "rollup": "4.24.0",
+    "typescript": "5.1.6"
+  },
+  "type": "module",
+  "files": [
+    "dist/index.*"
+  ],
+  "scripts": {
+    "prepack": "yarn build && yarn bundle",
+    "bundle": "rollup -c && ../../validate-api.sh && ../../emit-dcts.sh",
+    "build": "tsc",
+    "clean": "rm -rf {build,dist}"
+  },
+  "exports": {
+    ".": {
+      "import": "./build/index.js",
+      "types": "./build/index.d.ts"
+    }
+  },
+  "publishConfig": {
+    "registry": "https://registry.npmjs.org/",
+    "access": "public",
+    "exports": {
+      ".": {
+        "import": {
+          "types": "./dist/index.d.ts",
+          "default": "./dist/index.mjs"
+        },
+        "require": {
+          "types": "./dist/index.d.cts",
+          "default": "./dist/index.cjs"
+        }
+      }
+    },
+    "main": "dist/index.cjs",
+    "module": "dist/index.mjs",
+    "types": "dist/index.d.ts"
+  }
+}

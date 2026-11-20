@@ -51,5 +51,8 @@
   },
   "dependencies": {
     "bowser": "^2.14.1"
+  },
+  "devDependencies": {
+    "@spotify-confidence/device-info": "workspace:*"
   }
 }

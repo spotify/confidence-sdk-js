@@ -1,9 +1,20 @@
 import Bowser from 'bowser';
 
+/**
+ * A name with an optional version, such as `{ name: 'iOS', version: '17.4' }`.
+ * @public
+ */
 export type NamedVersion = { name: string; version?: string };
 
+/**
+ * @public
+ */
 export type FormFactor = 'mobile' | 'tablet' | 'desktop';
 
+/**
+ * The parts of `navigator.userAgentData` used for detection.
+ * @public
+ */
 export type UserAgentData = {
   mobile?: boolean;
   platform?: string;
@@ -95,11 +106,25 @@ function parseOs(
   return os;
 }
 
-export function parseDeviceInfo(
-  userAgent: string,
-  uaData: UserAgentData | undefined,
-  maxTouchPoints: number,
-): { os: NamedVersion; browser: NamedVersion; formFactor: FormFactor } {
+/**
+ * The detected OS, browser and form factor.
+ * @public
+ */
+export type DeviceInfo = { os: NamedVersion; browser: NamedVersion; formFactor: FormFactor };
+
+/**
+ * Detects the OS, browser and form factor from a user agent.
+ *
+ * @remarks
+ * OS names match the Confidence iOS and Android SDKs (`iOS`, `iPadOS`, `android`). Versions that
+ * user agents freeze or fake are left out, and `browser.version` is the major version only.
+ *
+ * @param userAgent - `navigator.userAgent`
+ * @param uaData - `navigator.userAgentData`, used over the user agent where available
+ * @param maxTouchPoints - `navigator.maxTouchPoints`, used to tell iPads in desktop mode from Macs
+ * @public
+ */
+export function parseDeviceInfo(userAgent: string, uaData?: UserAgentData, maxTouchPoints: number = 0): DeviceInfo {
   const parsed = Bowser.parse(userAgent);
   let formFactor = parseFormFactor(userAgent, parsed.platform.type, maxTouchPoints);
   const os = parseOs(userAgent, parsed, uaData, formFactor === 'tablet');

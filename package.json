@@ -8,7 +8,7 @@
   ],
   "scripts": {
     "build": "tsc -b tsconfig.json",
-    "build:csr": "yarn workspaces foreach -A --include 'csr/*' --topological run prebuild && yarn workspaces foreach -A --include 'csr/*' --topological run build",
+    "build:csr": "yarn workspace @spotify-confidence/device-info build && yarn workspaces foreach -A --include 'csr/*' --topological run prebuild && yarn workspaces foreach -A --include 'csr/*' --topological run build",
     "bundle": "yarn constraints && yarn build && yarn workspaces foreach -Ap run bundle",
     "clean": "rm -rf packages/*/{build,dist}",
     "format": "prettier --config prettier.config.js -w .",

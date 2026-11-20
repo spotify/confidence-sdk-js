@@ -40,8 +40,13 @@ module.exports = defineConfig({
         } else if (dep.type === 'devDependencies') {
           dep.update('workspace:*');
         } else if (dep.type === 'dependencies') {
-          // there should be no regular deps between packages.
-          dep.delete();
+          if (workspace.cwd === 'packages/device-info') {
+            // device-info is a leaf utility bundled with whichever package uses it.
+            dep.update('workspace:*');
+          } else {
+            // there should be no regular deps between packages.
+            dep.delete();
+          }
         }
       }
 

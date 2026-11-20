@@ -20,7 +20,7 @@
   },
   "dependencies": {
     "@bufbuild/protobuf": "^2.0.0",
-    "bowser": "^2.14.1",
+    "@spotify-confidence/device-info": "workspace:*",
     "web-vitals": "^3.5.2"
   },
   "files": [
