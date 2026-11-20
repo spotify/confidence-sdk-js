@@ -62,6 +62,31 @@
       #status {
         min-height: 1.5em;
       }
+      #findings {
+        margin-top: 20px;
+      }
+      #findings h2 {
+        font-size: 17px;
+        margin: 0 0 4px;
+      }
+      #findings-list {
+        padding-left: 20px;
+      }
+      #findings-list li {
+        margin: 6px 0;
+      }
+      #findings-list code,
+      #config {
+        background: #fff;
+        border: 1px solid #ddd;
+        border-radius: 4px;
+        padding: 1px 4px;
+      }
+      #config {
+        display: block;
+        padding: 8px;
+        white-space: pre-wrap;
+      }
     </style>
   </head>
   <body>
@@ -75,6 +100,19 @@
       </div>
       <p id="status" role="status"></p>
       <div id="stage" aria-label="Recording replay"></div>
+      <section id="findings" hidden>
+        <h2>Possible personal data</h2>
+        <p id="findings-summary"></p>
+        <ol id="findings-list"></ol>
+        <div id="suggestion" hidden>
+          <p>
+            These options would mask the values found above. Check them before adding them to your config: a selector
+            can match more of the page than you expect.
+          </p>
+          <code id="config"></code>
+          <p><button id="copy-config" type="button">Copy suggested config</button></p>
+        </div>
+      </section>
     </main>
     <!-- EMBEDDED_RECORDING -->
     <script>
@@ -152,9 +190,90 @@
         document.documentElement.dataset.privacyReviewReady = 'true';
       }
 
+      const KIND_LABELS = {
+        email: 'Email address',
+        phone: 'Phone number',
+        card: 'Card number',
+        iban: 'IBAN',
+        token: 'Token or credential',
+      };
+
+      function describeFinding(finding) {
+        const where =
+          finding.location === 'attribute'
+            ? `the ${finding.attribute} attribute of `
+            : finding.location === 'input'
+            ? 'the value typed into '
+            : 'the text of ';
+        return `${KIND_LABELS[finding.kind] ?? finding.kind} in ${where}`;
+      }
+
+      function fixFor(finding) {
+        if (finding.location === 'attribute') return `add "${finding.attribute}" to maskAttributes`;
+        if (finding.location === 'input') return 'set maskInputs: true';
+        return /[#.]/.test(finding.selector)
+          ? `add "${finding.selector}" to maskSelectors`
+          : 'add data-csr-mask to this element';
+      }
+
+      function renderFindings(findings, suggestion, startTime) {
+        if (!Array.isArray(findings)) return;
+        const section = document.querySelector('#findings');
+        const list = document.querySelector('#findings-list');
+        section.hidden = false;
+        document.querySelector('#findings-summary').textContent = findings.length
+          ? `${findings.length} recorded ${
+              findings.length === 1 ? 'value looks' : 'values look'
+            } like personal data. ` + 'This check only finds common formats, so also review the replay itself.'
+          : 'No common personal data formats were found. This check only finds common formats, so also review the replay itself.';
+        for (const finding of findings) {
+          const item = document.createElement('li');
+          const selector = document.createElement('code');
+          selector.textContent = finding.selector;
+          const offset = Math.max(0, finding.timestamp - startTime);
+          const jump = document.createElement('button');
+          jump.type = 'button';
+          jump.textContent = clock(offset);
+          jump.title = 'Show this moment in the replay';
+          jump.addEventListener('click', () => {
+            if (!player) return;
+            playing = false;
+            playButton.textContent = 'Play';
+            player.pause(offset);
+            updatePosition();
+          });
+          item.append(
+            jump,
+            ` ${describeFinding(finding)}`,
+            selector,
+            ` (${finding.preview}). To fix, ${fixFor(finding)}.`,
+          );
+          list.append(item);
+        }
+        const hasSuggestion =
+          suggestion &&
+          (suggestion.maskSelectors?.length || suggestion.maskAttributes?.length || suggestion.maskInputs);
+        if (!hasSuggestion) return;
+        const config = JSON.stringify(suggestion, null, 2);
+        document.querySelector('#suggestion').hidden = false;
+        document.querySelector('#config').textContent = config;
+        document.querySelector('#copy-config').addEventListener('click', async event => {
+          try {
+            await navigator.clipboard.writeText(config);
+            event.target.textContent = 'Copied';
+          } catch (_error) {
+            // Clipboard access is often blocked for local files; select the text for manual copying.
+            getSelection().selectAllChildren(document.querySelector('#config'));
+            event.target.textContent = 'Press Ctrl/Cmd+C to copy';
+          }
+        });
+      }
+
       const embeddedRecording = document.querySelector('#embedded-recording');
       try {
-        loadRecording(JSON.parse(embeddedRecording.textContent));
+        const data = JSON.parse(embeddedRecording.textContent);
+        loadRecording(data);
+        renderFindings(data.findings, data.suggestion, player.getMetaData().startTime);
       } catch (error) {
         status.textContent = error instanceof Error ? error.message : String(error);
       }

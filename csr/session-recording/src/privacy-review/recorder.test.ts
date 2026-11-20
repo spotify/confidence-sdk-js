@@ -68,7 +68,12 @@ describe('startPrivacyReviewRecording', () => {
     expect(html).not.toContain('<!-- EMBEDDED_RECORDING -->');
     expect(html).not.toContain('</script><img src="https://example.invalid">');
     const embedded = html.match(/<script id="embedded-recording" type="application\/json">([^<]*)<\/script>/)?.[1];
-    expect(JSON.parse(embedded!)).toEqual({ format: 'csr-privacy-review-v1', events: [event] });
+    expect(JSON.parse(embedded!)).toEqual({
+      format: 'csr-privacy-review-v1',
+      events: [event],
+      findings: [],
+      suggestion: { maskSelectors: [], maskAttributes: [] },
+    });
   });
 
   it('reports success only after the local replay has loaded', async () => {
@@ -151,5 +156,49 @@ describe('startPrivacyReviewRecording', () => {
     expect(await startPrivacyReviewRecording().preview()).toBe('empty');
     expect(stopCapture).toHaveBeenCalledOnce();
     expect(open).not.toHaveBeenCalled();
+  });
+
+  it('embeds possible personal data findings and a suggested config in the review', async () => {
+    const snapshot = {
+      type: 2,
+      timestamp: 5,
+      data: {
+        node: {
+          type: 0,
+          id: 1,
+          childNodes: [
+            {
+              type: 2,
+              id: 2,
+              tagName: 'p',
+              attributes: { id: 'greeting', title: 'jane@example.com' },
+              childNodes: [{ type: 3, id: 3, textContent: 'Hi jane@example.com' }],
+            },
+          ],
+        },
+      },
+    } as RecordingEvent;
+    record.mockImplementationOnce(onEvent => {
+      onEvent(snapshot);
+      return vi.fn();
+    });
+    const link = { click: vi.fn(), remove: vi.fn(), href: '', download: '' };
+    vi.stubGlobal('document', { createElement: () => link, body: { appendChild: vi.fn() } });
+    const createObjectURL = vi.spyOn(URL, 'createObjectURL').mockReturnValue('blob:local-review');
+    vi.spyOn(URL, 'revokeObjectURL').mockImplementation(() => {});
+
+    startPrivacyReviewRecording().download();
+
+    const html = await (createObjectURL.mock.calls[0][0] as Blob).text();
+    const embedded = html.match(/<script id="embedded-recording" type="application\/json">([^<]*)<\/script>/)?.[1];
+    const data = JSON.parse(embedded!);
+    expect(data.findings).toHaveLength(2);
+    expect(data.findings).toEqual(
+      expect.arrayContaining([
+        expect.objectContaining({ kind: 'email', location: 'text', selector: '#greeting', timestamp: 5 }),
+        expect.objectContaining({ kind: 'email', location: 'attribute', attribute: 'title' }),
+      ]),
+    );
+    expect(data.suggestion).toEqual({ maskSelectors: ['#greeting'], maskAttributes: ['title'] });
   });
 });

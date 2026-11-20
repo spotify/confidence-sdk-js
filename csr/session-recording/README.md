@@ -144,6 +144,21 @@ review.download();
 
 `preview()` opens a local tab and resolves to `'opened'`. It resolves to `'empty'`, without opening a tab, if nothing replayable has been captured yet. It resolves to `'popup-blocked'` or `'viewer-blocked'` if the browser blocks the tab or its Content Security Policy prevents replay; in that case, download the review and open the HTML file directly. `review.stop()` returns the captured events without downloading them. This review covers DOM capture and its masking and blocking rules; it does not include backend eligibility, session context, tags, measures, or flag metadata from the normal SDK.
 
+### Leak report
+
+The review also scans the recording for values that still look like personal data: email addresses, phone numbers, card numbers (Luhn-checked), IBANs, JWTs, and credentials in URL parameters such as `?token=`. The viewer lists each finding with the element it came from, a button that jumps to that moment in the replay, and a suggested fix. It also shows a suggested config, with a button to copy it. The panel reports how many values were found when you preview.
+
+The scan runs locally, on the recording only. It matches common formats, so an empty report does not prove a page is clean: still watch the replay. The suggested config only contains id or class selectors; for elements without one, the report tells you to add `data-csr-mask`.
+
+The same scan is available for your own tooling:
+
+```typescript
+import { findPotentialPii, suggestMaskingConfig } from '@spotify-confidence/session-recording/privacy-review';
+
+const findings = findPotentialPii(review.stop()); // or review.findings()
+const config = suggestMaskingConfig(findings); // { maskSelectors, maskAttributes, maskInputs? }
+```
+
 ## Context
 
 Context lets you attach custom dimensions to the recording session. These are sent alongside the auto-collected browser metadata (user agent, OS, viewport, language, timezone) in the session init request. Context serves two purposes: it helps you find and filter recordings later, and the backend uses it to target recordings to specific cohorts of your user population (e.g. only record premium users, or users on a specific build version).

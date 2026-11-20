@@ -92,10 +92,14 @@ export function mountPrivacyReviewControls(options: PrivacyReviewControlsOptions
       return;
     }
     download.disabled = false;
+    const leaks = review.findings().length;
+    const leakSummary = leaks
+      ? ` ${leaks} possible personal data ${leaks === 1 ? 'value was' : 'values were'} recorded; see the review.`
+      : ' No common personal data formats were found.';
     status.textContent =
-      result === 'opened'
+      (result === 'opened'
         ? 'Preview opened in a new tab. Download a copy if you want to keep it.'
-        : 'Your browser blocked the preview. Download the review to open it locally.';
+        : 'Your browser blocked the preview. Download the review to open it locally.') + leakSummary;
   });
 
   download.addEventListener('click', () => {

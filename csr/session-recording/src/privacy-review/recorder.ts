@@ -1,6 +1,7 @@
 import { record, type RecordingConfig } from '@spotify-confidence/csr-recorder';
 import type { RecordingEvent } from '@spotify-confidence/csr-common';
 import { viewerHtml } from './privacy-review-viewer.generated';
+import { findPotentialPii, suggestMaskingConfig, type PiiFinding } from './scanner';
 
 export type PrivacyReviewOptions = RecordingConfig;
 
@@ -11,6 +12,8 @@ export type PrivacyReviewOptions = RecordingConfig;
 export type PrivacyReviewPreviewResult = 'opened' | 'empty' | 'popup-blocked' | 'viewer-blocked';
 
 export interface PrivacyReviewRecording {
+  /** Values in the recording so far that look like personal data. See `findPotentialPii`. */
+  findings(): PiiFinding[];
   /** Stop capture and return the locally captured DOM events. */
   stop(): RecordingEvent[];
   /** Stop capture and open a local replay tab. */
@@ -20,9 +23,23 @@ export interface PrivacyReviewRecording {
   readonly isRecording: boolean;
 }
 
+// The leak report is an aid; a scanner bug must never stop the review itself.
+function safeFindings(events: RecordingEvent[]): PiiFinding[] {
+  try {
+    return findPotentialPii(events);
+  } catch (_error) {
+    return [];
+  }
+}
+
 function reviewHtmlBlob(events: RecordingEvent[]): Blob {
   // JSON in an HTML script element must not contain a literal closing tag.
-  const data = JSON.stringify({ format: 'csr-privacy-review-v1', events }).replaceAll('<', '\\u003c');
+  const findings = safeFindings(events);
+  const suggestion = suggestMaskingConfig(findings);
+  const data = JSON.stringify({ format: 'csr-privacy-review-v1', events, findings, suggestion }).replaceAll(
+    '<',
+    '\\u003c',
+  );
   const html = viewerHtml.replace('<!-- EMBEDDED_RECORDING -->', () => {
     return `<script id="embedded-recording" type="application/json">${data}</script>`;
   });
@@ -63,6 +80,7 @@ export function startPrivacyReviewRecording(options: PrivacyReviewOptions = {}):
 
   return {
     stop,
+    findings: () => safeFindings(events),
     preview() {
       const captured = stop();
       if (!hasFullSnapshot(captured)) return Promise.resolve('empty');
