@@ -31,7 +31,7 @@ describe('findPotentialPii', () => {
     );
     expect(findings).toEqual(
       expect.arrayContaining([
-        expect.objectContaining({ kind: 'email', location: 'text', selector: '#greeting' }),
+        expect.objectContaining({ kind: 'email', location: 'text', selector: '#greeting', nodeId: expect.any(Number) }),
         expect.objectContaining({ kind: 'phone', location: 'text', selector: 'span.phone' }),
         expect.objectContaining({ kind: 'token', location: 'attribute', attribute: 'href', selector: 'a' }),
         expect.objectContaining({ kind: 'card', location: 'attribute', attribute: 'title' }),
@@ -65,6 +65,20 @@ describe('findPotentialPii', () => {
         expect.objectContaining({ kind: 'email', location: 'input', selector: '#email' }),
       ]),
     );
+  });
+
+  it('finds personal data in tag values', () => {
+    const tag = {
+      type: 6,
+      timestamp: 9,
+      data: { plugin: 'csr:tag', payload: { key: 'customer', value: 'jane@example.com' } },
+    };
+    expect(findPotentialPii([tag as RecordingEvent])).toEqual([
+      expect.objectContaining({ kind: 'email', location: 'tag', selector: 'customer', timestamp: 9 }),
+    ]);
+    expect(suggestMaskingConfig(findPotentialPii([tag as RecordingEvent]))).toEqual({
+      masking: { selectors: [], attributes: [] },
+    });
   });
 
   it('reports a repeated value once', async () => {

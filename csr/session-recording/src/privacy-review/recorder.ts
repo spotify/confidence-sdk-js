@@ -1,13 +1,48 @@
-import { record } from '@spotify-confidence/csr-recorder';
-import { resolvePrivacyOptions, type PrivacyOptions } from '../privacy-options';
-import type { RecordingEvent } from '@spotify-confidence/csr-common';
+import {
+  DEFAULT_BLOCK_SELECTORS,
+  DEFAULT_MASK_SELECTORS,
+  record,
+  type RecordingConfig,
+} from '@spotify-confidence/csr-recorder';
+import type { ClientContext } from '@spotify-confidence/csr-common/uploader';
+import { resolvePrivacyOptions, type MaskingLevel, type PrivacyOptions } from '../privacy-options';
+import { IncrementalSource, RecordingEventType, type RecordingEvent } from '@spotify-confidence/csr-common';
 import { viewerHtml } from './privacy-review-viewer.generated';
 import { findPotentialPii, suggestMaskingConfig, type PiiFinding } from './scanner';
 
 /** The same `masking` and `blocking` options as `initSessionRecorder`, so a review matches production. */
 export interface PrivacyReviewOptions extends PrivacyOptions {
+  /** Session context to show in the review; `initSessionRecorder` passes the one it would have sent. */
+  context?: ClientContext;
   debugLogger?: (message: string) => void;
 }
+
+/** The review panel's own element, blocked from capture and left out of the config shown in reviews. */
+export const REVIEW_PANEL_SELECTOR = '[data-confidence-privacy-review-controls]';
+
+/** The privacy settings a review records with, defaults included, as shown in the viewer. */
+export interface EffectivePrivacyConfig {
+  masking: { level: MaskingLevel; selectors: string[]; attributes: string[] };
+  blocking: { selectors: string[] };
+}
+
+function effectiveConfig(resolved: RecordingConfig): EffectivePrivacyConfig {
+  let level: MaskingLevel = 'none';
+  if (resolved.maskAllText) level = 'text';
+  else if (resolved.maskInputs) level = 'inputs';
+  return {
+    masking: {
+      level,
+      selectors: resolved.maskSelectors ?? DEFAULT_MASK_SELECTORS,
+      attributes: resolved.maskAttributes ?? [],
+    },
+    blocking: {
+      selectors: (resolved.blockSelectors ?? DEFAULT_BLOCK_SELECTORS).filter(s => s !== REVIEW_PANEL_SELECTOR),
+    },
+  };
+}
+
+type ReviewMetadata = { context?: ClientContext; config: EffectivePrivacyConfig };
 
 /**
  * `empty`: nothing replayable was captured yet, so no tab was opened.
@@ -16,6 +51,8 @@ export interface PrivacyReviewOptions extends PrivacyOptions {
 export type PrivacyReviewPreviewResult = 'opened' | 'empty' | 'popup-blocked' | 'viewer-blocked';
 
 export interface PrivacyReviewRecording {
+  /** Add an event to the recording while it is capturing, e.g. a tag the recorder would upload. */
+  addEvent(event: RecordingEvent): void;
   /** Values in the recording so far that look like personal data. See `findPotentialPii`. */
   findings(): PiiFinding[];
   /** Stop capture and return the locally captured DOM events. */
@@ -36,18 +73,31 @@ function safeFindings(events: RecordingEvent[]): PiiFinding[] {
   }
 }
 
-function reviewHtmlBlob(events: RecordingEvent[]): Blob {
+function reviewHtmlBlob(events: RecordingEvent[], metadata: ReviewMetadata): Blob {
   // JSON in an HTML script element must not contain a literal closing tag.
   const findings = safeFindings(events);
   const suggestion = suggestMaskingConfig(findings);
-  const data = JSON.stringify({ format: 'csr-privacy-review-v1', events, findings, suggestion }).replaceAll(
-    '<',
-    '\\u003c',
-  );
+  const data = JSON.stringify({
+    format: 'csr-privacy-review-v1',
+    events,
+    findings,
+    suggestion,
+    ...metadata,
+  }).replaceAll('<', '\\u003c');
   const html = viewerHtml.replace('<!-- EMBEDDED_RECORDING -->', () => {
     return `<script id="embedded-recording" type="application/json">${data}</script>`;
   });
   return new Blob([html], { type: 'text/html;charset=utf-8' });
+}
+
+// Interactions rrweb couldn't map to a node (id -1), such as clicks inside the review panel's
+// shadow root, can't be replayed; in a review they are only noise.
+function isUnmappedInteraction(event: RecordingEvent): boolean {
+  if (event.type !== RecordingEventType.IncrementalSnapshot) return false;
+  const data = event.data as { source?: number; id?: number };
+  return (
+    data.id === -1 && (data.source === IncrementalSource.MouseInteraction || data.source === IncrementalSource.Input)
+  );
 }
 
 // rrweb cannot replay without a full DOM snapshot (event type 2).
@@ -70,12 +120,14 @@ function saveBlob(blob: Blob, filename: string): void {
 export function startPrivacyReviewRecording(options: PrivacyReviewOptions = {}): PrivacyReviewRecording {
   const events: RecordingEvent[] = [];
   let recording = true;
-  const { debugLogger } = options;
+  const { debugLogger, context } = options;
+  const resolved = resolvePrivacyOptions(options, debugLogger);
+  const metadata: ReviewMetadata = { context, config: effectiveConfig(resolved) };
   const stopCapture = record(
     event => {
-      if (recording) events.push(event);
+      if (recording && !isUnmappedInteraction(event)) events.push(event);
     },
-    { ...resolvePrivacyOptions(options, debugLogger), debugLogger },
+    { ...resolved, debugLogger },
   );
 
   const stop = () => {
@@ -88,11 +140,14 @@ export function startPrivacyReviewRecording(options: PrivacyReviewOptions = {}):
 
   return {
     stop,
+    addEvent(event) {
+      if (recording) events.push(event);
+    },
     findings: () => safeFindings(events),
     preview() {
       const captured = stop();
       if (!hasFullSnapshot(captured)) return Promise.resolve('empty');
-      const url = URL.createObjectURL(reviewHtmlBlob(captured));
+      const url = URL.createObjectURL(reviewHtmlBlob(captured, metadata));
       const opened = window.open(url, '_blank');
       if (!opened) {
         URL.revokeObjectURL(url);
@@ -140,7 +195,7 @@ export function startPrivacyReviewRecording(options: PrivacyReviewOptions = {}):
       });
     },
     download(filename = 'confidence-privacy-review.html') {
-      saveBlob(reviewHtmlBlob(stop()), filename);
+      saveBlob(reviewHtmlBlob(stop(), metadata), filename);
     },
     get isRecording() {
       return recording;

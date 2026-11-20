@@ -1,6 +1,7 @@
 import {
   IncrementalSource,
   RecordingEventType,
+  RecordingPluginName,
   SerializedNodeType,
   type RecordingEvent,
 } from '@spotify-confidence/csr-common';
@@ -9,14 +10,16 @@ export type PiiKind = 'email' | 'phone' | 'card' | 'iban' | 'token';
 
 export interface PiiFinding {
   kind: PiiKind;
-  /** Where the value was recorded: element text, an attribute, or an input value. */
-  location: 'text' | 'attribute' | 'input';
+  /** Where the value was recorded: element text, an attribute, an input value, or a `tag()` value. */
+  location: 'text' | 'attribute' | 'input' | 'tag';
   /** Attribute name, when `location` is `attribute`. */
   attribute?: string;
-  /** CSS selector for the element, as specific as the recorded id and classes allow. */
+  /** CSS selector for the element, as specific as the recorded id and classes allow; the tag key for tags. */
   selector: string;
   /** Event timestamp (ms since epoch) when the value was first recorded. */
   timestamp: number;
+  /** Recorded node id of the element (absent for tags), for locating it in a replay. */
+  nodeId?: number;
   /** The matched value with most characters hidden, safe to show in a report. */
   preview: string;
 }
@@ -107,6 +110,12 @@ function cssEscape(value: string): string {
 
 type NodeInfo = { tagName?: string; attributes: Record<string, unknown>; parentId?: number };
 
+// Text nodes have no tag, so findings point at their parent element.
+function elementIdFor(id: number | undefined, nodes: Map<number, NodeInfo>): number | undefined {
+  const info = id === undefined ? undefined : nodes.get(id);
+  return info && !info.tagName ? info.parentId : id;
+}
+
 function selectorFor(id: number | undefined, nodes: Map<number, NodeInfo>): string {
   // Text nodes have no tag, so describe their parent element.
   let info = id === undefined ? undefined : nodes.get(id);
@@ -149,7 +158,24 @@ export function findPotentialPii(events: RecordingEvent[]): PiiFinding[] {
       const key = `${kind}|${location}|${attribute ?? ''}|${selector}|${match}`;
       if (seen.has(key)) continue;
       seen.add(key);
-      findings.push({ kind, location, attribute, selector, timestamp, preview: preview(match) });
+      findings.push({
+        kind,
+        location,
+        attribute,
+        selector,
+        timestamp,
+        nodeId: elementIdFor(nodeId, nodes),
+        preview: preview(match),
+      });
+    }
+  };
+
+  const reportTag = (value: string, key: string, timestamp: number) => {
+    for (const { kind, match } of matches(value)) {
+      const dedupe = `${kind}|tag|${key}|${match}`;
+      if (seen.has(dedupe)) continue;
+      seen.add(dedupe);
+      findings.push({ kind, location: 'tag', selector: key, timestamp, preview: preview(match) });
     }
   };
 
@@ -189,6 +215,9 @@ export function findPotentialPii(events: RecordingEvent[]): PiiFinding[] {
       } else if (data.source === IncrementalSource.Input && typeof data.text === 'string') {
         report(data.text, 'input', data.id, event.timestamp);
       }
+    } else if (event.type === RecordingEventType.Plugin && event.data?.plugin === RecordingPluginName.Tag) {
+      const { key, value } = event.data.payload;
+      if (typeof value === 'string') reportTag(value, key, event.timestamp);
     }
   }
   return findings;
@@ -207,6 +236,8 @@ export function suggestMaskingConfig(findings: PiiFinding[]): SuggestedMaskingCo
   for (const finding of findings) {
     if (finding.location === 'attribute' && finding.attribute) maskAttributes.add(finding.attribute);
     else if (finding.location === 'input') inputsLeaked = true;
+    // Tag values come from your own tag() calls; no masking option applies to them.
+    else if (finding.location === 'tag') continue;
     // A bare tag like `p` would mask every paragraph; those need data-csr-mask on the element instead.
     else if (isSpecificSelector(finding.selector)) maskSelectors.add(finding.selector);
   }

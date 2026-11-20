@@ -5,6 +5,7 @@ const record = vi.hoisted(() => vi.fn());
 
 vi.mock('@spotify-confidence/csr-common/uploader', () => ({
   createUploader,
+  buildSessionContext: (custom: object) => ({ userAgent: { browser: 'test' }, ...custom }),
 }));
 vi.mock('@spotify-confidence/csr-recorder', () => ({
   record,
@@ -320,5 +321,125 @@ describe('initSessionRecorder', () => {
     expect(flagEvaluations()[1][0]).toMatchObject({
       data: { payload: { flagKey: 'checkout', variant: 'treatment' } },
     });
+  });
+});
+
+describe('review mode', () => {
+  afterEach(() => {
+    vi.resetAllMocks();
+    vi.unstubAllGlobals();
+  });
+
+  function reviewModule() {
+    const destroy = vi.fn();
+    const addEvent = vi.fn();
+    return { mount: vi.fn(() => ({ destroy, addEvent })), destroy, addEvent };
+  }
+
+  it('mounts the review with the same privacy options and never uploads or records', async () => {
+    vi.stubGlobal('document', { body: {} });
+    const review = reviewModule();
+    const debugLogger = vi.fn();
+
+    const recorder = initSessionRecorder({
+      clientSecret: 'secret',
+      review,
+      masking: { level: 'text', selectors: ['.pii'] },
+      blocking: { selectors: ['.widget'] },
+      debugLogger,
+    });
+    recorder.start();
+    recorder.tag('k', 'v');
+    await flushPromises();
+
+    expect(createUploader).not.toHaveBeenCalled();
+    expect(record).not.toHaveBeenCalled();
+    expect(review.mount).toHaveBeenCalledWith(
+      expect.objectContaining({
+        masking: { level: 'text', selectors: ['.pii'] },
+        blocking: { selectors: ['.widget'] },
+        debugLogger: expect.any(Function),
+      }),
+    );
+    expect(recorder.isRecording).toBe(false);
+    recorder.stop();
+    expect(review.destroy).toHaveBeenCalledOnce();
+  });
+
+  it('sends the session context, tags, measures and flags to the review instead of uploading', () => {
+    vi.stubGlobal('document', { body: {} });
+    const review = reviewModule();
+
+    const recorder = initSessionRecorder({
+      clientSecret: 'secret',
+      review,
+      context: { team: 'checkout' },
+      appVersion: '1.2.3',
+    });
+    recorder.tag('plan', 'pro');
+    recorder.measure('items', 3);
+    recorder.tag('bad key!');
+
+    const options = review.mount.mock.calls[0][0];
+    expect(options.context).toMatchObject({ team: 'checkout', _app_version: '1.2.3', userAgent: { browser: 'test' } });
+    expect(options.context._csr_sdk_version).toEqual(expect.any(String));
+    expect(review.addEvent.mock.calls.map(([event]) => event.data)).toEqual([
+      { plugin: 'csr:tag', payload: { key: 'plan', value: 'pro' } },
+      { plugin: 'csr:measure', payload: { key: 'items', value: 3 } },
+    ]);
+    expect(createUploader).not.toHaveBeenCalled();
+  });
+
+  it('replays evaluated flags into each review recording', () => {
+    vi.stubGlobal('document', { body: {} });
+    vi.stubGlobal('window', {
+      __confidence: { flags: { 'new-checkout': { variant: 'on', assignmentOrigin: 'targeting' } } },
+    });
+    const review = reviewModule();
+
+    initSessionRecorder({ clientSecret: 'secret', review });
+    expect(review.addEvent).not.toHaveBeenCalled();
+    review.mount.mock.calls[0][0].onRecordingStart();
+
+    expect(review.addEvent.mock.calls.map(([event]) => event.data)).toEqual([
+      {
+        plugin: 'csr:flagEvaluation',
+        payload: { flagKey: 'new-checkout', variant: 'on', assignmentOrigin: 'targeting' },
+      },
+    ]);
+  });
+
+  it('waits for the body before mounting', () => {
+    let onReady: (() => void) | undefined;
+    vi.stubGlobal('document', {
+      body: null,
+      addEventListener: (type: string, listener: () => void) => {
+        if (type === 'DOMContentLoaded') onReady = listener;
+      },
+    });
+    const review = reviewModule();
+
+    initSessionRecorder({ clientSecret: 'secret', review });
+    expect(review.mount).not.toHaveBeenCalled();
+    onReady!();
+    expect(review.mount).toHaveBeenCalledOnce();
+  });
+
+  it('ignores mode and says so', async () => {
+    vi.stubGlobal('document', { body: {} });
+    const debugLogger = vi.fn();
+
+    initSessionRecorder({ clientSecret: 'secret', review: reviewModule(), mode: 'automatic', debugLogger });
+    await flushPromises();
+
+    expect(createUploader).not.toHaveBeenCalled();
+    expect(debugLogger).toHaveBeenCalledWith("[CSR] review is set, so mode 'automatic' is ignored");
+  });
+
+  it('does nothing outside a browser', () => {
+    const review = reviewModule();
+    initSessionRecorder({ clientSecret: 'secret', review });
+    expect(review.mount).not.toHaveBeenCalled();
+    expect(createUploader).not.toHaveBeenCalled();
   });
 });

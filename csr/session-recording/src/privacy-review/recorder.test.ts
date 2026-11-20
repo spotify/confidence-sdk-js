@@ -2,7 +2,11 @@ import { afterEach, describe, expect, it, vi } from 'vitest';
 import type { RecordingEvent } from '@spotify-confidence/csr-common';
 
 const record = vi.hoisted(() => vi.fn());
-vi.mock('@spotify-confidence/csr-recorder', () => ({ record }));
+vi.mock('@spotify-confidence/csr-recorder', () => ({
+  record,
+  DEFAULT_MASK_SELECTORS: ['[data-csr-mask]'],
+  DEFAULT_BLOCK_SELECTORS: ['[data-csr-block]', 'video'],
+}));
 
 import { startPrivacyReviewRecording } from './index';
 
@@ -74,6 +78,10 @@ describe('startPrivacyReviewRecording', () => {
       events: [event],
       findings: [],
       suggestion: { masking: { selectors: [], attributes: [] } },
+      config: {
+        masking: { level: 'inputs', selectors: ['[data-csr-mask]'], attributes: [] },
+        blocking: { selectors: ['[data-csr-block]', 'video'] },
+      },
     });
   });
 
@@ -201,5 +209,47 @@ describe('startPrivacyReviewRecording', () => {
       ]),
     );
     expect(data.suggestion).toEqual({ masking: { selectors: ['#greeting'], attributes: ['title'] } });
+  });
+
+  it('embeds the context, the effective config and added events, without the panel selector', async () => {
+    record.mockImplementationOnce(onEvent => {
+      onEvent({ type: 2, timestamp: 1, data: { node: { type: 0, id: 1, childNodes: [] } } } as RecordingEvent);
+      return vi.fn();
+    });
+    const link = { click: vi.fn(), remove: vi.fn(), href: '', download: '' };
+    vi.stubGlobal('document', { createElement: () => link, body: { appendChild: vi.fn() } });
+    const createObjectURL = vi.spyOn(URL, 'createObjectURL').mockReturnValue('blob:local-review');
+    vi.spyOn(URL, 'revokeObjectURL').mockImplementation(() => {});
+    const tag = { type: 6, timestamp: 2, data: { plugin: 'csr:tag', payload: { key: 'plan', value: 'pro' } } };
+
+    const review = startPrivacyReviewRecording({
+      context: { userAgent: { browser: 'chrome' }, team: 'checkout' },
+      masking: { level: 'text', attributes: ['href'] },
+      blocking: { selectors: ['.widget', '[data-confidence-privacy-review-controls]'] },
+    });
+    review.addEvent(tag as RecordingEvent);
+    review.download();
+    review.addEvent(tag as RecordingEvent);
+
+    const html = await (createObjectURL.mock.calls[0][0] as Blob).text();
+    const data = JSON.parse(
+      html.match(/<script id="embedded-recording" type="application\/json">([^<]*)<\/script>/)![1],
+    );
+    expect(data.context).toEqual({ userAgent: { browser: 'chrome' }, team: 'checkout' });
+    expect(data.config).toEqual({
+      masking: { level: 'text', selectors: ['[data-csr-mask]'], attributes: ['href'] },
+      blocking: { selectors: ['.widget'] },
+    });
+    expect(data.events.filter((e: RecordingEvent) => e.type === 6)).toEqual([tag]);
+  });
+
+  it('drops interactions rrweb could not map to a node, like clicks in the review panel', () => {
+    const click = (id: number) => ({ type: 3, timestamp: 1, data: { source: 2, type: 2, id, x: 0, y: 0 } });
+    record.mockImplementationOnce(onEvent => {
+      onEvent(click(-1) as RecordingEvent);
+      onEvent(click(7) as RecordingEvent);
+      return vi.fn();
+    });
+    expect(startPrivacyReviewRecording().stop()).toEqual([click(7)]);
   });
 });

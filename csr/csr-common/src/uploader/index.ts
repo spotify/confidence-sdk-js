@@ -2,6 +2,7 @@ export { createUploader } from './create-uploader';
 export { type Uploader, type CreateUploaderOptions } from './types';
 export {
   collectUserAgentContext,
+  buildSessionContext,
   type ClientContext,
   type UserAgentContext,
   type ContextValue,

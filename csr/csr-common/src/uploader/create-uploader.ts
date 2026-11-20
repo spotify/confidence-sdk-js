@@ -1,5 +1,5 @@
 import type { CreateUploaderOptions, Frame, Uploader } from './types';
-import { ClientContext, collectUserAgentContext } from './client-context';
+import { buildSessionContext } from './client-context';
 import { isSessionActivityEvent } from '../session-activity';
 import { workerScript } from './worker/worker-script';
 import { WORKER_HASH } from './worker-hash';
@@ -132,11 +132,7 @@ export async function createUploader(opts: CreateUploaderOptions): Promise<Uploa
     }
   });
 
-  const autoUA = collectUserAgentContext();
-  const context: ClientContext = {
-    ...(autoUA ? { userAgent: autoUA } : {}),
-    ...(opts.context ?? {}),
-  };
+  const context = buildSessionContext(opts.context);
 
   port.postMessage({
     type: 'hello',

@@ -1,21 +1,29 @@
 import { DEFAULT_BLOCK_SELECTORS } from '@spotify-confidence/csr-recorder';
-import { startPrivacyReviewRecording, type PrivacyReviewOptions, type PrivacyReviewRecording } from './recorder';
-
-const CONTROL_SELECTOR = '[data-confidence-privacy-review-controls]';
+import {
+  REVIEW_PANEL_SELECTOR,
+  startPrivacyReviewRecording,
+  type PrivacyReviewOptions,
+  type PrivacyReviewRecording,
+} from './recorder';
+import type { RecordingEvent } from '@spotify-confidence/csr-common';
 
 export interface PrivacyReviewControlsOptions extends PrivacyReviewOptions {
   /** Nonce for the panel's stylesheet when the application uses a style-src nonce. */
   styleNonce?: string;
+  /** Called each time a review recording starts. */
+  onRecordingStart?: () => void;
 }
 
 export interface PrivacyReviewControls {
+  /** Add an event (e.g. a tag) to the review if one is recording. */
+  addEvent(event: RecordingEvent): void;
   /** Stop any active capture and remove the panel. */
   destroy(): void;
 }
 
 /** Add a local review panel to a temporary test page or local-only build. */
 export function mountPrivacyReviewControls(options: PrivacyReviewControlsOptions = {}): PrivacyReviewControls {
-  const { styleNonce, ...recordingOptions } = options;
+  const { styleNonce, onRecordingStart, ...recordingOptions } = options;
   const host = document.createElement('div');
   host.setAttribute('data-confidence-privacy-review-controls', '');
   const shadow = host.attachShadow({ mode: 'open' });
@@ -74,10 +82,11 @@ export function mountPrivacyReviewControls(options: PrivacyReviewControlsOptions
       blocking: {
         selectors: [
           ...(recordingOptions.blocking?.selectors ?? recordingOptions.blockSelectors ?? DEFAULT_BLOCK_SELECTORS),
-          CONTROL_SELECTOR,
+          REVIEW_PANEL_SELECTOR,
         ],
       },
     });
+    onRecordingStart?.();
     start.disabled = true;
     preview.disabled = false;
     download.disabled = false;
@@ -118,6 +127,9 @@ export function mountPrivacyReviewControls(options: PrivacyReviewControlsOptions
   });
 
   return {
+    addEvent(event) {
+      review?.addEvent(event);
+    },
     destroy() {
       review?.stop();
       review = undefined;
