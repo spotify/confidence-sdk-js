@@ -100,7 +100,7 @@ Wherever text is masked, the values of `title`, `placeholder`, `aria-label` and 
 | `maskInputs: true`      | `masking: { level: 'inputs' }` (the default) |
 | `maskInputs: false`     | `masking: { level: 'none' }`                 |
 
-If both forms are set, `masking` and `blocking` win, and `debugLogger` says so.
+If both forms are set, `masking` and `blocking` win. Using a deprecated option logs a note through `debugLogger`.
 
 ## Context
 

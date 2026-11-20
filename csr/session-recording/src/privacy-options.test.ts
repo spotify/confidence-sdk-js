@@ -34,10 +34,7 @@ describe('resolvePrivacyOptions', () => {
       message => messages.push(message),
     );
     expect(resolved).toMatchObject({ maskSelectors: ['.new'], blockSelectors: ['.new-block'], maskInputs: true });
-    expect(messages).toEqual([
-      'maskSelectors, blockSelectors, maskInputs are deprecated; use masking and blocking',
-      "masking.level 'inputs' overrides maskInputs: false",
-    ]);
+    expect(messages).toEqual(['maskSelectors, blockSelectors, maskInputs are deprecated; use masking and blocking']);
   });
 
   it('keeps deprecated flat options working on their own', () => {

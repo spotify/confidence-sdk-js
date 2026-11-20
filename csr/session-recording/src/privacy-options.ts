@@ -1,3 +1,5 @@
+import type { RecordingConfig } from '@spotify-confidence/csr-recorder';
+
 /**
  * How much the recorder masks before anything leaves the page. Each level includes the one below:
  * - `none`: record inputs, text and attributes as they are.
@@ -39,20 +41,11 @@ export interface PrivacyOptions {
 
 const LEVELS: readonly MaskingLevel[] = ['none', 'inputs', 'text'];
 
-/** The recorder's own option names. */
-export interface ResolvedPrivacyConfig {
-  maskSelectors?: string[];
-  maskAttributes?: string[];
-  maskAllText: boolean;
-  maskInputs: boolean;
-  blockSelectors?: string[];
-}
-
 /** Map public privacy options to recorder config. Grouped options win over deprecated flat ones. */
 export function resolvePrivacyOptions(
   options: PrivacyOptions,
   debugLogger?: (message: string) => void,
-): ResolvedPrivacyConfig {
+): Pick<RecordingConfig, 'maskSelectors' | 'maskAttributes' | 'maskAllText' | 'maskInputs' | 'blockSelectors'> {
   const { masking = {}, blocking = {} } = options;
   const deprecated = (['maskSelectors', 'blockSelectors', 'maskInputs'] as const).filter(
     name => options[name] !== undefined,
@@ -63,12 +56,8 @@ export function resolvePrivacyOptions(
     );
   }
 
-  let legacyLevel: MaskingLevel | undefined;
-  if (options.maskInputs !== undefined) legacyLevel = options.maskInputs ? 'inputs' : 'none';
-  if (masking.level && legacyLevel && masking.level !== legacyLevel) {
-    debugLogger?.(`masking.level '${masking.level}' overrides maskInputs: ${options.maskInputs}`);
-  }
-  let level = masking.level ?? legacyLevel ?? 'inputs';
+  const legacyLevel = options.maskInputs === false ? 'none' : 'inputs';
+  let level = masking.level ?? legacyLevel;
   if (!LEVELS.includes(level)) {
     // A typo must fail closed, not fall back to less masking.
     debugLogger?.(`SECURITY: unknown masking.level '${String(level)}'; masking all text`);
