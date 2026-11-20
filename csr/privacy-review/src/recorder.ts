@@ -4,11 +4,17 @@ import { viewerHtml } from './privacy-review-viewer.generated';
 
 export type PrivacyReviewOptions = RecordingConfig;
 
+/**
+ * `empty`: nothing replayable was captured yet, so no tab was opened.
+ * `popup-blocked` / `viewer-blocked`: the browser blocked the tab or the replay; download instead.
+ */
+export type PrivacyReviewPreviewResult = 'opened' | 'empty' | 'popup-blocked' | 'viewer-blocked';
+
 export interface PrivacyReviewRecording {
   /** Stop capture and return the locally captured DOM events. */
   stop(): RecordingEvent[];
-  /** Stop capture and open a local replay tab. Resolves false if the browser blocks the tab or replay. */
-  preview(): Promise<boolean>;
+  /** Stop capture and open a local replay tab. */
+  preview(): Promise<PrivacyReviewPreviewResult>;
   /** Stop capture and save a self-contained HTML review that opens locally. */
   download(filename?: string): void;
   readonly isRecording: boolean;
@@ -21,6 +27,11 @@ function reviewHtmlBlob(events: RecordingEvent[]): Blob {
     return `<script id="embedded-recording" type="application/json">${data}</script>`;
   });
   return new Blob([html], { type: 'text/html;charset=utf-8' });
+}
+
+// rrweb cannot replay without a full DOM snapshot (event type 2).
+function hasFullSnapshot(events: RecordingEvent[]): boolean {
+  return events.some(event => event.type === 2);
 }
 
 function saveBlob(blob: Blob, filename: string): void {
@@ -53,35 +64,37 @@ export function startPrivacyReviewRecording(options: PrivacyReviewOptions = {}):
   return {
     stop,
     preview() {
-      const url = URL.createObjectURL(reviewHtmlBlob(stop()));
+      const captured = stop();
+      if (!hasFullSnapshot(captured)) return Promise.resolve('empty');
+      const url = URL.createObjectURL(reviewHtmlBlob(captured));
       const opened = window.open(url, '_blank');
       if (!opened) {
         URL.revokeObjectURL(url);
-        return Promise.resolve(false);
+        return Promise.resolve('popup-blocked');
       }
       opened.opener = null;
       const revoke = () => URL.revokeObjectURL(url);
       window.addEventListener('pagehide', revoke, { once: true });
       const deadline = Date.now() + 5_000;
-      return new Promise<boolean>(resolve => {
+      return new Promise<PrivacyReviewPreviewResult>(resolve => {
         const check = () => {
           if (opened.closed) {
             window.removeEventListener('pagehide', revoke);
             revoke();
-            resolve(false);
+            resolve('viewer-blocked');
             return;
           }
           try {
             if (opened.location.href === url) {
               if (opened.document.documentElement?.dataset.privacyReviewReady === 'true') {
-                resolve(true);
+                resolve('opened');
                 return;
               }
               if (opened.document.readyState === 'complete') {
                 opened.close();
                 window.removeEventListener('pagehide', revoke);
                 revoke();
-                resolve(false);
+                resolve('viewer-blocked');
                 return;
               }
             }
@@ -92,7 +105,7 @@ export function startPrivacyReviewRecording(options: PrivacyReviewOptions = {}):
             opened.close();
             window.removeEventListener('pagehide', revoke);
             revoke();
-            resolve(false);
+            resolve('viewer-blocked');
           } else {
             setTimeout(check, 50);
           }

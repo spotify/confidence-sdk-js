@@ -84,12 +84,18 @@ export function mountPrivacyReviewControls(options: PrivacyReviewControlsOptions
     preview.disabled = true;
     download.disabled = true;
     status.textContent = 'Opening local preview…';
-    const opened = await review.preview();
+    const result = await review.preview();
     start.disabled = false;
+    if (result === 'empty') {
+      review = undefined;
+      status.textContent = 'Nothing was captured yet. Record for a little longer before previewing.';
+      return;
+    }
     download.disabled = false;
-    status.textContent = opened
-      ? 'Preview opened in a new tab. Download a copy if you want to keep it.'
-      : 'Your browser blocked the preview. Download the review to open it locally.';
+    status.textContent =
+      result === 'opened'
+        ? 'Preview opened in a new tab. Download a copy if you want to keep it.'
+        : 'Your browser blocked the preview. Download the review to open it locally.';
   });
 
   download.addEventListener('click', () => {

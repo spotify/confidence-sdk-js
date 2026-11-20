@@ -44,4 +44,4 @@ await review.preview();
 review.download();
 ```
 
-`preview()` opens a local tab and resolves to `false` if the browser blocks the tab or its Content Security Policy prevents replay. In that case, download the review and open the HTML file directly. `review.stop()` returns the captured events without downloading them. This review covers DOM capture and its masking and blocking rules; it does not include backend eligibility, session context, tags, measures, or flag metadata from the normal SDK.
+`preview()` opens a local tab and resolves to `'opened'`. It resolves to `'empty'`, without opening a tab, if nothing replayable has been captured yet. It resolves to `'popup-blocked'` or `'viewer-blocked'` if the browser blocks the tab or its Content Security Policy prevents replay; in that case, download the review and open the HTML file directly. `review.stop()` returns the captured events without downloading them. This review covers DOM capture and its masking and blocking rules; it does not include backend eligibility, session context, tags, measures, or flag metadata from the normal SDK.

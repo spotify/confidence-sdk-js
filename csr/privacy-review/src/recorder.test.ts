@@ -6,6 +6,8 @@ vi.mock('@spotify-confidence/csr-recorder', () => ({ record }));
 
 import { startPrivacyReviewRecording } from './index';
 
+const fullSnapshot = { type: 2, timestamp: 1, data: {} } as RecordingEvent;
+
 describe('startPrivacyReviewRecording', () => {
   afterEach(() => {
     vi.restoreAllMocks();
@@ -70,10 +72,9 @@ describe('startPrivacyReviewRecording', () => {
   });
 
   it('reports success only after the local replay has loaded', async () => {
-    const event = { type: 4, timestamp: 1, data: { width: 100, height: 100 } } as RecordingEvent;
     const stopCapture = vi.fn();
     record.mockImplementationOnce(onEvent => {
-      onEvent(event);
+      onEvent(fullSnapshot);
       return stopCapture;
     });
     const opened = {
@@ -89,7 +90,7 @@ describe('startPrivacyReviewRecording', () => {
     const revokeObjectURL = vi.spyOn(URL, 'revokeObjectURL').mockImplementation(() => {});
 
     const review = startPrivacyReviewRecording();
-    expect(await review.preview()).toBe(true);
+    expect(await review.preview()).toBe('opened');
 
     expect(stopCapture).toHaveBeenCalledOnce();
     expect(open).toHaveBeenCalledWith('blob:local-review', '_blank');
@@ -102,17 +103,23 @@ describe('startPrivacyReviewRecording', () => {
   });
 
   it('reports a blocked preview tab and releases its blob URL', async () => {
-    record.mockReturnValueOnce(vi.fn());
+    record.mockImplementationOnce(onEvent => {
+      onEvent(fullSnapshot);
+      return vi.fn();
+    });
     vi.stubGlobal('window', { open: () => null });
     vi.spyOn(URL, 'createObjectURL').mockReturnValue('blob:blocked-preview');
     const revokeObjectURL = vi.spyOn(URL, 'revokeObjectURL').mockImplementation(() => {});
 
-    expect(await startPrivacyReviewRecording().preview()).toBe(false);
+    expect(await startPrivacyReviewRecording().preview()).toBe('popup-blocked');
     expect(revokeObjectURL).toHaveBeenCalledWith('blob:blocked-preview');
   });
 
   it('reports a viewer blocked by CSP and closes the empty tab', async () => {
-    record.mockReturnValueOnce(vi.fn());
+    record.mockImplementationOnce(onEvent => {
+      onEvent(fullSnapshot);
+      return vi.fn();
+    });
     const close = vi.fn();
     const opened = {
       opener: {} as object | null,
@@ -126,9 +133,23 @@ describe('startPrivacyReviewRecording', () => {
     vi.spyOn(URL, 'createObjectURL').mockReturnValue('blob:blocked-viewer');
     const revokeObjectURL = vi.spyOn(URL, 'revokeObjectURL').mockImplementation(() => {});
 
-    expect(await startPrivacyReviewRecording().preview()).toBe(false);
+    expect(await startPrivacyReviewRecording().preview()).toBe('viewer-blocked');
     expect(close).toHaveBeenCalledOnce();
     expect(revokeObjectURL).toHaveBeenCalledWith('blob:blocked-viewer');
     expect(removeEventListener).toHaveBeenCalledOnce();
+  });
+
+  it('does not open a tab when nothing replayable was captured', async () => {
+    const stopCapture = vi.fn();
+    record.mockImplementationOnce(onEvent => {
+      onEvent({ type: 4, timestamp: 1, data: { width: 100, height: 100 } } as RecordingEvent);
+      return stopCapture;
+    });
+    const open = vi.fn();
+    vi.stubGlobal('window', { open });
+
+    expect(await startPrivacyReviewRecording().preview()).toBe('empty');
+    expect(stopCapture).toHaveBeenCalledOnce();
+    expect(open).not.toHaveBeenCalled();
   });
 });
