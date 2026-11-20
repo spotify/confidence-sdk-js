@@ -1,9 +1,13 @@
-import { record, type RecordingConfig } from '@spotify-confidence/csr-recorder';
+import { record } from '@spotify-confidence/csr-recorder';
+import { resolvePrivacyOptions, type PrivacyOptions } from '../privacy-options';
 import type { RecordingEvent } from '@spotify-confidence/csr-common';
 import { viewerHtml } from './privacy-review-viewer.generated';
 import { findPotentialPii, suggestMaskingConfig, type PiiFinding } from './scanner';
 
-export type PrivacyReviewOptions = RecordingConfig;
+/** The same `masking` and `blocking` options as `initSessionRecorder`, so a review matches production. */
+export interface PrivacyReviewOptions extends PrivacyOptions {
+  debugLogger?: (message: string) => void;
+}
 
 /**
  * `empty`: nothing replayable was captured yet, so no tab was opened.
@@ -66,9 +70,13 @@ function saveBlob(blob: Blob, filename: string): void {
 export function startPrivacyReviewRecording(options: PrivacyReviewOptions = {}): PrivacyReviewRecording {
   const events: RecordingEvent[] = [];
   let recording = true;
-  const stopCapture = record(event => {
-    if (recording) events.push(event);
-  }, options);
+  const { debugLogger } = options;
+  const stopCapture = record(
+    event => {
+      if (recording) events.push(event);
+    },
+    { ...resolvePrivacyOptions(options, debugLogger), debugLogger },
+  );
 
   const stop = () => {
     if (recording) {

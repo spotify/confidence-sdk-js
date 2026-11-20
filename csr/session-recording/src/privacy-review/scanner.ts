@@ -21,11 +21,14 @@ export interface PiiFinding {
   preview: string;
 }
 
+/** Paste-ready `masking` options for `initSessionRecorder`; merge them into your existing config. */
 export interface SuggestedMaskingConfig {
-  maskSelectors: string[];
-  maskAttributes: string[];
-  /** Present when typed values were recorded unmasked. */
-  maskInputs?: true;
+  masking: {
+    selectors: string[];
+    attributes: string[];
+    /** Present when typed values were recorded unmasked. */
+    level?: 'inputs';
+  };
 }
 
 // The subset of rrweb's serialized node this scanner reads.
@@ -200,12 +203,18 @@ export function isSpecificSelector(selector: string): boolean {
 export function suggestMaskingConfig(findings: PiiFinding[]): SuggestedMaskingConfig {
   const maskSelectors = new Set<string>();
   const maskAttributes = new Set<string>();
-  let maskInputs = false;
+  let inputsLeaked = false;
   for (const finding of findings) {
     if (finding.location === 'attribute' && finding.attribute) maskAttributes.add(finding.attribute);
-    else if (finding.location === 'input') maskInputs = true;
+    else if (finding.location === 'input') inputsLeaked = true;
     // A bare tag like `p` would mask every paragraph; those need data-csr-mask on the element instead.
     else if (isSpecificSelector(finding.selector)) maskSelectors.add(finding.selector);
   }
-  return { maskSelectors: [...maskSelectors], maskAttributes: [...maskAttributes], ...(maskInputs && { maskInputs }) };
+  return {
+    masking: {
+      selectors: [...maskSelectors],
+      attributes: [...maskAttributes],
+      ...(inputsLeaked && { level: 'inputs' as const }),
+    },
+  };
 }

@@ -209,10 +209,10 @@
       }
 
       function fixFor(finding) {
-        if (finding.location === 'attribute') return `add "${finding.attribute}" to maskAttributes`;
-        if (finding.location === 'input') return 'set maskInputs: true';
+        if (finding.location === 'attribute') return `add "${finding.attribute}" to masking.attributes`;
+        if (finding.location === 'input') return "set masking.level to 'inputs' or higher";
         return /[#.]/.test(finding.selector)
-          ? `add "${finding.selector}" to maskSelectors`
+          ? `add "${finding.selector}" to masking.selectors`
           : 'add data-csr-mask to this element';
       }
 
@@ -250,9 +250,8 @@
           );
           list.append(item);
         }
-        const hasSuggestion =
-          suggestion &&
-          (suggestion.maskSelectors?.length || suggestion.maskAttributes?.length || suggestion.maskInputs);
+        const masking = suggestion?.masking;
+        const hasSuggestion = masking && (masking.selectors?.length || masking.attributes?.length || masking.level);
         if (!hasSuggestion) return;
         const config = JSON.stringify(suggestion, null, 2);
         document.querySelector('#suggestion').hidden = false;

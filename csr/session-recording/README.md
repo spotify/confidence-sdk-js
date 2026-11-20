@@ -114,9 +114,8 @@ Add the built-in floating controls to a temporary test page or local-only build 
 import { mountPrivacyReviewControls } from '@spotify-confidence/session-recording/privacy-review';
 
 mountPrivacyReviewControls({
-  maskSelectors: ['.pii'],
-  blockSelectors: ['.third-party-widget'],
-  maskInputs: true,
+  masking: { level: 'text', selectors: ['.pii'] },
+  blocking: { selectors: ['.third-party-widget'] },
 });
 ```
 
@@ -130,9 +129,8 @@ The panel offers Start recording, Stop & preview, and Download review. The downl
 import { startPrivacyReviewRecording } from '@spotify-confidence/session-recording/privacy-review';
 
 const review = startPrivacyReviewRecording({
-  maskSelectors: ['.pii'],
-  blockSelectors: ['.third-party-widget'],
-  maskInputs: true,
+  masking: { level: 'text', selectors: ['.pii'] },
+  blocking: { selectors: ['.third-party-widget'] },
 });
 
 // Call from a button click or another user gesture after the test journey:
@@ -156,7 +154,7 @@ The same scan is available for your own tooling:
 import { findPotentialPii, suggestMaskingConfig } from '@spotify-confidence/session-recording/privacy-review';
 
 const findings = findPotentialPii(review.stop()); // or review.findings()
-const config = suggestMaskingConfig(findings); // { maskSelectors, maskAttributes, maskInputs? }
+const config = suggestMaskingConfig(findings); // { masking: { selectors, attributes, level? } }
 ```
 
 ## Context

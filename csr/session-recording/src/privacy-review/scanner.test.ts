@@ -85,9 +85,7 @@ describe('suggestMaskingConfig', () => {
       },
     );
     expect(suggestMaskingConfig(findPotentialPii(events))).toEqual({
-      maskSelectors: ['#greeting'],
-      maskAttributes: ['alt'],
-      maskInputs: true,
+      masking: { selectors: ['#greeting'], attributes: ['alt'], level: 'inputs' },
     });
   });
 });

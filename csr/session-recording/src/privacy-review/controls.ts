@@ -71,7 +71,12 @@ export function mountPrivacyReviewControls(options: PrivacyReviewControlsOptions
   start.addEventListener('click', () => {
     review = startPrivacyReviewRecording({
       ...recordingOptions,
-      blockSelectors: [...(recordingOptions.blockSelectors ?? DEFAULT_BLOCK_SELECTORS), CONTROL_SELECTOR],
+      blocking: {
+        selectors: [
+          ...(recordingOptions.blocking?.selectors ?? recordingOptions.blockSelectors ?? DEFAULT_BLOCK_SELECTORS),
+          CONTROL_SELECTOR,
+        ],
+      },
     });
     start.disabled = true;
     preview.disabled = false;

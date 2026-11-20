@@ -27,10 +27,11 @@ describe('startPrivacyReviewRecording', () => {
     vi.stubGlobal('fetch', fetch);
     vi.stubGlobal('WebSocket', WebSocket);
 
-    const review = startPrivacyReviewRecording({ maskSelectors: ['.private'], maskInputs: true });
+    const review = startPrivacyReviewRecording({ masking: { level: 'text', selectors: ['.private'] } });
     expect(review.isRecording).toBe(true);
     expect(record).toHaveBeenCalledWith(expect.any(Function), {
       maskSelectors: ['.private'],
+      maskAllText: true,
       maskInputs: true,
     });
     expect(review.stop()).toEqual([event]);
@@ -72,7 +73,7 @@ describe('startPrivacyReviewRecording', () => {
       format: 'csr-privacy-review-v1',
       events: [event],
       findings: [],
-      suggestion: { maskSelectors: [], maskAttributes: [] },
+      suggestion: { masking: { selectors: [], attributes: [] } },
     });
   });
 
@@ -199,6 +200,6 @@ describe('startPrivacyReviewRecording', () => {
         expect.objectContaining({ kind: 'email', location: 'attribute', attribute: 'title' }),
       ]),
     );
-    expect(data.suggestion).toEqual({ maskSelectors: ['#greeting'], maskAttributes: ['title'] });
+    expect(data.suggestion).toEqual({ masking: { selectors: ['#greeting'], attributes: ['title'] } });
   });
 });
