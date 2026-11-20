@@ -43,5 +43,8 @@
   "dependencies": {
     "@spotify-confidence/csr-common": "workspace:*",
     "@spotify-confidence/csr-recorder": "workspace:*"
+  },
+  "devDependencies": {
+    "@spotify-confidence/device-info": "workspace:*"
   }
 }

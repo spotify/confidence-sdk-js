@@ -25,6 +25,8 @@ Parsing uses [bowser](https://github.com/bowser-js/bowser), with these correctio
 
 It also reports:
 
-- **`inAppBrowser`:** the app whose built-in browser opened the page: `instagram`, `facebook`, `messenger`, `tiktok`, `snapchat`, `linkedin`, `pinterest`, `x`, `wechat` or `line`. Detected from tokens the apps add to the user agent, which they sometimes change.
-- **`webview`:** whether the page runs in an app's web view (Android `wv`, or iOS without the `Safari/` token), including in-app browsers.
+- **`inAppBrowser`:** the app whose built-in browser opened the page: `instagram`, `facebook`, `messenger`, `tiktok`, `snapchat`, `linkedin`, `pinterest`, `x`, `wechat`, `line` or `google` (the Google app). Detected from tokens the apps add to the user agent, which they sometimes change.
+- **`webview`:** whether the page runs in an app's web view (Android `wv`, or iOS and iPads in desktop mode without the `Safari/` token), including in-app browsers.
 - **`bot`:** whether the user agent belongs to a crawler (including AI crawlers), a monitoring tool such as Lighthouse, headless Chrome or an HTTP library. `getDeviceInfo()` also sets it when `navigator.webdriver` is true. User agents can be faked, so treat this as a filter, not a security check.
+
+The session recording SDK skips sessions where `bot` is true unless `recordBots: true` is set.

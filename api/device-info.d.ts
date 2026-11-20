@@ -23,6 +23,11 @@ type UserAgentData = {
     }[];
 };
 /**
+ * Apps whose built-in browser can be detected.
+ * @public
+ */
+type InAppBrowser = 'messenger' | 'instagram' | 'facebook' | 'tiktok' | 'snapchat' | 'linkedin' | 'pinterest' | 'x' | 'wechat' | 'line' | 'google';
+/**
  * The detected OS, browser and form factor.
  * @public
  */
@@ -31,7 +36,7 @@ type DeviceInfo = {
     browser: NamedVersion;
     formFactor: FormFactor;
     /** The app whose built-in browser opened the page, such as `instagram` or `tiktok`. */
-    inAppBrowser?: string;
+    inAppBrowser?: InAppBrowser;
     /** Whether the page runs in an app's web view rather than a standalone browser. */
     webview: boolean;
     /** Whether the user agent belongs to a crawler, monitoring tool or HTTP library. */
@@ -62,4 +67,4 @@ declare function getDeviceInfo(): (DeviceInfo & {
     touch: boolean;
 }) | undefined;
 
-export { type DeviceInfo, type FormFactor, type NamedVersion, type UserAgentData, getDeviceInfo, parseDeviceInfo };
+export { type DeviceInfo, type FormFactor, type InAppBrowser, type NamedVersion, type UserAgentData, getDeviceInfo, parseDeviceInfo };

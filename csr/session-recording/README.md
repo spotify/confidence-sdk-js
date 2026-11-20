@@ -86,6 +86,7 @@ const recorder = initSessionRecorder({
 
   // Recording mode
   mode: 'automatic', // 'automatic' (default) or 'manual'
+  recordBots: false, // record crawlers, monitoring tools and automated browsers (default: false)
 
   // CSP: self-hosted worker (only needed when data: and blob: are blocked)
   // workerUrl: '/confidence-worker.js',

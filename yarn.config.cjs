@@ -41,8 +41,8 @@ module.exports = defineConfig({
           dep.update('workspace:*');
         } else if (dep.type === 'dependencies') {
           if (workspace.cwd === 'packages/device-info') {
-            // device-info is a leaf utility bundled with whichever package uses it.
-            dep.update('workspace:*');
+            // device-info is a leaf utility. A caret range lets packages share one copy.
+            dep.update('workspace:^');
           } else {
             // there should be no regular deps between packages.
             dep.delete();

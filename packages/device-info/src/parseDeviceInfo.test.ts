@@ -1,6 +1,8 @@
 /**
  * @jest-environment jsdom
  */
+import { readFileSync } from 'fs';
+import { join } from 'path';
 import { getDeviceInfo } from './getDeviceInfo';
 import { parseDeviceInfo } from './parseDeviceInfo';
 
@@ -189,6 +191,14 @@ describe('parseDeviceInfo', () => {
       'snapchat',
       'Mozilla/5.0 (iPhone; CPU iPhone OS 17_4 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Mobile/15E148 Snapchat/13.20.0.37 (like Safari/8617.2.4.10.8, panda)',
     ],
+    [
+      'google',
+      'Mozilla/5.0 (iPhone; CPU iPhone OS 17_4 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) GSA/300.0.598994205 Mobile/15E148 Safari/604.1',
+    ],
+    [
+      'line',
+      'Mozilla/5.0 (iPhone; CPU iPhone OS 17_4 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Mobile/15E148 Safari Line/14.3.0',
+    ],
   ])('detects the %s in-app browser', (inAppBrowser, userAgent) => {
     const info = parseDeviceInfo(userAgent);
     expect(info.inAppBrowser).toBe(inAppBrowser);
@@ -199,8 +209,9 @@ describe('parseDeviceInfo', () => {
   it.each([
     'Mozilla/5.0 (Linux; Android 14; Pixel 8 Build/AP1A.240305.019; wv) AppleWebKit/537.36 (KHTML, like Gecko) Version/4.0 Chrome/122.0.6261.119 Mobile Safari/537.36',
     'Mozilla/5.0 (iPhone; CPU iPhone OS 17_4 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Mobile/15E148',
+    'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/605.1.15 (KHTML, like Gecko)',
   ])('detects other web views: %s', userAgent => {
-    const info = parseDeviceInfo(userAgent);
+    const info = parseDeviceInfo(userAgent, undefined, 5);
     expect(info.webview).toBe(true);
     expect(info.inAppBrowser).toBeUndefined();
   });
@@ -215,6 +226,18 @@ describe('parseDeviceInfo', () => {
     'python-requests/2.32.3',
   ])('detects bots: %s', userAgent => {
     expect(parseDeviceInfo(userAgent).bot).toBe(true);
+  });
+
+  it('does not treat a Mac without touch as a web view', () => {
+    expect(
+      parseDeviceInfo('Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/605.1.15 (KHTML, like Gecko)')
+        .webview,
+    ).toBe(false);
+  });
+
+  it('does not use regex features missing from Safari before 16.4', () => {
+    const source = readFileSync(join(__dirname, 'parseDeviceInfo.ts'), 'utf8');
+    expect(source).not.toMatch(/\(\?<[!=]/);
   });
 
   it('does not flag Cubot phones as bots', () => {

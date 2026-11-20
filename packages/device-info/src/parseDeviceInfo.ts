@@ -66,7 +66,7 @@ const FIRST_FROZEN_SAFARI = 26;
 const ANDROID_NON_TABLET = /\bTV\b|SMART-TV|AFT\w+|CrKey|OculusBrowser|Quest|Android Automotive/i;
 
 // Checked in order: Messenger and Instagram user agents also contain Facebook tokens.
-const IN_APP_BROWSERS: [name: string, pattern: RegExp][] = [
+const IN_APP_BROWSERS: [name: InAppBrowser, pattern: RegExp][] = [
   ['messenger', /FBAN\/Messenger|FB_IAB\/MESSENGER|\bOrca-Android\b/i],
   ['instagram', /\bInstagram\b/],
   ['facebook', /\bFBAN\/|\bFBAV\/|\bFB_IAB\/|\bFB4A\b|\bFBIOS\b/],
@@ -76,15 +76,19 @@ const IN_APP_BROWSERS: [name: string, pattern: RegExp][] = [
   ['pinterest', /\bPinterest\b/],
   ['x', /\bTwitter for\b|\bTwitterAndroid\b/],
   ['wechat', /\bMicroMessenger\b/],
-  ['line', /\bLine\/\d/],
+  ['line', /\bLine\/\d/i],
+  ['google', /\bGSA\//],
 ];
 // Android web views add "wv". iOS web views lack the "Safari/" token that iOS browsers keep.
 const ANDROID_WEBVIEW = /; wv\)/;
 const IOS_WEBVIEW = /(?:iPhone|iPod|iPad).*AppleWebKit(?!.*Safari\/)/;
+// iPads in desktop mode report a Mac user agent.
+const IPAD_DESKTOP_WEBVIEW = /Macintosh.*AppleWebKit(?!.*Safari\/)/;
 const IOS_BROWSERS_WITHOUT_SAFARI_TOKEN = /\bOPT\/|\bEdgiOS\/|\bFxiOS\//;
-// "Cubot" is a phone brand, not a bot.
 const BOT =
-  /(?<!cu)bot\b|crawl|spider|slurp|HeadlessChrome|Lighthouse|PhantomJS|facebookexternalhit|Bytespider|Google-InspectionTool|PTST\/|^curl\/|^Wget\/|python-requests|axios\/|node-fetch|Go-http-client|okhttp/i;
+  /bot\b|crawl|spider|slurp|HeadlessChrome|Lighthouse|PhantomJS|facebookexternalhit|Bytespider|Google-InspectionTool|PTST\/|^curl\/|^Wget\/|python-requests|axios\/|node-fetch|Go-http-client|okhttp/i;
+// "Cubot" is a phone brand, not a bot.
+const NOT_BOT = /\bCubot\b/i;
 
 function withVersion(name: string, version: string | undefined): NamedVersion {
   return version ? { name, version } : { name };
@@ -128,6 +132,23 @@ function parseOs(
 }
 
 /**
+ * Apps whose built-in browser can be detected.
+ * @public
+ */
+export type InAppBrowser =
+  | 'messenger'
+  | 'instagram'
+  | 'facebook'
+  | 'tiktok'
+  | 'snapchat'
+  | 'linkedin'
+  | 'pinterest'
+  | 'x'
+  | 'wechat'
+  | 'line'
+  | 'google';
+
+/**
  * The detected OS, browser and form factor.
  * @public
  */
@@ -136,7 +157,7 @@ export type DeviceInfo = {
   browser: NamedVersion;
   formFactor: FormFactor;
   /** The app whose built-in browser opened the page, such as `instagram` or `tiktok`. */
-  inAppBrowser?: string;
+  inAppBrowser?: InAppBrowser;
   /** Whether the page runs in an app's web view rather than a standalone browser. */
   webview: boolean;
   /** Whether the user agent belongs to a crawler, monitoring tool or HTTP library. */
@@ -171,8 +192,10 @@ export function parseDeviceInfo(userAgent: string, uaData?: UserAgentData, maxTo
   const webview =
     !!inAppBrowser ||
     ANDROID_WEBVIEW.test(userAgent) ||
-    (IOS_WEBVIEW.test(userAgent) && !IOS_BROWSERS_WITHOUT_SAFARI_TOKEN.test(userAgent));
-  const info: DeviceInfo = { os, browser, formFactor, webview, bot: BOT.test(userAgent) };
+    ((IOS_WEBVIEW.test(userAgent) || (maxTouchPoints > 1 && IPAD_DESKTOP_WEBVIEW.test(userAgent))) &&
+      !IOS_BROWSERS_WITHOUT_SAFARI_TOKEN.test(userAgent));
+  const bot = BOT.test(userAgent) && !NOT_BOT.test(userAgent);
+  const info: DeviceInfo = { os, browser, formFactor, webview, bot };
   if (inAppBrowser) info.inAppBrowser = inAppBrowser;
   return info;
 }

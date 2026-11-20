@@ -5047,7 +5047,7 @@ __metadata:
   languageName: unknown
   linkType: soft
 
-"@spotify-confidence/device-info@workspace:*, @spotify-confidence/device-info@workspace:packages/device-info":
+"@spotify-confidence/device-info@workspace:*, @spotify-confidence/device-info@workspace:^, @spotify-confidence/device-info@workspace:packages/device-info":
   version: 0.0.0-use.local
   resolution: "@spotify-confidence/device-info@workspace:packages/device-info"
   dependencies:
@@ -5112,7 +5112,7 @@ __metadata:
   dependencies:
     "@bufbuild/protobuf": "npm:^2.0.0"
     "@microsoft/api-extractor": "npm:7.43.1"
-    "@spotify-confidence/device-info": "workspace:*"
+    "@spotify-confidence/device-info": "workspace:^"
     prettier: "npm:*"
     rollup: "npm:4.24.0"
     ts-proto: "npm:^2.3.0"
@@ -5127,6 +5127,7 @@ __metadata:
   dependencies:
     "@spotify-confidence/csr-common": "workspace:*"
     "@spotify-confidence/csr-recorder": "workspace:*"
+    "@spotify-confidence/device-info": "workspace:*"
   languageName: unknown
   linkType: soft
 

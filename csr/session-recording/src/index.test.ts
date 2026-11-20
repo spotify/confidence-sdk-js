@@ -2,6 +2,9 @@ import { afterEach, describe, expect, it, vi } from 'vitest';
 
 const createUploader = vi.hoisted(() => vi.fn());
 const record = vi.hoisted(() => vi.fn());
+const getDeviceInfo = vi.hoisted(() => vi.fn());
+
+vi.mock('@spotify-confidence/device-info', () => ({ getDeviceInfo }));
 
 vi.mock('@spotify-confidence/csr-common/uploader', () => ({
   createUploader,
@@ -38,6 +41,19 @@ describe('initSessionRecorder', () => {
 
     expect(recorder.start).toBeTypeOf('function');
     expect(recorder.stop).toBeTypeOf('function');
+  });
+
+  it('skips bots unless recordBots is set', async () => {
+    getDeviceInfo.mockReturnValue({ bot: true });
+    initSessionRecorder({ clientSecret: 'secret' });
+    await flushPromises();
+    expect(createUploader).not.toHaveBeenCalled();
+
+    createUploader.mockResolvedValueOnce(mockUploader());
+    record.mockReturnValueOnce(() => {});
+    initSessionRecorder({ clientSecret: 'secret', recordBots: true });
+    await flushPromises();
+    expect(createUploader).toHaveBeenCalledOnce();
   });
 
   it('automatic mode inits and records immediately', async () => {
