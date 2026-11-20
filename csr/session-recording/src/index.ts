@@ -1,20 +1,13 @@
 import { record, type ConsoleCaptureOptions, type NetworkCaptureOptions } from '@spotify-confidence/csr-recorder';
-import {
-  RecordingEventType,
-  RecordingPluginName,
-  type TagPluginData,
-  type MeasurePluginData,
-  type FlagEvaluationPluginData,
-  validateKey,
-  validateTagValue,
-  validateMeasureValue,
-} from '@spotify-confidence/csr-common';
 import { observeFlags, type FlagWrite } from './flag-observer';
-import { createUploader, type ClientContext } from '@spotify-confidence/csr-common/uploader';
+import { flagEvaluationEvent, measureEvent, tagEvent } from './plugin-events';
+import { buildSessionContext, createUploader, type ClientContext } from '@spotify-confidence/csr-common/uploader';
 import { SDK_VERSION } from './version';
 import { resolvePrivacyOptions, type PrivacyOptions } from './privacy-options';
+import { startLocalReview, type PrivacyReviewModule } from './local-review';
 
 export type { MaskingLevel, MaskingOptions, BlockingOptions, PrivacyOptions } from './privacy-options';
+export type { PrivacyReviewModule } from './local-review';
 
 const DEFAULT_API_URL = 'https://recording.confidence.dev';
 const DEFAULT_WEBSOCKET_URL = 'wss://recording-ws.confidence.dev/sessions/stream';
@@ -66,6 +59,13 @@ export interface InitSessionRecorderOptions extends PrivacyOptions {
    */
   mode?: 'automatic' | 'manual';
   /**
+   * Review locally instead of recording: pass `privacyReview` from
+   * `@spotify-confidence/session-recording/privacy-review`. No session is created and nothing is
+   * uploaded; a panel lets you record and replay on this machine with these same privacy options.
+   * Only import it in test builds.
+   */
+  review?: PrivacyReviewModule;
+  /**
    * URL of a self-hosted worker script. Required when your Content Security Policy
    * blocks `data:` and `blob:` in `worker-src`. Serve the file exported from
    * `@spotify-confidence/session-recording/worker` at a same-origin route and pass
@@ -111,9 +111,21 @@ function csrDebugLogger(): ((msg: string) => void) | undefined {
  *
  * Always returns a {@link SessionRecorder} — safe to call, never throws.
  */
+/** The caller's context plus SDK metadata. The uploader adds browser metadata on top. */
+function sessionContext(options: InitSessionRecorderOptions): ClientContext {
+  return {
+    ...options.context,
+    _csr_sdk_version: SDK_VERSION,
+    ...(options.appVersion ? { _app_version: options.appVersion } : {}),
+  };
+}
+
 export function initSessionRecorder(options: InitSessionRecorderOptions): SessionRecorder {
   const userLogger = options.debugLogger ?? csrDebugLogger();
   const debugLogger = userLogger ? (msg: string) => userLogger(`[CSR] ${msg}`) : undefined;
+  if (options.review) {
+    return startLocalReview(options, options.review, buildSessionContext(sessionContext(options)), debugLogger);
+  }
 
   let stopRecorder: (() => void) | null = null;
   let closeUploader: (() => void) | null = null;
@@ -132,16 +144,8 @@ export function initSessionRecorder(options: InitSessionRecorderOptions): Sessio
     debugLogger,
   };
 
-  function emitFlagEvaluation({ flagKey, variant, assignmentOrigin }: FlagWrite): void {
-    const data: FlagEvaluationPluginData = {
-      plugin: RecordingPluginName.FlagEvaluation,
-      payload: { flagKey, variant, assignmentOrigin },
-    };
-    sendEvent?.({
-      type: RecordingEventType.Plugin,
-      timestamp: Date.now(),
-      data,
-    });
+  function emitFlagEvaluation(write: FlagWrite): void {
+    sendEvent?.(flagEvaluationEvent(write));
   }
 
   async function initAndRecord() {
@@ -150,11 +154,7 @@ export function initSessionRecorder(options: InitSessionRecorderOptions): Sessio
         apiUrl: options.apiUrl ?? DEFAULT_API_URL,
         websocketUrl: options.websocketUrl ?? DEFAULT_WEBSOCKET_URL,
         clientSecret: options.clientSecret,
-        context: {
-          ...options.context,
-          _csr_sdk_version: SDK_VERSION,
-          ...(options.appVersion ? { _app_version: options.appVersion } : {}),
-        },
+        context: sessionContext(options),
         workerUrl: options.workerUrl,
         debugLogger,
         onTerminate: ({ reason }) => {
@@ -231,46 +231,12 @@ export function initSessionRecorder(options: InitSessionRecorderOptions): Sessio
       closeUploader = null;
     },
     tag(key: string, value?: string) {
-      const keyErr = validateKey(key);
-      if (keyErr) {
-        debugLogger?.(`tag() dropped: ${keyErr}`);
-        return;
-      }
-      const valErr = validateTagValue(value);
-      if (valErr) {
-        debugLogger?.(`tag() dropped: ${valErr}`);
-        return;
-      }
-      const data: TagPluginData = {
-        plugin: RecordingPluginName.Tag,
-        payload: value !== undefined ? { key, value } : { key },
-      };
-      sendEvent?.({
-        type: RecordingEventType.Plugin,
-        timestamp: Date.now(),
-        data,
-      });
+      const event = tagEvent(key, value, debugLogger);
+      if (event) sendEvent?.(event);
     },
     measure(key: string, value?: number) {
-      const keyErr = validateKey(key);
-      if (keyErr) {
-        debugLogger?.(`measure() dropped: ${keyErr}`);
-        return;
-      }
-      const valErr = validateMeasureValue(value);
-      if (valErr) {
-        debugLogger?.(`measure() dropped: ${valErr}`);
-        return;
-      }
-      const data: MeasurePluginData = {
-        plugin: RecordingPluginName.Measure,
-        payload: value !== undefined ? { key, value } : { key },
-      };
-      sendEvent?.({
-        type: RecordingEventType.Plugin,
-        timestamp: Date.now(),
-        data,
-      });
+      const event = measureEvent(key, value, debugLogger);
+      if (event) sendEvent?.(event);
     },
     get isRecording() {
       return stopRecorder !== null;
