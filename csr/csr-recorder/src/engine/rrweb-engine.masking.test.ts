@@ -110,6 +110,23 @@ describe('maskAllText', () => {
     expect(wire).toContain('*'.repeat('jane@example.com'.length));
   });
 
+  it('masks option values along with their labels', async () => {
+    const wire = await recordedText(
+      { maskAllText: true },
+      '<select><option value="jane@example.com">Jane Doe</option><option value="GB" selected>United Kingdom</option></select>',
+    );
+    for (const leaked of ['jane@example.com', 'Jane Doe', '"GB"', 'United Kingdom']) {
+      expect(wire).not.toContain(leaked);
+    }
+  });
+
+  it('warns once when maskInputs is off under maskAllText', async () => {
+    const messages: string[] = [];
+    await recordedText({ maskAllText: true, maskInputs: false, debugLogger: m => messages.push(m) }, '<p>x</p>');
+    await recordedText({ maskAllText: true, debugLogger: m => messages.push(m) }, '<p>x</p>');
+    expect(messages).toEqual([expect.stringMatching(/^SECURITY: maskAllText is on but maskInputs is false/)]);
+  });
+
   it('leaves text input values to maskInputs', async () => {
     const wire = await recordedText(
       { maskAllText: true, maskInputs: false },

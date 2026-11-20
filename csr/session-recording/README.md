@@ -24,40 +24,39 @@ That's it. In `automatic` mode (the default), recording begins as soon as a sess
 
 ## Privacy: masking and blocking
 
-The SDK provides two mechanisms to prevent sensitive content from being captured:
-
-**Masking** replaces text content with `•` characters while preserving the layout. The element is still visible in the replay, but the actual text is never sent to the backend.
+Privacy settings live under `masking` and `blocking`:
 
 ```typescript
 const recorder = initSessionRecorder({
   clientSecret: '<your-client-secret>',
-  maskSelectors: ['.pii', '[data-sensitive]'],
-  maskInputs: true, // mask all <input>, <textarea>, and contenteditable values (default: true)
+  masking: {
+    level: 'inputs', // 'none' | 'inputs' (default) | 'text'
+    selectors: ['.pii', '[data-sensitive]'],
+    attributes: ['data-user-email'],
+  },
+  blocking: {
+    selectors: ['video', '.third-party-widget'],
+  },
 });
 ```
 
-**Blocking** replaces entire subtrees with an empty placeholder. The blocked element's dimensions are preserved, but nothing inside it — text, images, child nodes — is serialized or sent.
+### Masking levels
 
-```typescript
-const recorder = initSessionRecorder({
-  clientSecret: '<your-client-secret>',
-  blockSelectors: ['video', '.third-party-widget', '[data-block]'],
-});
-```
+Each level includes the one below it:
 
-`maskInputs` defaults to `true` — all input values are masked unless you explicitly opt out.
+| `masking.level`    | Typed and pre-filled input values | Page text and text-bearing attributes            |
+| ------------------ | --------------------------------- | ------------------------------------------------ |
+| `none`             | Recorded                          | Recorded, except where `masking.selectors` match |
+| `inputs` (default) | Masked                            | Recorded, except where `masking.selectors` match |
+| `text`             | Masked                            | Masked, except inside `data-csr-unmask`          |
+
+**Masking** replaces text with `*` of the same length, so layout is preserved but the text never leaves the page. `<input type="password">` is always masked. An unknown level masks everything and logs a `SECURITY` warning through `debugLogger`.
+
+**Blocking** replaces whole subtrees matched by `blocking.selectors` with a same-sized placeholder. Nothing inside, including text, images and child nodes, is serialized. Defaults to `['[data-csr-block]', 'video']`; passing your own list replaces the defaults.
 
 ### Mask all text by default
 
-If listing everything sensitive is impractical, set `maskAllText: true`. All text is masked, and you opt components back in by adding `data-csr-unmask`:
-
-```typescript
-const recorder = initSessionRecorder({
-  clientSecret: '<your-client-secret>',
-  maskAllText: true,
-  maskSelectors: ['.pii'],
-});
-```
+If listing everything sensitive is impractical, use `level: 'text'`. All text is masked, and you opt components back in by adding `data-csr-unmask`:
 
 ```html
 <nav data-csr-unmask>Home · Orders · Help</nav>
@@ -67,7 +66,7 @@ const recorder = initSessionRecorder({
 
 Because the attribute lives on the component, it moves with the component when markup changes; there is no selector to keep in sync. Anything you forget to tag stays masked.
 
-When an element is inside both a mask (`maskSelectors` or `data-csr-mask`) and `data-csr-unmask`, the nearer one wins, so you can nest them in either direction:
+When an element is inside both a mask (`masking.selectors` or `data-csr-mask`) and `data-csr-unmask`, the nearer one wins, so you can nest them in either direction:
 
 ```html
 <section data-csr-unmask>
@@ -84,20 +83,24 @@ When an element is inside both a mask (`maskSelectors` or `data-csr-mask`) and `
 </section>
 ```
 
-`maskAllText` also masks `value` on submit and button inputs. Text input values are still controlled by `maskInputs`. `data-csr-unmask` applies inside a component's shadow DOM. Add it in the markup a component first renders: text recorded before the attribute was added stays masked in the replay.
+The `text` level also masks `value` on `<option>` elements and on submit and button inputs. `data-csr-unmask` applies inside a component's shadow DOM. Add it in the markup a component first renders: text recorded before the attribute was added stays masked in the replay.
 
 ### Masking attributes
 
-Wherever text is masked, the values of `title`, `placeholder`, `aria-label` and `alt` on the same elements are masked too. That covers `maskSelectors` and `data-csr-mask` matches, and every element outside `data-csr-unmask` under `maskAllText`. Other attributes, such as `href` or your own `data-*` attributes, are recorded as-is.
+Wherever text is masked, the values of `title`, `placeholder`, `aria-label` and `alt` on the same elements are masked too. Other attributes, such as `href` or your own `data-*` attributes, are recorded as-is. To mask more, list them in `masking.attributes`. Listed attributes are masked on every element, whether or not its text is masked, except under a nearer `data-csr-unmask`.
 
-To mask more attributes, list them in `maskAttributes`. Listed attributes are masked on every element, whether or not its text is masked, except under a nearer `data-csr-unmask`:
+### Migrating from flat options
 
-```typescript
-const recorder = initSessionRecorder({
-  clientSecret: '<your-client-secret>',
-  maskAttributes: ['href', 'data-user-email'],
-});
-```
+`maskSelectors`, `blockSelectors` and `maskInputs` still work but are deprecated:
+
+| Deprecated              | Use instead                                  |
+| ----------------------- | -------------------------------------------- |
+| `maskSelectors: [...]`  | `masking: { selectors: [...] }`              |
+| `blockSelectors: [...]` | `blocking: { selectors: [...] }`             |
+| `maskInputs: true`      | `masking: { level: 'inputs' }` (the default) |
+| `maskInputs: false`     | `masking: { level: 'none' }`                 |
+
+If both forms are set, `masking` and `blocking` win, and `debugLogger` says so.
 
 ## Context
 
@@ -127,9 +130,8 @@ const recorder = initSessionRecorder({
   context: { visitor_id: 'user-42', buildVersion: '2.3.1' },
 
   // Privacy
-  maskSelectors: ['.pii'],
-  blockSelectors: ['video'],
-  maskInputs: true, // default: true
+  masking: { level: 'inputs', selectors: ['.pii'] }, // level default: 'inputs'
+  blocking: { selectors: ['video'] },
 
   // Capture options
   captureConsoleLogs: true, // capture raw browser console output (default: false)

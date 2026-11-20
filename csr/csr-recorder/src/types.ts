@@ -29,9 +29,10 @@ export interface RecordingConfig {
    */
   maskSelectors?: string[];
   /**
-   * Mask all text, plus `value` on submit and button inputs, except inside
+   * Mask all text, plus `value` on options and on submit and button inputs, except inside
    * `data-csr-unmask`. The nearer of a mask and `data-csr-unmask` wins.
-   * Input values still follow `maskInputs`. Defaults to `false`.
+   * Typed and pre-filled input values still follow `maskInputs`: with
+   * `maskInputs: false` they are recorded unmasked. Defaults to `false`.
    */
   maskAllText?: boolean;
   /**

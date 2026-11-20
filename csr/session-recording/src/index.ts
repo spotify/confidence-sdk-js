@@ -12,22 +12,15 @@ import {
 import { observeFlags, type FlagWrite } from './flag-observer';
 import { createUploader, type ClientContext } from '@spotify-confidence/csr-common/uploader';
 import { SDK_VERSION } from './version';
+import { resolvePrivacyOptions, type PrivacyOptions } from './privacy-options';
+
+export type { MaskingLevel, MaskingOptions, BlockingOptions, PrivacyOptions } from './privacy-options';
 
 const DEFAULT_API_URL = 'https://recording.confidence.dev';
 const DEFAULT_WEBSOCKET_URL = 'wss://recording-ws.confidence.dev/sessions/stream';
-export interface InitSessionRecorderOptions {
+export interface InitSessionRecorderOptions extends PrivacyOptions {
   /** Per-tenant secret. */
   clientSecret: string;
-  /** CSS selectors whose text content should be masked. */
-  maskSelectors?: string[];
-  /** Mask all text except inside `data-csr-unmask` elements. Defaults to `false`. */
-  maskAllText?: boolean;
-  /** Attributes to mask on every element. `title`, `placeholder`, `aria-label` and `alt` are always masked wherever text is. */
-  maskAttributes?: string[];
-  /** CSS selectors whose subtrees should be blocked (replaced with a placeholder, never serialized). */
-  blockSelectors?: string[];
-  /** Mask values of every `<input>` / `<textarea>` / `contenteditable`. Defaults to `true`. */
-  maskInputs?: boolean;
   /**
    * Capture browser console output. Defaults to `false`.
    * Pass `true` for raw output, or use `sanitize: true` to remove query
@@ -130,11 +123,7 @@ export function initSessionRecorder(options: InitSessionRecorderOptions): Sessio
   let stopped = false;
 
   const recordingConfig = {
-    maskSelectors: options.maskSelectors,
-    maskAllText: options.maskAllText,
-    maskAttributes: options.maskAttributes,
-    blockSelectors: options.blockSelectors,
-    maskInputs: options.maskInputs,
+    ...resolvePrivacyOptions(options, debugLogger),
     captureConsoleLogs: options.captureConsoleLogs,
     captureNetworkRequests: options.captureNetworkRequests,
     captureRouteChanges: options.captureRouteChanges,

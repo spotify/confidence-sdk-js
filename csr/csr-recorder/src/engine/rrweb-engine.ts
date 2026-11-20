@@ -3,6 +3,7 @@ import { RecordingConfig, DEFAULT_MASK_SELECTORS, DEFAULT_BLOCK_SELECTORS } from
 import { RecordingEngine } from './index';
 import { EventType, IncrementalSource, MouseInteractions, record, takeFullSnapshot, type recordOptions } from 'rrweb';
 import { getConsoleCapturePlugin } from './console-capture-plugin';
+import { createOnceLogger } from '../capture-sanitizer';
 
 type RrwebPlugin = NonNullable<recordOptions<RecordingEvent>['plugins']>[number];
 
@@ -229,18 +230,17 @@ function isMasked(element: Element | null, { maskAllText, maskSelector }: Maskin
   return unmaskDistance < 0 || distanceToMatch(element, maskSelector, unmaskDistance) >= 0;
 }
 
-function isButtonValue(name: string, element: Element | null): boolean {
-  // Button labels are visible text, but maskInputs leaves them alone.
-  return (
-    name === 'value' &&
-    element?.tagName === 'INPUT' &&
-    ['submit', 'button'].includes(element.getAttribute('type') ?? '')
-  );
+// Values that are shown to the user as text, which maskInputs does not cover.
+function isTextValue(name: string, element: Element | null): boolean {
+  if (name !== 'value') return false;
+  // An option's value is often the same data as its (masked) label.
+  if (element?.tagName === 'OPTION') return true;
+  return element?.tagName === 'INPUT' && ['submit', 'button'].includes(element.getAttribute('type') ?? '');
 }
 
 function maskAttributes(attributes: Record<string, unknown>, element: Element | null, masking: Masking): void {
   const followsText = (name: string) =>
-    TEXT_ATTRIBUTES.has(name) || (masking.maskAllText && isButtonValue(name, element));
+    TEXT_ATTRIBUTES.has(name) || (masking.maskAllText && isTextValue(name, element));
   const names = Object.keys(attributes).filter(
     name => typeof attributes[name] === 'string' && (followsText(name) || masking.maskAttributes.has(name)),
   );
@@ -320,6 +320,11 @@ export class RrwebEngine implements RecordingEngine {
     const blockSelectors = config.blockSelectors ?? DEFAULT_BLOCK_SELECTORS;
 
     const masking = maskingFor(config, maskSelectors);
+    if (masking.maskAllText && config.maskInputs === false) {
+      createOnceLogger(config.debugLogger)(
+        'SECURITY: maskAllText is on but maskInputs is false, so typed and pre-filled input values are recorded unmasked',
+      );
+    }
 
     const plugins: RrwebPlugin[] = [
       clickModifiersPlugin(),
