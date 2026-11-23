@@ -81,6 +81,7 @@ describe('startPrivacyReviewRecording', () => {
       config: {
         masking: { level: 'inputs', selectors: ['[data-csr-mask]'], attributes: [] },
         blocking: { selectors: ['[data-csr-block]', 'video'] },
+        capture: { consoleLogs: { enabled: false }, networkRequests: { enabled: false }, routeChanges: true },
       },
     });
   });
@@ -239,8 +240,49 @@ describe('startPrivacyReviewRecording', () => {
     expect(data.config).toEqual({
       masking: { level: 'text', selectors: ['[data-csr-mask]'], attributes: ['href'] },
       blocking: { selectors: ['.widget'] },
+      capture: {
+        consoleLogs: { enabled: false },
+        networkRequests: { enabled: false },
+        routeChanges: true,
+      },
     });
     expect(data.events.filter((e: RecordingEvent) => e.type === 6)).toEqual([tag]);
+  });
+
+  it('records with the capture options and shows how each is sanitized', async () => {
+    record.mockImplementationOnce(onEvent => {
+      onEvent(fullSnapshot);
+      return vi.fn();
+    });
+    const link = { click: vi.fn(), remove: vi.fn(), href: '', download: '' };
+    vi.stubGlobal('document', { createElement: () => link, body: { appendChild: vi.fn() } });
+    const createObjectURL = vi.spyOn(URL, 'createObjectURL').mockReturnValue('blob:local-review');
+    vi.spyOn(URL, 'revokeObjectURL').mockImplementation(() => {});
+    const sanitize = (value: string) => value;
+    const parameterizeRoute = (route: string) => route;
+
+    startPrivacyReviewRecording({
+      captureConsoleLogs: { levels: ['error'], sanitize },
+      captureNetworkRequests: { sanitize: true },
+      captureRouteChanges: false,
+      parameterizeRoute,
+    }).download();
+
+    expect(record.mock.calls[0][1]).toMatchObject({
+      captureConsoleLogs: { levels: ['error'], sanitize },
+      captureNetworkRequests: { sanitize: true },
+      captureRouteChanges: false,
+      parameterizeRoute,
+    });
+    const html = await (createObjectURL.mock.calls[0][0] as Blob).text();
+    const data = JSON.parse(
+      html.match(/<script id="embedded-recording" type="application\/json">([^<]*)<\/script>/)![1],
+    );
+    expect(data.config.capture).toEqual({
+      consoleLogs: { enabled: true, sanitize: 'custom', levels: ['error'] },
+      networkRequests: { enabled: true, sanitize: 'built-in' },
+      routeChanges: false,
+    });
   });
 
   it('drops interactions rrweb could not map to a node, like clicks in the review panel', () => {

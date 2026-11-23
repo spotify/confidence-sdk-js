@@ -346,6 +346,8 @@ describe('review mode', () => {
       review,
       masking: { level: 'text', selectors: ['.pii'] },
       blocking: { selectors: ['.widget'] },
+      captureConsoleLogs: { sanitize: true },
+      captureNetworkRequests: true,
       debugLogger,
     });
     recorder.start();
@@ -358,6 +360,8 @@ describe('review mode', () => {
       expect.objectContaining({
         masking: { level: 'text', selectors: ['.pii'] },
         blocking: { selectors: ['.widget'] },
+        captureConsoleLogs: { sanitize: true },
+        captureNetworkRequests: true,
         debugLogger: expect.any(Function),
       }),
     );
