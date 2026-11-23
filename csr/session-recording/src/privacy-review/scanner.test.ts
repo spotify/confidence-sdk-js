@@ -1,6 +1,6 @@
 // @vitest-environment jsdom
 
-import { afterEach, describe, expect, it } from 'vitest';
+import { afterEach, describe, expect, it, vi } from 'vitest';
 import { record, type RecordingConfig } from '@spotify-confidence/csr-recorder';
 import type { RecordingEvent } from '@spotify-confidence/csr-common';
 import { findPotentialPii, suggestMaskingConfig } from './scanner';
@@ -79,6 +79,44 @@ describe('findPotentialPii', () => {
     expect(suggestMaskingConfig(findPotentialPii([tag as RecordingEvent]))).toEqual({
       masking: { selectors: [], attributes: [] },
     });
+  });
+
+  it('finds personal data in console messages the recorder captured', async () => {
+    // Silenced before recording starts, so the recorder's console patch wraps the mock.
+    const silence = vi.spyOn(globalThis.console, 'log').mockImplementation(() => {});
+    try {
+      const events = await recorded('<p>ok</p>', { captureConsoleLogs: true }, () =>
+        // eslint-disable-next-line no-console -- the console message is what this test records
+        console.log('signed in as jane@example.com'),
+      );
+      expect(findPotentialPii(events)).toEqual([
+        expect.objectContaining({ kind: 'email', location: 'console', selector: 'console.log' }),
+      ]);
+    } finally {
+      silence.mockRestore();
+    }
+  });
+
+  it('finds personal data in request URLs and route paths, with no masking suggestion', () => {
+    const plugin = (data: object) => ({ type: 6, timestamp: 3, data } as RecordingEvent);
+    const findings = findPotentialPii([
+      plugin({
+        plugin: 'csr:networkRequest',
+        payload: { initiator: 'fetch', method: 'GET', url: '/api?email=jane@example.com', status: 200, durationMs: 1 },
+      }),
+      plugin({
+        plugin: 'csr:routeChange',
+        payload: { from: '/', to: '/users/jane@example.com', trigger: 'pushState' },
+      }),
+    ]);
+    expect(findings).toEqual(
+      expect.arrayContaining([
+        expect.objectContaining({ kind: 'email', location: 'network', selector: 'fetch GET' }),
+        expect.objectContaining({ kind: 'token', location: 'network' }),
+        expect.objectContaining({ kind: 'email', location: 'route', selector: 'route' }),
+      ]),
+    );
+    expect(suggestMaskingConfig(findings)).toEqual({ masking: { selectors: [], attributes: [] } });
   });
 
   it('reports a repeated value once', async () => {

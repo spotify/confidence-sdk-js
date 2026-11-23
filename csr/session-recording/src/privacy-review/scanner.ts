@@ -10,11 +10,17 @@ export type PiiKind = 'email' | 'phone' | 'card' | 'iban' | 'token';
 
 export interface PiiFinding {
   kind: PiiKind;
-  /** Where the value was recorded: element text, an attribute, an input value, or a `tag()` value. */
-  location: 'text' | 'attribute' | 'input' | 'tag';
+  /**
+   * Where the value was recorded: element text, an attribute, an input value, a `tag()` value,
+   * a console message, a network request URL, or a route change path.
+   */
+  location: 'text' | 'attribute' | 'input' | 'tag' | 'console' | 'network' | 'route';
   /** Attribute name, when `location` is `attribute`. */
   attribute?: string;
-  /** CSS selector for the element, as specific as the recorded id and classes allow; the tag key for tags. */
+  /**
+   * CSS selector for the element, as specific as the recorded id and classes allow. For other
+   * locations: the tag key, the console level (`console.error`), the request (`fetch GET`), or `route`.
+   */
   selector: string;
   /** Event timestamp (ms since epoch) when the value was first recorded. */
   timestamp: number;
@@ -170,12 +176,19 @@ export function findPotentialPii(events: RecordingEvent[]): PiiFinding[] {
     }
   };
 
-  const reportTag = (value: string, key: string, timestamp: number) => {
+  // Values not tied to a DOM node: tag values, console messages, request URLs and route paths.
+  const reportValue = (
+    value: unknown,
+    location: 'tag' | 'console' | 'network' | 'route',
+    selector: string,
+    timestamp: number,
+  ) => {
+    if (typeof value !== 'string') return;
     for (const { kind, match } of matches(value)) {
-      const dedupe = `${kind}|tag|${key}|${match}`;
+      const dedupe = `${kind}|${location}|${selector}|${match}`;
       if (seen.has(dedupe)) continue;
       seen.add(dedupe);
-      findings.push({ kind, location: 'tag', selector: key, timestamp, preview: preview(match) });
+      findings.push({ kind, location, selector, timestamp, preview: preview(match) });
     }
   };
 
@@ -215,12 +228,42 @@ export function findPotentialPii(events: RecordingEvent[]): PiiFinding[] {
       } else if (data.source === IncrementalSource.Input && typeof data.text === 'string') {
         report(data.text, 'input', data.id, event.timestamp);
       }
-    } else if (event.type === RecordingEventType.Plugin && event.data?.plugin === RecordingPluginName.Tag) {
-      const { key, value } = event.data.payload;
-      if (typeof value === 'string') reportTag(value, key, event.timestamp);
+    } else if (event.type === RecordingEventType.Plugin) {
+      scanPlugin(event.data, event.timestamp, reportValue);
     }
   }
   return findings;
+}
+
+type PluginData = { plugin?: string; payload?: Record<string, unknown> };
+
+function scanPlugin(
+  data: PluginData | undefined,
+  timestamp: number,
+  report: (value: unknown, location: 'tag' | 'console' | 'network' | 'route', selector: string, ts: number) => void,
+) {
+  const payload = data?.payload;
+  if (!payload || typeof payload !== 'object') return;
+  switch (data.plugin) {
+    case RecordingPluginName.Tag:
+      report(payload.value, 'tag', String(payload.key), timestamp);
+      break;
+    case RecordingPluginName.ConsoleLog: {
+      const selector = `console.${String(payload.level)}`;
+      for (const list of [payload.payload, payload.trace]) {
+        if (Array.isArray(list)) list.forEach(value => report(value, 'console', selector, timestamp));
+      }
+      break;
+    }
+    case RecordingPluginName.NetworkRequest:
+      report(payload.url, 'network', `${String(payload.initiator)} ${String(payload.method)}`, timestamp);
+      break;
+    case RecordingPluginName.RouteChange:
+      report(payload.from, 'route', 'route', timestamp);
+      report(payload.to, 'route', 'route', timestamp);
+      break;
+    default:
+  }
 }
 
 /** Whether `selector` targets specific elements (by id or class) rather than a whole tag. */
@@ -236,8 +279,8 @@ export function suggestMaskingConfig(findings: PiiFinding[]): SuggestedMaskingCo
   for (const finding of findings) {
     if (finding.location === 'attribute' && finding.attribute) maskAttributes.add(finding.attribute);
     else if (finding.location === 'input') inputsLeaked = true;
-    // Tag values come from your own tag() calls; no masking option applies to them.
-    else if (finding.location === 'tag') continue;
+    // Tags, console, network and route values aren't DOM content; no masking option applies to them.
+    else if (finding.location !== 'text') continue;
     // A bare tag like `p` would mask every paragraph; those need data-csr-mask on the element instead.
     else if (isSpecificSelector(finding.selector)) maskSelectors.add(finding.selector);
   }

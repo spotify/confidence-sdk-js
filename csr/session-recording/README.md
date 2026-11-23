@@ -108,7 +108,7 @@ Check locally what the recorder captures before you ship. The `@spotify-confiden
 
 ### Review with your recorder config
 
-In a test or local-only build, pass `privacyReview` to your existing `initSessionRecorder` call. The recorder then creates no session and uploads nothing; instead, a floating panel lets you record and replay on your machine, using that call's `masking` and `blocking` options:
+In a test or local-only build, pass `privacyReview` to your existing `initSessionRecorder` call. The recorder then creates no session and uploads nothing; instead, a floating panel lets you record and replay on your machine, using that call's `masking`, `blocking` and capture options (`captureConsoleLogs`, `captureNetworkRequests`, `captureRouteChanges` and `parameterizeRoute`):
 
 ```typescript
 import { initSessionRecorder } from '@spotify-confidence/session-recording';
@@ -157,11 +157,11 @@ review.download();
 
 ### What else the review shows
 
-Below the replay, the review lists everything else the recorder would send: the session context, every `tag()`, `measure()` and flag evaluation, and the privacy config it recorded with. An **All recorded events** list shows every event exactly as it would be uploaded; selecting one shows its JSON and outlines the element it affects in the replay, and **Download events (JSON)** saves the full list.
+Below the replay, the review lists everything else the recorder would send: the session context, every `tag()`, `measure()` and flag evaluation, every captured console message, network request and route change (after your sanitizers run), and the privacy and capture config it recorded with. An **All recorded events** list shows every event exactly as it would be uploaded; selecting one shows its JSON and outlines the element it affects in the replay, and **Download events (JSON)** saves the full list.
 
 ### Leak report
 
-The review also scans the recording for values that still look like personal data: email addresses, phone numbers, card numbers (Luhn-checked), IBANs, JWTs, and credentials in URL parameters such as `?token=`. The viewer lists each finding with the element it came from, a button that jumps to that moment and outlines the element in the replay, and a suggested fix. It also shows a suggested config, with a button to copy it. The panel reports how many values were found when you preview.
+The review also scans the recording for values that still look like personal data: email addresses, phone numbers, card numbers (Luhn-checked), IBANs, JWTs, and credentials in URL parameters such as `?token=`. It checks page content, typed values, tag values, console messages, request URLs and route paths. The viewer lists each finding with the element it came from, a button that jumps to that moment and outlines the element in the replay, and a suggested fix. It also shows a suggested config, with a button to copy it. The panel reports how many values were found when you preview.
 
 The scan runs locally, on the recording only. It matches common formats, so an empty report does not prove a page is clean: still watch the replay. The suggested config only contains id or class selectors; for elements without one, the report tells you to add `data-csr-mask`.
 

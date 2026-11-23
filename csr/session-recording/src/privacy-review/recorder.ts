@@ -6,12 +6,16 @@ import {
 } from '@spotify-confidence/csr-recorder';
 import type { ClientContext } from '@spotify-confidence/csr-common/uploader';
 import { resolvePrivacyOptions, type MaskingLevel, type PrivacyOptions } from '../privacy-options';
+import type { ReviewCaptureOptions } from '../local-review';
 import { IncrementalSource, RecordingEventType, type RecordingEvent } from '@spotify-confidence/csr-common';
 import { viewerHtml } from './privacy-review-viewer.generated';
 import { findPotentialPii, suggestMaskingConfig, type PiiFinding } from './scanner';
 
-/** The same `masking` and `blocking` options as `initSessionRecorder`, so a review matches production. */
-export interface PrivacyReviewOptions extends PrivacyOptions {
+/**
+ * The same `masking`, `blocking` and capture options as `initSessionRecorder`, so a review
+ * matches production. Console and network capture stay off unless enabled, as in production.
+ */
+export interface PrivacyReviewOptions extends PrivacyOptions, ReviewCaptureOptions {
   /** Session context to show in the review; `initSessionRecorder` passes the one it would have sent. */
   context?: ClientContext;
   debugLogger?: (message: string) => void;
@@ -24,9 +28,28 @@ export const REVIEW_PANEL_SELECTOR = '[data-confidence-privacy-review-controls]'
 export interface EffectivePrivacyConfig {
   masking: { level: MaskingLevel; selectors: string[]; attributes: string[] };
   blocking: { selectors: string[] };
+  capture: {
+    consoleLogs: CaptureSummary & { levels?: string[] };
+    networkRequests: CaptureSummary;
+    routeChanges: boolean;
+  };
 }
 
-function effectiveConfig(resolved: RecordingConfig): EffectivePrivacyConfig {
+/** `sanitize` is `'built-in'` for `sanitize: true` and `'custom'` for a sanitizer function. */
+export type CaptureSummary = { enabled: boolean; sanitize?: 'none' | 'built-in' | 'custom' };
+
+function captureSummary(option: boolean | { sanitize?: boolean | ((value: string) => string) } | undefined) {
+  if (!option) return { enabled: false };
+  const sanitize = option === true ? undefined : option.sanitize;
+  let mode: CaptureSummary['sanitize'] = 'none';
+  if (typeof sanitize === 'function') mode = 'custom';
+  else if (sanitize) mode = 'built-in';
+  return { enabled: true, sanitize: mode };
+}
+
+function effectiveConfig(resolved: RecordingConfig, capture: ReviewCaptureOptions): EffectivePrivacyConfig {
+  const consoleOption = capture.captureConsoleLogs;
+  const levels = typeof consoleOption === 'object' ? consoleOption.levels : undefined;
   let level: MaskingLevel = 'none';
   if (resolved.maskAllText) level = 'text';
   else if (resolved.maskInputs) level = 'inputs';
@@ -38,6 +61,11 @@ function effectiveConfig(resolved: RecordingConfig): EffectivePrivacyConfig {
     },
     blocking: {
       selectors: (resolved.blockSelectors ?? DEFAULT_BLOCK_SELECTORS).filter(s => s !== REVIEW_PANEL_SELECTOR),
+    },
+    capture: {
+      consoleLogs: { ...captureSummary(consoleOption), ...(consoleOption && levels && { levels }) },
+      networkRequests: captureSummary(capture.captureNetworkRequests),
+      routeChanges: capture.captureRouteChanges ?? true,
     },
   };
 }
@@ -120,14 +148,16 @@ function saveBlob(blob: Blob, filename: string): void {
 export function startPrivacyReviewRecording(options: PrivacyReviewOptions = {}): PrivacyReviewRecording {
   const events: RecordingEvent[] = [];
   let recording = true;
-  const { debugLogger, context } = options;
+  const { debugLogger, context, captureConsoleLogs, captureNetworkRequests, captureRouteChanges, parameterizeRoute } =
+    options;
+  const capture = { captureConsoleLogs, captureNetworkRequests, captureRouteChanges, parameterizeRoute };
   const resolved = resolvePrivacyOptions(options, debugLogger);
-  const metadata: ReviewMetadata = { context, config: effectiveConfig(resolved) };
+  const metadata: ReviewMetadata = { context, config: effectiveConfig(resolved, capture) };
   const stopCapture = record(
     event => {
       if (recording && !isUnmappedInteraction(event)) events.push(event);
     },
-    { ...resolved, debugLogger },
+    { ...resolved, ...capture, debugLogger },
   );
 
   const stop = () => {

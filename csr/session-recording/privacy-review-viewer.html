@@ -154,6 +154,16 @@
           max-height: 40vh;
         }
       }
+      #recorder-filters {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 6px;
+        margin: 0 0 8px;
+      }
+      #recorder-filters button[aria-pressed='true'] {
+        background: #1d1d1d;
+        color: #fff;
+      }
       #recorder-events {
         border-collapse: collapse;
         background: #fff;
@@ -208,8 +218,9 @@
         <h3>Session context</h3>
         <p id="context-note"></p>
         <pre id="context"></pre>
-        <h3>Tags, measures and flag evaluations</h3>
+        <h3>Tags, measures, flags, console, network and route changes</h3>
         <p id="recorder-events-note"></p>
+        <div id="recorder-filters" role="group" aria-label="Filter by type" hidden></div>
         <table id="recorder-events" hidden>
           <thead>
             <tr>
@@ -338,7 +349,11 @@
       };
 
       function describeFinding(finding) {
-        if (finding.location === 'tag') return `${KIND_LABELS[finding.kind] ?? finding.kind} in the value of tag `;
+        const label = KIND_LABELS[finding.kind] ?? finding.kind;
+        if (finding.location === 'tag') return `${label} in the value of tag `;
+        if (finding.location === 'console') return `${label} in a console message from `;
+        if (finding.location === 'network') return `${label} in the URL of a request from `;
+        if (finding.location === 'route') return `${label} in the page path, recorded as a `;
         const where =
           finding.location === 'attribute'
             ? `the ${finding.attribute} attribute of `
@@ -352,6 +367,11 @@
         if (finding.location === 'attribute') return `add "${finding.attribute}" to masking.attributes`;
         if (finding.location === 'input') return "set masking.level to 'inputs' or higher";
         if (finding.location === 'tag') return "don't pass personal data to tag()";
+        if (finding.location === 'console')
+          return 'set captureConsoleLogs.sanitize to true or to a function that removes it, or stop logging it';
+        if (finding.location === 'network')
+          return 'set captureNetworkRequests.sanitize to true or to a function that removes it';
+        if (finding.location === 'route') return 'use parameterizeRoute to replace it with a placeholder';
         return /[#.]/.test(finding.selector)
           ? `add "${finding.selector}" to masking.selectors`
           : 'add data-csr-mask to this element';
@@ -402,7 +422,30 @@
         'csr:tag': 'Tag',
         'csr:measure': 'Measure',
         'csr:flagEvaluation': 'Flag evaluation',
+        'rrweb/console@1': 'Console log',
+        'csr:networkRequest': 'Network request',
+        'csr:routeChange': 'Route change',
       };
+
+      // The key and value columns for one recorder event in "Sent with this recording".
+      function recorderEventCells(data) {
+        const payload = data.payload ?? {};
+        switch (data.plugin) {
+          case 'csr:flagEvaluation':
+            return [
+              payload.flagKey ?? '',
+              `${payload.variant ?? ''}${payload.assignmentOrigin ? ` (${payload.assignmentOrigin})` : ''}`,
+            ];
+          case 'rrweb/console@1':
+            return [payload.level ?? '', (payload.payload ?? []).join(' ')];
+          case 'csr:networkRequest':
+            return [`${payload.method ?? ''} ${payload.status ?? ''}`, payload.url ?? ''];
+          case 'csr:routeChange':
+            return [payload.trigger ?? '', `${payload.from ?? ''} → ${payload.to ?? ''}`];
+          default:
+            return [payload.key ?? '', String(payload.value ?? '')];
+        }
+      }
 
       let highlighted;
 
@@ -467,6 +510,41 @@
         setTimeout(() => URL.revokeObjectURL(url), 60000);
       }
 
+      // One toggle per event type present; with none selected, every row shows.
+      function renderRecorderFilters(rows) {
+        const counts = new Map();
+        for (const row of rows) counts.set(row.dataset.type, (counts.get(row.dataset.type) ?? 0) + 1);
+        if (counts.size < 2) return;
+        const filters = document.querySelector('#recorder-filters');
+        filters.hidden = false;
+        const selected = new Set();
+        const buttons = [];
+        const apply = () => {
+          for (const row of rows) row.hidden = selected.size > 0 && !selected.has(row.dataset.type);
+          for (const button of buttons) {
+            const type = button.dataset.type;
+            button.setAttribute('aria-pressed', String(type ? selected.has(type) : selected.size === 0));
+          }
+        };
+        const add = (label, type) => {
+          const button = document.createElement('button');
+          button.type = 'button';
+          button.textContent = label;
+          if (type) button.dataset.type = type;
+          button.addEventListener('click', () => {
+            if (!type) selected.clear();
+            else if (selected.has(type)) selected.delete(type);
+            else selected.add(type);
+            apply();
+          });
+          buttons.push(button);
+          filters.append(button);
+        };
+        add(`All (${rows.length})`);
+        for (const [type, count] of counts) add(`${type} (${count})`, type);
+        apply();
+      }
+
       function renderSent(data, startTime) {
         if (!data.config) return;
         document.querySelector('#sent').hidden = false;
@@ -483,17 +561,14 @@
           : 'None were sent during the recording.';
         const table = document.querySelector('#recorder-events');
         table.hidden = rows.length === 0;
+        const tableRows = [];
         for (const event of rows) {
-          const payload = event.data.payload ?? {};
           const row = document.createElement('tr');
+          row.dataset.type = RECORDER_EVENTS[event.data.plugin];
+          tableRows.push(row);
           const time = document.createElement('td');
           time.append(jumpButton(Math.max(0, event.timestamp - startTime)));
-          const key = payload.key ?? payload.flagKey ?? '';
-          const value =
-            event.data.plugin === 'csr:flagEvaluation'
-              ? `${payload.variant ?? ''}${payload.assignmentOrigin ? ` (${payload.assignmentOrigin})` : ''}`
-              : payload.value ?? '';
-          for (const text of [RECORDER_EVENTS[event.data.plugin], key, String(value)]) {
+          for (const text of [RECORDER_EVENTS[event.data.plugin], ...recorderEventCells(event.data)]) {
             const cell = document.createElement('td');
             cell.textContent = text;
             row.append(cell);
@@ -501,6 +576,7 @@
           row.prepend(time);
           table.querySelector('tbody').append(row);
         }
+        renderRecorderFilters(tableRows);
       }
 
       const EVENT_TYPES = ['DOM content loaded', 'Load', 'Full page snapshot', null, 'Meta', 'Custom', 'Plugin'];
