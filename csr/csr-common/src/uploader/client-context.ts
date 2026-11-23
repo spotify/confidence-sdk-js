@@ -76,6 +76,12 @@ function collectEffectiveConnectionType(): string | undefined {
   return (navigator as Navigator & { connection?: { effectiveType?: string } }).connection?.effectiveType;
 }
 
+/** The context sent when a session is created: auto-collected browser metadata plus the caller's own. */
+export function buildSessionContext(custom: ClientContext = {}): ClientContext {
+  const userAgent = collectUserAgentContext();
+  return { ...(userAgent ? { userAgent } : {}), ...custom };
+}
+
 export function collectUserAgentContext(): UserAgentContext | undefined {
   if (typeof window === 'undefined' || typeof navigator === 'undefined') return undefined;
 

@@ -366,7 +366,10 @@ describe('createUploader', () => {
     }
 
     async function loadCreateUploaderWithMockedContext() {
-      vi.doMock('./client-context', () => ({ collectUserAgentContext: () => null }));
+      vi.doMock('./client-context', () => ({
+        collectUserAgentContext: () => null,
+        buildSessionContext: (custom = {}) => custom,
+      }));
       return loadCreateUploader();
     }
 

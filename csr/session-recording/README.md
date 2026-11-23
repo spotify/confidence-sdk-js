@@ -102,6 +102,78 @@ Wherever text is masked, the values of `title`, `placeholder`, `aria-label` and 
 
 If both forms are set, `masking` and `blocking` win. Using a deprecated option logs a note through `debugLogger`.
 
+## Offline privacy review
+
+Check locally what the recorder captures before you ship. The `@spotify-confidence/session-recording/privacy-review` entry point uses the same recorder and masking options as `initSessionRecorder`, but creates no backend session and uploads no events. It is a separate entry point: importing `@spotify-confidence/session-recording` does not include it, so it adds nothing to production bundles unless you import it.
+
+### Review with your recorder config
+
+In a test or local-only build, pass `privacyReview` to your existing `initSessionRecorder` call. The recorder then creates no session and uploads nothing; instead, a floating panel lets you record and replay on your machine, using that call's `masking` and `blocking` options:
+
+```typescript
+import { initSessionRecorder } from '@spotify-confidence/session-recording';
+import { privacyReview } from '@spotify-confidence/session-recording/privacy-review';
+
+initSessionRecorder({
+  clientSecret: '<your-client-secret>',
+  review: privacyReview, // test builds only
+  masking: { level: 'text', selectors: ['.pii'] },
+  blocking: { selectors: ['.third-party-widget'] },
+});
+```
+
+Only import `privacyReview` in builds where you want the review. The main entry point never imports it, so production bundles don't include it. When `review` is set, `mode` is ignored and `tag()`, `measure()` and `start()` do nothing.
+
+The panel offers Start recording, Stop & preview, and Download review. Its own markup is excluded from capture. The downloaded HTML file contains both the recording and viewer, and opens directly on the reviewer's machine. The viewer blocks remote assets and network connections, so some recorded visuals may be incomplete. The file contains captured page data until the reviewer deletes it.
+
+### Panel without a recorder
+
+To add the panel to a page without calling `initSessionRecorder`, use `mountPrivacyReviewControls` with the same options. Call it after `document.body` exists; the returned controller has `destroy()` for cleanup. If your Content Security Policy requires a nonce for injected styles, pass `styleNonce`. Don't also run a normal recorder on that page; it would upload recordings.
+
+```typescript
+import { mountPrivacyReviewControls } from '@spotify-confidence/session-recording/privacy-review';
+
+mountPrivacyReviewControls({ masking: { level: 'text', selectors: ['.pii'] } });
+```
+
+### Custom controls
+
+```typescript
+import { startPrivacyReviewRecording } from '@spotify-confidence/session-recording/privacy-review';
+
+const review = startPrivacyReviewRecording({
+  masking: { level: 'text', selectors: ['.pii'] },
+  blocking: { selectors: ['.third-party-widget'] },
+});
+
+// Call from a button click or another user gesture after the test journey:
+await review.preview();
+
+// Optionally save a self-contained copy of the same recording:
+review.download();
+```
+
+`preview()` opens a local tab and resolves to `'opened'`. It resolves to `'empty'`, without opening a tab, if nothing replayable has been captured yet. It resolves to `'popup-blocked'` or `'viewer-blocked'` if the browser blocks the tab or its Content Security Policy prevents replay; in that case, download the review and open the HTML file directly. `review.stop()` returns the captured events without downloading them. This review covers DOM capture and its masking and blocking rules; it does not include backend eligibility, session context, tags, measures, or flag metadata from the normal SDK.
+
+### What else the review shows
+
+Below the replay, the review lists everything else the recorder would send: the session context, every `tag()`, `measure()` and flag evaluation, and the privacy config it recorded with. An **All recorded events** list shows every event exactly as it would be uploaded; selecting one shows its JSON and outlines the element it affects in the replay, and **Download events (JSON)** saves the full list.
+
+### Leak report
+
+The review also scans the recording for values that still look like personal data: email addresses, phone numbers, card numbers (Luhn-checked), IBANs, JWTs, and credentials in URL parameters such as `?token=`. The viewer lists each finding with the element it came from, a button that jumps to that moment and outlines the element in the replay, and a suggested fix. It also shows a suggested config, with a button to copy it. The panel reports how many values were found when you preview.
+
+The scan runs locally, on the recording only. It matches common formats, so an empty report does not prove a page is clean: still watch the replay. The suggested config only contains id or class selectors; for elements without one, the report tells you to add `data-csr-mask`.
+
+The same scan is available for your own tooling:
+
+```typescript
+import { findPotentialPii, suggestMaskingConfig } from '@spotify-confidence/session-recording/privacy-review';
+
+const findings = findPotentialPii(review.stop()); // or review.findings()
+const config = suggestMaskingConfig(findings); // { masking: { selectors, attributes, level? } }
+```
+
 ## Context
 
 Context lets you attach custom dimensions to the recording session. These are sent alongside the auto-collected browser metadata (user agent, OS, viewport, language, timezone) in the session init request. Context serves two purposes: it helps you find and filter recordings later, and the backend uses it to target recordings to specific cohorts of your user population (e.g. only record premium users, or users on a specific build version).
