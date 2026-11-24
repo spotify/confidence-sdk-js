@@ -21,10 +21,13 @@ export function createFlagSet(debugLogger?: (msg: string) => void): FlagSet {
           continue;
         }
         const flagKey = name.startsWith(FLAG_PREFIX) ? name : FLAG_PREFIX + name;
+        const variant = assignment.variant.startsWith(FLAG_PREFIX)
+          ? assignment.variant
+          : `${flagKey}/variants/${assignment.variant}`;
         const assignmentOrigin = assignment.assignmentOrigin ?? '';
         const previous = current.get(flagKey);
-        if (previous?.variant === assignment.variant && previous.assignmentOrigin === assignmentOrigin) continue;
-        const write = { flagKey, variant: assignment.variant, assignmentOrigin };
+        if (previous?.variant === variant && previous.assignmentOrigin === assignmentOrigin) continue;
+        const write = { flagKey, variant, assignmentOrigin };
         current.set(flagKey, write);
         changed.push(write);
       }

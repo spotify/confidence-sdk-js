@@ -7,8 +7,8 @@ describe('createFlagSet', () => {
     expect(
       flags.set({ checkout: { variant: 'on' }, 'flags/banner': { variant: 'off', assignmentOrigin: 'rule' } }),
     ).toEqual([
-      { flagKey: 'flags/checkout', variant: 'on', assignmentOrigin: '' },
-      { flagKey: 'flags/banner', variant: 'off', assignmentOrigin: 'rule' },
+      { flagKey: 'flags/checkout', variant: 'flags/checkout/variants/on', assignmentOrigin: '' },
+      { flagKey: 'flags/banner', variant: 'flags/banner/variants/off', assignmentOrigin: 'rule' },
     ]);
   });
 
@@ -16,11 +16,18 @@ describe('createFlagSet', () => {
     const flags = createFlagSet();
     flags.set({ a: { variant: 'on' }, b: { variant: 'off' } });
     expect(flags.set({ a: { variant: 'on' }, b: { variant: 'on' } })).toEqual([
-      { flagKey: 'flags/b', variant: 'on', assignmentOrigin: '' },
+      { flagKey: 'flags/b', variant: 'flags/b/variants/on', assignmentOrigin: '' },
     ]);
     expect(flags.all()).toEqual([
-      { flagKey: 'flags/a', variant: 'on', assignmentOrigin: '' },
-      { flagKey: 'flags/b', variant: 'on', assignmentOrigin: '' },
+      { flagKey: 'flags/a', variant: 'flags/a/variants/on', assignmentOrigin: '' },
+      { flagKey: 'flags/b', variant: 'flags/b/variants/on', assignmentOrigin: '' },
+    ]);
+  });
+
+  it('keeps variants already given as resource names', () => {
+    const flags = createFlagSet();
+    expect(flags.set({ 'flags/checkout': { variant: 'flags/checkout/variants/on' } })).toEqual([
+      { flagKey: 'flags/checkout', variant: 'flags/checkout/variants/on', assignmentOrigin: '' },
     ]);
   });
 

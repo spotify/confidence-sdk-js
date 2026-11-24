@@ -266,12 +266,12 @@ To filter recordings by flag and variant, pass the assignments with `setFlags()`
 
 ```typescript
 recorder.setFlags({
-  'flags/new-checkout': { variant: 'treatment', assignmentOrigin },
-  'flags/plan-picker': { variant: 'control' },
+  'flags/new-checkout': { variant: 'flags/new-checkout/variants/treatment', assignmentOrigin },
+  'flags/plan-picker': { variant: 'flags/plan-picker/variants/control' },
 });
 ```
 
-Key each assignment by its flag's resource name, `flags/<flag-name>`. Calls merge, so different parts of your app can each set their own flags. A flag is sent again only when its variant changes. You can call `setFlags()` before `start()`; the assignments are sent once recording begins. To filter on the sessions that actually saw a change, call it when the variant is shown to the visitor rather than when it is resolved.
+Key each assignment by its flag's resource name, `flags/<flag-name>`, and give the variant's resource name, `flags/<flag-name>/variants/<variant-name>`. Calls merge, so different parts of your app can each set their own flags. A flag is sent again only when its variant changes. You can call `setFlags()` before `start()`; the assignments are sent once recording begins. To filter on the sessions that actually saw a change, call it when the variant is shown to the visitor rather than when it is resolved.
 
 ## Route parameterization
 

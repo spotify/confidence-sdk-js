@@ -341,8 +341,8 @@ describe('initSessionRecorder', () => {
       recorder.setFlags({ checkout: { variant: 'treatment', assignmentOrigin: 'rule' } });
 
       expect(flagEvaluations(uploader)).toEqual([
-        { flagKey: 'flags/checkout', variant: 'treatment', assignmentOrigin: 'rule' },
-        { flagKey: 'flags/banner', variant: 'off', assignmentOrigin: '' },
+        { flagKey: 'flags/checkout', variant: 'flags/checkout/variants/treatment', assignmentOrigin: 'rule' },
+        { flagKey: 'flags/banner', variant: 'flags/banner/variants/off', assignmentOrigin: '' },
       ]);
     });
 
@@ -357,7 +357,7 @@ describe('initSessionRecorder', () => {
       await flushPromises();
 
       expect(flagEvaluations(uploader)).toEqual([
-        { flagKey: 'flags/checkout', variant: 'treatment', assignmentOrigin: '' },
+        { flagKey: 'flags/checkout', variant: 'flags/checkout/variants/treatment', assignmentOrigin: '' },
       ]);
 
       createUploader.mock.calls[0][0].onSessionRestart();
@@ -466,7 +466,7 @@ describe('review mode', () => {
 
     const flagEvent = {
       plugin: 'csr:flagEvaluation',
-      payload: { flagKey: 'flags/checkout', variant: 'treatment', assignmentOrigin: 'rule' },
+      payload: { flagKey: 'flags/checkout', variant: 'flags/checkout/variants/treatment', assignmentOrigin: 'rule' },
     };
     expect(review.addEvent.mock.calls.map(([event]) => event.data)).toEqual([flagEvent, flagEvent]);
   });
