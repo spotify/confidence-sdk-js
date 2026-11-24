@@ -1,5 +1,6 @@
 import { record, type ConsoleCaptureOptions, type NetworkCaptureOptions } from '@spotify-confidence/csr-recorder';
 import { observeFlags, type FlagWrite } from './flag-observer';
+import { createFlagSet, type FlagAssignment } from './flag-set';
 import { flagEvaluationEvent, measureEvent, tagEvent } from './plugin-events';
 import { buildSessionContext, createUploader, type ClientContext } from '@spotify-confidence/csr-common/uploader';
 import { SDK_VERSION } from './version';
@@ -8,6 +9,7 @@ import { startLocalReview, type PrivacyReviewModule } from './local-review';
 
 export type { MaskingLevel, MaskingOptions, BlockingOptions, PrivacyOptions } from './privacy-options';
 export type { PrivacyReviewModule } from './local-review';
+export type { FlagAssignment } from './flag-set';
 
 const DEFAULT_API_URL = 'https://recording.confidence.dev';
 const DEFAULT_WEBSOCKET_URL = 'wss://recording-ws.confidence.dev/sessions/stream';
@@ -87,6 +89,12 @@ export interface SessionRecorder {
   tag(key: string, value?: string): void;
   /** Record a numeric measurement. Measurements with the same key are summed. Omit value to count occurrences (each call adds 1). */
   measure(key: string, value?: number): void;
+  /**
+   * Record the flag variants this session was assigned, keyed by flag name. Calls merge, and a
+   * flag is only sent again when its variant changes. Assignments set before recording starts
+   * are sent once it does.
+   */
+  setFlags(flags: Record<string, FlagAssignment>): void;
   /** Whether the recorder is actively capturing events. */
   readonly isRecording: boolean;
 }
@@ -133,6 +141,7 @@ export function initSessionRecorder(options: InitSessionRecorderOptions): Sessio
   let sendEvent: ((event: unknown) => void) | null = null;
   let started = false;
   let stopped = false;
+  const flags = createFlagSet(debugLogger);
 
   const recordingConfig = {
     ...resolvePrivacyOptions(options, debugLogger),
@@ -146,6 +155,12 @@ export function initSessionRecorder(options: InitSessionRecorderOptions): Sessio
 
   function emitFlagEvaluation(write: FlagWrite): void {
     sendEvent?.(flagEvaluationEvent(write));
+  }
+
+  function observeAllFlags(): () => void {
+    const stop = observeFlags(emitFlagEvaluation);
+    flags.all().forEach(emitFlagEvaluation);
+    return stop;
   }
 
   async function initAndRecord() {
@@ -174,7 +189,7 @@ export function initSessionRecorder(options: InitSessionRecorderOptions): Sessio
           // recording only sees flags evaluated after the restart, missing the assignments
           // that shaped the experience being recorded.
           stopObservingFlags?.();
-          stopObservingFlags = observeFlags(emitFlagEvaluation);
+          stopObservingFlags = observeAllFlags();
         },
       });
 
@@ -200,7 +215,7 @@ export function initSessionRecorder(options: InitSessionRecorderOptions): Sessio
 
       stopRecorder = record(sendEvent, recordingConfig);
 
-      stopObservingFlags = observeFlags(emitFlagEvaluation);
+      stopObservingFlags = observeAllFlags();
     } catch (err) {
       debugLogger?.(`Recording disabled: ${err instanceof Error ? err.message : String(err)}`);
     }
@@ -237,6 +252,10 @@ export function initSessionRecorder(options: InitSessionRecorderOptions): Sessio
     measure(key: string, value?: number) {
       const event = measureEvent(key, value, debugLogger);
       if (event) sendEvent?.(event);
+    },
+    setFlags(assignments: Record<string, FlagAssignment>) {
+      if (stopped) return;
+      flags.set(assignments).forEach(emitFlagEvaluation);
     },
     get isRecording() {
       return stopRecorder !== null;
