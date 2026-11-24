@@ -3,8 +3,7 @@ import type { ClientContext } from '@spotify-confidence/csr-common/uploader';
 import type { RecordingConfig } from '@spotify-confidence/csr-recorder';
 import type { PrivacyOptions } from './privacy-options';
 import type { SessionRecorder } from './index';
-import { observeFlags } from './flag-observer';
-import { createFlagSet } from './flag-set';
+import { createFlagSet, observeFlagsInto } from './flag-set';
 import { flagEvaluationEvent, measureEvent, tagEvent } from './plugin-events';
 
 /** The non-DOM capture options a review records with, so their events can be checked too. */
@@ -73,11 +72,10 @@ export function startLocalReview(
       parameterizeRoute,
       context,
       debugLogger,
-      // observeFlags replays already-evaluated flags, as the real recorder does at session start.
+      // observeFlagsInto replays the current flag assignments, as the real recorder does at session start.
       onRecordingStart: () => {
         stopObservingFlags?.();
-        stopObservingFlags = observeFlags(write => add(flagEvaluationEvent(write)));
-        flags.all().forEach(write => add(flagEvaluationEvent(write)));
+        stopObservingFlags = observeFlagsInto(flags, write => add(flagEvaluationEvent(write)));
       },
     });
   };

@@ -1,6 +1,6 @@
 import { record, type ConsoleCaptureOptions, type NetworkCaptureOptions } from '@spotify-confidence/csr-recorder';
-import { observeFlags, type FlagWrite } from './flag-observer';
-import { createFlagSet, type FlagAssignment } from './flag-set';
+import type { FlagWrite } from './flag-observer';
+import { createFlagSet, observeFlagsInto, type FlagAssignment } from './flag-set';
 import { flagEvaluationEvent, measureEvent, tagEvent } from './plugin-events';
 import { buildSessionContext, createUploader, type ClientContext } from '@spotify-confidence/csr-common/uploader';
 import { SDK_VERSION } from './version';
@@ -157,12 +157,6 @@ export function initSessionRecorder(options: InitSessionRecorderOptions): Sessio
     sendEvent?.(flagEvaluationEvent(write));
   }
 
-  function observeAllFlags(): () => void {
-    const stop = observeFlags(emitFlagEvaluation);
-    flags.all().forEach(emitFlagEvaluation);
-    return stop;
-  }
-
   async function initAndRecord() {
     try {
       const uploader = await createUploader({
@@ -184,12 +178,12 @@ export function initSessionRecorder(options: InitSessionRecorderOptions): Sessio
           if (stopped || sendEvent === null) return;
           stopRecorder?.();
           stopRecorder = record(sendEvent, recordingConfig);
-          // `observeFlags` replays the already-evaluated flags on setup, so re-establishing
+          // `observeFlagsInto` replays the current flag assignments on setup, so re-establishing
           // it is what carries them into the replacement recording. Without this the new
           // recording only sees flags evaluated after the restart, missing the assignments
           // that shaped the experience being recorded.
           stopObservingFlags?.();
-          stopObservingFlags = observeAllFlags();
+          stopObservingFlags = observeFlagsInto(flags, emitFlagEvaluation);
         },
       });
 
@@ -215,7 +209,7 @@ export function initSessionRecorder(options: InitSessionRecorderOptions): Sessio
 
       stopRecorder = record(sendEvent, recordingConfig);
 
-      stopObservingFlags = observeAllFlags();
+      stopObservingFlags = observeFlagsInto(flags, emitFlagEvaluation);
     } catch (err) {
       debugLogger?.(`Recording disabled: ${err instanceof Error ? err.message : String(err)}`);
     }

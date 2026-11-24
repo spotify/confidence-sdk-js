@@ -346,6 +346,26 @@ describe('initSessionRecorder', () => {
       ]);
     });
 
+    it('replays only the latest variant when setFlags and the window report the same flag', async () => {
+      const win = { __confidence: {} as { flags?: Record<string, unknown> } };
+      vi.stubGlobal('window', win);
+      const uploader = mockUploader();
+      createUploader.mockResolvedValueOnce(uploader);
+      record.mockReturnValue(vi.fn());
+
+      const recorder = initSessionRecorder({ clientSecret: 'secret' });
+      await flushPromises();
+      recorder.setFlags({ 'flags/checkout': { variant: 'flags/checkout/variants/control' } });
+      win.__confidence.flags!['flags/checkout'] = { variant: 'flags/checkout/variants/treatment' };
+      uploader.mockClear();
+
+      createUploader.mock.calls[0][0].onSessionRestart();
+
+      expect(flagEvaluations(uploader)).toEqual([
+        { flagKey: 'flags/checkout', variant: 'flags/checkout/variants/treatment', assignmentOrigin: '' },
+      ]);
+    });
+
     it('sends flags set before start when recording begins, and again after a restart', async () => {
       const uploader = mockUploader();
       createUploader.mockResolvedValueOnce(uploader);
