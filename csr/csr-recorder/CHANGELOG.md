@@ -1,5 +1,14 @@
 # Changelog
 
+## [0.17.27](https://github.com/spotify/confidence-sdk-js/compare/csr-recorder-v0.17.26...csr-recorder-v0.17.27) (2026-11-25)
+
+
+### Dependencies
+
+* The following workspace dependencies were updated
+  * dependencies
+    * @spotify-confidence/csr-common bumped to 0.18.17
+
 ## [0.17.26](https://github.com/spotify/confidence-sdk-js/compare/csr-recorder-v0.17.25...csr-recorder-v0.17.26) (2026-11-20)
 
 

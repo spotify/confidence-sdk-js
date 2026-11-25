@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.18.17](https://github.com/spotify/confidence-sdk-js/compare/csr-common-v0.18.16...csr-common-v0.18.17) (2026-11-25)
+
+
+### ✨ New Features
+
+* add an offline privacy review with a local leak report ([#470](https://github.com/spotify/confidence-sdk-js/issues/470)) ([b17fe5a](https://github.com/spotify/confidence-sdk-js/commit/b17fe5a73f63ea373c3c22c95031edda0884cfdf))
+
 ## [0.18.16](https://github.com/spotify/confidence-sdk-js/compare/csr-common-v0.18.15...csr-common-v0.18.16) (2026-11-19)
 
 
