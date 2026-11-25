@@ -1,5 +1,22 @@
 # Changelog
 
+## [0.18.22](https://github.com/spotify/confidence-sdk-js/compare/session-recording-v0.18.21...session-recording-v0.18.22) (2026-11-25)
+
+
+### ✨ New Features
+
+* add an offline privacy review with a local leak report ([#470](https://github.com/spotify/confidence-sdk-js/issues/470)) ([b17fe5a](https://github.com/spotify/confidence-sdk-js/commit/b17fe5a73f63ea373c3c22c95031edda0884cfdf))
+* include console, network and route capture in privacy reviews ([#492](https://github.com/spotify/confidence-sdk-js/issues/492)) ([028f21e](https://github.com/spotify/confidence-sdk-js/commit/028f21e58eb8c58ca7eb453432ac8beeed464737))
+* **session-recording:** add setFlags() for recording flag assignments ([#493](https://github.com/spotify/confidence-sdk-js/issues/493)) ([3a6f196](https://github.com/spotify/confidence-sdk-js/commit/3a6f1968d6ac1484f3ce117c825971bbf0d42f75))
+
+
+### Dependencies
+
+* The following workspace dependencies were updated
+  * dependencies
+    * @spotify-confidence/csr-common bumped to 0.18.17
+    * @spotify-confidence/csr-recorder bumped to 0.17.27
+
 ## [0.18.21](https://github.com/spotify/confidence-sdk-js/compare/session-recording-v0.18.20...session-recording-v0.18.21) (2026-11-20)
 
 
