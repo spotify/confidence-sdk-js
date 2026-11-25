@@ -322,6 +322,69 @@ describe('initSessionRecorder', () => {
       data: { payload: { flagKey: 'checkout', variant: 'treatment' } },
     });
   });
+  describe('setFlags', () => {
+    const flagEvaluations = (uploader: ReturnType<typeof mockUploader>) =>
+      uploader.mock.calls
+        .filter(
+          ([event]) => (event as { data?: { plugin?: string } })?.data?.plugin === RecordingPluginName.FlagEvaluation,
+        )
+        .map(([event]) => (event as { data: { payload: unknown } }).data.payload);
+
+    it('sends prefixed flag evaluations once recording', async () => {
+      const uploader = mockUploader();
+      createUploader.mockResolvedValueOnce(uploader);
+      record.mockReturnValue(vi.fn());
+
+      const recorder = initSessionRecorder({ clientSecret: 'secret' });
+      await flushPromises();
+      recorder.setFlags({ checkout: { variant: 'treatment', assignmentOrigin: 'rule' }, banner: { variant: 'off' } });
+      recorder.setFlags({ checkout: { variant: 'treatment', assignmentOrigin: 'rule' } });
+
+      expect(flagEvaluations(uploader)).toEqual([
+        { flagKey: 'flags/checkout', variant: 'flags/checkout/variants/treatment', assignmentOrigin: 'rule' },
+        { flagKey: 'flags/banner', variant: 'flags/banner/variants/off', assignmentOrigin: '' },
+      ]);
+    });
+
+    it('replays only the latest variant when setFlags and the window report the same flag', async () => {
+      const win = { __confidence: {} as { flags?: Record<string, unknown> } };
+      vi.stubGlobal('window', win);
+      const uploader = mockUploader();
+      createUploader.mockResolvedValueOnce(uploader);
+      record.mockReturnValue(vi.fn());
+
+      const recorder = initSessionRecorder({ clientSecret: 'secret' });
+      await flushPromises();
+      recorder.setFlags({ 'flags/checkout': { variant: 'flags/checkout/variants/control' } });
+      win.__confidence.flags!['flags/checkout'] = { variant: 'flags/checkout/variants/treatment' };
+      uploader.mockClear();
+
+      createUploader.mock.calls[0][0].onSessionRestart();
+
+      expect(flagEvaluations(uploader)).toEqual([
+        { flagKey: 'flags/checkout', variant: 'flags/checkout/variants/treatment', assignmentOrigin: '' },
+      ]);
+    });
+
+    it('sends flags set before start when recording begins, and again after a restart', async () => {
+      const uploader = mockUploader();
+      createUploader.mockResolvedValueOnce(uploader);
+      record.mockReturnValue(vi.fn());
+
+      const recorder = initSessionRecorder({ clientSecret: 'secret', mode: 'manual' });
+      recorder.setFlags({ checkout: { variant: 'treatment' } });
+      recorder.start();
+      await flushPromises();
+
+      expect(flagEvaluations(uploader)).toEqual([
+        { flagKey: 'flags/checkout', variant: 'flags/checkout/variants/treatment', assignmentOrigin: '' },
+      ]);
+
+      createUploader.mock.calls[0][0].onSessionRestart();
+
+      expect(flagEvaluations(uploader)).toHaveLength(2);
+    });
+  });
 });
 
 describe('review mode', () => {
@@ -411,6 +474,21 @@ describe('review mode', () => {
         payload: { flagKey: 'new-checkout', variant: 'on', assignmentOrigin: 'targeting' },
       },
     ]);
+  });
+
+  it('adds set flags to the review and replays them into each review recording', () => {
+    vi.stubGlobal('document', { body: {} });
+    const review = reviewModule();
+
+    const recorder = initSessionRecorder({ clientSecret: 'secret', review });
+    recorder.setFlags({ checkout: { variant: 'treatment', assignmentOrigin: 'rule' } });
+    review.mount.mock.calls[0][0].onRecordingStart();
+
+    const flagEvent = {
+      plugin: 'csr:flagEvaluation',
+      payload: { flagKey: 'flags/checkout', variant: 'flags/checkout/variants/treatment', assignmentOrigin: 'rule' },
+    };
+    expect(review.addEvent.mock.calls.map(([event]) => event.data)).toEqual([flagEvent, flagEvent]);
   });
 
   it('waits for the body before mounting', () => {

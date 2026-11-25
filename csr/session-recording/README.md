@@ -260,6 +260,19 @@ in `sessionStorage`, the SDK logs a prominent `SECURITY` warning without logging
 
 If you use both session recording and the Confidence SDK (or an OpenFeature provider) for feature flags, try your best to keep the contexts aligned. Aligning the contexts will make sense when using the Confidence app to set up targeting on recording rules and flag rules. Matching contexts will let you set up policies like "record sessions for users in the `beta` environment" or "only record premium users" without surprises.
 
+### Recording flag assignments
+
+To filter recordings by flag and variant, pass the assignments with `setFlags()`. This works with flags resolved anywhere, including on your server.
+
+```typescript
+recorder.setFlags({
+  'flags/new-checkout': { variant: 'flags/new-checkout/variants/treatment', assignmentOrigin },
+  'flags/plan-picker': { variant: 'flags/plan-picker/variants/control' },
+});
+```
+
+Key each assignment by its flag's resource name, `flags/<flag-name>`, and give the variant's resource name, `flags/<flag-name>/variants/<variant-name>`. Calls merge, so different parts of your app can each set their own flags. A flag is sent again only when its variant changes. You can call `setFlags()` before `start()`; the assignments are sent once recording begins. To filter on the sessions that actually saw a change, call it when the variant is shown to the visitor rather than when it is resolved.
+
 ## Route parameterization
 
 Routes containing dynamic segments (such as IDs in the URL) are automatically normalized into patterns — for example, `/users/123/profile` becomes `/users/:id/profile`. This ensures that per-page metrics are grouped by route rather than by individual page visit, keeping dashboards meaningful and query performance fast.
@@ -413,6 +426,7 @@ Creates a session recorder. Always returns a `SessionRecorder` — safe to call,
 | `stop()`               | Stop recording permanently. Idempotent.                        |
 | `tag(key, value?)`     | Attach a string tag. Tags with the same key accumulate values. |
 | `measure(key, value?)` | Record a numeric measurement. Same key = summed.               |
+| `setFlags(flags)`      | Record flag assignments, keyed by flag name. Calls merge.      |
 | `isRecording`          | Whether the recorder is actively capturing events.             |
 
 ## License

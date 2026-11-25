@@ -3,7 +3,7 @@ import type { ClientContext } from '@spotify-confidence/csr-common/uploader';
 import type { RecordingConfig } from '@spotify-confidence/csr-recorder';
 import type { PrivacyOptions } from './privacy-options';
 import type { SessionRecorder } from './index';
-import { observeFlags } from './flag-observer';
+import { createFlagSet, observeFlagsInto } from './flag-set';
 import { flagEvaluationEvent, measureEvent, tagEvent } from './plugin-events';
 
 /** The non-DOM capture options a review records with, so their events can be checked too. */
@@ -52,6 +52,7 @@ export function startLocalReview(
   let panel: PrivacyReviewPanel | undefined;
   let stopObservingFlags: (() => void) | undefined;
   let stopped = false;
+  const flags = createFlagSet(debugLogger);
   const add = (event: RecordingEvent | undefined) => {
     if (event) panel?.addEvent(event);
   };
@@ -71,10 +72,10 @@ export function startLocalReview(
       parameterizeRoute,
       context,
       debugLogger,
-      // observeFlags replays already-evaluated flags, as the real recorder does at session start.
+      // observeFlagsInto replays the current flag assignments, as the real recorder does at session start.
       onRecordingStart: () => {
         stopObservingFlags?.();
-        stopObservingFlags = observeFlags(write => add(flagEvaluationEvent(write)));
+        stopObservingFlags = observeFlagsInto(flags, write => add(flagEvaluationEvent(write)));
       },
     });
   };
@@ -97,6 +98,9 @@ export function startLocalReview(
     },
     measure(key, value) {
       add(measureEvent(key, value, debugLogger));
+    },
+    setFlags(assignments) {
+      flags.set(assignments).forEach(write => add(flagEvaluationEvent(write)));
     },
     get isRecording() {
       return false;
