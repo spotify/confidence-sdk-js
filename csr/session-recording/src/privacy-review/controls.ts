@@ -1,4 +1,6 @@
-import { DEFAULT_BLOCK_SELECTORS } from '@spotify-confidence/csr-recorder';
+import { createElementPrivacyClassifier, DEFAULT_BLOCK_SELECTORS } from '@spotify-confidence/csr-recorder';
+import { resolvePrivacyOptions } from '../privacy-options';
+import { OVERLAY_STYLES, startMaskingOverlay, type MaskingOverlay } from './overlay';
 import {
   REVIEW_PANEL_SELECTOR,
   startPrivacyReviewRecording,
@@ -34,14 +36,16 @@ export function mountPrivacyReviewControls(options: PrivacyReviewControlsOptions
     * { box-sizing: border-box; }
     .panel { max-width: min(360px, calc(100vw - 32px)); padding: 14px; border: 1px solid #bed0c0;
       border-radius: 12px; background: #fff; color: #17382c; box-shadow: 0 8px 28px #0003;
-      font: 14px/1.4 system-ui, sans-serif; }
+      font: 14px/1.4 system-ui, sans-serif; position: relative; z-index: 1; }
     strong { display: block; margin-bottom: 4px; font-size: 15px; }
     p { margin: 0 0 10px; }
     .buttons { display: flex; flex-wrap: wrap; gap: 6px; }
     button { padding: 7px 9px; border: 1px solid #577661; border-radius: 7px; background: #f5f8f2;
       color: #17382c; font: inherit; cursor: pointer; }
     button:disabled { opacity: .5; cursor: default; }
+    button.on { background: #17382c; color: #fff; }
     [role=status] { margin: 9px 0 0; font-size: 12px; }
+    ${OVERLAY_STYLES}
   `;
   const panel = document.createElement('div');
   panel.className = 'panel';
@@ -65,16 +69,55 @@ export function mountPrivacyReviewControls(options: PrivacyReviewControlsOptions
   download.type = 'button';
   download.textContent = 'Download review';
   download.disabled = true;
-  buttons.append(start, preview, download);
+  const showMasking = document.createElement('button');
+  showMasking.id = 'show-masking';
+  showMasking.type = 'button';
+  showMasking.textContent = 'Show masking';
+  buttons.append(start, preview, download, showMasking);
+  const legend = document.createElement('p');
+  legend.className = 'legend';
+  legend.hidden = true;
+  const layer = document.createElement('div');
+  layer.className = 'overlay';
   const status = document.createElement('p');
   status.id = 'status';
   status.setAttribute('role', 'status');
   status.textContent = 'Ready to record.';
-  panel.append(heading, description, buttons, status);
-  shadow.append(style, panel);
+  panel.append(heading, description, buttons, legend, status);
+  shadow.append(style, layer, panel);
   document.body.appendChild(host);
 
   let review: PrivacyReviewRecording | undefined;
+  let overlay: MaskingOverlay | undefined;
+
+  // Outlines what this config would record as-is, mask or block on the live page, without recording.
+  const classifier = createElementPrivacyClassifier(resolvePrivacyOptions(recordingOptions));
+  const legendItem = (state: string, text: string) => {
+    const item = document.createElement('span');
+    item.className = state;
+    item.textContent = text;
+    return item;
+  };
+  showMasking.addEventListener('click', () => {
+    if (overlay) {
+      overlay.stop();
+      overlay = undefined;
+      legend.hidden = true;
+      showMasking.textContent = 'Show masking';
+      showMasking.classList.remove('on');
+      return;
+    }
+    legend.hidden = false;
+    showMasking.textContent = 'Hide masking';
+    showMasking.classList.add('on');
+    overlay = startMaskingOverlay(layer, classifier, counts => {
+      legend.replaceChildren(
+        legendItem('visible', `Recorded as-is (${counts.visible})`),
+        legendItem('masked', `Masked (${counts.masked})`),
+        legendItem('blocked', `Blocked (${counts.blocked})`),
+      );
+    });
+  });
 
   start.addEventListener('click', () => {
     review = startPrivacyReviewRecording({
@@ -131,6 +174,8 @@ export function mountPrivacyReviewControls(options: PrivacyReviewControlsOptions
       review?.addEvent(event);
     },
     destroy() {
+      overlay?.stop();
+      overlay = undefined;
       review?.stop();
       review = undefined;
       host.remove();
