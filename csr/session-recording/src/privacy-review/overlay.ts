@@ -7,8 +7,6 @@ export type OverlayState = 'visible' | 'masked' | 'blocked';
 export type OverlayCounts = Record<OverlayState, number>;
 
 export interface MaskingOverlay {
-  /** Recompute now, e.g. after a config change. Updates also run on scroll, resize and DOM changes. */
-  refresh(): void;
   stop(): void;
 }
 
@@ -59,22 +57,18 @@ export function collectBoxes(doc: Document, classifier: ElementPrivacyClassifier
   const visit = (element: Element, offsetX: number, offsetY: number) => {
     if (boxes.length >= MAX_BOXES || SKIPPED_TAGS.has(element.tagName)) return;
     if (element.matches(REVIEW_PANEL_SELECTOR)) return;
-    const rect = (): Rect => {
-      const r = element.getBoundingClientRect();
-      return { left: r.left + offsetX, top: r.top + offsetY, width: r.width, height: r.height };
-    };
-    if (classifier.isBlocked(element)) {
-      const r = rect();
-      if (onScreen(r, view)) boxes.push({ state: 'blocked', rect: r });
-      return;
-    }
+    const blocked = classifier.isBlocked(element);
     let state: OverlayState | undefined;
-    if (isFormValue(element)) state = classifier.isInputMasked(element) ? 'masked' : 'visible';
+    if (blocked) state = 'blocked';
+    else if (isFormValue(element)) state = classifier.isInputMasked(element) ? 'masked' : 'visible';
     else if (hasOwnText(element)) state = classifier.isTextMasked(element) ? 'masked' : 'visible';
     if (state) {
-      const r = rect();
-      if (onScreen(r, view)) boxes.push({ state, rect: r });
+      const r = element.getBoundingClientRect();
+      const rect = { left: r.left + offsetX, top: r.top + offsetY, width: r.width, height: r.height };
+      if (onScreen(rect, view)) boxes.push({ state, rect });
     }
+    // A blocked element's subtree isn't recorded at all.
+    if (blocked) return;
     if (element.shadowRoot) for (const child of element.shadowRoot.children) visit(child, offsetX, offsetY);
     if (element.tagName === 'IFRAME') {
       try {
@@ -96,7 +90,7 @@ export function collectBoxes(doc: Document, classifier: ElementPrivacyClassifier
 
 export const OVERLAY_STYLES = `
   .overlay { position: fixed; inset: 0; pointer-events: none; }
-  .box { position: fixed; pointer-events: none; border-radius: 2px; }
+  .box { position: fixed; border-radius: 2px; }
   .box.visible { outline: 2px dashed #d9480f; background: #d9480f14; }
   .box.masked { outline: 2px solid #2f9e44; background: #2f9e4414; }
   .box.blocked { outline: 2px solid #5f3dc4;
@@ -115,31 +109,24 @@ export function startMaskingOverlay(
   classifier: ElementPrivacyClassifier,
   onCounts?: (counts: OverlayCounts) => void,
 ): MaskingOverlay {
-  const pool: HTMLElement[] = [];
   let frame = 0;
 
   const draw = () => {
     frame = 0;
-    const boxes = collectBoxes(document, classifier);
     const counts: OverlayCounts = { visible: 0, masked: 0, blocked: 0 };
-    boxes.forEach((box, index) => {
-      counts[box.state]++;
-      let element = pool[index];
-      if (!element) {
-        element = document.createElement('div');
-        pool.push(element);
-        layer.append(element);
-      }
-      element.className = `box ${box.state}`;
-      element.hidden = false;
+    const elements = collectBoxes(document, classifier).map(({ state, rect }) => {
+      counts[state]++;
+      const element = document.createElement('div');
+      element.className = `box ${state}`;
       Object.assign(element.style, {
-        left: `${box.rect.left}px`,
-        top: `${box.rect.top}px`,
-        width: `${box.rect.width}px`,
-        height: `${box.rect.height}px`,
+        left: `${rect.left}px`,
+        top: `${rect.top}px`,
+        width: `${rect.width}px`,
+        height: `${rect.height}px`,
       });
+      return element;
     });
-    for (let i = boxes.length; i < pool.length; i++) pool[i].hidden = true;
+    layer.replaceChildren(...elements);
     onCounts?.(counts);
   };
   const schedule = () => {
@@ -154,14 +141,12 @@ export function startMaskingOverlay(
   draw();
 
   return {
-    refresh: draw,
     stop() {
       observer.disconnect();
       window.removeEventListener('scroll', schedule, { capture: true });
       window.removeEventListener('resize', schedule);
       if (frame) cancelAnimationFrame(frame);
-      pool.forEach(element => element.remove());
-      pool.length = 0;
+      layer.replaceChildren();
     },
   };
 }

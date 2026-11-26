@@ -2,7 +2,7 @@ import { DEFAULT_BLOCK_SELECTORS, DEFAULT_MASK_SELECTORS, type RecordingConfig }
 
 // The masking decisions shared by the recorder and the privacy review's live overlay.
 
-export const UNMASK_SELECTOR = '[data-csr-unmask]';
+const UNMASK_SELECTOR = '[data-csr-unmask]';
 
 export function maskWithStars(text: string): string {
   return text.replace(/\S/g, '*');
@@ -14,13 +14,13 @@ export function isElement(node: unknown): node is Element {
 }
 
 // Parent element, continuing from a shadow root to its host.
-export function parentAcrossShadow(element: Element): Element | null {
+function parentAcrossShadow(element: Element): Element | null {
   const root = element.getRootNode() as Node & { host?: unknown };
   return element.parentElement ?? (isElement(root.host) ? root.host : null);
 }
 
 // Levels up to the nearest match (0 = the element itself), or -1 if none within `limit`.
-export function distanceToMatch(element: Element, selector: string, limit: number = Infinity): number {
+function distanceToMatch(element: Element, selector: string, limit: number = Infinity): number {
   let current: Element | null = element;
   for (let distance = 0; current && distance <= limit; distance++) {
     try {
