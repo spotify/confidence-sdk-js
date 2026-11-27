@@ -4,6 +4,10 @@ import { RecordingEngine } from './index';
 import { EventType, IncrementalSource, MouseInteractions, record, takeFullSnapshot, type recordOptions } from 'rrweb';
 import { getConsoleCapturePlugin } from './console-capture-plugin';
 import { createOnceLogger } from '../capture-sanitizer';
+import { isElement, isMasked, maskingFor, maskWithStars, type Masking } from './masking';
+
+// rrweb's text masking never reaches attributes, so these are masked wherever text is.
+const TEXT_ATTRIBUTES = new Set(['title', 'placeholder', 'aria-label', 'alt']);
 
 type RrwebPlugin = NonNullable<recordOptions<RecordingEvent>['plugins']>[number];
 
@@ -186,50 +190,6 @@ function clickModifiersPlugin(): RrwebPlugin {
   };
 }
 
-const UNMASK_SELECTOR = '[data-csr-unmask]';
-// rrweb's text masking never reaches attributes, so these are masked wherever text is.
-const TEXT_ATTRIBUTES = new Set(['title', 'placeholder', 'aria-label', 'alt']);
-
-function maskWithStars(text: string): string {
-  return text.replace(/\S/g, '*');
-}
-
-// nodeType, not instanceof, so nodes inside same-origin iframes are recognised.
-function isElement(node: unknown): node is Element {
-  return (node as Node | null)?.nodeType === 1;
-}
-
-// Parent element, continuing from a shadow root to its host.
-function parentAcrossShadow(element: Element): Element | null {
-  const root = element.getRootNode() as Node & { host?: unknown };
-  return element.parentElement ?? (isElement(root.host) ? root.host : null);
-}
-
-// Levels up to the nearest match (0 = the element itself), or -1 if none within `limit`.
-function distanceToMatch(element: Element, selector: string, limit = Infinity): number {
-  let current: Element | null = element;
-  for (let distance = 0; current && distance <= limit; distance++) {
-    try {
-      if (current.matches(selector)) return distance;
-    } catch (_error) {
-      // An invalid customer selector must fail closed: treat it as matching.
-      return distance;
-    }
-    current = parentAcrossShadow(current);
-  }
-  return -1;
-}
-
-type Masking = { maskAllText: boolean; maskSelector: string; maskAttributes: Set<string> };
-
-/** Whether text on this element is masked. Under maskAllText the nearer of mask and unmask wins; ties mask. */
-function isMasked(element: Element | null, { maskAllText, maskSelector }: Masking): boolean {
-  if (!element) return maskAllText;
-  if (!maskAllText) return maskSelector !== '' && distanceToMatch(element, maskSelector) >= 0;
-  const unmaskDistance = distanceToMatch(element, UNMASK_SELECTOR);
-  return unmaskDistance < 0 || distanceToMatch(element, maskSelector, unmaskDistance) >= 0;
-}
-
 // Values that are shown to the user as text, which maskInputs does not cover.
 function isTextValue(name: string, element: Element | null): boolean {
   if (name !== 'value') return false;
@@ -288,13 +248,6 @@ function maskedAttributesPlugin(masking: Masking): RrwebPlugin {
       return event;
     },
   };
-}
-
-function maskingFor(config: RecordingConfig, maskSelectors: string[]): Masking {
-  const maskAllText = config.maskAllText ?? false;
-  // Under maskAllText, data-csr-mask keeps working alongside custom maskSelectors.
-  const selectors = maskAllText ? [...new Set([...DEFAULT_MASK_SELECTORS, ...maskSelectors])] : maskSelectors;
-  return { maskAllText, maskSelector: selectors.join(','), maskAttributes: new Set(config.maskAttributes) };
 }
 
 function maskTextOptions(masking: Masking) {

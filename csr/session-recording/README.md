@@ -128,6 +128,8 @@ The panel offers Start recording, Stop & preview, and Download review. Its own m
 
 ### Panel without a recorder
 
+**Show masking** outlines what your config does on the live page, without recording: text and form values that would be recorded as-is (orange, dashed), masked (green) or blocked (purple, hatched). It uses the recorder's own rules, follows open shadow roots and same-origin iframes, and updates as you scroll or the page changes, so you can check a `data-csr-unmask` or selector change straight away. The legend counts each state on screen. Attributes such as `title` aren't outlined; check those in a replay.
+
 To add the panel to a page without calling `initSessionRecorder`, use `mountPrivacyReviewControls` with the same options. Call it after `document.body` exists; the returned controller has `destroy()` for cleanup. If your Content Security Policy requires a nonce for injected styles, pass `styleNonce`. Don't also run a normal recorder on that page; it would upload recordings.
 
 ```typescript
