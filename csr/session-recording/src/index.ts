@@ -6,6 +6,7 @@ import { buildSessionContext, createUploader, type ClientContext } from '@spotif
 import { SDK_VERSION } from './version';
 import { resolvePrivacyOptions, type PrivacyOptions } from './privacy-options';
 import { startLocalReview, type PrivacyReviewModule } from './local-review';
+import { whenViewportReady } from './viewport-gate';
 
 export type { MaskingLevel, MaskingOptions, BlockingOptions, PrivacyOptions } from './privacy-options';
 export type { PrivacyReviewModule } from './local-review';
@@ -139,6 +140,7 @@ export function initSessionRecorder(options: InitSessionRecorderOptions): Sessio
   let closeUploader: (() => void) | null = null;
   let stopObservingFlags: (() => void) | null = null;
   let sendEvent: ((event: unknown) => void) | null = null;
+  let cancelViewportWait: (() => void) | null = null;
   let started = false;
   let stopped = false;
   const flags = createFlagSet(debugLogger);
@@ -215,22 +217,31 @@ export function initSessionRecorder(options: InitSessionRecorderOptions): Sessio
     }
   }
 
+  function beginWhenViewportReady() {
+    cancelViewportWait = whenViewportReady(() => {
+      cancelViewportWait = null;
+      if (!stopped) void initAndRecord();
+    }, debugLogger);
+  }
+
   const mode = options.mode ?? 'automatic';
 
   if (mode === 'automatic') {
     started = true;
-    void initAndRecord();
+    beginWhenViewportReady();
   }
 
   return {
     start() {
       if (started || stopped) return;
       started = true;
-      void initAndRecord();
+      beginWhenViewportReady();
     },
     stop() {
       if (stopped) return;
       stopped = true;
+      cancelViewportWait?.();
+      cancelViewportWait = null;
       stopObservingFlags?.();
       stopObservingFlags = null;
       stopRecorder?.();

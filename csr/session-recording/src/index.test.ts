@@ -525,3 +525,129 @@ describe('review mode', () => {
     expect(createUploader).not.toHaveBeenCalled();
   });
 });
+
+describe('viewport gate', () => {
+  afterEach(() => {
+    vi.resetAllMocks();
+    vi.unstubAllGlobals();
+  });
+
+  function stubPage({
+    width,
+    height,
+    prerendering = false,
+  }: {
+    width: number;
+    height: number;
+    prerendering?: boolean;
+  }) {
+    const windowTarget = new EventTarget();
+    const documentTarget = new EventTarget();
+    const page = {
+      window: Object.assign(windowTarget, { innerWidth: width, innerHeight: height }),
+      document: Object.assign(documentTarget, {
+        prerendering,
+        documentElement: { clientWidth: width, clientHeight: height },
+        body: { clientWidth: width, clientHeight: height },
+      }),
+    };
+    vi.stubGlobal('window', page.window);
+    vi.stubGlobal('document', page.document);
+    return page;
+  }
+
+  function resize(page: ReturnType<typeof stubPage>, width: number, height: number) {
+    Object.assign(page.window, { innerWidth: width, innerHeight: height });
+    Object.assign(page.document.documentElement, { clientWidth: width, clientHeight: height });
+    page.window.dispatchEvent(new Event('resize'));
+  }
+
+  it('starts immediately with a normal viewport', async () => {
+    stubPage({ width: 1280, height: 800 });
+    createUploader.mockResolvedValueOnce(mockUploader());
+    record.mockReturnValueOnce(() => {});
+
+    initSessionRecorder({ clientSecret: 'secret' });
+    await flushPromises();
+
+    expect(createUploader).toHaveBeenCalledOnce();
+    expect(record).toHaveBeenCalledOnce();
+  });
+
+  it('creates no session and records nothing while the viewport is zero-sized', async () => {
+    const page = stubPage({ width: 0, height: 20000 });
+    page.document.body.clientWidth = 0;
+
+    initSessionRecorder({ clientSecret: 'secret' });
+    page.document.dispatchEvent(new Event('visibilitychange'));
+    await flushPromises();
+
+    expect(createUploader).not.toHaveBeenCalled();
+    expect(record).not.toHaveBeenCalled();
+  });
+
+  it('starts once when the viewport grows to a positive size', async () => {
+    const page = stubPage({ width: 0, height: 0 });
+    createUploader.mockResolvedValueOnce(mockUploader());
+    record.mockReturnValueOnce(() => {});
+
+    initSessionRecorder({ clientSecret: 'secret' });
+    resize(page, 1024, 768);
+    resize(page, 800, 600);
+    page.document.dispatchEvent(new Event('visibilitychange'));
+    await flushPromises();
+
+    expect(createUploader).toHaveBeenCalledOnce();
+    expect(record).toHaveBeenCalledOnce();
+  });
+
+  it('waits for prerenderingchange while prerendering', async () => {
+    const page = stubPage({ width: 1280, height: 800, prerendering: true });
+    createUploader.mockResolvedValueOnce(mockUploader());
+    record.mockReturnValueOnce(() => {});
+
+    initSessionRecorder({ clientSecret: 'secret' });
+    await flushPromises();
+    expect(createUploader).not.toHaveBeenCalled();
+
+    page.document.prerendering = false;
+    page.document.dispatchEvent(new Event('prerenderingchange'));
+    await flushPromises();
+
+    expect(createUploader).toHaveBeenCalledOnce();
+    expect(record).toHaveBeenCalledOnce();
+  });
+
+  it('applies to start() in manual mode', async () => {
+    const page = stubPage({ width: 0, height: 0 });
+    createUploader.mockResolvedValueOnce(mockUploader());
+    record.mockReturnValueOnce(() => {});
+
+    const recorder = initSessionRecorder({ clientSecret: 'secret', mode: 'manual' });
+    recorder.start();
+    await flushPromises();
+    expect(createUploader).not.toHaveBeenCalled();
+
+    resize(page, 1024, 768);
+    await flushPromises();
+    expect(createUploader).toHaveBeenCalledOnce();
+  });
+
+  it('stop before the viewport is ready removes the listeners and never starts', async () => {
+    const page = stubPage({ width: 0, height: 0 });
+    const removeWindowListener = vi.spyOn(page.window, 'removeEventListener');
+    const removeDocumentListener = vi.spyOn(page.document, 'removeEventListener');
+
+    const recorder = initSessionRecorder({ clientSecret: 'secret' });
+    recorder.stop();
+    resize(page, 1024, 768);
+    page.document.dispatchEvent(new Event('visibilitychange'));
+    await flushPromises();
+
+    expect(removeWindowListener).toHaveBeenCalledWith('resize', expect.any(Function));
+    expect(removeDocumentListener).toHaveBeenCalledWith('visibilitychange', expect.any(Function));
+    expect(removeDocumentListener).toHaveBeenCalledWith('prerenderingchange', expect.any(Function));
+    expect(createUploader).not.toHaveBeenCalled();
+    expect(record).not.toHaveBeenCalled();
+  });
+});
