@@ -98,3 +98,24 @@ describe('FlagResolution', () => {
     });
   });
 });
+
+describe('FlagResolution list flag values (deprecated, still supported)', () => {
+  const flagSchema = {
+    schema: {
+      tags: { listSchema: { elementSchema: { stringSchema: {} } } },
+      nested: { structSchema: { schema: { nums: { listSchema: { elementSchema: { intSchema: {} } } } } } },
+    },
+  } as any;
+  const value = { tags: ['a', 'b'], nested: { nums: [1, 2, 3] } };
+
+  it('resolves list properties against a listSchema', () => {
+    const resolution = FlagResolution.ready({}, makeResponse({ value, flagSchema }));
+    expect(resolution.evaluate('test-flag.tags', [] as string[])).toMatchObject({ value: ['a', 'b'], reason: 'MATCH' });
+    expect(resolution.evaluate('test-flag.nested.nums', [] as number[])).toMatchObject({ value: [1, 2, 3] });
+  });
+
+  it('returns default on a list element type mismatch', () => {
+    const resolution = FlagResolution.ready({}, makeResponse({ value, flagSchema }));
+    expect(resolution.evaluate('test-flag.tags', 'x' as any)).toMatchObject({ value: 'x', reason: 'ERROR' });
+  });
+});
