@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.18.23](https://github.com/spotify/confidence-sdk-js/compare/session-recording-v0.18.22...session-recording-v0.18.23) (2026-11-27)
+
+
+### 🐛 Bug Fixes
+
+* **session-recording:** skip recording zero-size and prerendered viewports ([#495](https://github.com/spotify/confidence-sdk-js/issues/495)) ([eaa99a1](https://github.com/spotify/confidence-sdk-js/commit/eaa99a107679d38973e2bc452c5c4de8484afea4))
+
 ## [0.18.22](https://github.com/spotify/confidence-sdk-js/compare/session-recording-v0.18.21...session-recording-v0.18.22) (2026-11-25)
 
 

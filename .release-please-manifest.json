@@ -5,5 +5,5 @@
   "packages/react": "0.2.25",
   "csr/csr-common": "0.18.17",
   "csr/csr-recorder": "0.17.27",
-  "csr/session-recording": "0.18.22"
+  "csr/session-recording": "0.18.23"
 }
