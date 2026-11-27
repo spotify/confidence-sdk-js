@@ -56,6 +56,18 @@ interface PortHandle {
    * are dropped rather than forwarded.
    */
   awaitingReset: boolean;
+  /**
+   * The session this port's tab last learned about, via welcome or `session-restarted`. A tab
+   * recording into any other session is told it was replaced, so its recording there starts
+   * with a fresh Meta and full snapshot instead of mid-stream.
+   */
+  knownSessionId: string | null;
+  /**
+   * Set by a `pagehide` bye. The page may come back (bfcache restore, iOS resume) and post on
+   * the same port, which re-attaches it rather than leaving it outside `ports`, where it
+   * would miss `session-restarted` broadcasts while its frames were still forwarded.
+   */
+  departed: boolean;
 }
 
 const IDLE_GRACE_MS = 5_000;
@@ -130,6 +142,8 @@ export function registerPort(adapter: PortAdapter): void {
     debugLogs: false,
     answered: false,
     awaitingReset: false,
+    knownSessionId: null,
+    departed: false,
   };
   ports.push(handle);
   adapter.onmessage((data: unknown) => {
@@ -138,6 +152,7 @@ export function registerPort(adapter: PortAdapter): void {
 }
 
 function handleMessage(handle: PortHandle, message: IncomingMessage): void {
+  if (handle.departed && message.type !== 'bye') reattach(handle);
   switch (message.type) {
     case 'hello':
       handle.hello = message;
@@ -219,12 +234,9 @@ function onHello(handle: PortHandle): void {
     case 'active':
       sendActiveWelcome(handle, state.sessionId, state.sessionToken);
       return;
-    case 'idle': {
-      const { client, sessionId, sessionToken } = state;
-      state = { phase: 'initializing' };
-      void resumeTransport(client, sessionId, sessionToken).then(flushPendingWelcomes);
+    case 'idle':
+      resumeFromIdle();
       return;
-    }
     case 'interrupted': {
       // Deliberately not gated on `backoffPending`: a hello means a fresh page load, which
       // is a stronger signal than a frame and would otherwise be answered with a `dead` and
@@ -252,6 +264,24 @@ function onHello(handle: PortHandle): void {
     default:
       break;
   }
+}
+
+function resumeFromIdle(): void {
+  if (state.phase !== 'idle') return;
+  const { client, sessionId, sessionToken } = state;
+  state = { phase: 'initializing' };
+  void resumeTransport(client, sessionId, sessionToken).then(flushPendingWelcomes);
+}
+
+/** Brings a port that said `bye` back into `ports` when its page resumes and posts again. */
+function reattach(handle: PortHandle): void {
+  handle.departed = false;
+  cancelIdleTimer();
+  ports.push(handle);
+  log('departed tab posted again; re-attached');
+  // Frames never drive recovery from idle, so resume here or the tab would post into a
+  // closed transport until some other tab says hello.
+  if (handle.answered) resumeFromIdle();
 }
 
 async function initializeSession(firstHello: HelloMessage): Promise<void> {
@@ -386,12 +416,17 @@ async function restartSession(
     // gating. A port still awaiting one ignores `session-restarted` entirely, so gating it
     // would wait for a reset it never performs and drop every frame it ever sends.
     handle.awaitingReset = handle.answered;
-    handle.port.postMessage({
-      type: 'session-restarted',
-      result,
-      adoptedFromSessionId: previousSessionId,
-    });
+    sendSessionRestarted(handle, result, previousSessionId);
   }
+}
+
+function sendSessionRestarted(
+  handle: PortHandle,
+  result: { sessionId: string; sessionToken: string },
+  adoptedFromSessionId: string,
+): void {
+  handle.knownSessionId = result.sessionId;
+  handle.port.postMessage({ type: 'session-restarted', result, adoptedFromSessionId });
 }
 
 function backoffPending(state: Extract<State, { phase: 'interrupted' }>): boolean {
@@ -476,6 +511,7 @@ function sendActiveWelcome(handle: PortHandle, currentSessionId: string, current
     resetCounter: adopted || newTabId !== undefined,
   });
   handle.answered = true;
+  handle.knownSessionId = currentSessionId;
 }
 
 function sendSkipWelcome(handle: PortHandle): void {
@@ -494,6 +530,16 @@ function onFrame(handle: PortHandle, frame: Frame): void {
   // frame already in flight at the instant we transition out of 'active' — e.g.
   // `transport.onClose` fires while the tab has just posted a frame to the port. Drop it.
   if (state.phase === 'active') {
+    if (handle.knownSessionId !== null && handle.knownSessionId !== state.sessionId) {
+      // The session was replaced while this tab could not be told (it had said bye). Its
+      // frames belong to the previous recording, so make it re-record before forwarding.
+      handle.awaitingReset = true;
+      sendSessionRestarted(
+        handle,
+        { sessionId: state.sessionId, sessionToken: state.sessionToken },
+        handle.knownSessionId,
+      );
+    }
     if (handle.awaitingReset) {
       if (frame.eventCounter !== 0) return;
       handle.awaitingReset = false;
@@ -512,6 +558,7 @@ function onFrame(handle: PortHandle, frame: Frame): void {
 function onBye(handle: PortHandle, reason?: string): void {
   const idx = ports.indexOf(handle);
   if (idx >= 0) ports.splice(idx, 1);
+  handle.departed = idx >= 0 && reason !== 'stop';
   if (ports.length === 0 && state.phase === 'active') {
     if (reason === 'stop') {
       log('last tab stopped; closing transport and ending session');

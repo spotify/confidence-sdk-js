@@ -701,6 +701,140 @@ describe('worker/core', () => {
       }
     });
 
+    describe('a tab that said bye and came back', () => {
+      function countingBackend(selectProtocol?: (protocols: string[], connectionIndex: number) => string) {
+        let initCount = 0;
+        const fetchHarness = installMockFetch(() => {
+          initCount += 1;
+          return jsonResponse({ sessionId: `sess-${initCount}`, sessionToken: `tok-${initCount}` });
+        });
+        const wsHarness = installMockWsServer(WS_URL, { selectProtocol });
+        return { fetchHarness, wsHarness };
+      }
+
+      it('is told about a session restarted after its transport closed while it was away', async () => {
+        const { wsHarness } = countingBackend();
+        const { registerPort } = await loadCore();
+        const port = createMockPort();
+        registerPort(port.adapter);
+        port.tabSends(helloMessage());
+        await port.next<WelcomeMessage>(isType('welcome'));
+
+        const ws = await wsHarness.waitForConnection();
+        port.tabSends({ type: 'bye', reason: 'pagehide' });
+        ws.close({ code: 1011, reason: 'storage failure', wasClean: false });
+        await vi.waitFor(() => expect(ws.readyState).toBe(3));
+
+        // The page resumes on the same port with the old recording's counters.
+        port.tabSends({
+          type: 'frame',
+          frame: { tabId: 'tab-A', eventCounter: 50, data: 'popstate', userActivity: true },
+        });
+        const restarted = await port.next<SessionRestartedMessage>(isType('session-restarted'));
+        expect(restarted.result).toEqual({ sessionId: 'sess-2', sessionToken: 'tok-2' });
+        await wsHarness.waitForConnection();
+
+        port.tabSends({
+          type: 'frame',
+          frame: { tabId: 'tab-A', eventCounter: 51, data: 'mousemove', userActivity: true },
+        });
+        port.tabSends({
+          type: 'frame',
+          frame: { tabId: 'tab-A', eventCounter: 0, data: 'full-snapshot', userActivity: false },
+        });
+        expect(JSON.parse(await wsHarness.nextMessage())).toMatchObject({ eventCounter: 0, data: 'full-snapshot' });
+      });
+
+      it('starts the replacement session with a snapshot when resuming from idle fails', async () => {
+        vi.useFakeTimers({ toFake: ['setTimeout', 'clearTimeout', 'Date'] });
+        try {
+          // The second connection (resuming the idle session) fails negotiation, forcing a restart.
+          const { wsHarness } = countingBackend((protocols, connectionIndex) =>
+            connectionIndex === 1 ? '' : protocols[0],
+          );
+          const { registerPort } = await loadCore();
+          const portA = createMockPort();
+          registerPort(portA.adapter);
+          portA.tabSends(helloMessage());
+          await portA.next<WelcomeMessage>(isType('welcome'));
+          await wsHarness.waitForConnection();
+
+          portA.tabSends({ type: 'bye', reason: 'pagehide' });
+          await vi.advanceTimersByTimeAsync(5_000);
+
+          // Another tab wakes the worker, the idle session can't be resumed, and a new one starts.
+          const portB = createMockPort();
+          registerPort(portB.adapter);
+          portB.tabSends(helloMessage({ tabId: 'tab-B' }));
+          const welcomeB = await portB.next<WelcomeMessage>(isType('welcome'));
+          expect(welcomeB.result).toEqual({ sessionId: 'sess-2', sessionToken: 'tok-2' });
+
+          // Tab A comes back and keeps posting on its old port.
+          portA.tabSends({
+            type: 'frame',
+            frame: { tabId: 'tab-A', eventCounter: 50, data: 'popstate', userActivity: true },
+          });
+          const restarted = await portA.next<SessionRestartedMessage>(isType('session-restarted'));
+          expect(restarted).toEqual({
+            type: 'session-restarted',
+            result: { sessionId: 'sess-2', sessionToken: 'tok-2' },
+            adoptedFromSessionId: 'sess-1',
+          });
+          portA.tabSends({
+            type: 'frame',
+            frame: { tabId: 'tab-A', eventCounter: 0, data: 'full-snapshot', userActivity: false },
+          });
+          expect(JSON.parse(await wsHarness.nextMessage())).toMatchObject({
+            tabId: 'tab-A',
+            eventCounter: 0,
+            data: 'full-snapshot',
+          });
+        } finally {
+          vi.useRealTimers();
+        }
+      });
+
+      it('resumes the idle session for a returning hello and keeps the tab in later broadcasts', async () => {
+        vi.useFakeTimers({ toFake: ['setTimeout', 'clearTimeout', 'Date'] });
+        try {
+          const { fetchHarness, wsHarness } = countingBackend();
+          const { registerPort } = await loadCore();
+          const port = createMockPort();
+          registerPort(port.adapter);
+          port.tabSends(helloMessage());
+          await port.next<WelcomeMessage>(isType('welcome'));
+          await wsHarness.waitForConnection();
+
+          port.tabSends({ type: 'bye', reason: 'pagehide' });
+          await vi.advanceTimersByTimeAsync(5_000);
+
+          port.tabSends(helloMessage({ sessionIdHint: 'sess-1', sessionTokenHint: 'tok-1' }));
+          const welcome = await port.next<WelcomeMessage>(isType('welcome'));
+          expect(welcome.result).toEqual({ sessionId: 'sess-1', sessionToken: 'tok-1' });
+          expect(welcome.resetCounter).toBe(false);
+          expect(fetchHarness.calls).toHaveLength(1);
+
+          const resumed = await wsHarness.waitForConnection();
+          port.tabSends({
+            type: 'frame',
+            frame: { tabId: 'tab-A', eventCounter: 60, data: 'full-snapshot', userActivity: false },
+          });
+          expect(JSON.parse(await wsHarness.nextMessage())).toMatchObject({ eventCounter: 60 });
+
+          // Re-attached, so a later restart reaches it like any other tab.
+          resumed.close({ code: 1011, reason: 'storage failure', wasClean: false });
+          await port.next(isType('state'));
+          port.tabSends({
+            type: 'frame',
+            frame: { tabId: 'tab-A', eventCounter: 61, data: 'click', userActivity: true },
+          });
+          await port.next<SessionRestartedMessage>(isType('session-restarted'));
+        } finally {
+          vi.useRealTimers();
+        }
+      });
+    });
+
     it('backs off after a failed restart instead of retrying on every active frame', async () => {
       let initCount = 0;
       const fetchHarness = installMockFetch(() => {

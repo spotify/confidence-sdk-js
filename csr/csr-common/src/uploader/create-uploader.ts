@@ -73,6 +73,12 @@ export async function createUploader(opts: CreateUploaderOptions): Promise<Uploa
   let effectiveTabId: string = tabId;
   let counter = counterHint;
   let nextAdoptionMeta: Pick<Frame, 'adoptedFromSessionId' | 'adoptedAt'> | undefined;
+  /**
+   * `departed` after this page said bye on pagehide; `rejoining` once it came back and sent a
+   * fresh hello. Frames are held back in both, since the worker may have closed or replaced
+   * the session meanwhile and anything posted now would land without a snapshot.
+   */
+  let attachment: 'attached' | 'departed' | 'rejoining' = 'attached';
   let resolveWelcome!: (msg: WelcomeOrDead) => void;
   const welcomePromise = new Promise<WelcomeOrDead>(res => {
     resolveWelcome = res;
@@ -100,7 +106,12 @@ export async function createUploader(opts: CreateUploaderOptions): Promise<Uploa
       });
       return;
     }
+    if (attachment === 'rejoining' && msg.type === 'welcome') {
+      onRejoinWelcome(msg);
+      return;
+    }
     if (msg.type === 'session-restarted') {
+      attachment = 'attached';
       sessionId = msg.result.sessionId;
       sessionToken = msg.result.sessionToken;
       counter = 0;
@@ -132,19 +143,46 @@ export async function createUploader(opts: CreateUploaderOptions): Promise<Uploa
     }
   });
 
-  const context = buildSessionContext(opts.context);
+  /**
+   * Answer to the hello sent when the page came back. Whether the session continued or was
+   * replaced, the recorder restarts now that the worker is ready, so the first frames it
+   * receives are a fresh Meta and full snapshot rather than mid-stream events.
+   */
+  function onRejoinWelcome(msg: WelcomeMessage): void {
+    attachment = 'attached';
+    if ('skipRecording' in msg.result) {
+      phase = 'dead';
+      opts.onTerminate?.({ reason: 'session-restart-skipped' });
+      return;
+    }
+    if (msg.adoptedFromSessionId !== undefined) {
+      nextAdoptionMeta = { adoptedFromSessionId: msg.adoptedFromSessionId, adoptedAt: Date.now() };
+    }
+    if (msg.resetCounter) counter = 0;
+    sessionId = msg.result.sessionId;
+    sessionToken = msg.result.sessionToken;
+    writeSession(sessionId, sessionToken);
+    log?.(`tab: rejoined sessionId=${sessionId}`);
+    opts.onStateChange?.({ sessionId, tabId: effectiveTabId, connected: true, sessionToken });
+    opts.onSessionRestart?.();
+  }
 
-  port.postMessage({
-    type: 'hello',
-    apiUrl: opts.apiUrl,
-    websocketUrl: opts.websocketUrl,
-    clientSecret: opts.clientSecret,
-    context,
-    sessionIdHint: sessionHint?.id,
-    sessionTokenHint: sessionHint?.token,
-    tabId,
-    debugLogs: log !== undefined,
-  });
+  const context = buildSessionContext(opts.context);
+  const sendHello = (idHint: string | undefined, tokenHint: string | undefined, helloTabId: string) => {
+    port.postMessage({
+      type: 'hello',
+      apiUrl: opts.apiUrl,
+      websocketUrl: opts.websocketUrl,
+      clientSecret: opts.clientSecret,
+      context,
+      sessionIdHint: idHint,
+      sessionTokenHint: tokenHint,
+      tabId: helloTabId,
+      debugLogs: log !== undefined,
+    });
+  };
+
+  sendHello(sessionHint?.id, sessionHint?.token, tabId);
   log?.('tab: hello sent, awaiting welcome');
 
   const timeoutMs = opts._welcomeTimeoutMs ?? WELCOME_TIMEOUT_MS;
@@ -223,18 +261,31 @@ export async function createUploader(opts: CreateUploaderOptions): Promise<Uploa
     flush();
     try {
       port.postMessage({ type: 'bye', reason: 'pagehide' });
+      attachment = 'departed';
     } catch (_e) {
       // ignore
     }
   });
+  // The worker forgot this port on bye and may have gone idle or replaced the session, so
+  // re-handshake before recording resumes.
+  const rejoin = () => {
+    if (attachment !== 'departed' || phase !== 'active') return;
+    attachment = 'rejoining';
+    log?.('tab: page resumed after bye; re-sending hello');
+    sendHello(sessionId ?? undefined, sessionToken ?? undefined, effectiveTabId);
+  };
+  window.addEventListener('pageshow', rejoin);
   document.addEventListener('visibilitychange', () => {
     if (document.visibilityState === 'hidden') flush();
+    else rejoin();
   });
 
   const uploader = ((event: unknown) => {
     if (phase === 'dead') {
       throw new Error('uploader: terminated');
     }
+    // Held back until the rejoin welcome restarts the recorder with a fresh snapshot.
+    if (attachment !== 'attached') return;
     const frame: Frame = {
       tabId: effectiveTabId,
       eventCounter: counter,
